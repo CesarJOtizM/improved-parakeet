@@ -1,0 +1,21 @@
+
+echo '🏗️  ¡Hora de poner guapo tu código antes del commit!'
+
+# Ejecutar lint-staged
+bun run lint-staged || {
+    echo ''
+    echo '❌❌❌ ¡Ups! Algo salió mal en el pre-commit ❌❌❌'
+    echo ''
+    echo '🔧 Posibles soluciones:'
+    echo '   • Ejecuta "bun run lint-staged" manualmente para ver errores detallados'
+    echo '   • O ejecuta los comandos individuales:'
+    echo '     - "bun run eslint:fix" para arreglar ESLint'
+    echo '     - "bun run prettier:fix" para arreglar Prettier'
+    echo '     - "bun run stylelint:fix" para arreglar Stylelint'
+    echo '   • Agrega los archivos corregidos y vuelve a intentar'
+    echo ''
+    echo '💡 Tip: lint-staged solo procesa archivos modificados, así que es súper rápido!'
+    exit 1
+}
+
+echo '🎉✅ ¡Éxito! Tu código está más limpio que tu conciencia después de un deploy en viernes. ¡A commitear! 🎉✅'
