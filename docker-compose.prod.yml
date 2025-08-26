@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/prod.Dockerfile
+      target: production
+    container_name: inventory_app_prod
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://inventory_user:inventory_password@postgres:5432/inventory_system?schema=public
+      - REDIS_URL=redis://redis:6379
+      - BUN_ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - inventory_network
+    restart: unless-stopped
+    # Configuraciones de producción
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: inventory_postgres_prod
+    environment:
+      POSTGRES_DB: inventory_system
+      POSTGRES_USER: inventory_user
+      POSTGRES_PASSWORD: inventory_password
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    networks:
+      - inventory_network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U inventory_user -d inventory_system']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    # Configuraciones de producción para PostgreSQL
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  redis:
+    image: redis:7-alpine
+    container_name: inventory_redis_prod
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_prod_data:/data
+    networks:
+      - inventory_network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    # Configuraciones de producción para Redis
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
+
+networks:
+  inventory_network:
+    driver: bridge

@@ -44,6 +44,24 @@ $ yarn run start:dev
 $ yarn run start:prod
 ```
 
+### Base de Datos
+
+```bash
+npm run db:generate  # Generar cliente Prisma
+npm run db:push      # Sincronizar esquema con BD
+npm run db:migrate   # Ejecutar migraciones
+npm run db:studio    # Abrir Prisma Studio
+npm run db:seed      # Poblar con datos de prueba
+npm run db:reset     # Resetear base de datos
+npm run db:status    # Ver estado de migraciones
+```
+
+**📁 Estructura de Prisma:**
+
+- **Schema**: `src/infrastructure/database/prisma/schema.prisma`
+- **Migraciones**: `src/infrastructure/database/migrations/`
+- **Cliente generado**: `src/infrastructure/database/generated/prisma/`
+
 ## Run tests
 
 ```bash
