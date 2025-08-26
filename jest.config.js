@@ -4,7 +4,13 @@ const config = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src', '<rootDir>/test'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
-  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts', '!src/main.ts', '!src/**/*.module.ts'],
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.d.ts',
+    '!src/main.ts',
+    '!src/**/*.module.ts',
+    '!src/**/index.ts',
+  ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   moduleNameMapper: {
@@ -30,7 +36,7 @@ const config = {
   },
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   testTimeout: 30000,
-  // Configuraciones adicionales recomendadas por la documentación
+  // Additional configurations recommended by the documentation
   clearMocks: true,
   collectCoverage: true,
   coverageThreshold: {

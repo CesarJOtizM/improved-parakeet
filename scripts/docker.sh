@@ -36,7 +36,7 @@ show_help() {
 # Función para desarrollo
 start_dev() {
     echo -e "${GREEN}🚀 Iniciando entorno de desarrollo...${NC}"
-    docker-compose -f docker-compose.dev.yml up -d
+    docker compose -f docker-compose.dev.yml up -d
     echo -e "${GREEN}✅ Entorno de desarrollo iniciado!${NC}"
     echo -e "${BLUE}📱 App disponible en: http://localhost:3000${NC}"
     echo -e "${BLUE}🗄️  PostgreSQL en: localhost:5432${NC}"
@@ -46,7 +46,7 @@ start_dev() {
 # Función para producción
 start_prod() {
     echo -e "${GREEN}🚀 Iniciando entorno de producción...${NC}"
-    docker-compose -f docker-compose.prod.yml up -d
+    docker compose -f docker-compose.prod.yml up -d
     echo -e "${GREEN}✅ Entorno de producción iniciado!${NC}"
     echo -e "${BLUE}📱 App disponible en: http://localhost:3000${NC}"
 }
@@ -54,7 +54,7 @@ start_prod() {
 # Función para infraestructura
 start_infra() {
     echo -e "${GREEN}🚀 Iniciando solo infraestructura...${NC}"
-    docker-compose up -d
+    docker compose up -d
     echo -e "${GREEN}✅ Infraestructura iniciada!${NC}"
     echo -e "${BLUE}🗄️  PostgreSQL en: localhost:5432${NC}"
     echo -e "${BLUE}🔴 Redis en: localhost:6379${NC}"
@@ -63,18 +63,18 @@ start_infra() {
 # Función para detener
 stop_all() {
     echo -e "${YELLOW}🛑 Deteniendo todos los contenedores...${NC}"
-    docker-compose down
-    docker-compose -f docker-compose.dev.yml down
-    docker-compose -f docker-compose.prod.yml down
+    docker compose down
+    docker compose -f docker-compose.dev.yml down
+    docker compose -f docker-compose.prod.yml down
     echo -e "${GREEN}✅ Todos los contenedores detenidos!${NC}"
 }
 
 # Función para limpiar
 clean_all() {
     echo -e "${YELLOW}🧹 Limpiando todo...${NC}"
-    docker-compose down -v --remove-orphans
-    docker-compose -f docker-compose.dev.yml down -v --remove-orphans
-    docker-compose -f docker-compose.prod.yml down -v --remove-orphans
+    docker compose down -v --remove-orphans
+    docker compose -f docker-compose.dev.yml down -v --remove-orphans
+    docker compose -f docker-compose.prod.yml down -v --remove-orphans
     docker system prune -f
     echo -e "${GREEN}✅ Todo limpiado!${NC}"
 }
@@ -82,19 +82,19 @@ clean_all() {
 # Función para logs
 show_logs() {
     echo -e "${BLUE}📋 Mostrando logs...${NC}"
-    docker-compose logs -f
+    docker compose logs -f
 }
 
 # Función para status
 show_status() {
     echo -e "${BLUE}📊 Estado de los servicios:${NC}"
-    docker-compose ps
+    docker compose ps
     echo ""
     echo -e "${BLUE}📊 Estado de desarrollo:${NC}"
-    docker-compose -f docker-compose.dev.yml ps
+    docker compose -f docker-compose.dev.yml ps
     echo ""
     echo -e "${BLUE}📊 Estado de producción:${NC}"
-    docker-compose -f docker-compose.prod.yml ps
+    docker compose -f docker-compose.dev.yml ps
 }
 
 # Función principal

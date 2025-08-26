@@ -215,6 +215,6 @@ Para agregar nuevos servicios o modificar la configuración:
 
 1. **Actualiza** el archivo correspondiente
 2. **Modifica** el script `scripts/docker.sh` si es necesario
-3. **Actualiza** esta documentación
+3. **Update** this documentation
 4. **Prueba** en todos los entornos
 5. **Commit** los cambios

@@ -25,3 +25,4 @@ fi
 # Run formatting check
 echo "✨ Checking code formatting..."
 bun run format:check
+

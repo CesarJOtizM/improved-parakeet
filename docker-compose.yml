@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Docker Compose para infraestructura básica (sin aplicación)
 # Usar para: CI/CD, testing, o cuando solo necesites la infraestructura
 

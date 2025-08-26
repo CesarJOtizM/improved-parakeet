@@ -61,11 +61,11 @@ export const baseConfig = [
         },
       ],
 
-      // Convención para nombres de carpetas: SNAKE_CASE
+      // Convención para nombres de carpetas: CAMEL_CASE
       'check-file/folder-naming-convention': [
         'error',
         {
-          '**/!(__tests__)/!(__mocks__)/': 'SNAKE_CASE',
+          '**/!(__tests__)/!(__mocks__)/': 'CAMEL_CASE',
         },
       ],
 

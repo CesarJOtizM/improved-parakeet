@@ -431,7 +431,7 @@ class Reason {
 
 ## 10) Notas de implementación
 
-- **API**: exponer _endpoints_ de catálogo, movimientos (posteo y reverso), transferencias y reportes.
+- **API**: expose _endpoints_ for catalog, movements (posting and reversal), transfers and reports.
 - **Concurrencia**: aplicar _row-level locking_ al postear movimientos por `(org_id, product_id, warehouse_id)` para integridad de PPM y stock.
 - **Materialización**: si el volumen crece, materializar `v_inventory_balance` y refrescar por lotes.
 

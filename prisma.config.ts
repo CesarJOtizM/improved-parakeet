@@ -1,5 +1,10 @@
 import path from 'node:path';
 
+// eslint-disable-next-line import/order
+import { config } from 'dotenv';
+// Cargar variables de entorno desde .env
+config();
+
 import { defineConfig } from 'prisma/config';
 
 export default defineConfig({
