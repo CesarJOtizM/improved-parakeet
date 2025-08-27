@@ -1,14 +1,13 @@
 // Health Check Application Service - Caso de Uso
 // Coordina el dominio y la infraestructura
 
+import {
+  performHealthCheck,
+  type DetailedHealthCheck,
+  type HealthCheckPort,
+  type HealthCheckResult,
+} from '@healthCheck/index';
 import { Inject, Injectable } from '@nestjs/common';
-import { performHealthCheck } from '@shared/domain/healthCheck.service';
-
-import type {
-  DetailedHealthCheck,
-  HealthCheckPort,
-  HealthCheckResult,
-} from '@shared/domain/healthCheck.port';
 
 // Token personalizado para inyección de dependencias
 export const HEALTH_CHECK_PORT_TOKEN = 'HealthCheckPort';

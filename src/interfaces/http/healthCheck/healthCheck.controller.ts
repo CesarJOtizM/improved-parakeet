@@ -7,7 +7,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { DetailedHealthCheckDto, HealthCheckResultDto } from './dto/healthCheck.dto';
 
-import type { DetailedHealthCheck, HealthCheckResult } from '@shared/domain/healthCheck.types';
+import type { DetailedHealthCheck, HealthCheckResult } from '@healthCheck/types/healthCheck.types';
 
 @ApiTags('Health Check')
 @Controller('health')

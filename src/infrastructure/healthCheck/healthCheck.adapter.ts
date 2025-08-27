@@ -3,19 +3,16 @@
 
 import os from 'os';
 
-import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Injectable } from '@nestjs/common';
 import {
   createDetailedHealthCheck,
   createHealthCheckResult,
-} from '@shared/domain/healthCheck.service';
-
-import type {
-  DetailedHealthCheck,
-  HealthCheckPort,
-  HealthCheckResult,
-} from '@shared/domain/healthCheck.port';
-import type { HealthStatus } from '@shared/domain/healthCheck.types';
+  type DetailedHealthCheck,
+  type HealthCheckPort,
+  type HealthCheckResult,
+  type HealthStatus,
+} from '@healthCheck/index';
+import { PrismaService } from '@infrastructure/database/prisma.service';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class HealthCheckAdapter implements HealthCheckPort {

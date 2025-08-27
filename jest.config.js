@@ -33,6 +33,7 @@ const config = {
     '^@infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
     '^@interface/(.*)$': '<rootDir>/src/interfaces/$1',
     '^@shared/(.*)$': '<rootDir>/src/shared/$1',
+    '^@healthCheck/(.*)$': '<rootDir>/src/healthCheck/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   testTimeout: 30000,

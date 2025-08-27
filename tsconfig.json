@@ -47,7 +47,8 @@
       "@application/*": ["src/application/*"],
       "@infrastructure/*": ["src/infrastructure/*"],
       "@interface/*": ["src/interfaces/*"],
-      "@shared/*": ["src/shared/*"]
+      "@shared/*": ["src/shared/*"],
+      "@healthCheck/*": ["src/healthCheck/*"]
     }
   },
   "include": ["src/**/*", "test/**/*"],
