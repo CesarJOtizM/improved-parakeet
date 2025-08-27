@@ -1,6 +1,6 @@
 import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
-import { TransferStatus } from '../valueObjects/transferStatus.valueObject';
-import { TransferLine } from './transferLine.entity';
+import { TransferLine } from '@transfer/domain/entities/transferLine.entity';
+import { TransferStatus } from '@transfer/domain/valueObjects/transferStatus.valueObject';
 
 export interface TransferProps {
   fromWarehouseId: string;

@@ -1,5 +1,5 @@
-import { DomainEvent } from '../events/domainEvent.base';
-import { Entity } from './entity.base';
+import { Entity } from '@shared/domain/base/entity.base';
+import { DomainEvent } from '@shared/domain/events/domainEvent.base';
 
 export abstract class AggregateRoot<T> extends Entity<T> {
   private _domainEvents: DomainEvent[] = [];
@@ -20,4 +20,3 @@ export abstract class AggregateRoot<T> extends Entity<T> {
     this._domainEvents.forEach(event => event.markForDispatch());
   }
 }
-

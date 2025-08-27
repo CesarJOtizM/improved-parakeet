@@ -1,12 +1,12 @@
 // Health Check Domain Service - Programación Funcional + DDD
 // Lógica de negocio pura sin efectos secundarios
 
-import type { HealthCheckPort } from '../ports/healthCheck.port';
+import type { HealthCheckPort } from '@healthCheck/ports/healthCheck.port';
 import type {
   DetailedHealthCheck,
   HealthCheckResult,
   HealthStatus,
-} from '../types/healthCheck.types';
+} from '@healthCheck/types/healthCheck.types';
 
 // Funciones puras para el dominio
 export const createHealthCheckResult = (

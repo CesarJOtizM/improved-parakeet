@@ -1,6 +1,5 @@
+import { Movement } from '@movement/domain/entities/movement.entity';
 import { DomainEvent } from '@shared/domain/events/domainEvent.base';
-
-import { Movement } from '../entities/movement.entity';
 
 export class MovementPostedEvent extends DomainEvent {
   constructor(private readonly movement: Movement) {

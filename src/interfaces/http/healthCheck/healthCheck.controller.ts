@@ -2,10 +2,12 @@
 // Exposes health check endpoints
 
 import { HealthCheckApplicationService } from '@application/healthCheck/healthCheck.application.service';
+import {
+  DetailedHealthCheckDto,
+  HealthCheckResultDto,
+} from '@interface/http/healthCheck/dto/healthCheck.dto';
 import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-
-import { DetailedHealthCheckDto, HealthCheckResultDto } from './dto/healthCheck.dto';
 
 import type { DetailedHealthCheck, HealthCheckResult } from '@healthCheck/types/healthCheck.types';
 

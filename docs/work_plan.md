@@ -59,42 +59,42 @@
   - [x] Setup de Domain Events y Domain Services
   - [x] Crear estructura que "grita" el dominio del inventario
 
-- [ ] **Configuración de Base de Datos**
-  - [ ] Scripts de migración siguiendo DDD con Prisma
-  - [ ] Implementación de índices y restricciones de integridad
-  - [ ] Crear vistas materializadas (`v_inventory_balance`, `v_low_stock`)
-  - [ ] Setup de seeds para datos de prueba por dominio
-  - [ ] Configuración de conexiones multi-tenant
+- [x] **Configuración de Base de Datos**
+  - [x] Scripts de migración siguiendo DDD con Prisma
+  - [x] Implementación de índices y restricciones de integridad
+  - [x] Crear vistas materializadas (`v_inventory_balance`, `v_low_stock`)
+  - [x] Setup de seeds para datos de prueba por dominio
+  - [x] Configuración de conexiones multi-tenant
 
 - [x] **Implementación de Entidades Base**
   - [x] Crear entidades base (BaseEntity, BaseAggregate)
   - [x] Implementar Value Objects inmutables
   - [x] Setup de Domain Events base
   - [x] Crear interfaces de Repository base
-  - [ ] Implementar decoradores personalizados para validación
+  - [x] Implementar decoradores personalizados para validación
 
-### **Semana 3: Infraestructura y Adaptadores** 🚧 **EN PROGRESO**
+### **Semana 3: Infraestructura y Adaptadores** ✅ **COMPLETADA**
 
-- [ ] **Implementación de Arquitectura Hexagonal**
-  - [ ] Setup de adaptadores de entrada (HTTP Controllers, CLI Commands)
-  - [ ] Implementación de adaptadores de salida (PostgreSQL, Redis)
-  - [ ] Configuración de inyección de dependencias con NestJS
-  - [ ] Tests de integración multi-tenant
-  - [ ] Crear interfaces de ports para cada adaptador
+- [x] **Implementación de Arquitectura Hexagonal**
+  - [x] Setup de adaptadores de entrada (HTTP Controllers, CLI Commands)
+  - [x] Implementación de adaptadores de salida (PostgreSQL, Redis)
+  - [x] Configuración de inyección de dependencias con NestJS
+  - [x] Tests de integración multi-tenant
+  - [x] Crear interfaces de ports para cada adaptador
 
-- [ ] **Configuración Multi-Tenant**
-  - [ ] Middleware de detección de organización por subdominio/header
-  - [ ] Validación de `org_id` en todos los endpoints
-  - [ ] Configuración de conexiones por organización
-  - [ ] Implementación de Tenant Context con decoradores personalizados
-  - [ ] Tests de integración multi-tenant
+- [x] **Configuración Multi-Tenant**
+  - [x] Middleware de detección de organización por subdominio/header
+  - [x] Validación de `org_id` en todos los endpoints
+  - [x] Configuración de conexiones por organización
+  - [x] Implementación de Tenant Context con decoradores personalizados
+  - [x] Tests de integración multi-tenant
 
-- [ ] **Setup de Infraestructura Base**
-  - [ ] Configuración de Prisma con múltiples conexiones
-  - [ ] Setup de Redis para caché y sesiones
-  - [ ] Implementación de adaptadores base (BaseRepository, BaseService)
-  - [ ] Crear interceptores globales para logging y auditoría
-  - [ ] Setup de filtros de excepción globales
+- [x] **Setup de Infraestructura Base**
+  - [x] Configuración de Prisma con múltiples conexiones
+  - [x] Setup de Redis para caché y sesiones
+  - [x] Implementación de adaptadores base (BaseRepository, BaseService)
+  - [x] Crear interceptores globales para logging y auditoría
+  - [x] Setup de filtros de excepción globales
 
 ---
 
@@ -1039,13 +1039,13 @@ export class PermissionGuard implements CanActivate {
 5. ⏳ **Configurar el sistema de testing funcional** - EN PROGRESO
 6. ✅ **Validar que la estructura "grite" claramente el dominio del inventario** - COMPLETADO
 
-### **🚀 Próximos Pasos para Semana 3**
+### **🚀 Próximos Pasos para Semana 4**
 
-1. **Implementar adaptadores de entrada** (HTTP Controllers con NestJS)
-2. **Configurar Prisma** con esquemas DDD para base de datos
-3. **Implementar repositorios concretos** en PostgreSQL
-4. **Setup de inyección de dependencias** con NestJS
-5. **Configurar middleware multi-tenant** para validación de `org_id`
+1. **Implementar dominio de autenticación** (User, Role, Permission entities)
+2. **Crear casos de uso de autenticación** (Login, Logout, Refresh Token)
+3. **Implementar sistema RBAC** con permisos granulares
+4. **Crear guards de autorización** por roles y permisos
+5. **Implementar adaptadores de autenticación** (HTTP Controllers)
 
 ---
 
@@ -1055,7 +1055,7 @@ export class PermissionGuard implements CanActivate {
 
 - [x] **Semana 1**: Setup del proyecto y arquitectura base ✅ **COMPLETADA**
 - [x] **Semana 2**: Dominios y entidades del core ✅ **COMPLETADA**
-- [ ] **Semana 3**: Infraestructura y adaptadores 🚧 **EN PROGRESO**
+- [x] **Semana 3**: Infraestructura y adaptadores ✅ **COMPLETADA**
 - [ ] **Semana 4**: Dominio de autenticación
 - [ ] **Semana 5**: Dominio de usuarios y RBAC
 - [ ] **Semana 6**: Adaptadores y API de autenticación
@@ -1072,7 +1072,7 @@ export class PermissionGuard implements CanActivate {
 
 ### **Entregables por Fase**
 
-- [x] **Fase 1**: Arquitectura base, dominios core, infraestructura 🚧 **EN PROGRESO (67%)**
+- [x] **Fase 1**: Arquitectura base, dominios core, infraestructura ✅ **COMPLETADA (100%)**
 - [ ] **Fase 2**: Sistema de autenticación completo con RBAC
 - [ ] **Fase 3**: Sistema de inventarios completo
 - [ ] **Fase 4**: Sistema de reportes e importaciones
@@ -1099,16 +1099,19 @@ export class PermissionGuard implements CanActivate {
 - **Eventos de Dominio**: ProductCreated, MovementPosted
 - **Estructura de Carpetas**: Reorganizada por dominio funcional
 
-#### **🚧 En Progreso - Semana 3**
+#### **✅ Completado - Semana 3**
 
-- **Infraestructura**: Adaptadores de entrada y salida
-- **Base de Datos**: Configuración de Prisma con DDD
-- **Multi-Tenant**: Middleware de validación de organización
-- **Testing**: Configuración de tests de integración
+- **Infraestructura**: Adaptadores de entrada y salida implementados
+- **Base de Datos**: Configuración de Prisma con DDD completada
+- **Multi-Tenant**: Middleware de validación de organización implementado
+- **Testing**: Configuración de tests de integración completada
+- **Vistas Materializadas**: `v_inventory_balance` y `v_low_stock` implementadas
+- **Decoradores**: Sistema de permisos y validación implementado
+- **Seeds**: Organización por dominios implementada
 
 #### **⏳ Pendiente**
 
-- **Fase 2**: Sistema de autenticación y RBAC
+- **Fase 2**: Sistema de autenticación y RBAC (Próxima semana)
 - **Fase 3**: Casos de uso y APIs de inventario
 - **Fase 4**: Reportes e importaciones
 - **Fase 5**: Testing completo y despliegue

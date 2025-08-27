@@ -6,7 +6,7 @@ import {
   type DetailedHealthCheck,
   type HealthCheckPort,
   type HealthCheckResult,
-} from '@healthCheck/index';
+} from '@healthCheck';
 import { Inject, Injectable } from '@nestjs/common';
 
 // Token personalizado para inyección de dependencias

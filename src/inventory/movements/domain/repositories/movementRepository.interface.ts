@@ -1,6 +1,5 @@
+import { Movement } from '@movement/domain/entities/movement.entity';
 import { ReadRepository, WriteRepository } from '@shared/domain/repository';
-
-import { Movement } from '../entities/movement.entity';
 
 export interface MovementRepository extends ReadRepository<Movement>, WriteRepository<Movement> {
   findByWarehouse(warehouseId: string, orgId: string): Promise<Movement[]>;

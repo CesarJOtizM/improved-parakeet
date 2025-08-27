@@ -1,7 +1,7 @@
 // Health Check Port - Arquitectura Hexagonal
 // Define la interfaz que el dominio necesita
 
-import type { DetailedHealthCheck, HealthCheckResult } from '../types/healthCheck.types';
+import type { DetailedHealthCheck, HealthCheckResult } from '@healthCheck/types/healthCheck.types';
 
 export interface HealthCheckPort {
   readonly checkBasic: () => Promise<HealthCheckResult>;

@@ -1,5 +1,5 @@
 // Value Objects
-export * from './valueObjects/userStatus.valueObject';
+export * from './valueObjects';
 
 // Entities
-export * from './entities/user.entity';
+export * from './entities';

@@ -21,4 +21,3 @@ export abstract class ValueObject<T> {
     return this.props;
   }
 }
-

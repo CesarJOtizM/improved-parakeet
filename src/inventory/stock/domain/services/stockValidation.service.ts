@@ -1,7 +1,6 @@
 import { Movement } from '@inventory/movements/domain/entities/movement.entity';
 import { Product } from '@inventory/products/domain/entities/product.entity';
-
-import { Quantity } from '../valueObjects/quantity.valueObject';
+import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 export interface StockValidationResult {
   isValid: boolean;

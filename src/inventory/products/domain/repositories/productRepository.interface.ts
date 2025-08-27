@@ -1,5 +1,5 @@
+import { Product } from '@product/domain/entities/product.entity';
 import { ReadRepository, WriteRepository } from '@shared/domain/repository';
-import { Product } from '../entities/product.entity';
 
 export interface ProductRepository extends ReadRepository<Product>, WriteRepository<Product> {
   findBySku(sku: string, orgId: string): Promise<Product | null>;

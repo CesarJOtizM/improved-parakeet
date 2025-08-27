@@ -1,5 +1,5 @@
+import { UserStatus } from '@auth/domain';
 import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
-import { UserStatus } from '../valueObjects/userStatus.valueObject';
 
 export interface UserProps {
   email: string;

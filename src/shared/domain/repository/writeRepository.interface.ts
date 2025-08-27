@@ -1,4 +1,4 @@
-import { Entity } from '../base/entity.base';
+import { Entity } from '@shared/domain/base/entity.base';
 
 export interface WriteRepository<T extends Entity<unknown>> {
   save(entity: T): Promise<T>;

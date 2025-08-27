@@ -5,4 +5,3 @@ export * from './services/healthCheck.controller.spec';
 export * from './services/healthCheck.dto.spec';
 export * from './services/healthCheck.service.spec';
 export * from './types/healthCheck.types.spec';
-

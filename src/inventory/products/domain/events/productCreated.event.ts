@@ -1,6 +1,5 @@
+import { Product } from '@product/domain/entities/product.entity';
 import { DomainEvent } from '@shared/domain/events/domainEvent.base';
-
-import { Product } from '../entities/product.entity';
 
 export class ProductCreatedEvent extends DomainEvent {
   constructor(private readonly product: Product) {

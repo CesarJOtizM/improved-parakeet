@@ -1,5 +1,5 @@
 import { ReadRepository, WriteRepository } from '@shared/domain/repository';
-import { Transfer } from '../entities/transfer.entity';
+import { Transfer } from '@transfer/domain/entities/transfer.entity';
 
 export interface TransferRepository extends ReadRepository<Transfer>, WriteRepository<Transfer> {
   findByFromWarehouse(warehouseId: string, orgId: string): Promise<Transfer[]>;

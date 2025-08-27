@@ -1,9 +1,8 @@
+import { ProductCreatedEvent } from '@product/domain/events/productCreated.event';
+import { ProductUpdatedEvent } from '@product/domain/events/productUpdated.event';
+import { CostMethod } from '@product/domain/valueObjects/costMethod.valueObject';
+import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
 import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
-
-import { ProductCreatedEvent } from '../events/productCreated.event';
-import { ProductUpdatedEvent } from '../events/productUpdated.event';
-import { CostMethod } from '../valueObjects/costMethod.valueObject';
-import { ProductStatus } from '../valueObjects/productStatus.valueObject';
 
 export interface ProductProps {
   sku: string;

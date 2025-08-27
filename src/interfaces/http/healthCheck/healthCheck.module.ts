@@ -4,9 +4,8 @@
 import { HealthCheckApplicationService } from '@application/healthCheck/healthCheck.application.service';
 import { PrismaModule } from '@infrastructure/database/prisma.module';
 import { HealthCheckAdapter } from '@infrastructure/healthCheck/healthCheck.adapter';
+import { HealthCheckController } from '@interface/http/healthCheck/healthCheck.controller';
 import { Module } from '@nestjs/common';
-
-import { HealthCheckController } from './healthCheck.controller';
 
 @Module({
   imports: [PrismaModule],

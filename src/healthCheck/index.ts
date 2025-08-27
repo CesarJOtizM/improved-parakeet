@@ -1,4 +1,4 @@
 // Health Check Module - Exports
-export * from './ports/healthCheck.port';
-export * from './services/healthCheck.service';
-export * from './types/healthCheck.types';
+export * from './ports';
+export * from './services';
+export * from './types';

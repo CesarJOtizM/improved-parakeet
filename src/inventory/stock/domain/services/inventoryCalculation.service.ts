@@ -1,5 +1,5 @@
-import { Money } from '../valueObjects/money.valueObject';
-import { Quantity } from '../valueObjects/quantity.valueObject';
+import { Money } from '@stock/domain/valueObjects/money.valueObject';
+import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 export interface InventoryBalance {
   productId: string;
