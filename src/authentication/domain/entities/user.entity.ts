@@ -1,10 +1,14 @@
 import { UserStatus } from '@auth/domain';
+import { UserCreatedEvent } from '@auth/domain/events/userCreated.event';
+import { Email } from '@auth/domain/valueObjects/email.valueObject';
+import { Password } from '@auth/domain/valueObjects/password.valueObject';
 import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
+import { DomainEvent } from '@shared/domain/events/domainEvent.base';
 
 export interface UserProps {
-  email: string;
+  email: Email;
   username: string;
-  passwordHash: string;
+  passwordHash: Password;
   name: string;
   status: UserStatus;
   lastLoginAt?: Date;
@@ -17,8 +21,18 @@ export class User extends AggregateRoot<UserProps> {
     super(props, id, orgId);
   }
 
-  public static create(props: UserProps, orgId: string): User {
-    const user = new User(props, undefined, orgId);
+  public static create(
+    props: Omit<UserProps, 'passwordHash'> & { password: string },
+    orgId: string
+  ): User {
+    const passwordHash = Password.create(props.password);
+    const userProps: UserProps = {
+      ...props,
+      passwordHash,
+    };
+
+    const user = new User(userProps, undefined, orgId);
+    user.addDomainEvent(new UserCreatedEvent(user));
     return user;
   }
 
@@ -26,16 +40,18 @@ export class User extends AggregateRoot<UserProps> {
     return new User(props, id, orgId);
   }
 
-  public update(props: Partial<UserProps>): void {
+  public update(
+    props: Partial<Omit<UserProps, 'email' | 'passwordHash'>> & { email?: string }
+  ): void {
+    if (props.email !== undefined) this.props.email = Email.create(props.email);
     if (props.name !== undefined) this.props.name = props.name;
-    if (props.email !== undefined) this.props.email = props.email;
     if (props.username !== undefined) this.props.username = props.username;
 
     this.updateTimestamp();
   }
 
-  public changePassword(passwordHash: string): void {
-    this.props.passwordHash = passwordHash;
+  public changePassword(password: string): void {
+    this.props.passwordHash = Password.create(password);
     this.props.failedLoginAttempts = 0;
     this.props.lockedUntil = undefined;
     this.updateTimestamp();
@@ -83,6 +99,10 @@ export class User extends AggregateRoot<UserProps> {
     this.updateTimestamp();
   }
 
+  public addDomainEventFromService(event: DomainEvent): void {
+    this.addDomainEvent(event);
+  }
+
   public isLocked(): boolean {
     if (this.props.status.getValue() !== 'LOCKED') return false;
     if (!this.props.lockedUntil) return false;
@@ -95,7 +115,7 @@ export class User extends AggregateRoot<UserProps> {
 
   // Getters
   get email(): string {
-    return this.props.email;
+    return this.props.email.getValue();
   }
 
   get username(): string {
@@ -103,7 +123,7 @@ export class User extends AggregateRoot<UserProps> {
   }
 
   get passwordHash(): string {
-    return this.props.passwordHash;
+    return this.props.passwordHash.getValue();
   }
 
   get name(): string {

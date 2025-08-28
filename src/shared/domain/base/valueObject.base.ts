@@ -1,4 +1,8 @@
-export abstract class ValueObject<T> {
+export interface ValueObjectProps {
+  value: unknown;
+}
+
+export abstract class ValueObject<T extends ValueObjectProps> {
   protected readonly props: T;
 
   constructor(props: T) {
@@ -17,7 +21,7 @@ export abstract class ValueObject<T> {
     return JSON.stringify(this.props) === JSON.stringify(vo.props);
   }
 
-  public getValue(): T {
-    return this.props;
+  public getValue(): T['value'] {
+    return this.props.value;
   }
 }
