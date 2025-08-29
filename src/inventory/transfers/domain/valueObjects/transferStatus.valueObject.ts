@@ -8,9 +8,9 @@ export type TransferStatusValue =
   | 'REJECTED'
   | 'CANCELED';
 
-export class TransferStatus extends ValueObject<TransferStatusValue> {
+export class TransferStatus extends ValueObject<{ value: TransferStatusValue }> {
   constructor(value: TransferStatusValue) {
-    super(value);
+    super({ value });
   }
 
   public static create(value: TransferStatusValue): TransferStatus {
@@ -25,46 +25,46 @@ export class TransferStatus extends ValueObject<TransferStatusValue> {
   }
 
   public isDraft(): boolean {
-    return this.props === 'DRAFT';
+    return this.props.value === 'DRAFT';
   }
 
   public isInTransit(): boolean {
-    return this.props === 'IN_TRANSIT';
+    return this.props.value === 'IN_TRANSIT';
   }
 
   public isPartial(): boolean {
-    return this.props === 'PARTIAL';
+    return this.props.value === 'PARTIAL';
   }
 
   public isReceived(): boolean {
-    return this.props === 'RECEIVED';
+    return this.props.value === 'RECEIVED';
   }
 
   public isRejected(): boolean {
-    return this.props === 'REJECTED';
+    return this.props.value === 'REJECTED';
   }
 
   public isCanceled(): boolean {
-    return this.props === 'CANCELED';
+    return this.props.value === 'CANCELED';
   }
 
   public canConfirm(): boolean {
-    return ['DRAFT', 'IN_TRANSIT'].includes(this.props);
+    return ['DRAFT', 'IN_TRANSIT'].includes(this.props.value);
   }
 
   public canReceive(): boolean {
-    return ['IN_TRANSIT', 'PARTIAL'].includes(this.props);
+    return ['IN_TRANSIT', 'PARTIAL'].includes(this.props.value);
   }
 
   public canReject(): boolean {
-    return ['IN_TRANSIT', 'PARTIAL'].includes(this.props);
+    return ['IN_TRANSIT', 'PARTIAL'].includes(this.props.value);
   }
 
   public canCancel(): boolean {
-    return ['DRAFT', 'IN_TRANSIT'].includes(this.props);
+    return ['DRAFT', 'IN_TRANSIT'].includes(this.props.value);
   }
 
   public getValue(): TransferStatusValue {
-    return this.props;
+    return this.props.value;
   }
 }

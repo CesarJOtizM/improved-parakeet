@@ -2,9 +2,9 @@ import { ValueObject } from '@shared/domain/base/valueObject.base';
 
 export type CostMethodValue = 'AVG' | 'FIFO';
 
-export class CostMethod extends ValueObject<CostMethodValue> {
+export class CostMethod extends ValueObject<{ value: CostMethodValue }> {
   constructor(value: CostMethodValue) {
-    super(value);
+    super({ value });
   }
 
   public static create(value: CostMethodValue): CostMethod {
@@ -19,14 +19,14 @@ export class CostMethod extends ValueObject<CostMethodValue> {
   }
 
   public isAverage(): boolean {
-    return this.props === 'AVG';
+    return this.props.value === 'AVG';
   }
 
   public isFifo(): boolean {
-    return this.props === 'FIFO';
+    return this.props.value === 'FIFO';
   }
 
   public getValue(): CostMethodValue {
-    return this.props;
+    return this.props.value;
   }
 }

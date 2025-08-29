@@ -19,7 +19,7 @@ export class AuthorizationService {
    * Verifica si un usuario tiene un permiso específico
    */
   public static checkPermission(
-    user: User,
+    _user: User,
     userPermissions: string[],
     requiredPermission: string
   ): AuthorizationResult {
@@ -37,7 +37,7 @@ export class AuthorizationService {
    * Verifica si un usuario tiene al menos uno de los permisos requeridos
    */
   public static checkAnyPermission(
-    user: User,
+    _user: User,
     userPermissions: string[],
     requiredPermissions: string[]
   ): AuthorizationResult {
@@ -57,7 +57,7 @@ export class AuthorizationService {
    * Verifica si un usuario tiene todos los permisos requeridos
    */
   public static checkAllPermissions(
-    user: User,
+    _user: User,
     userPermissions: string[],
     requiredPermissions: string[]
   ): AuthorizationResult {
@@ -83,7 +83,7 @@ export class AuthorizationService {
    * Verifica si un usuario tiene acceso a un módulo específico
    */
   public static checkModuleAccess(
-    user: User,
+    _user: User,
     userPermissions: string[],
     module: string
   ): AuthorizationResult {
@@ -105,7 +105,7 @@ export class AuthorizationService {
    * Verifica si un usuario puede realizar una acción específica en un módulo
    */
   public static checkActionPermission(
-    user: User,
+    _user: User,
     userPermissions: string[],
     module: string,
     action: string
@@ -125,7 +125,7 @@ export class AuthorizationService {
    * Verifica si un usuario tiene un rol específico
    */
   public static checkRole(
-    user: User,
+    _user: User,
     userRoles: string[],
     requiredRole: string
   ): AuthorizationResult {
@@ -143,7 +143,7 @@ export class AuthorizationService {
    * Verifica si un usuario tiene al menos uno de los roles requeridos
    */
   public static checkAnyRole(
-    user: User,
+    _user: User,
     userRoles: string[],
     requiredRoles: string[]
   ): AuthorizationResult {
@@ -160,14 +160,14 @@ export class AuthorizationService {
   /**
    * Verifica si un usuario es administrador
    */
-  public static isAdmin(user: User, userRoles: string[]): boolean {
+  public static isAdmin(_user: User, userRoles: string[]): boolean {
     return userRoles.includes('ADMIN');
   }
 
   /**
    * Verifica si un usuario es superusuario
    */
-  public static isSuperUser(user: User, userRoles: string[]): boolean {
+  public static isSuperUser(_user: User, userRoles: string[]): boolean {
     return userRoles.includes('SUPER_USER') || userRoles.includes('ADMIN');
   }
 
@@ -181,9 +181,11 @@ export class AuthorizationService {
     const permissions = new Set<string>();
 
     userRoles.forEach(role => {
-      if (role.isActive()) {
+      if (role) {
         rolePermissions.forEach(permission => {
-          permissions.add(permission.getFullPermission());
+          if (permission && typeof permission === 'string') {
+            permissions.add(permission);
+          }
         });
       }
     });

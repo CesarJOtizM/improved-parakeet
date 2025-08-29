@@ -2,9 +2,9 @@ import { ValueObject } from '@shared/domain/base/valueObject.base';
 
 export type UserStatusValue = 'ACTIVE' | 'INACTIVE' | 'LOCKED';
 
-export class UserStatus extends ValueObject<UserStatusValue> {
+export class UserStatus extends ValueObject<{ value: UserStatusValue }> {
   constructor(value: UserStatusValue) {
-    super(value);
+    super({ value });
   }
 
   public static create(value: UserStatusValue): UserStatus {
@@ -19,22 +19,22 @@ export class UserStatus extends ValueObject<UserStatusValue> {
   }
 
   public isActive(): boolean {
-    return this.props === 'ACTIVE';
+    return this.props.value === 'ACTIVE';
   }
 
   public isInactive(): boolean {
-    return this.props === 'INACTIVE';
+    return this.props.value === 'INACTIVE';
   }
 
   public isLocked(): boolean {
-    return this.props === 'LOCKED';
+    return this.props.value === 'LOCKED';
   }
 
   public canLogin(): boolean {
-    return this.props === 'ACTIVE';
+    return this.props.value === 'ACTIVE';
   }
 
   public getValue(): UserStatusValue {
-    return this.props;
+    return this.props.value;
   }
 }

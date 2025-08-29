@@ -2,9 +2,9 @@ import { ValueObject } from '@shared/domain/base/valueObject.base';
 
 export type ProductStatusValue = 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED';
 
-export class ProductStatus extends ValueObject<ProductStatusValue> {
+export class ProductStatus extends ValueObject<{ value: ProductStatusValue }> {
   constructor(value: ProductStatusValue) {
-    super(value);
+    super({ value });
   }
 
   public static create(value: ProductStatusValue): ProductStatus {
@@ -19,18 +19,18 @@ export class ProductStatus extends ValueObject<ProductStatusValue> {
   }
 
   public isActive(): boolean {
-    return this.props === 'ACTIVE';
+    return this.props.value === 'ACTIVE';
   }
 
   public isInactive(): boolean {
-    return this.props === 'INACTIVE';
+    return this.props.value === 'INACTIVE';
   }
 
   public isDiscontinued(): boolean {
-    return this.props === 'DISCONTINUED';
+    return this.props.value === 'DISCONTINUED';
   }
 
   public getValue(): ProductStatusValue {
-    return this.props;
+    return this.props.value;
   }
 }

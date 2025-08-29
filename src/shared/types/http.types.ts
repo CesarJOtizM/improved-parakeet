@@ -2,13 +2,12 @@
 
 export interface AuthenticatedUser {
   id: string;
+  orgId: string;
   email: string;
   username: string;
-  firstName: string;
-  lastName: string;
-  orgId: string;
-  isActive: boolean;
-  lastLoginAt?: Date;
+  roles: string[];
+  permissions: string[];
+  jti: string;
 }
 
 export interface OrganizationContext {

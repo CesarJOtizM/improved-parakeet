@@ -102,25 +102,25 @@
 
 ### **Semana 4: Dominio de Autenticación**
 
-- [ ] **Implementación del Dominio de Auth**
-  - [ ] Entidades: User, Role, Permission, Session con decoradores NestJS
-  - [ ] Value Objects: Email, Password, JWT Token (inmutables)
-  - [ ] Domain Services: AuthenticationService, AuthorizationService
-  - [ ] Domain Events: UserCreated, UserLoggedIn, PermissionChanged
-  - [ ] Crear interfaces de Repository para cada entidad
+- [x] **Implementación del Dominio de Auth**
+  - [x] Entidades: User, Role, Permission, Session con decoradores NestJS
+  - [x] Value Objects: Email, Password, JWT Token (inmutables)
+  - [x] Domain Services: AuthenticationService, AuthorizationService
+  - [x] Domain Events: UserCreated, UserLoggedIn, PermissionChanged
+  - [x] Crear interfaces de Repository para cada entidad
 
-- [ ] **Casos de Uso de Autenticación**
-  - [ ] Login, Logout, Refresh Token con JWT
-  - [ ] Validación de contraseñas con bcrypt (salt rounds: 12)
-  - [ ] Blacklisting de tokens con Redis
-  - [ ] Rate limiting funcional por IP y usuario
-  - [ ] Implementar guards de autenticación
+- [x] **Casos de Uso de Autenticación**
+  - [x] Login, Logout, Refresh Token con JWT
+  - [x] Validación de contraseñas con bcrypt (salt rounds: 12)
+  - [x] Blacklisting de tokens con Redis
+  - [x] Rate limiting funcional por IP y usuario
+  - [x] Implementar guards de autenticación
 
 - [ ] **Setup de Seguridad Base**
-  - [ ] Configuración de Passport JWT Strategy
-  - [ ] Implementar guards de autorización por roles
-  - [ ] Crear interceptores para logging de autenticación
-  - [ ] Setup de validación de entrada con class-validator
+  - [x] Configuración de Passport JWT Strategy
+  - [x] Implementar guards de autorización por roles
+  - [x] Crear interceptores para logging de autenticación
+  - [x] Setup de validación de entrada con class-validator
   - [ ] Tests unitarios para todos los servicios de autenticación
 
 ### **Semana 5: Dominio de Usuarios y RBAC**

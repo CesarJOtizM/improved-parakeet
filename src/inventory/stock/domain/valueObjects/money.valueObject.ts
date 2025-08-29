@@ -1,9 +1,11 @@
 import { ValueObject } from '@shared/domain/base/valueObject.base';
 
 export interface MoneyProps {
-  amount: number;
-  currency: string;
-  precision: number;
+  value: {
+    amount: number;
+    currency: string;
+    precision: number;
+  };
 }
 
 export class Money extends ValueObject<MoneyProps> {
@@ -13,79 +15,87 @@ export class Money extends ValueObject<MoneyProps> {
   }
 
   public static create(amount: number, currency: string = 'COP', precision: number = 2): Money {
-    return new Money({ amount, currency, precision });
+    return new Money({ value: { amount, currency, precision } });
   }
 
   private validate(props: MoneyProps): void {
-    if (props.amount < 0) {
+    if (props.value.amount < 0) {
       throw new Error('Amount cannot be negative');
     }
-    if (!props.currency || props.currency.trim().length === 0) {
+    if (!props.value.currency || props.value.currency.trim().length === 0) {
       throw new Error('Currency is required');
     }
-    if (props.precision < 0 || props.precision > 6) {
+    if (props.value.precision < 0 || props.value.precision > 6) {
       throw new Error('Precision must be between 0 and 6');
     }
   }
 
   public add(money: Money): Money {
-    if (this.props.currency !== money.props.currency) {
+    if (this.props.value.currency !== money.props.value.currency) {
       throw new Error('Cannot add money with different currencies');
     }
     return Money.create(
-      this.props.amount + money.props.amount,
-      this.props.currency,
-      this.props.precision
+      this.props.value.amount + money.props.value.amount,
+      this.props.value.currency,
+      this.props.value.precision
     );
   }
 
   public subtract(money: Money): Money {
-    if (this.props.currency !== money.props.currency) {
+    if (this.props.value.currency !== money.props.value.currency) {
       throw new Error('Cannot subtract money with different currencies');
     }
-    const result = this.props.amount - money.props.amount;
+    const result = this.props.value.amount - money.props.value.amount;
     if (result < 0) {
       throw new Error('Result cannot be negative');
     }
-    return Money.create(result, this.props.currency, this.props.precision);
+    return Money.create(result, this.props.value.currency, this.props.value.precision);
   }
 
   public multiply(factor: number): Money {
-    return Money.create(this.props.amount * factor, this.props.currency, this.props.precision);
+    return Money.create(
+      this.props.value.amount * factor,
+      this.props.value.currency,
+      this.props.value.precision
+    );
   }
 
   public divide(divisor: number): Money {
     if (divisor === 0) {
       throw new Error('Cannot divide by zero');
     }
-    return Money.create(this.props.amount / divisor, this.props.currency, this.props.precision);
+    return Money.create(
+      this.props.value.amount / divisor,
+      this.props.value.currency,
+      this.props.value.precision
+    );
   }
 
   public isZero(): boolean {
-    return this.props.amount === 0;
+    return this.props.value.amount === 0;
   }
 
   public isPositive(): boolean {
-    return this.props.amount > 0;
+    return this.props.value.amount > 0;
   }
 
   public getAmount(): number {
-    return this.props.amount;
+    return this.props.value.amount;
   }
 
   public getCurrency(): string {
-    return this.props.currency;
+    return this.props.value.currency;
   }
 
   public getPrecision(): number {
-    return this.props.precision;
+    return this.props.value.precision;
   }
 
   public toFixed(): string {
-    return this.props.amount.toFixed(this.props.precision);
+    return this.props.value.amount.toFixed(this.props.value.precision);
   }
 
   public format(): string {
-    return `${this.props.currency} ${this.toFixed()}`;
+    return `${this.props.value.currency} ${this.toFixed()}`;
   }
 }

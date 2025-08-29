@@ -33,4 +33,12 @@ export class UserCreatedEvent extends DomainEvent {
   get name(): string {
     return this.user.name;
   }
+
+  get firstName(): string {
+    return this.user.firstName;
+  }
+
+  get lastName(): string {
+    return this.user.lastName;
+  }
 }

@@ -1,0 +1,838 @@
+{
+  "info": {
+    "name": "Inventory System API",
+    "description": "Multi-Tenant Inventory System API con arquitectura DDD y Hexagonal",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "organizationId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "description": "Endpoints para autenticación y autorización de usuarios",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Autenticar usuario con email y contraseña, retorna tokens JWT"
+          },
+          "response": [
+            {
+              "name": "Login Exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"user\": {\n    \"id\": \"user-id\",\n    \"email\": \"user@example.com\",\n    \"username\": \"username\",\n    \"name\": \"User Name\",\n    \"roles\": [\"USER\"],\n    \"permissions\": [\"READ\"]\n  },\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"accessTokenExpiresAt\": \"2024-12-31T23:59:59.000Z\",\n  \"refreshTokenExpiresAt\": \"2025-01-31T23:59:59.000Z\",\n  \"sessionId\": \"session-id\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accessToken\": \"{{accessToken}}\",\n  \"reason\": \"USER_REQUEST\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Cerrar sesión del usuario y blacklistear tokens JWT"
+          },
+          "response": [
+            {
+              "name": "Logout Exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"accessToken\": \"{{accessToken}}\",\n  \"reason\": \"USER_REQUEST\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/logout",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "logout"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Logout successful\",\n  \"blacklistedTokens\": 1\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Refrescar token de acceso usando un refresh token válido"
+          },
+          "response": [
+            {
+              "name": "Refresh Exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/refresh",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "refresh"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"accessTokenExpiresAt\": \"2024-12-31T23:59:59.000Z\",\n  \"refreshTokenExpiresAt\": \"2025-01-31T23:59:59.000Z\",\n  \"user\": {\n    \"id\": \"user-id\",\n    \"email\": \"user@example.com\",\n    \"username\": \"username\",\n    \"name\": \"User Name\",\n    \"roles\": [\"USER\"],\n    \"permissions\": [\"READ\"]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout All Sessions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout-all"]
+            },
+            "description": "Cerrar sesión del usuario en todas las sesiones activas y blacklistear todos los tokens"
+          },
+          "response": [
+            {
+              "name": "Logout All Sessions Exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/logout-all",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "logout-all"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"All sessions logged out successfully\",\n  \"blacklistedTokens\": 3\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "description": "Endpoints para verificación de salud del sistema",
+      "item": [
+        {
+          "name": "Basic Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Verificación básica de salud del sistema"
+          },
+          "response": [
+            {
+              "name": "Health Check Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/health",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": \"healthy\",\n  \"timestamp\": \"2024-12-20T10:00:00.000Z\",\n  \"uptime\": 3600\n}"
+            }
+          ]
+        },
+        {
+          "name": "Detailed Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/detailed",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "detailed"]
+            },
+            "description": "Verificación detallada de salud con métricas del sistema"
+          },
+          "response": [
+            {
+              "name": "Detailed Health Check Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/health/detailed",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["health", "detailed"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": \"healthy\",\n  \"timestamp\": \"2024-12-20T10:00:00.000Z\",\n  \"uptime\": 3600,\n  \"memory\": {\n    \"used\": 512,\n    \"total\": 1024,\n    \"free\": 512\n  },\n  \"cpu\": {\n    \"usage\": 15.5\n  },\n  \"database\": {\n    \"status\": \"connected\",\n    \"responseTime\": 45\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Full Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/full",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "full"]
+            },
+            "description": "Verificación completa de salud orquestada por el dominio"
+          },
+          "response": [
+            {
+              "name": "Full Health Check Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/health/full",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["health", "full"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": \"healthy\",\n  \"timestamp\": \"2024-12-20T10:00:00.000Z\",\n  \"uptime\": 3600,\n  \"memory\": {\n    \"used\": 512,\n    \"total\": 1024,\n    \"free\": 512\n  },\n  \"cpu\": {\n    \"usage\": 15.5\n  },\n  \"database\": {\n    \"status\": \"connected\",\n    \"responseTime\": 45\n  },\n  \"services\": {\n    \"auth\": \"healthy\",\n    \"inventory\": \"healthy\",\n    \"reporting\": \"healthy\"\n  },\n  \"domain\": {\n    \"status\": \"operational\",\n    \"checks\": [\"business-rules\", \"workflows\", \"validations\"]\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Inventory Management",
+      "description": "Endpoints para gestión de inventario (pendientes de implementación)",
+      "item": [
+        {
+          "name": "Products - Get All",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/inventory/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory", "products"]
+            },
+            "description": "Obtener todos los productos del inventario"
+          },
+          "response": []
+        },
+        {
+          "name": "Products - Get by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/inventory/products/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory", "products", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "product-id",
+                  "description": "ID del producto"
+                }
+              ]
+            },
+            "description": "Obtener un producto específico por ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Products - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Producto Ejemplo\",\n  \"description\": \"Descripción del producto\",\n  \"sku\": \"SKU001\",\n  \"category\": \"Electrónicos\",\n  \"price\": 99.99,\n  \"cost\": 50.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/inventory/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory", "products"]
+            },
+            "description": "Crear un nuevo producto en el inventario"
+          },
+          "response": []
+        },
+        {
+          "name": "Warehouses - Get All",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/inventory/warehouses",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory", "warehouses"]
+            },
+            "description": "Obtener todas las bodegas"
+          },
+          "response": []
+        },
+        {
+          "name": "Stock - Get Current Stock",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/inventory/stock",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory", "stock"]
+            },
+            "description": "Obtener el stock actual de todos los productos"
+          },
+          "response": []
+        },
+        {
+          "name": "Movements - Get All",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/inventory/movements",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory", "movements"]
+            },
+            "description": "Obtener todos los movimientos de inventario"
+          },
+          "response": []
+        },
+        {
+          "name": "Transfers - Get All",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/inventory/transfers",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory", "transfers"]
+            },
+            "description": "Obtener todas las transferencias entre bodegas"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Organization Management",
+      "description": "Endpoints para gestión de organizaciones (pendientes de implementación)",
+      "item": [
+        {
+          "name": "Organization Settings - Get",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/organization/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["organization", "settings"]
+            },
+            "description": "Obtener configuración de la organización"
+          },
+          "response": []
+        },
+        {
+          "name": "Branding - Get",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/organization/branding",
+              "host": ["{{baseUrl}}"],
+              "path": ["organization", "branding"]
+            },
+            "description": "Obtener información de marca de la organización"
+          },
+          "response": []
+        },
+        {
+          "name": "Multi-tenancy - Get Tenant Info",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/organization/tenant",
+              "host": ["{{baseUrl}}"],
+              "path": ["organization", "tenant"]
+            },
+            "description": "Obtener información del tenant actual"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reporting",
+      "description": "Endpoints para reportes y exportación (pendientes de implementación)",
+      "item": [
+        {
+          "name": "Inventory Reports - Generate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reportType\": \"inventory-summary\",\n  \"dateRange\": {\n    \"start\": \"2024-01-01\",\n    \"end\": \"2024-12-31\"\n  },\n  \"format\": \"pdf\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reporting/inventory",
+              "host": ["{{baseUrl}}"],
+              "path": ["reporting", "inventory"]
+            },
+            "description": "Generar reporte de inventario"
+          },
+          "response": []
+        },
+        {
+          "name": "Financial Reports - Generate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reportType\": \"financial-summary\",\n  \"dateRange\": {\n    \"start\": \"2024-01-01\",\n    \"end\": \"2024-12-31\"\n  },\n  \"format\": \"excel\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reporting/financial",
+              "host": ["{{baseUrl}}"],
+              "path": ["reporting", "financial"]
+            },
+            "description": "Generar reporte financiero"
+          },
+          "response": []
+        },
+        {
+          "name": "Movement Reports - Generate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reportType\": \"movement-summary\",\n  \"dateRange\": {\n    \"start\": \"2024-01-01\",\n    \"end\": \"2024-12-31\"\n  },\n  \"format\": \"csv\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reporting/movements",
+              "host": ["{{baseUrl}}"],
+              "path": ["reporting", "movements"]
+            },
+            "description": "Generar reporte de movimientos"
+          },
+          "response": []
+        },
+        {
+          "name": "Export - Download Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reporting/export/:reportId",
+              "host": ["{{baseUrl}}"],
+              "path": ["reporting", "export", ":reportId"],
+              "variable": [
+                {
+                  "key": "reportId",
+                  "value": "report-id",
+                  "description": "ID del reporte generado"
+                }
+              ]
+            },
+            "description": "Descargar reporte generado"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Bulk Imports",
+      "description": "Endpoints para importación masiva de datos (pendientes de implementación)",
+      "item": [
+        {
+          "name": "Import Products",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "type",
+                  "value": "products",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/imports/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["imports", "products"]
+            },
+            "description": "Importar productos masivamente desde archivo"
+          },
+          "response": []
+        },
+        {
+          "name": "Import Stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "type",
+                  "value": "stock",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/imports/stock",
+              "host": ["{{baseUrl}}"],
+              "path": ["imports", "stock"]
+            },
+            "description": "Importar stock masivamente desde archivo"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Import Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/imports/status/:importId",
+              "host": ["{{baseUrl}}"],
+              "path": ["imports", "status", ":importId"],
+              "variable": [
+                {
+                  "key": "importId",
+                  "value": "import-id",
+                  "description": "ID de la importación"
+                }
+              ]
+            },
+            "description": "Obtener estado de una importación"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Script de pre-request para configuraciones automáticas",
+          "console.log('Pre-request script ejecutado');"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Script de test para validaciones automáticas",
+          "pm.test('Status code is 200', function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "pm.test('Response time is less than 2000ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+          "});"
+        ]
+      }
+    }
+  ]
+}

@@ -5,6 +5,7 @@ export interface SessionRepository extends ReadRepository<Session>, WriteReposit
   findByToken(token: string): Promise<Session | null>;
   findByUserId(userId: string, orgId: string): Promise<Session[]>;
   findActiveSessions(userId: string, orgId: string): Promise<Session[]>;
+  findActiveByUserIdAndToken(userId: string, orgId: string, token: string): Promise<Session | null>;
   findExpiredSessions(): Promise<Session[]>;
   findSessionsByIpAddress(ipAddress: string, orgId: string): Promise<Session[]>;
   findSessionsByUserAgent(userAgent: string, orgId: string): Promise<Session[]>;

@@ -9,11 +9,14 @@ export interface UserProps {
   email: Email;
   username: string;
   passwordHash: Password;
-  name: string;
+  firstName: string;
+  lastName: string;
   status: UserStatus;
   lastLoginAt?: Date;
   failedLoginAttempts: number;
   lockedUntil?: Date;
+  roles?: string[];
+  permissions?: string[];
 }
 
 export class User extends AggregateRoot<UserProps> {
@@ -44,7 +47,8 @@ export class User extends AggregateRoot<UserProps> {
     props: Partial<Omit<UserProps, 'email' | 'passwordHash'>> & { email?: string }
   ): void {
     if (props.email !== undefined) this.props.email = Email.create(props.email);
-    if (props.name !== undefined) this.props.name = props.name;
+    if (props.firstName !== undefined) this.props.firstName = props.firstName;
+    if (props.lastName !== undefined) this.props.lastName = props.lastName;
     if (props.username !== undefined) this.props.username = props.username;
 
     this.updateTimestamp();
@@ -127,7 +131,15 @@ export class User extends AggregateRoot<UserProps> {
   }
 
   get name(): string {
-    return this.props.name;
+    return `${this.props.firstName} ${this.props.lastName}`;
+  }
+
+  get firstName(): string {
+    return this.props.firstName;
+  }
+
+  get lastName(): string {
+    return this.props.lastName;
   }
 
   get status(): UserStatus {
@@ -144,5 +156,13 @@ export class User extends AggregateRoot<UserProps> {
 
   get lockedUntil(): Date | undefined {
     return this.props.lockedUntil;
+  }
+
+  get roles(): string[] {
+    return this.props.roles || [];
+  }
+
+  get permissions(): string[] {
+    return this.props.permissions || [];
   }
 }

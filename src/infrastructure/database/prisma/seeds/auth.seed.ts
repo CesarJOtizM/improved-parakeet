@@ -359,7 +359,7 @@ export class AuthSeed {
         username: 'admin',
         firstName: 'Admin',
         lastName: 'Demo',
-        passwordHash: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/HS.iK8i', // password: admin123
+        passwordHash: '$2b$12$pEquH59Tvv3q4r5Ko48yD.aXEKoo5q.zonfns67mKd8kcDWM7Z3ly', // password: admin123
         isActive: true,
         orgId: organizationId,
       },

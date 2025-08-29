@@ -1,4 +1,2 @@
-export * from './permissionRepository.interface';
-export * from './roleRepository.interface';
-export * from './sessionRepository.interface';
-export * from './userRepository.interface';
+export type { SessionRepository } from './sessionRepository.interface';
+export type { UserRepository } from './userRepository.interface';

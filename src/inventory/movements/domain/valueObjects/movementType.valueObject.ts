@@ -8,9 +8,9 @@ export type MovementTypeValue =
   | 'TRANSFER_OUT'
   | 'TRANSFER_IN';
 
-export class MovementType extends ValueObject<MovementTypeValue> {
+export class MovementType extends ValueObject<{ value: MovementTypeValue }> {
   constructor(value: MovementTypeValue) {
-    super(value);
+    super({ value });
   }
 
   public static create(value: MovementTypeValue): MovementType {
@@ -25,22 +25,22 @@ export class MovementType extends ValueObject<MovementTypeValue> {
   }
 
   public isInput(): boolean {
-    return ['IN', 'ADJUST_IN', 'TRANSFER_IN'].includes(this.props);
+    return ['IN', 'ADJUST_IN', 'TRANSFER_IN'].includes(this.props.value);
   }
 
   public isOutput(): boolean {
-    return ['OUT', 'ADJUST_OUT', 'TRANSFER_OUT'].includes(this.props);
+    return ['OUT', 'ADJUST_OUT', 'TRANSFER_OUT'].includes(this.props.value);
   }
 
   public isTransfer(): boolean {
-    return ['TRANSFER_IN', 'TRANSFER_OUT'].includes(this.props);
+    return ['TRANSFER_IN', 'TRANSFER_OUT'].includes(this.props.value);
   }
 
   public isAdjustment(): boolean {
-    return ['ADJUST_IN', 'ADJUST_OUT'].includes(this.props);
+    return ['ADJUST_IN', 'ADJUST_OUT'].includes(this.props.value);
   }
 
   public getValue(): MovementTypeValue {
-    return this.props;
+    return this.props.value;
   }
 }

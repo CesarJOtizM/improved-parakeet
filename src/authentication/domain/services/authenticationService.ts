@@ -1,7 +1,7 @@
 import { User } from '@auth/domain/entities/user.entity';
 import { UserLoggedInEvent } from '@auth/domain/events/userLoggedIn.event';
 import { JwtToken } from '@auth/domain/valueObjects/jwtToken.valueObject';
-import { Password } from '@auth/domain/valueObjects/password.valueObject';
+import * as bcrypt from 'bcrypt';
 
 export interface AuthenticationResult {
   user: User;
@@ -18,21 +18,30 @@ export interface LoginCredentials {
 }
 
 export class AuthenticationService {
+  private static readonly SALT_ROUNDS = 12;
+  private static readonly ACCESS_TOKEN_EXPIRY_MINUTES = 15;
+  private static readonly REFRESH_TOKEN_EXPIRY_DAYS = 7;
+
   /**
-   * Valida las credenciales de login de un usuario
+   * Valida las credenciales de login de un usuario usando bcrypt
    */
-  public static validateLoginCredentials(
+  public static async validateLoginCredentials(
     user: User,
-    password: Password,
+    password: string,
     hashedPassword: string
-  ): boolean {
+  ): Promise<boolean> {
     // Verificar que el usuario esté activo y no bloqueado
     if (!user.canLogin()) {
       return false;
     }
 
-    // Verificar que la contraseña coincida
-    return password.getValue() === hashedPassword;
+    // Verificar que la contraseña coincida usando bcrypt
+    try {
+      return await bcrypt.compare(password, hashedPassword);
+    } catch (_error) {
+      // En caso de error en la comparación, retornar false
+      return false;
+    }
   }
 
   /**
@@ -61,12 +70,12 @@ export class AuthenticationService {
   }
 
   /**
-   * Crea tokens de acceso y refresh
+   * Crea tokens de acceso y refresh con configuración estándar
    */
   public static createAuthTokens(
     userId: string,
-    accessTokenExpiryMinutes: number = 15,
-    refreshTokenExpiryDays: number = 7
+    accessTokenExpiryMinutes: number = this.ACCESS_TOKEN_EXPIRY_MINUTES,
+    refreshTokenExpiryDays: number = this.REFRESH_TOKEN_EXPIRY_DAYS
   ): {
     accessToken: JwtToken;
     refreshToken: JwtToken;
@@ -79,6 +88,30 @@ export class AuthenticationService {
     const refreshToken = JwtToken.createRefreshToken(refreshTokenValue, refreshTokenExpiryDays);
 
     return { accessToken, refreshToken };
+  }
+
+  /**
+   * Hashea una contraseña usando bcrypt con salt rounds configurado
+   */
+  public static async hashPassword(password: string): Promise<string> {
+    try {
+      return await bcrypt.hash(password, this.SALT_ROUNDS);
+    } catch (error) {
+      throw new Error(
+        `Error hashing password: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Verifica si una contraseña coincide con su hash usando bcrypt
+   */
+  public static async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+    try {
+      return await bcrypt.compare(password, hashedPassword);
+    } catch (_error) {
+      return false;
+    }
   }
 
   /**
@@ -145,5 +178,25 @@ export class AuthenticationService {
     requiredPermissions: string[]
   ): boolean {
     return requiredPermissions.every(permission => userPermissions.includes(permission));
+  }
+
+  /**
+   * Obtiene la configuración de salt rounds para bcrypt
+   */
+  public static getSaltRounds(): number {
+    return this.SALT_ROUNDS;
+  }
+
+  /**
+   * Obtiene la configuración de expiración de tokens
+   */
+  public static getTokenConfig(): {
+    accessTokenExpiryMinutes: number;
+    refreshTokenExpiryDays: number;
+  } {
+    return {
+      accessTokenExpiryMinutes: this.ACCESS_TOKEN_EXPIRY_MINUTES,
+      refreshTokenExpiryDays: this.REFRESH_TOKEN_EXPIRY_DAYS,
+    };
   }
 }
