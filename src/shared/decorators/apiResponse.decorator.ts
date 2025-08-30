@@ -1,8 +1,9 @@
 import { applyDecorators, Type } from '@nestjs/common';
 import { ApiProperty, ApiResponse } from '@nestjs/swagger';
-import { ApiResponseError, ApiResponseSuccess } from '@shared/types/apiResponse.types';
 
-export class ApiResponseWrapper<T> implements ApiResponseSuccess<T> {
+import type { IApiResponseError, IApiResponseSuccess } from '@shared/types/apiResponse.types';
+
+export class ApiResponseWrapper<T> implements IApiResponseSuccess<T> {
   @ApiProperty({ example: true })
   success!: true;
 
@@ -16,7 +17,7 @@ export class ApiResponseWrapper<T> implements ApiResponseSuccess<T> {
   timestamp!: string;
 }
 
-export class ApiErrorWrapper implements ApiResponseError {
+export class ApiErrorWrapper implements IApiResponseError {
   @ApiProperty({ example: false })
   success!: false;
 

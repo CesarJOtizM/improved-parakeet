@@ -1,4 +1,4 @@
-export interface SecurityLoggingConfig {
+export interface ISecurityLoggingConfig {
   enabled: boolean;
   level: 'debug' | 'info' | 'warn' | 'error';
   includeSensitiveData: boolean;
@@ -13,11 +13,11 @@ export interface SecurityLoggingConfig {
 }
 
 // Función para obtener la configuración de logging desde auth.config.ts
-export function getSecurityLoggingConfig(): SecurityLoggingConfig {
+export function getSecurityLoggingConfig(): ISecurityLoggingConfig {
   const env = process.env.NODE_ENV || 'development';
 
   // Configuración base según el entorno
-  const baseConfig: SecurityLoggingConfig = {
+  const baseConfig: ISecurityLoggingConfig = {
     enabled: true,
     level: env === 'production' ? 'warn' : 'debug',
     includeSensitiveData: false, // Nunca incluir datos sensibles
@@ -49,7 +49,7 @@ export function getSecurityLoggingConfig(): SecurityLoggingConfig {
 }
 
 // Configuración por defecto (fallback si no hay auth.config)
-export const defaultSecurityLoggingConfig: SecurityLoggingConfig = {
+export const defaultSecurityLoggingConfig: ISecurityLoggingConfig = {
   enabled: true,
   level: 'info',
   includeSensitiveData: false,

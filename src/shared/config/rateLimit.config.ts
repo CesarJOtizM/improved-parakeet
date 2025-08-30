@@ -1,8 +1,8 @@
-import { AuthConfig } from '@auth/config/auth.config';
-import { RateLimitConfig } from '@auth/domain/services/rateLimitService';
+import { IAuthConfig } from '@auth/config/auth.config';
+import { IRateLimitConfig } from '@auth/domain/services/rateLimitService';
 
 // Función para obtener la configuración de rate limiting desde auth.config.ts
-export function getRateLimitConfig(authConfig: AuthConfig): Record<string, RateLimitConfig> {
+export function getRateLimitConfig(authConfig: IAuthConfig): Record<string, IRateLimitConfig> {
   return {
     // Rate limiting por IP (general)
     ip: {
@@ -56,7 +56,7 @@ export function getRateLimitConfig(authConfig: AuthConfig): Record<string, RateL
 }
 
 // Configuración por defecto (fallback si no hay auth.config)
-export const defaultRateLimitConfig: RateLimitConfig = {
+export const defaultRateLimitConfig: IRateLimitConfig = {
   windowMs: 15 * 60 * 1000, // 15 minutos
   maxRequests: 100, // máximo 100 requests por ventana
   blockDurationMs: 60 * 60 * 1000, // bloquear por 1 hora si se excede

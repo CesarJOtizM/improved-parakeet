@@ -6,17 +6,17 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { AuthenticatedUser } from '@shared/types/http.types';
+import { IAuthenticatedUser } from '@shared/types/http.types';
 import { Request } from 'express';
 
-export interface PermissionGuardOptions {
+export interface IPermissionGuardOptions {
   requireAll?: boolean; // true = requiere todos los permisos, false = requiere al menos uno
   permissions?: string[];
   roles?: string[];
   checkOrganization?: boolean; // verificar que el usuario pertenezca a la organización
 }
 
-export type { AuthenticatedUser } from '@auth/types/http.types';
+export type { IAuthenticatedUser } from '@auth/types/http.types';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -75,8 +75,8 @@ export class PermissionsGuard implements CanActivate {
     }
   }
 
-  private getGuardOptions(context: ExecutionContext): PermissionGuardOptions {
-    const options = this.reflector.get<PermissionGuardOptions>(
+  private getGuardOptions(context: ExecutionContext): IPermissionGuardOptions {
+    const options = this.reflector.get<IPermissionGuardOptions>(
       'permissionOptions',
       context.getHandler()
     );
@@ -90,7 +90,7 @@ export class PermissionsGuard implements CanActivate {
     };
   }
 
-  private checkOrganizationAccess(request: Request, user: AuthenticatedUser): boolean {
+  private checkOrganizationAccess(request: Request, user: IAuthenticatedUser): boolean {
     // Verificar si el usuario está intentando acceder a recursos de su organización
     const requestOrgId = this.extractOrganizationId(request);
 

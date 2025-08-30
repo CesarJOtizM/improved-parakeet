@@ -1,13 +1,13 @@
 import { ValueObject } from '@shared/domain/base/valueObject.base';
 
-export interface JwtTokenProps {
+export interface IJwtTokenProps {
   value: string;
   type: 'ACCESS' | 'REFRESH';
   expiresAt: Date;
 }
 
-export class JwtToken extends ValueObject<JwtTokenProps> {
-  private constructor(props: JwtTokenProps) {
+export class JwtToken extends ValueObject<IJwtTokenProps> {
+  private constructor(props: IJwtTokenProps) {
     super(props);
     this.validate(props);
   }
@@ -26,7 +26,7 @@ export class JwtToken extends ValueObject<JwtTokenProps> {
     return new JwtToken({ value, type: 'REFRESH', expiresAt });
   }
 
-  private validate(props: JwtTokenProps): void {
+  private validate(props: IJwtTokenProps): void {
     if (!props.value || props.value.trim().length === 0) {
       throw new Error('JWT token cannot be empty');
     }

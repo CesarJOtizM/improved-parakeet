@@ -9,15 +9,15 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
-import type { SessionRepository, UserRepository } from '@auth/domain/repositories';
+import type { ISessionRepository, IUserRepository } from '@auth/domain/repositories';
 
-export interface RefreshTokenRequest {
+export interface IRefreshTokenRequest {
   refreshToken: string;
   ipAddress?: string;
   userAgent?: string;
 }
 
-export interface RefreshTokenResponse {
+export interface IRefreshTokenResponse {
   accessToken: string;
   refreshToken: string;
   accessTokenExpiresAt: Date;
@@ -41,11 +41,11 @@ export class RefreshTokenUseCase {
     private readonly jwtService: JwtService,
     private readonly tokenBlacklistService: TokenBlacklistService,
     private readonly rateLimitService: RateLimitService,
-    @Inject('UserRepository') private readonly userRepository: UserRepository,
-    @Inject('SessionRepository') private readonly sessionRepository: SessionRepository
+    @Inject('UserRepository') private readonly userRepository: IUserRepository,
+    @Inject('SessionRepository') private readonly sessionRepository: ISessionRepository
   ) {}
 
-  async execute(request: RefreshTokenRequest): Promise<RefreshTokenResponse> {
+  async execute(request: IRefreshTokenRequest): Promise<IRefreshTokenResponse> {
     try {
       // Verificar rate limiting para refresh token
       const rateLimitResult = await this.rateLimitService.checkRefreshTokenRateLimit(

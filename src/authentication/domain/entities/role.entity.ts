@@ -2,28 +2,28 @@ import { RoleCreatedEvent } from '@auth/domain/events/roleCreated.event';
 import { RoleUpdatedEvent } from '@auth/domain/events/roleUpdated.event';
 import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
 
-export interface RoleProps {
+export interface IRoleProps {
   name: string;
   description?: string;
   isActive: boolean;
 }
 
-export class Role extends AggregateRoot<RoleProps> {
-  private constructor(props: RoleProps, id?: string, orgId?: string) {
+export class Role extends AggregateRoot<IRoleProps> {
+  private constructor(props: IRoleProps, id?: string, orgId?: string) {
     super(props, id, orgId);
   }
 
-  public static create(props: RoleProps, orgId: string): Role {
+  public static create(props: IRoleProps, orgId: string): Role {
     const role = new Role(props, undefined, orgId);
     role.addDomainEvent(new RoleCreatedEvent(role));
     return role;
   }
 
-  public static reconstitute(props: RoleProps, id: string, orgId: string): Role {
+  public static reconstitute(props: IRoleProps, id: string, orgId: string): Role {
     return new Role(props, id, orgId);
   }
 
-  public update(props: Partial<RoleProps>): void {
+  public update(props: Partial<IRoleProps>): void {
     if (props.name !== undefined) this.props.name = props.name;
     if (props.description !== undefined) this.props.description = props.description;
     if (props.isActive !== undefined) this.props.isActive = props.isActive;

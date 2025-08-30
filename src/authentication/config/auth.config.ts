@@ -1,6 +1,6 @@
 import { registerAs } from '@nestjs/config';
 
-export interface AuthConfig {
+export interface IAuthConfig {
   jwt: {
     secret: string;
     accessTokenExpiry: string;
@@ -46,7 +46,7 @@ export interface AuthConfig {
 
 export default registerAs(
   'auth',
-  (): AuthConfig => ({
+  (): IAuthConfig => ({
     jwt: {
       secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
       accessTokenExpiry: process.env.JWT_ACCESS_TOKEN_EXPIRY || '15m',

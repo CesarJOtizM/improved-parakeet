@@ -1,4 +1,4 @@
-import { JwtPayload } from '@auth/domain/services/jwtService';
+import { IJwtPayload } from '@auth/domain/services/jwtService';
 import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
@@ -17,7 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload): Promise<JwtPayload> {
+  async validate(payload: IJwtPayload): Promise<IJwtPayload> {
     try {
       // Verificar que el token no esté en la blacklist
       const isBlacklisted = await this.tokenBlacklistService.isTokenBlacklisted(payload.jti);

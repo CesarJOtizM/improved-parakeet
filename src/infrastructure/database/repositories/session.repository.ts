@@ -1,5 +1,5 @@
 import { Session } from '@auth/domain/entities/session.entity';
-import { SessionRepository as SessionRepositoryInterface } from '@auth/domain/repositories/sessionRepository.interface';
+import { ISessionRepository as SessionRepositoryInterface } from '@auth/domain/repositories/sessionRepository.interface';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Injectable, Logger } from '@nestjs/common';
 

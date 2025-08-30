@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService as NestJwtService } from '@nestjs/jwt';
 
-export interface JwtPayload {
+export interface IJwtPayload {
   sub: string; // user_id
   org_id: string;
   email: string;
@@ -13,7 +13,7 @@ export interface JwtPayload {
   jti: string; // unique token id
 }
 
-export interface TokenPair {
+export interface ITokenPair {
   accessToken: string;
   refreshToken: string;
   accessTokenExpiresAt: Date;
@@ -34,12 +34,12 @@ export class JwtService {
     username: string,
     roles: string[],
     permissions: string[]
-  ): Promise<TokenPair> {
+  ): Promise<ITokenPair> {
     const now = new Date();
     const accessTokenExpiresAt = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutos
     const refreshTokenExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 días
 
-    const accessTokenPayload: JwtPayload = {
+    const accessTokenPayload: IJwtPayload = {
       sub: userId,
       org_id: orgId,
       email,
@@ -51,7 +51,7 @@ export class JwtService {
       jti: this.generateTokenId(),
     };
 
-    const refreshTokenPayload: JwtPayload = {
+    const refreshTokenPayload: IJwtPayload = {
       sub: userId,
       org_id: orgId,
       email,
@@ -89,7 +89,7 @@ export class JwtService {
     const now = new Date();
     const accessTokenExpiresAt = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutos
 
-    const accessTokenPayload: JwtPayload = {
+    const accessTokenPayload: IJwtPayload = {
       sub: userId,
       org_id: orgId,
       email,
@@ -112,9 +112,9 @@ export class JwtService {
   /**
    * Verifica y decodifica un token JWT
    */
-  async verifyToken(token: string): Promise<JwtPayload> {
+  async verifyToken(token: string): Promise<IJwtPayload> {
     try {
-      const payload = await this.nestJwtService.verifyAsync<JwtPayload>(token);
+      const payload = await this.nestJwtService.verifyAsync<IJwtPayload>(token);
       return payload;
     } catch (error) {
       throw new Error(
@@ -126,9 +126,9 @@ export class JwtService {
   /**
    * Decodifica un token JWT sin verificar la firma (útil para debugging)
    */
-  decodeToken(token: string): JwtPayload | null {
+  decodeToken(token: string): IJwtPayload | null {
     try {
-      return this.nestJwtService.decode(token) as JwtPayload;
+      return this.nestJwtService.decode(token) as IJwtPayload;
     } catch (_error) {
       return null;
     }
@@ -154,7 +154,7 @@ export class JwtService {
   /**
    * Valida si un token está próximo a expirar (útil para refresh automático)
    */
-  isTokenNearExpiration(payload: JwtPayload, thresholdMinutes: number = 5): boolean {
+  isTokenNearExpiration(payload: IJwtPayload, thresholdMinutes: number = 5): boolean {
     const now = Math.floor(Date.now() / 1000);
     const thresholdSeconds = thresholdMinutes * 60;
     return payload.exp - now <= thresholdSeconds;

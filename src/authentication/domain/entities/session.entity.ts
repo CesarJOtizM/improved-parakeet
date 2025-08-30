@@ -1,6 +1,6 @@
 import { Entity } from '@shared/domain/base/entity.base';
 
-export interface SessionProps {
+export interface ISessionProps {
   userId: string;
   token: string;
   expiresAt: Date;
@@ -9,20 +9,20 @@ export interface SessionProps {
   userAgent?: string;
 }
 
-export class Session extends Entity<SessionProps> {
-  private constructor(props: SessionProps, id?: string, orgId?: string) {
+export class Session extends Entity<ISessionProps> {
+  private constructor(props: ISessionProps, id?: string, orgId?: string) {
     super(props, id, orgId);
   }
 
-  public static create(props: SessionProps, orgId: string): Session {
+  public static create(props: ISessionProps, orgId: string): Session {
     return new Session(props, undefined, orgId);
   }
 
-  public static reconstitute(props: SessionProps, id: string, orgId: string): Session {
+  public static reconstitute(props: ISessionProps, id: string, orgId: string): Session {
     return new Session(props, id, orgId);
   }
 
-  public update(props: Partial<SessionProps>): void {
+  public update(props: Partial<ISessionProps>): void {
     if (props.token !== undefined) this.props.token = props.token;
     if (props.expiresAt !== undefined) this.props.expiresAt = props.expiresAt;
     if (props.isActive !== undefined) this.props.isActive = props.isActive;

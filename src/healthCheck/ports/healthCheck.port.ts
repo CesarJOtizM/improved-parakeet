@@ -3,7 +3,7 @@
 
 import type { DetailedHealthCheck, HealthCheckResult } from '@healthCheck/types/healthCheck.types';
 
-export interface HealthCheckPort {
+export interface IHealthCheckPort {
   readonly checkBasic: () => Promise<HealthCheckResult>;
   readonly checkDetailed: () => Promise<DetailedHealthCheck>;
   readonly checkDatabase: () => Promise<boolean>;

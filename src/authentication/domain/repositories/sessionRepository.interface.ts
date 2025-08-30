@@ -1,7 +1,7 @@
 import { Session } from '@auth/domain/entities/session.entity';
-import { ReadRepository, WriteRepository } from '@shared/domain/repository';
+import { IReadRepository, IWriteRepository } from '@shared/domain/repository';
 
-export interface SessionRepository extends ReadRepository<Session>, WriteRepository<Session> {
+export interface ISessionRepository extends IReadRepository<Session>, IWriteRepository<Session> {
   findByToken(token: string): Promise<Session | null>;
   findByUserId(userId: string, orgId: string): Promise<Session[]>;
   findActiveSessions(userId: string, orgId: string): Promise<Session[]>;

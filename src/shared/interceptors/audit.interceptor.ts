@@ -1,8 +1,9 @@
 import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
-import { AuthenticatedUser, OrganizationContext } from '@shared/types/http.types';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
+
+import type { IAuthenticatedUser, IOrganizationContext } from '@shared/types/http.types';
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
@@ -11,8 +12,8 @@ export class AuditInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest<Request>();
     const { method, url, body, query, params } = request;
-    const user = request.user as AuthenticatedUser | undefined;
-    const organization = request.organization as OrganizationContext | undefined;
+    const user = request.user as IAuthenticatedUser | undefined;
+    const organization = request.organization as IOrganizationContext | undefined;
     const startTime = Date.now();
 
     // Log de inicio de operación

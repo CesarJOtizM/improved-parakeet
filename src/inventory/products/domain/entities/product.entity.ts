@@ -4,7 +4,7 @@ import { CostMethod } from '@product/domain/valueObjects/costMethod.valueObject'
 import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
 import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
 
-export interface ProductProps {
+export interface IProductProps {
   sku: string;
   name: string;
   description?: string;
@@ -16,22 +16,22 @@ export interface ProductProps {
   costMethod: CostMethod;
 }
 
-export class Product extends AggregateRoot<ProductProps> {
-  private constructor(props: ProductProps, id?: string, orgId?: string) {
+export class Product extends AggregateRoot<IProductProps> {
+  private constructor(props: IProductProps, id?: string, orgId?: string) {
     super(props, id, orgId);
   }
 
-  public static create(props: ProductProps, orgId: string): Product {
+  public static create(props: IProductProps, orgId: string): Product {
     const product = new Product(props, undefined, orgId);
     product.addDomainEvent(new ProductCreatedEvent(product));
     return product;
   }
 
-  public static reconstitute(props: ProductProps, id: string, orgId: string): Product {
+  public static reconstitute(props: IProductProps, id: string, orgId: string): Product {
     return new Product(props, id, orgId);
   }
 
-  public update(props: Partial<ProductProps>): void {
+  public update(props: Partial<IProductProps>): void {
     if (props.name !== undefined) this.props.name = props.name;
     if (props.description !== undefined) this.props.description = props.description;
     if (props.barcode !== undefined) this.props.barcode = props.barcode;

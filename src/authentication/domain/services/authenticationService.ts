@@ -3,14 +3,14 @@ import { UserLoggedInEvent } from '@auth/domain/events/userLoggedIn.event';
 import { JwtToken } from '@auth/domain/valueObjects/jwtToken.valueObject';
 import * as bcrypt from 'bcrypt';
 
-export interface AuthenticationResult {
+export interface IAuthenticationResult {
   user: User;
   accessToken: JwtToken;
   refreshToken: JwtToken;
   loginTimestamp: Date;
 }
 
-export interface LoginCredentials {
+export interface ILoginCredentials {
   email: string;
   password: string;
   ipAddress?: string;

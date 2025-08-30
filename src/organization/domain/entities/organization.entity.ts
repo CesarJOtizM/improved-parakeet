@@ -1,6 +1,6 @@
 import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
 
-export interface OrganizationProps {
+export interface IOrganizationProps {
   name: string;
   taxId?: string;
   settings: Record<string, unknown>;
@@ -10,21 +10,21 @@ export interface OrganizationProps {
   isActive: boolean;
 }
 
-export class Organization extends AggregateRoot<OrganizationProps> {
-  private constructor(props: OrganizationProps, id?: string, orgId?: string) {
+export class Organization extends AggregateRoot<IOrganizationProps> {
+  private constructor(props: IOrganizationProps, id?: string, orgId?: string) {
     super(props, id, orgId);
   }
 
-  public static create(props: OrganizationProps, orgId: string): Organization {
+  public static create(props: IOrganizationProps, orgId: string): Organization {
     const organization = new Organization(props, undefined, orgId);
     return organization;
   }
 
-  public static reconstitute(props: OrganizationProps, id: string, orgId: string): Organization {
+  public static reconstitute(props: IOrganizationProps, id: string, orgId: string): Organization {
     return new Organization(props, id, orgId);
   }
 
-  public update(props: Partial<OrganizationProps>): void {
+  public update(props: Partial<IOrganizationProps>): void {
     if (props.name !== undefined) this.props.name = props.name;
     if (props.taxId !== undefined) this.props.taxId = props.taxId;
     if (props.timezone !== undefined) this.props.timezone = props.timezone;

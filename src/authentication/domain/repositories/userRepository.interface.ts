@@ -1,7 +1,7 @@
 import { User } from '@auth/domain/entities/user.entity';
-import { ReadRepository, WriteRepository } from '@shared/domain/repository';
+import { IReadRepository, IWriteRepository } from '@shared/domain/repository';
 
-export interface UserRepository extends ReadRepository<User>, WriteRepository<User> {
+export interface IUserRepository extends IReadRepository<User>, IWriteRepository<User> {
   findByEmail(email: string, orgId: string): Promise<User | null>;
   findByUsername(username: string, orgId: string): Promise<User | null>;
   findByStatus(status: string, orgId: string): Promise<User[]>;

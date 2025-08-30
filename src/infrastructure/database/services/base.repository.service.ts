@@ -1,11 +1,11 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
-  BaseEntity,
-  FilterOptions,
-  PaginationOptions,
-  QueryOptions,
-  QueryResult,
+  IBaseEntity,
+  IFilterOptions,
+  IPaginationOptions,
+  IQueryOptions,
+  IQueryResult,
 } from '@shared/types/database.types';
 
 // Tipos genéricos para operaciones de Prisma
@@ -33,7 +33,7 @@ type PrismaClientWithModel<T> = {
 };
 
 @Injectable()
-export abstract class BaseRepositoryService<T extends BaseEntity> {
+export abstract class BaseRepositoryService<T extends IBaseEntity> {
   protected readonly logger = new Logger(this.constructor.name);
 
   constructor(
@@ -93,7 +93,7 @@ export abstract class BaseRepositoryService<T extends BaseEntity> {
   /**
    * Buscar todos los registros de una organización
    */
-  async findAll(orgId: string, options?: QueryOptions): Promise<QueryResult<T>> {
+  async findAll(orgId: string, options?: IQueryOptions): Promise<IQueryResult<T>> {
     try {
       const { skip, take, where, orderBy, include } = options || {};
 
@@ -209,8 +209,8 @@ export abstract class BaseRepositoryService<T extends BaseEntity> {
    */
   async findWithFilters(
     orgId: string,
-    filters: FilterOptions & PaginationOptions & { orderBy?: PrismaOrderByInput }
-  ): Promise<QueryResult<T>> {
+    filters: IFilterOptions & IPaginationOptions & { orderBy?: PrismaOrderByInput }
+  ): Promise<IQueryResult<T>> {
     try {
       const { search, category, status, dateFrom, dateTo, skip, take, orderBy } = filters;
 

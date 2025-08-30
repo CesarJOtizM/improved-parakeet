@@ -1,13 +1,13 @@
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
-export interface RateLimitConfig {
+export interface IRateLimitConfig {
   maxRequests: number;
   windowMs: number; // en milisegundos
   blockDurationMs?: number; // duración del bloqueo en milisegundos
 }
 
-export interface RateLimitResult {
+export interface IRateLimitResult {
   allowed: boolean;
   remaining: number;
   resetTime: Date;
@@ -15,7 +15,7 @@ export interface RateLimitResult {
   blockExpiresAt?: Date;
 }
 
-export interface RateLimitEntry {
+export interface IRateLimitEntry {
   count: number;
   resetTime: number;
   blocked: boolean;
@@ -29,7 +29,7 @@ export class RateLimitService {
   private readonly BLOCK_PREFIX = 'rate_limit_block:';
 
   // Configuraciones por defecto
-  private readonly DEFAULT_CONFIGS: Record<string, RateLimitConfig> = {
+  private readonly DEFAULT_CONFIGS: Record<string, IRateLimitConfig> = {
     // Rate limiting por IP
     IP: {
       maxRequests: 100,
@@ -63,8 +63,8 @@ export class RateLimitService {
   async checkRateLimit(
     identifier: string,
     type: keyof typeof this.DEFAULT_CONFIGS = 'IP',
-    customConfig?: Partial<RateLimitConfig>
-  ): Promise<RateLimitResult> {
+    customConfig?: Partial<IRateLimitConfig>
+  ): Promise<IRateLimitResult> {
     try {
       const config = { ...this.DEFAULT_CONFIGS[type], ...customConfig };
       const key = `${this.RATE_LIMIT_PREFIX}${type}:${identifier}`;
@@ -135,7 +135,7 @@ export class RateLimitService {
   /**
    * Verifica rate limiting para login (más estricto)
    */
-  async checkLoginRateLimit(identifier: string, isIp: boolean = true): Promise<RateLimitResult> {
+  async checkLoginRateLimit(identifier: string, isIp: boolean = true): Promise<IRateLimitResult> {
     const type = isIp ? 'IP' : 'USER';
     return this.checkRateLimit(identifier, type, this.DEFAULT_CONFIGS.LOGIN);
   }
@@ -146,7 +146,7 @@ export class RateLimitService {
   async checkRefreshTokenRateLimit(
     identifier: string,
     isIp: boolean = true
-  ): Promise<RateLimitResult> {
+  ): Promise<IRateLimitResult> {
     const type = isIp ? 'IP' : 'USER';
     return this.checkRateLimit(identifier, type, this.DEFAULT_CONFIGS.REFRESH_TOKEN);
   }
@@ -177,7 +177,7 @@ export class RateLimitService {
   async getRateLimitStats(): Promise<{
     totalTracked: number;
     blockedCount: number;
-    configs: Record<string, RateLimitConfig>;
+    configs: Record<string, IRateLimitConfig>;
   }> {
     try {
       // Esta implementación es básica y puede ser optimizada
@@ -199,11 +199,11 @@ export class RateLimitService {
   /**
    * Obtiene la entrada actual del rate limit
    */
-  private async getRateLimitEntry(key: string): Promise<RateLimitEntry> {
+  private async getRateLimitEntry(key: string): Promise<IRateLimitEntry> {
     try {
       const entry = await this.cacheManager.get<string>(key);
       if (entry) {
-        return JSON.parse(entry) as RateLimitEntry;
+        return JSON.parse(entry) as IRateLimitEntry;
       }
     } catch (error) {
       this.logger.warn(`Error getting rate limit entry for ${key}:`, error);
@@ -222,7 +222,7 @@ export class RateLimitService {
    */
   private async saveRateLimitEntry(
     key: string,
-    entry: RateLimitEntry,
+    entry: IRateLimitEntry,
     ttlMs: number
   ): Promise<void> {
     try {

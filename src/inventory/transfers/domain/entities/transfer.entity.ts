@@ -2,7 +2,7 @@ import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
 import { TransferLine } from '@transfer/domain/entities/transferLine.entity';
 import { TransferStatus } from '@transfer/domain/valueObjects/transferStatus.valueObject';
 
-export interface TransferProps {
+export interface ITransferProps {
   fromWarehouseId: string;
   toWarehouseId: string;
   status: TransferStatus;
@@ -10,19 +10,19 @@ export interface TransferProps {
   note?: string;
 }
 
-export class Transfer extends AggregateRoot<TransferProps> {
+export class Transfer extends AggregateRoot<ITransferProps> {
   private _lines: TransferLine[] = [];
 
-  private constructor(props: TransferProps, id?: string, orgId?: string) {
+  private constructor(props: ITransferProps, id?: string, orgId?: string) {
     super(props, id, orgId);
   }
 
-  public static create(props: TransferProps, orgId: string): Transfer {
+  public static create(props: ITransferProps, orgId: string): Transfer {
     const transfer = new Transfer(props, undefined, orgId);
     return transfer;
   }
 
-  public static reconstitute(props: TransferProps, id: string, orgId: string): Transfer {
+  public static reconstitute(props: ITransferProps, id: string, orgId: string): Transfer {
     return new Transfer(props, id, orgId);
   }
 
@@ -81,7 +81,7 @@ export class Transfer extends AggregateRoot<TransferProps> {
     this.updateTimestamp();
   }
 
-  public update(props: Partial<TransferProps>): void {
+  public update(props: Partial<ITransferProps>): void {
     if (props.note !== undefined) this.props.note = props.note;
 
     this.updateTimestamp();

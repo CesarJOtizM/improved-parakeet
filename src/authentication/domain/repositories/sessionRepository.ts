@@ -1,6 +1,6 @@
 import type { Session } from '@auth/domain/entities/session.entity';
 
-export interface SessionRepository {
+export interface ISessionRepository {
   findById(id: string, orgId: string): Promise<Session | null>;
   findByUserId(userId: string, orgId: string): Promise<Session[]>;
   findActiveByUserId(userId: string, orgId: string): Promise<Session[]>;

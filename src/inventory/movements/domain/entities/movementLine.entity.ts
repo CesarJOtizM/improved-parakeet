@@ -1,7 +1,7 @@
 import { Money, Quantity } from '@inventory/stock';
 import { Entity } from '@shared/domain/base/entity.base';
 
-export interface MovementLineProps {
+export interface IMovementLineProps {
   productId: string;
   locationId: string;
   quantity: Quantity;
@@ -10,20 +10,20 @@ export interface MovementLineProps {
   extra?: Record<string, unknown>;
 }
 
-export class MovementLine extends Entity<MovementLineProps> {
-  private constructor(props: MovementLineProps, id?: string, orgId?: string) {
+export class MovementLine extends Entity<IMovementLineProps> {
+  private constructor(props: IMovementLineProps, id?: string, orgId?: string) {
     super(props, id, orgId);
   }
 
-  public static create(props: MovementLineProps, orgId: string): MovementLine {
+  public static create(props: IMovementLineProps, orgId: string): MovementLine {
     return new MovementLine(props, undefined, orgId);
   }
 
-  public static reconstitute(props: MovementLineProps, id: string, orgId: string): MovementLine {
+  public static reconstitute(props: IMovementLineProps, id: string, orgId: string): MovementLine {
     return new MovementLine(props, id, orgId);
   }
 
-  public update(props: Partial<MovementLineProps>): void {
+  public update(props: Partial<IMovementLineProps>): void {
     if (props.quantity !== undefined) this.props.quantity = props.quantity;
     if (props.unitCost !== undefined) this.props.unitCost = props.unitCost;
     if (props.currency !== undefined) this.props.currency = props.currency;

@@ -2,7 +2,7 @@
 import { PrismaClient } from '@infrastructure/database/generated/prisma';
 import { AuthSeed } from '@infrastructure/database/prisma/seeds/auth.seed';
 import { InventorySeed } from '@infrastructure/database/prisma/seeds/inventory.seed';
-import { InventorySeedResult, SeedResult } from '@shared/types/database.types';
+import { IInventorySeedResult, ISeedResult } from '@shared/types/database.types';
 
 const prisma = new PrismaClient();
 
@@ -25,11 +25,11 @@ async function main() {
 
   // Sembrar dominio de autenticación
   const authSeed = new AuthSeed(prisma);
-  const authResult: SeedResult = await authSeed.seed(organization.id);
+  const authResult: ISeedResult = await authSeed.seed(organization.id);
 
   // Sembrar dominio de inventario
   const inventorySeed = new InventorySeed(prisma);
-  const inventoryResult: InventorySeedResult = await inventorySeed.seed(organization.id);
+  const inventoryResult: IInventorySeedResult = await inventorySeed.seed(organization.id);
 
   console.log('🎉 Seed completado exitosamente!');
   console.log('📊 Resumen:');

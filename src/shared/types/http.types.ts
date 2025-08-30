@@ -1,6 +1,6 @@
 // Tipos para extensiones de Express Request
 
-export interface AuthenticatedUser {
+export interface IAuthenticatedUser {
   id: string;
   orgId: string;
   email: string;
@@ -10,7 +10,7 @@ export interface AuthenticatedUser {
   jti: string;
 }
 
-export interface OrganizationContext {
+export interface IOrganizationContext {
   id: string;
   name: string;
   slug: string;
@@ -22,8 +22,8 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
-      user?: AuthenticatedUser;
-      organization?: OrganizationContext;
+      user?: IAuthenticatedUser;
+      organization?: IOrganizationContext;
       orgId?: string;
       userPermissions?: string[];
       userRoles?: string[];

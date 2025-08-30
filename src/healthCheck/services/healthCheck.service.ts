@@ -1,7 +1,7 @@
 // Health Check Domain Service - Programación Funcional + DDD
 // Lógica de negocio pura sin efectos secundarios
 
-import type { HealthCheckPort } from '@healthCheck/ports/healthCheck.port';
+import type { IHealthCheckPort } from '@healthCheck/ports/healthCheck.port';
 import type {
   DetailedHealthCheck,
   HealthCheckResult,
@@ -83,7 +83,7 @@ export const determineOverallStatus = (
 
 // Función principal del dominio que orquesta el health check
 export const performHealthCheck = async (
-  healthCheckPort: HealthCheckPort,
+  healthCheckPort: IHealthCheckPort,
   version: string,
   environment: string
 ): Promise<DetailedHealthCheck> => {

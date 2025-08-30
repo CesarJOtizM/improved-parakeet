@@ -2,7 +2,7 @@ import { SetMetadata } from '@nestjs/common';
 
 export const ROLE_BASED_AUTH_KEY = 'roleBasedAuthOptions';
 
-export interface RoleBasedAuthMetadata {
+export interface IRoleBasedAuthMetadata {
   requiredRoles: string[];
   requireAllRoles?: boolean;
   checkOrganization?: boolean;
@@ -16,7 +16,7 @@ export interface RoleBasedAuthMetadata {
  */
 export const RequireRoles = (
   roles: string[],
-  options: Omit<RoleBasedAuthMetadata, 'requiredRoles'> = {}
+  options: Omit<IRoleBasedAuthMetadata, 'requiredRoles'> = {}
 ) => SetMetadata(ROLE_BASED_AUTH_KEY, { requiredRoles: roles, ...options });
 
 /**

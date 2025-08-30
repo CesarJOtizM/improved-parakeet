@@ -1,14 +1,14 @@
-import { JwtAuthGuard, JwtAuthGuardOptions } from '@auth/security/guards/jwtAuthGuard';
-import { PermissionGuardOptions, PermissionsGuard } from '@auth/security/guards/permissionsGuard';
+import { JwtAuthGuard, IJwtAuthGuardOptions } from '@auth/security/guards/jwtAuthGuard';
+import { IPermissionGuardOptions, PermissionsGuard } from '@auth/security/guards/permissionsGuard';
 import { SetMetadata, UseGuards, applyDecorators } from '@nestjs/common';
 
 // Decorador para configurar autenticación JWT
-export const JwtAuth = (options?: JwtAuthGuardOptions) => {
+export const JwtAuth = (options?: IJwtAuthGuardOptions) => {
   return applyDecorators(SetMetadata('jwtAuthOptions', options || {}), UseGuards(JwtAuthGuard));
 };
 
 // Decorador para configurar permisos
-export const RequirePermissions = (options: PermissionGuardOptions) => {
+export const RequirePermissions = (options: IPermissionGuardOptions) => {
   return applyDecorators(SetMetadata('permissionOptions', options), UseGuards(PermissionsGuard));
 };
 

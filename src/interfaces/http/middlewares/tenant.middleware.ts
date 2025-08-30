@@ -1,6 +1,6 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { ForbiddenException, Injectable, NestMiddleware } from '@nestjs/common';
-import { OrganizationContext } from '@shared/types/http.types';
+import { IOrganizationContext } from '@shared/types/http.types';
 import { NextFunction, Request, Response } from 'express';
 
 @Injectable()
@@ -35,7 +35,7 @@ export class TenantMiddleware implements NestMiddleware {
       }
 
       // Establecer el contexto de la organización en el request
-      req.organization = organization as OrganizationContext;
+      req.organization = organization as IOrganizationContext;
       req.orgId = organization.id;
 
       // Si hay un usuario autenticado, verificar que pertenece a la organización

@@ -3,9 +3,9 @@ import { RateLimitService } from '@auth/domain/services/rateLimitService';
 import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
 import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 
-import type { SessionRepository } from '@auth/domain/repositories';
+import type { ISessionRepository } from '@auth/domain/repositories';
 
-export interface LogoutRequest {
+export interface ILogoutRequest {
   accessToken: string;
   refreshToken?: string;
   userId: string;
@@ -14,7 +14,7 @@ export interface LogoutRequest {
   reason?: 'LOGOUT' | 'SECURITY' | 'ADMIN_ACTION';
 }
 
-export interface LogoutResponse {
+export interface ILogoutResponse {
   success: boolean;
   message: string;
   blacklistedTokens: number;
@@ -27,11 +27,11 @@ export class LogoutUseCase {
   constructor(
     private readonly jwtService: JwtService,
     private readonly tokenBlacklistService: TokenBlacklistService,
-    @Inject('SessionRepository') private readonly sessionRepository: SessionRepository,
+    @Inject('SessionRepository') private readonly sessionRepository: ISessionRepository,
     private readonly rateLimitService: RateLimitService
   ) {}
 
-  async execute(request: LogoutRequest): Promise<LogoutResponse> {
+  async execute(request: ILogoutRequest): Promise<ILogoutResponse> {
     try {
       // Verificar rate limiting para logout
       const rateLimitResult = await this.rateLimitService.checkRateLimit(

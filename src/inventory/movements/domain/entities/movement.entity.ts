@@ -1,7 +1,7 @@
 import { MovementLine, MovementStatus, MovementType } from '@inventory/movements';
 import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
 
-export interface MovementProps {
+export interface IMovementProps {
   type: MovementType;
   status: MovementStatus;
   warehouseId: string;
@@ -12,19 +12,19 @@ export interface MovementProps {
   createdBy: string;
 }
 
-export class Movement extends AggregateRoot<MovementProps> {
+export class Movement extends AggregateRoot<IMovementProps> {
   private lines: MovementLine[] = [];
 
-  private constructor(props: MovementProps, id?: string, orgId?: string) {
+  private constructor(props: IMovementProps, id?: string, orgId?: string) {
     super(props, id, orgId);
   }
 
-  public static create(props: MovementProps, orgId: string): Movement {
+  public static create(props: IMovementProps, orgId: string): Movement {
     const movement = new Movement(props, undefined, orgId);
     return movement;
   }
 
-  public static reconstitute(props: MovementProps, id: string, orgId: string): Movement {
+  public static reconstitute(props: IMovementProps, id: string, orgId: string): Movement {
     return new Movement(props, id, orgId);
   }
 
@@ -57,7 +57,7 @@ export class Movement extends AggregateRoot<MovementProps> {
     this.updateTimestamp();
   }
 
-  public update(props: Partial<MovementProps>): void {
+  public update(props: Partial<IMovementProps>): void {
     if (props.reference !== undefined) this.props.reference = props.reference;
     if (props.reason !== undefined) this.props.reason = props.reason;
     if (props.note !== undefined) this.props.note = props.note;

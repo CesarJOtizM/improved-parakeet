@@ -5,7 +5,7 @@ import { Password } from '@auth/domain/valueObjects/password.valueObject';
 import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
 import { DomainEvent } from '@shared/domain/events/domainEvent.base';
 
-export interface UserProps {
+export interface IUserProps {
   email: Email;
   username: string;
   passwordHash: Password;
@@ -19,17 +19,17 @@ export interface UserProps {
   permissions?: string[];
 }
 
-export class User extends AggregateRoot<UserProps> {
-  private constructor(props: UserProps, id?: string, orgId?: string) {
+export class User extends AggregateRoot<IUserProps> {
+  private constructor(props: IUserProps, id?: string, orgId?: string) {
     super(props, id, orgId);
   }
 
   public static create(
-    props: Omit<UserProps, 'passwordHash'> & { password: string },
+    props: Omit<IUserProps, 'passwordHash'> & { password: string },
     orgId: string
   ): User {
     const passwordHash = Password.create(props.password);
-    const userProps: UserProps = {
+    const userProps: IUserProps = {
       ...props,
       passwordHash,
     };
@@ -39,12 +39,12 @@ export class User extends AggregateRoot<UserProps> {
     return user;
   }
 
-  public static reconstitute(props: UserProps, id: string, orgId: string): User {
+  public static reconstitute(props: IUserProps, id: string, orgId: string): User {
     return new User(props, id, orgId);
   }
 
   public update(
-    props: Partial<Omit<UserProps, 'email' | 'passwordHash'>> & { email?: string }
+    props: Partial<Omit<IUserProps, 'email' | 'passwordHash'>> & { email?: string }
   ): void {
     if (props.email !== undefined) this.props.email = Email.create(props.email);
     if (props.firstName !== undefined) this.props.firstName = props.firstName;

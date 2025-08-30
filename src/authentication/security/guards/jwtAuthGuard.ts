@@ -1,5 +1,5 @@
-import { JwtPayload, JwtService } from '@auth/domain/services/jwtService';
-import { RateLimitResult, RateLimitService } from '@auth/domain/services/rateLimitService';
+import { IJwtPayload, JwtService } from '@auth/domain/services/jwtService';
+import { IRateLimitResult, RateLimitService } from '@auth/domain/services/rateLimitService';
 import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
 import {
   CanActivate,
@@ -12,14 +12,14 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 
-export interface JwtAuthGuardOptions {
+export interface IJwtAuthGuardOptions {
   requireAuth?: boolean;
   checkBlacklist?: boolean;
   checkRateLimit?: boolean;
   rateLimitType?: 'IP' | 'USER';
 }
 
-export type { AuthenticatedUser } from '@shared/types/http.types';
+export type { IAuthenticatedUser } from '@shared/types/http.types';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -89,8 +89,11 @@ export class JwtAuthGuard implements CanActivate {
     }
   }
 
-  private getGuardOptions(context: ExecutionContext): JwtAuthGuardOptions {
-    const options = this.reflector.get<JwtAuthGuardOptions>('jwtAuthOptions', context.getHandler());
+  private getGuardOptions(context: ExecutionContext): IJwtAuthGuardOptions {
+    const options = this.reflector.get<IJwtAuthGuardOptions>(
+      'jwtAuthOptions',
+      context.getHandler()
+    );
 
     return {
       requireAuth: true,
@@ -108,9 +111,9 @@ export class JwtAuthGuard implements CanActivate {
 
   private async checkRateLimit(
     request: Request,
-    payload: JwtPayload,
+    payload: IJwtPayload,
     rateLimitType?: 'IP' | 'USER'
-  ): Promise<RateLimitResult> {
+  ): Promise<IRateLimitResult> {
     const identifier = rateLimitType === 'USER' ? payload.sub : this.getClientIp(request);
 
     if (rateLimitType === 'USER') {

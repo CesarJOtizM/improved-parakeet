@@ -1,27 +1,27 @@
 import { Quantity } from '@inventory/stock/domain/valueObjects/quantity.valueObject';
 import { Entity } from '@shared/domain/base/entity.base';
 
-export interface TransferLineProps {
+export interface ITransferLineProps {
   productId: string;
   quantity: Quantity;
   fromLocationId?: string;
   toLocationId?: string;
 }
 
-export class TransferLine extends Entity<TransferLineProps> {
-  private constructor(props: TransferLineProps, id?: string, orgId?: string) {
+export class TransferLine extends Entity<ITransferLineProps> {
+  private constructor(props: ITransferLineProps, id?: string, orgId?: string) {
     super(props, id, orgId);
   }
 
-  public static create(props: TransferLineProps, orgId: string): TransferLine {
+  public static create(props: ITransferLineProps, orgId: string): TransferLine {
     return new TransferLine(props, undefined, orgId);
   }
 
-  public static reconstitute(props: TransferLineProps, id: string, orgId: string): TransferLine {
+  public static reconstitute(props: ITransferLineProps, id: string, orgId: string): TransferLine {
     return new TransferLine(props, id, orgId);
   }
 
-  public update(props: Partial<TransferLineProps>): void {
+  public update(props: Partial<ITransferLineProps>): void {
     if (props.quantity !== undefined) this.props.quantity = props.quantity;
     if (props.fromLocationId !== undefined) this.props.fromLocationId = props.fromLocationId;
     if (props.toLocationId !== undefined) this.props.toLocationId = props.toLocationId;

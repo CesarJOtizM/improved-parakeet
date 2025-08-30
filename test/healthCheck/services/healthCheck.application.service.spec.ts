@@ -7,10 +7,10 @@ import {
 } from '@application/healthCheck/healthCheck.application.service';
 import { Test, TestingModule } from '@nestjs/testing';
 
-import type { DetailedHealthCheck, HealthCheckPort, HealthCheckResult } from '@healthCheck/index';
+import type { DetailedHealthCheck, HealthCheckResult, IHealthCheckPort } from '@healthCheck/index';
 
 // Mock del HealthCheckPort para tests
-const mockHealthCheckPort: jest.Mocked<HealthCheckPort> = {
+const mockHealthCheckPort: jest.Mocked<IHealthCheckPort> = {
   checkBasic: jest.fn(),
   checkDetailed: jest.fn(),
   checkDatabase: jest.fn(),

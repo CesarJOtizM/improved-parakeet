@@ -1,7 +1,7 @@
-import { ReadRepository, WriteRepository } from '@shared/domain/repository';
+import { IReadRepository, IWriteRepository } from '@shared/domain/repository';
 import { Transfer } from '@transfer/domain/entities/transfer.entity';
 
-export interface TransferRepository extends ReadRepository<Transfer>, WriteRepository<Transfer> {
+export interface ITransferRepository extends IReadRepository<Transfer>, IWriteRepository<Transfer> {
   findByFromWarehouse(warehouseId: string, orgId: string): Promise<Transfer[]>;
   findByToWarehouse(warehouseId: string, orgId: string): Promise<Transfer[]>;
   findByStatus(status: string, orgId: string): Promise<Transfer[]>;

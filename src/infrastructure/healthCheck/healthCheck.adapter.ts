@@ -7,15 +7,15 @@ import {
   createDetailedHealthCheck,
   createHealthCheckResult,
   type DetailedHealthCheck,
-  type HealthCheckPort,
   type HealthCheckResult,
   type HealthStatus,
+  type IHealthCheckPort,
 } from '@healthCheck/index';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class HealthCheckAdapter implements HealthCheckPort {
+export class HealthCheckAdapter implements IHealthCheckPort {
   constructor(private readonly prismaService: PrismaService) {}
 
   async checkBasic(): Promise<HealthCheckResult> {

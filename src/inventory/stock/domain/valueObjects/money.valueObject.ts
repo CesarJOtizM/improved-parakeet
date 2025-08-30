@@ -1,6 +1,6 @@
 import { ValueObject } from '@shared/domain/base/valueObject.base';
 
-export interface MoneyProps {
+export interface IMoneyProps {
   value: {
     amount: number;
     currency: string;
@@ -8,8 +8,8 @@ export interface MoneyProps {
   };
 }
 
-export class Money extends ValueObject<MoneyProps> {
-  constructor(props: MoneyProps) {
+export class Money extends ValueObject<IMoneyProps> {
+  constructor(props: IMoneyProps) {
     super(props);
     this.validate(props);
   }
@@ -18,7 +18,7 @@ export class Money extends ValueObject<MoneyProps> {
     return new Money({ value: { amount, currency, precision } });
   }
 
-  private validate(props: MoneyProps): void {
+  private validate(props: IMoneyProps): void {
     if (props.value.amount < 0) {
       throw new Error('Amount cannot be negative');
     }

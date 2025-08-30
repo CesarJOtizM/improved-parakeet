@@ -1,7 +1,7 @@
 export type {
-  AuthenticatedRequest,
-  AuthenticatedUser,
-  ErrorResponse,
-  RateLimitHeaders,
-  ValidationErrorResponse,
+  IAuthenticatedRequest,
+  IAuthenticatedUser,
+  IErrorResponse,
+  IRateLimitHeaders,
+  IValidationErrorResponse,
 } from './http.types';

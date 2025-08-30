@@ -6,10 +6,10 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { AuthenticatedUser } from '@shared/types/http.types';
+import { IAuthenticatedUser } from '@shared/types/http.types';
 import { Request } from 'express';
 
-export interface RoleBasedAuthOptions {
+export interface IRoleBasedAuthOptions {
   requiredRoles: string[];
   requireAllRoles: boolean; // true = requiere todos los roles, false = requiere al menos uno
   checkOrganization: boolean;
@@ -32,7 +32,7 @@ export class RoleBasedAuthGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<Request>();
-    const user = request.user as AuthenticatedUser | undefined;
+    const user = request.user as IAuthenticatedUser | undefined;
 
     if (!user) {
       this.logger.error('User not found in request context');
@@ -88,8 +88,8 @@ export class RoleBasedAuthGuard implements CanActivate {
     }
   }
 
-  private getGuardOptions(context: ExecutionContext): RoleBasedAuthOptions {
-    const options = this.reflector.get<RoleBasedAuthOptions>(
+  private getGuardOptions(context: ExecutionContext): IRoleBasedAuthOptions {
+    const options = this.reflector.get<IRoleBasedAuthOptions>(
       'roleBasedAuthOptions',
       context.getHandler()
     );
@@ -110,7 +110,7 @@ export class RoleBasedAuthGuard implements CanActivate {
     return requiredRoles.some(role => userRoles.includes(role));
   }
 
-  private checkOrganizationAccess(request: Request, user: AuthenticatedUser): boolean {
+  private checkOrganizationAccess(request: Request, user: IAuthenticatedUser): boolean {
     const requestOrgId = this.extractOrganizationId(request);
 
     if (!requestOrgId) {
@@ -131,7 +131,7 @@ export class RoleBasedAuthGuard implements CanActivate {
     return orgId ? String(orgId) : null;
   }
 
-  private isSuperAdmin(user: AuthenticatedUser): boolean {
+  private isSuperAdmin(user: IAuthenticatedUser): boolean {
     return user.roles.includes('SUPER_ADMIN') || user.roles.includes('SYSTEM_ADMIN');
   }
 }

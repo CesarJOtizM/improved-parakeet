@@ -1,9 +1,9 @@
 import { Permission } from '@auth/domain/entities/permission.entity';
-import { ReadRepository, WriteRepository } from '@shared/domain/repository';
+import { IReadRepository, IWriteRepository } from '@shared/domain/repository';
 
-export interface PermissionRepository
-  extends ReadRepository<Permission>,
-    WriteRepository<Permission> {
+export interface IPermissionRepository
+  extends IReadRepository<Permission>,
+    IWriteRepository<Permission> {
   findByName(name: string): Promise<Permission | null>;
   findByModule(module: string): Promise<Permission[]>;
   findByAction(action: string): Promise<Permission[]>;

@@ -1,7 +1,7 @@
 import { Money } from '@stock/domain/valueObjects/money.valueObject';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
-export interface InventoryBalance {
+export interface IInventoryBalance {
   productId: string;
   warehouseId: string;
   locationId?: string;
@@ -10,7 +10,7 @@ export interface InventoryBalance {
   totalValue: Money;
 }
 
-export interface MovementCalculation {
+export interface IMovementCalculation {
   quantity: Quantity;
   unitCost?: Money;
   totalCost?: Money;
@@ -48,7 +48,7 @@ export class InventoryCalculationService {
   /**
    * Calcula el saldo de inventario
    */
-  public static calculateBalance(movements: MovementCalculation[]): {
+  public static calculateBalance(movements: IMovementCalculation[]): {
     quantity: Quantity;
     totalCost: Money;
   } {

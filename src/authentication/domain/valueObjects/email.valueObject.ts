@@ -1,11 +1,11 @@
 import { ValueObject } from '@shared/domain/base/valueObject.base';
 
-export interface EmailProps {
+export interface IEmailProps {
   value: string;
 }
 
-export class Email extends ValueObject<EmailProps> {
-  private constructor(props: EmailProps) {
+export class Email extends ValueObject<IEmailProps> {
+  private constructor(props: IEmailProps) {
     super(props);
     this.validate(props);
   }
@@ -14,7 +14,7 @@ export class Email extends ValueObject<EmailProps> {
     return new Email({ value: value.toLowerCase().trim() });
   }
 
-  private validate(props: EmailProps): void {
+  private validate(props: IEmailProps): void {
     if (!props.value || props.value.trim().length === 0) {
       throw new Error('Email cannot be empty');
     }

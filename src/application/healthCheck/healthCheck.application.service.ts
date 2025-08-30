@@ -4,8 +4,8 @@
 import {
   performHealthCheck,
   type DetailedHealthCheck,
-  type HealthCheckPort,
   type HealthCheckResult,
+  type IHealthCheckPort,
 } from '@healthCheck';
 import { Inject, Injectable } from '@nestjs/common';
 
@@ -16,7 +16,7 @@ export const HEALTH_CHECK_PORT_TOKEN = 'HealthCheckPort';
 export class HealthCheckApplicationService {
   constructor(
     @Inject(HEALTH_CHECK_PORT_TOKEN)
-    private readonly healthCheckPort: HealthCheckPort
+    private readonly healthCheckPort: IHealthCheckPort
   ) {}
 
   async getBasicHealth(): Promise<HealthCheckResult> {

@@ -12,11 +12,11 @@ import {
   calculateMemoryPercentage,
 } from '@healthCheck/types/healthCheck.types';
 
-import type { HealthCheckPort } from '@healthCheck/ports/healthCheck.port';
+import type { IHealthCheckPort } from '@healthCheck/ports/healthCheck.port';
 import type { HealthStatus } from '@healthCheck/types/healthCheck.types';
 
 // Mock del HealthCheckPort para tests
-const mockHealthCheckPort: HealthCheckPort = {
+const mockHealthCheckPort: IHealthCheckPort = {
   checkBasic: jest.fn(),
   checkDetailed: jest.fn(),
   checkDatabase: jest.fn(),

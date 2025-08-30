@@ -1,8 +1,8 @@
-import { AuthConfig } from '@auth/config/auth.config';
+import { IAuthConfig } from '@auth/config/auth.config';
 import { SECURITY_CONFIG } from '@shared/constants';
 
 // Función para obtener la configuración de seguridad consolidada
-export function getSecurityConfig(authConfig: AuthConfig) {
+export function getSecurityConfig(authConfig: IAuthConfig) {
   return {
     // Headers de seguridad (desde constants)
     headers: SECURITY_CONFIG.SECURITY_HEADERS,

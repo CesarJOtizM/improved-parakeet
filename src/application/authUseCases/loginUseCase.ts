@@ -5,9 +5,9 @@ import { RateLimitService } from '@auth/domain/services/rateLimitService';
 import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
 import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 
-import type { SessionRepository, UserRepository } from '@auth/domain/repositories';
+import type { ISessionRepository, IUserRepository } from '@auth/domain/repositories';
 
-export interface LoginRequest {
+export interface ILoginRequest {
   email: string;
   password: string;
   orgId: string;
@@ -15,7 +15,7 @@ export interface LoginRequest {
   userAgent?: string;
 }
 
-export interface LoginResponse {
+export interface ILoginResponse {
   user: {
     id: string;
     email: string;
@@ -37,14 +37,14 @@ export class LoginUseCase {
   private readonly logger = new Logger(LoginUseCase.name);
 
   constructor(
-    @Inject('UserRepository') private readonly userRepository: UserRepository,
-    @Inject('SessionRepository') private readonly sessionRepository: SessionRepository,
+    @Inject('UserRepository') private readonly userRepository: IUserRepository,
+    @Inject('SessionRepository') private readonly sessionRepository: ISessionRepository,
     private readonly jwtService: JwtService,
     private readonly tokenBlacklistService: TokenBlacklistService,
     private readonly rateLimitService: RateLimitService
   ) {}
 
-  async execute(request: LoginRequest): Promise<LoginResponse> {
+  async execute(request: ILoginRequest): Promise<ILoginResponse> {
     try {
       // Verificar rate limiting para login
       const rateLimitResult = await this.rateLimitService.checkLoginRateLimit(

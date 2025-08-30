@@ -2,7 +2,7 @@ import { Movement } from '@inventory/movements/domain/entities/movement.entity';
 import { Product } from '@inventory/products/domain/entities/product.entity';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
-export interface StockValidationResult {
+export interface IStockValidationResult {
   isValid: boolean;
   availableQuantity: Quantity;
   requestedQuantity: Quantity;
@@ -19,7 +19,7 @@ export class StockValidationService {
     requestedQuantity: Quantity,
     currentStock: Quantity,
     pendingMovements: Movement[]
-  ): StockValidationResult {
+  ): IStockValidationResult {
     const errors: string[] = [];
 
     // Calcular stock disponible considerando movimientos pendientes

@@ -1,12 +1,12 @@
 import { ValueObject } from '@shared/domain/base/valueObject.base';
 
-export interface QuantityProps {
+export interface IQuantityProps {
   value: number;
   precision: number;
 }
 
-export class Quantity extends ValueObject<QuantityProps> {
-  constructor(props: QuantityProps) {
+export class Quantity extends ValueObject<IQuantityProps> {
+  constructor(props: IQuantityProps) {
     super(props);
     this.validate(props);
   }
@@ -15,7 +15,7 @@ export class Quantity extends ValueObject<QuantityProps> {
     return new Quantity({ value, precision });
   }
 
-  private validate(props: QuantityProps): void {
+  private validate(props: IQuantityProps): void {
     if (props.value < 0) {
       throw new Error('Quantity cannot be negative');
     }

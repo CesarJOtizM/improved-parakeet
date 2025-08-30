@@ -1,10 +1,10 @@
 import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
-import { AuthenticatedUser } from '@shared/types/http.types';
+import { IAuthenticatedUser } from '@shared/types/http.types';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 
-export interface AuthenticationLogMetadata {
+export interface IAuthenticationLogMetadata {
   enabled: boolean;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   includeSensitiveData: boolean;
@@ -26,7 +26,7 @@ export class AuthenticationLoggingInterceptor implements NestInterceptor {
     }
 
     const startTime = Date.now();
-    const user = request.user as AuthenticatedUser | undefined;
+    const user = request.user as IAuthenticatedUser | undefined;
 
     // Log de inicio de operación de autenticación
     this.logAuthenticationEvent(
@@ -89,7 +89,7 @@ export class AuthenticationLoggingInterceptor implements NestInterceptor {
     );
   }
 
-  private getInterceptorMetadata(): AuthenticationLogMetadata {
+  private getInterceptorMetadata(): IAuthenticationLogMetadata {
     // Por defecto, habilitar logging para todas las operaciones de autenticación
     return {
       enabled: true,

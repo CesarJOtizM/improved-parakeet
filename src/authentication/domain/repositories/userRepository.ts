@@ -1,6 +1,6 @@
 import type { User } from '@auth/domain/entities/user.entity';
 
-export interface UserRepository {
+export interface IUserRepository {
   findById(id: string, orgId: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findByUsername(username: string, orgId: string): Promise<User | null>;

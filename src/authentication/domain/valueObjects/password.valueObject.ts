@@ -1,12 +1,12 @@
 import { ValueObject } from '@shared/domain/base/valueObject.base';
 
-export interface PasswordProps {
+export interface IPasswordProps {
   value: string;
   isHashed: boolean;
 }
 
-export class Password extends ValueObject<PasswordProps> {
-  private constructor(props: PasswordProps) {
+export class Password extends ValueObject<IPasswordProps> {
+  private constructor(props: IPasswordProps) {
     super(props);
     if (!props.isHashed) {
       this.validate(props);
@@ -21,7 +21,7 @@ export class Password extends ValueObject<PasswordProps> {
     return new Password({ value: hashedValue, isHashed: true });
   }
 
-  private validate(props: PasswordProps): void {
+  private validate(props: IPasswordProps): void {
     if (!props.value || props.value.length < 8) {
       throw new Error('Password must be at least 8 characters long');
     }

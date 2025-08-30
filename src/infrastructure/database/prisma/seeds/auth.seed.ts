@@ -1,11 +1,11 @@
 /* eslint-disable no-console */
 import { PrismaClient } from '@infrastructure/database/generated/prisma';
-import { Permission, Role, SeedResult, User } from '@shared/types/database.types';
+import { IPermission, IRole, ISeedResult, IUser } from '@shared/types/database.types';
 
 export class AuthSeed {
   constructor(private prisma: PrismaClient) {}
 
-  async seed(organizationId: string): Promise<SeedResult> {
+  async seed(organizationId: string): Promise<ISeedResult> {
     console.log('🌱 Sembrando dominio de autenticación...');
 
     // Crear roles predefinidos
@@ -30,7 +30,7 @@ export class AuthSeed {
     return { roles, permissions, adminUser };
   }
 
-  private async createRoles(organizationId: string): Promise<Role[]> {
+  private async createRoles(organizationId: string): Promise<IRole[]> {
     const rolesData = [
       {
         name: 'ADMIN',
@@ -74,10 +74,10 @@ export class AuthSeed {
       roles.push(role);
     }
 
-    return roles as Role[];
+    return roles as IRole[];
   }
 
-  private async createPermissions(): Promise<Permission[]> {
+  private async createPermissions(): Promise<IPermission[]> {
     const permissionsData = [
       // Usuarios
       { name: 'USERS:CREATE', description: 'Crear usuarios', module: 'USERS', action: 'CREATE' },
@@ -279,10 +279,13 @@ export class AuthSeed {
       permissions.push(permission);
     }
 
-    return permissions as Permission[];
+    return permissions as IPermission[];
   }
 
-  private async assignPermissionsToRoles(roles: Role[], permissions: Permission[]): Promise<void> {
+  private async assignPermissionsToRoles(
+    roles: IRole[],
+    permissions: IPermission[]
+  ): Promise<void> {
     const rolePermissions = [
       // ADMIN - Todos los permisos
       ...(roles[0].name === 'ADMIN'
@@ -350,7 +353,7 @@ export class AuthSeed {
     }
   }
 
-  private async createAdminUser(organizationId: string, adminRoleId: string): Promise<User> {
+  private async createAdminUser(organizationId: string, adminRoleId: string): Promise<IUser> {
     const adminUser = await this.prisma.user.upsert({
       where: { email: 'admin@demo.com' },
       update: {},
@@ -382,6 +385,6 @@ export class AuthSeed {
       },
     });
 
-    return adminUser as User;
+    return adminUser as IUser;
   }
 }

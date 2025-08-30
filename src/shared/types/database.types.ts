@@ -1,6 +1,6 @@
 // Tipos compartidos para la base de datos y entidades
 
-export interface BaseEntity {
+export interface IBaseEntity {
   id: string;
   createdAt: Date;
   updatedAt: Date;
@@ -8,7 +8,7 @@ export interface BaseEntity {
   orgId: string;
 }
 
-export interface Organization {
+export interface IOrganization {
   id: string;
   name: string;
   slug: string;
@@ -18,7 +18,7 @@ export interface Organization {
   updatedAt: Date;
 }
 
-export interface User {
+export interface IUser {
   id: string;
   email: string;
   username: string;
@@ -32,7 +32,7 @@ export interface User {
   updatedAt: Date;
 }
 
-export interface Role {
+export interface IRole {
   id: string;
   name: string;
   description?: string | null;
@@ -42,7 +42,7 @@ export interface Role {
   updatedAt: Date;
 }
 
-export interface Permission {
+export interface IPermission {
   id: string;
   name: string;
   description?: string | null;
@@ -50,20 +50,20 @@ export interface Permission {
   action: string;
 }
 
-export interface UserRole {
+export interface IUserRole {
   id: string;
   userId: string;
   roleId: string;
   orgId: string;
 }
 
-export interface RolePermission {
+export interface IRolePermission {
   id: string;
   roleId: string;
   permissionId: string;
 }
 
-export interface Product {
+export interface IProduct {
   id: string;
   sku: string;
   name: string;
@@ -77,7 +77,7 @@ export interface Product {
   updatedAt: Date;
 }
 
-export interface Warehouse {
+export interface IWarehouse {
   id: string;
   code: string;
   name: string;
@@ -89,7 +89,7 @@ export interface Warehouse {
   updatedAt: Date;
 }
 
-export interface Stock {
+export interface IStock {
   id: string;
   productId: string;
   warehouseId: string;
@@ -98,7 +98,7 @@ export interface Stock {
   orgId: string;
 }
 
-export interface Movement {
+export interface IMovement {
   id: string;
   type: MovementType;
   status: MovementStatus;
@@ -109,7 +109,7 @@ export interface Movement {
   updatedAt: Date;
 }
 
-export interface MovementLine {
+export interface IMovementLine {
   id: string;
   movementId: string;
   productId: string;
@@ -121,7 +121,7 @@ export interface MovementLine {
 export type MovementType = 'IN' | 'OUT' | 'ADJUSTMENT' | 'TRANSFER';
 export type MovementStatus = 'DRAFT' | 'POSTED' | 'VOIDED' | 'CANCELLED';
 
-export interface InventoryBalance {
+export interface IInventoryBalance {
   productId: string;
   warehouseId: string;
   orgId: string;
@@ -139,7 +139,7 @@ export interface InventoryBalance {
   lastStockUpdate: Date;
 }
 
-export interface LowStockAlert {
+export interface ILowStockAlert {
   productId: string;
   warehouseId: string;
   orgId: string;
@@ -157,17 +157,17 @@ export interface LowStockAlert {
 }
 
 // Tipos para filtros y opciones
-export interface PaginationOptions {
+export interface IPaginationOptions {
   skip?: number;
   take?: number;
 }
 
-export interface SortOptions {
+export interface ISortOptions {
   field: string;
   direction: 'asc' | 'desc';
 }
 
-export interface FilterOptions {
+export interface IFilterOptions {
   search?: string;
   category?: string;
   status?: string;
@@ -176,7 +176,7 @@ export interface FilterOptions {
   isActive?: boolean;
 }
 
-export interface QueryOptions {
+export interface IQueryOptions {
   skip?: number;
   take?: number;
   where?: Record<string, unknown>;
@@ -184,19 +184,19 @@ export interface QueryOptions {
   include?: Record<string, boolean>;
 }
 
-export interface QueryResult<T> {
+export interface IQueryResult<T> {
   data: T[];
   total: number;
 }
 
 // Tipos para seeds
-export interface SeedResult {
-  roles: Role[];
-  permissions: Permission[];
-  adminUser: User;
+export interface ISeedResult {
+  roles: IRole[];
+  permissions: IPermission[];
+  adminUser: IUser;
 }
 
-export interface InventorySeedResult {
-  warehouses: Warehouse[];
-  products: Product[];
+export interface IInventorySeedResult {
+  warehouses: IWarehouse[];
+  products: IProduct[];
 }

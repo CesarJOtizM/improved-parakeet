@@ -2,14 +2,14 @@ import { Permission } from '@auth/domain/entities/permission.entity';
 import { Role } from '@auth/domain/entities/role.entity';
 import { User } from '@auth/domain/entities/user.entity';
 
-export interface AuthorizationResult {
+export interface IAuthorizationResult {
   isAuthorized: boolean;
   reason?: string;
   requiredPermissions: string[];
   userPermissions: string[];
 }
 
-export interface PermissionCheck {
+export interface IPermissionCheck {
   module: string;
   action: string;
 }
@@ -22,7 +22,7 @@ export class AuthorizationService {
     _user: User,
     userPermissions: string[],
     requiredPermission: string
-  ): AuthorizationResult {
+  ): IAuthorizationResult {
     const hasPermission = userPermissions.includes(requiredPermission);
 
     return {
@@ -40,7 +40,7 @@ export class AuthorizationService {
     _user: User,
     userPermissions: string[],
     requiredPermissions: string[]
-  ): AuthorizationResult {
+  ): IAuthorizationResult {
     const hasAnyPermission = requiredPermissions.some(permission =>
       userPermissions.includes(permission)
     );
@@ -60,7 +60,7 @@ export class AuthorizationService {
     _user: User,
     userPermissions: string[],
     requiredPermissions: string[]
-  ): AuthorizationResult {
+  ): IAuthorizationResult {
     const hasAllPermissions = requiredPermissions.every(permission =>
       userPermissions.includes(permission)
     );
@@ -86,7 +86,7 @@ export class AuthorizationService {
     _user: User,
     userPermissions: string[],
     module: string
-  ): AuthorizationResult {
+  ): IAuthorizationResult {
     const modulePermissions = userPermissions.filter(permission =>
       permission.startsWith(`${module}:`)
     );
@@ -109,7 +109,7 @@ export class AuthorizationService {
     userPermissions: string[],
     module: string,
     action: string
-  ): AuthorizationResult {
+  ): IAuthorizationResult {
     const requiredPermission = `${module}:${action}`;
     const hasPermission = userPermissions.includes(requiredPermission);
 
@@ -128,7 +128,7 @@ export class AuthorizationService {
     _user: User,
     userRoles: string[],
     requiredRole: string
-  ): AuthorizationResult {
+  ): IAuthorizationResult {
     const hasRole = userRoles.includes(requiredRole);
 
     return {
@@ -146,7 +146,7 @@ export class AuthorizationService {
     _user: User,
     userRoles: string[],
     requiredRoles: string[]
-  ): AuthorizationResult {
+  ): IAuthorizationResult {
     const hasAnyRole = requiredRoles.some(role => userRoles.includes(role));
 
     return {

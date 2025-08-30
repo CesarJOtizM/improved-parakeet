@@ -1,6 +1,7 @@
 import { LoginUseCase } from '@application/authUseCases/loginUseCase';
 import { LogoutUseCase } from '@application/authUseCases/logoutUseCase';
 import { RefreshTokenUseCase } from '@application/authUseCases/refreshTokenUseCase';
+import { RegisterUserUseCase } from '@application/authUseCases/registerUserUseCase';
 import authConfig from '@auth/config/auth.config';
 import { AuthenticationService } from '@auth/domain/services/authenticationService';
 import { JwtService } from '@auth/domain/services/jwtService';
@@ -11,8 +12,14 @@ import { PermissionsGuard } from '@auth/security/guards/permissionsGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
 import { JwtStrategy } from '@auth/security/strategies/jwtStrategy';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { SessionRepository, UserRepository } from '@infrastructure/database/repositories';
-import { AuthController } from '@interface/http/routes/authController';
+import {
+  OrganizationRepository,
+  SessionRepository,
+  UserRepository,
+} from '@infrastructure/database/repositories';
+import { EmailService } from '@infrastructure/externalServices';
+import { AuthController } from '@interface/http/routes/auth.controller';
+import { RegisterController } from '@interface/http/routes/register.controller';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -53,7 +60,7 @@ import { PassportModule } from '@nestjs/passport';
     }),
     ConfigModule.forFeature(authConfig),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, RegisterController],
   providers: [
     // Domain services
     AuthenticationService,
@@ -73,9 +80,11 @@ import { PassportModule } from '@nestjs/passport';
     LoginUseCase,
     LogoutUseCase,
     RefreshTokenUseCase,
+    RegisterUserUseCase,
 
     // Infrastructure services
     PrismaService,
+    EmailService,
 
     // Repositories
     {
@@ -85,6 +94,10 @@ import { PassportModule } from '@nestjs/passport';
     {
       provide: 'SessionRepository',
       useClass: SessionRepository,
+    },
+    {
+      provide: 'OrganizationRepository',
+      useClass: OrganizationRepository,
     },
   ],
   exports: [

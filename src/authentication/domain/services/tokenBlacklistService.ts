@@ -1,7 +1,7 @@
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
-export interface BlacklistedToken {
+export interface IBlacklistedToken {
   tokenId: string;
   userId: string;
   orgId: string;
@@ -26,10 +26,10 @@ export class TokenBlacklistService {
     userId: string,
     orgId: string,
     expiresAt: Date,
-    reason: BlacklistedToken['reason'] = 'LOGOUT'
+    reason: IBlacklistedToken['reason'] = 'LOGOUT'
   ): Promise<void> {
     try {
-      const blacklistedToken: BlacklistedToken = {
+      const blacklistedToken: IBlacklistedToken = {
         tokenId,
         userId,
         orgId,
@@ -77,7 +77,7 @@ export class TokenBlacklistService {
   /**
    * Obtiene información de un token blacklisted
    */
-  async getBlacklistedToken(tokenId: string): Promise<BlacklistedToken | null> {
+  async getBlacklistedToken(tokenId: string): Promise<IBlacklistedToken | null> {
     try {
       const blacklistedTokenData = await this.cacheManager.get<string>(
         `${this.BLACKLIST_PREFIX}${tokenId}`
@@ -85,7 +85,7 @@ export class TokenBlacklistService {
       if (!blacklistedTokenData) {
         return null;
       }
-      return JSON.parse(blacklistedTokenData) as BlacklistedToken;
+      return JSON.parse(blacklistedTokenData) as IBlacklistedToken;
     } catch (error) {
       this.logger.error(`Error getting blacklisted token ${tokenId}:`, error);
       return null;
@@ -98,7 +98,7 @@ export class TokenBlacklistService {
   async blacklistAllUserTokens(
     userId: string,
     orgId: string,
-    reason: BlacklistedToken['reason'] = 'SECURITY'
+    reason: IBlacklistedToken['reason'] = 'SECURITY'
   ): Promise<number> {
     try {
       const userTokens = await this.getUserTokensList(userId);

@@ -1,11 +1,11 @@
 /* eslint-disable no-console */
 import { PrismaClient } from '@infrastructure/database/generated/prisma';
-import { InventorySeedResult, Product, Warehouse } from '@shared/types/database.types';
+import { IInventorySeedResult, IProduct, IWarehouse } from '@shared/types/database.types';
 
 export class InventorySeed {
   constructor(private prisma: PrismaClient) {}
 
-  async seed(organizationId: string): Promise<InventorySeedResult> {
+  async seed(organizationId: string): Promise<IInventorySeedResult> {
     console.log('🌱 Sembrando dominio de inventario...');
 
     // Crear bodegas
@@ -33,7 +33,7 @@ export class InventorySeed {
     return { warehouses, products };
   }
 
-  private async createWarehouses(organizationId: string): Promise<Warehouse[]> {
+  private async createWarehouses(organizationId: string): Promise<IWarehouse[]> {
     const warehousesData = [
       {
         code: 'BODEGA-001',
@@ -74,7 +74,7 @@ export class InventorySeed {
     return warehouses;
   }
 
-  private async createProducts(organizationId: string): Promise<Product[]> {
+  private async createProducts(organizationId: string): Promise<IProduct[]> {
     const productsData = [
       {
         sku: 'PROD-001',
@@ -173,8 +173,8 @@ export class InventorySeed {
 
   private async createInitialStock(
     organizationId: string,
-    products: Product[],
-    warehouses: Warehouse[]
+    products: IProduct[],
+    warehouses: IWarehouse[]
   ): Promise<void> {
     const stockData = [
       // Bodega Principal
@@ -264,8 +264,8 @@ export class InventorySeed {
 
   private async createSampleMovements(
     organizationId: string,
-    products: Product[],
-    _warehouses: Warehouse[]
+    products: IProduct[],
+    _warehouses: IWarehouse[]
   ): Promise<void> {
     // Movimiento de entrada inicial
     const initialMovement = await this.prisma.movement.create({

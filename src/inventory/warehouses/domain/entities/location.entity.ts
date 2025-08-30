@@ -1,6 +1,6 @@
 import { Entity } from '@shared/domain/base/entity.base';
 
-export interface LocationProps {
+export interface ILocationProps {
   code: string;
   name: string;
   warehouseId: string;
@@ -8,20 +8,20 @@ export interface LocationProps {
   isActive: boolean;
 }
 
-export class Location extends Entity<LocationProps> {
-  private constructor(props: LocationProps, id?: string, orgId?: string) {
+export class Location extends Entity<ILocationProps> {
+  private constructor(props: ILocationProps, id?: string, orgId?: string) {
     super(props, id, orgId);
   }
 
-  public static create(props: LocationProps, orgId: string): Location {
+  public static create(props: ILocationProps, orgId: string): Location {
     return new Location(props, undefined, orgId);
   }
 
-  public static reconstitute(props: LocationProps, id: string, orgId: string): Location {
+  public static reconstitute(props: ILocationProps, id: string, orgId: string): Location {
     return new Location(props, id, orgId);
   }
 
-  public update(props: Partial<LocationProps>): void {
+  public update(props: Partial<ILocationProps>): void {
     if (props.code !== undefined) this.props.code = props.code;
     if (props.name !== undefined) this.props.name = props.name;
     if (props.isDefault !== undefined) this.props.isDefault = props.isDefault;

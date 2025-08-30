@@ -1,26 +1,26 @@
 import { Entity } from '@shared/domain/base/entity.base';
 
-export interface WarehouseProps {
+export interface IWarehouseProps {
   code: string;
   name: string;
   address?: string;
   isActive: boolean;
 }
 
-export class Warehouse extends Entity<WarehouseProps> {
-  private constructor(props: WarehouseProps, id?: string, orgId?: string) {
+export class Warehouse extends Entity<IWarehouseProps> {
+  private constructor(props: IWarehouseProps, id?: string, orgId?: string) {
     super(props, id, orgId);
   }
 
-  public static create(props: WarehouseProps, orgId: string): Warehouse {
+  public static create(props: IWarehouseProps, orgId: string): Warehouse {
     return new Warehouse(props, undefined, orgId);
   }
 
-  public static reconstitute(props: WarehouseProps, id: string, orgId: string): Warehouse {
+  public static reconstitute(props: IWarehouseProps, id: string, orgId: string): Warehouse {
     return new Warehouse(props, id, orgId);
   }
 
-  public update(props: Partial<WarehouseProps>): void {
+  public update(props: Partial<IWarehouseProps>): void {
     if (props.code !== undefined) this.props.code = props.code;
     if (props.name !== undefined) this.props.name = props.name;
     if (props.address !== undefined) this.props.address = props.address;

@@ -1,7 +1,7 @@
 import { Role } from '@auth/domain/entities/role.entity';
-import { ReadRepository, WriteRepository } from '@shared/domain/repository';
+import { IReadRepository, IWriteRepository } from '@shared/domain/repository';
 
-export interface RoleRepository extends ReadRepository<Role>, WriteRepository<Role> {
+export interface IRoleRepository extends IReadRepository<Role>, IWriteRepository<Role> {
   findByName(name: string, orgId: string): Promise<Role | null>;
   findByStatus(isActive: boolean, orgId: string): Promise<Role[]>;
   findActiveRoles(orgId: string): Promise<Role[]>;

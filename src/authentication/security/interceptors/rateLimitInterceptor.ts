@@ -1,4 +1,4 @@
-import { RateLimitConfig, RateLimitService } from '@auth/domain/services/rateLimitService';
+import { IRateLimitConfig, RateLimitService } from '@auth/domain/services/rateLimitService';
 import {
   CallHandler,
   ExecutionContext,
@@ -12,10 +12,10 @@ import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { Observable, throwError } from 'rxjs';
 
-export interface RateLimitMetadata {
+export interface IRateLimitMetadata {
   enabled: boolean;
   type: 'IP' | 'USER';
-  customConfig?: RateLimitConfig;
+  customConfig?: IRateLimitConfig;
 }
 
 @Injectable()
@@ -32,7 +32,7 @@ export class RateLimitInterceptor implements NestInterceptor {
     const handler = context.getHandler();
 
     // Verificar si el rate limiting está habilitado para este endpoint
-    const rateLimitMetadata = this.reflector.get<RateLimitMetadata>('rateLimit', handler);
+    const rateLimitMetadata = this.reflector.get<IRateLimitMetadata>('rateLimit', handler);
 
     if (!rateLimitMetadata?.enabled) {
       return next.handle();

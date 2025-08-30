@@ -1,5 +1,5 @@
 import { User } from '@auth/domain/entities/user.entity';
-import { UserRepository as UserRepositoryInterface } from '@auth/domain/repositories/userRepository.interface';
+import { IUserRepository as UserRepositoryInterface } from '@auth/domain/repositories/userRepository.interface';
 import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { Password } from '@auth/domain/valueObjects/password.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';

@@ -1,2 +1,3 @@
 // Entities
-export * from './entities/organization.entity';
+export * from './entities';
+export * from './repositories';

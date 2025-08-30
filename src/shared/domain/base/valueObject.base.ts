@@ -1,8 +1,8 @@
-export interface ValueObjectProps {
+export interface IValueObjectProps {
   value: unknown;
 }
 
-export abstract class ValueObject<T extends ValueObjectProps> {
+export abstract class ValueObject<T extends IValueObjectProps> {
   protected readonly props: T;
 
   constructor(props: T) {

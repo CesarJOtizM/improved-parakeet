@@ -1,10 +1,10 @@
 import { Request } from 'express';
 
-export interface AuthenticatedRequest extends Request {
-  user: AuthenticatedUser;
+export interface IAuthenticatedRequest extends Request {
+  user: IAuthenticatedUser;
 }
 
-export interface AuthenticatedUser {
+export interface IAuthenticatedUser {
   id: string;
   orgId: string;
   email: string;
@@ -14,7 +14,7 @@ export interface AuthenticatedUser {
   jti: string;
 }
 
-export interface RateLimitHeaders {
+export interface IRateLimitHeaders {
   'X-RateLimit-Limit': string;
   'X-RateLimit-Remaining': string;
   'X-RateLimit-Reset': string;
@@ -22,7 +22,7 @@ export interface RateLimitHeaders {
   'X-RateLimit-Block-Expires'?: string;
 }
 
-export interface ErrorResponse {
+export interface IErrorResponse {
   message: string;
   error: string;
   statusCode: number;
@@ -30,7 +30,7 @@ export interface ErrorResponse {
   path: string;
 }
 
-export interface ValidationErrorResponse extends ErrorResponse {
+export interface IValidationErrorResponse extends IErrorResponse {
   errors: Array<{
     field: string;
     message: string;

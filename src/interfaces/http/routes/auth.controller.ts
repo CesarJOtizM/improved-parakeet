@@ -19,11 +19,11 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrgId } from '@shared/decorators/orgId.decorator';
 
-import type { LoginRequest, LoginResponse } from '@application/authUseCases/loginUseCase';
-import type { LogoutRequest, LogoutResponse } from '@application/authUseCases/logoutUseCase';
+import type { ILoginRequest, ILoginResponse } from '@application/authUseCases/loginUseCase';
+import type { ILogoutRequest, ILogoutResponse } from '@application/authUseCases/logoutUseCase';
 import type {
-  RefreshTokenRequest,
-  RefreshTokenResponse,
+  IRefreshTokenRequest,
+  IRefreshTokenResponse,
 } from '@application/authUseCases/refreshTokenUseCase';
 import type { Request } from 'express';
 
@@ -80,14 +80,14 @@ export class AuthController {
     description: 'Rate limit exceeded',
   })
   async login(
-    @Body() loginRequest: LoginRequest,
+    @Body() loginRequest: ILoginRequest,
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
     @OrgId() orgId: string
-  ): Promise<LoginResponse> {
+  ): Promise<ILoginResponse> {
     this.logger.log(`Login attempt from IP: ${ipAddress} for org: ${orgId}`);
 
-    const request: LoginRequest = {
+    const request: ILoginRequest = {
       ...loginRequest,
       orgId,
       ipAddress,
@@ -122,17 +122,17 @@ export class AuthController {
     description: 'Invalid or expired token',
   })
   async logout(
-    @Body() logoutRequest: LogoutRequest,
+    @Body() logoutRequest: ILogoutRequest,
     @Req() req: Request,
     @Ip() ipAddress: string
-  ): Promise<LogoutResponse> {
+  ): Promise<ILogoutResponse> {
     if (!req.user) {
       throw new UnauthorizedException('User not authenticated');
     }
 
     this.logger.log(`Logout request for user: ${req.user.id}`);
 
-    const request: LogoutRequest = {
+    const request: ILogoutRequest = {
       ...logoutRequest,
       userId: req.user.id,
       orgId: req.user.orgId,
@@ -183,13 +183,13 @@ export class AuthController {
     description: 'Rate limit exceeded',
   })
   async refreshToken(
-    @Body() refreshRequest: RefreshTokenRequest,
+    @Body() refreshRequest: IRefreshTokenRequest,
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string
-  ): Promise<RefreshTokenResponse> {
+  ): Promise<IRefreshTokenResponse> {
     this.logger.log(`Token refresh attempt from IP: ${ipAddress}`);
 
-    const request: RefreshTokenRequest = {
+    const request: IRefreshTokenRequest = {
       ...refreshRequest,
       ipAddress,
       userAgent,
@@ -222,14 +222,14 @@ export class AuthController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Invalid or expired token',
   })
-  async logoutAllSessions(@Req() req: Request, @Ip() ipAddress: string): Promise<LogoutResponse> {
+  async logoutAllSessions(@Req() req: Request, @Ip() ipAddress: string): Promise<ILogoutResponse> {
     if (!req.user) {
       throw new UnauthorizedException('User not authenticated');
     }
 
     this.logger.log(`Logout all sessions request for user: ${req.user.id}`);
 
-    const request: LogoutRequest = {
+    const request: ILogoutRequest = {
       accessToken: req.headers.authorization?.replace('Bearer ', '') || '',
       userId: req.user.id,
       orgId: req.user.orgId,

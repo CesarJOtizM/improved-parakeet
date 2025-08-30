@@ -1,11 +1,11 @@
-export interface ApiResponseSuccess<T = unknown> {
+export interface IApiResponseSuccess<T = unknown> {
   success: true;
   message: string;
   data: T;
   timestamp: string;
 }
 
-export interface ApiResponseError {
+export interface IApiResponseError {
   success: false;
   message: string;
   error: {
@@ -16,9 +16,9 @@ export interface ApiResponseError {
   };
 }
 
-export type ApiResponse<T = unknown> = ApiResponseSuccess<T> | ApiResponseError;
+export type IApiResponse<T = unknown> = IApiResponseSuccess<T> | IApiResponseError;
 
-export interface PaginationMeta {
+export interface IPaginationMeta {
   page: number;
   limit: number;
   total: number;
@@ -27,6 +27,6 @@ export interface PaginationMeta {
   hasPrev: boolean;
 }
 
-export interface PaginatedResponse<T> extends ApiResponseSuccess<T[]> {
-  pagination: PaginationMeta;
+export interface IPaginatedResponse<T> extends IApiResponseSuccess<T[]> {
+  pagination: IPaginationMeta;
 }

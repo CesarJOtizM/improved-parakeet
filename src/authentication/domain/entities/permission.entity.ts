@@ -1,26 +1,26 @@
 import { Entity } from '@shared/domain/base/entity.base';
 
-export interface PermissionProps {
+export interface IPermissionProps {
   name: string;
   description?: string;
   module: string;
   action: string;
 }
 
-export class Permission extends Entity<PermissionProps> {
-  private constructor(props: PermissionProps, id?: string, orgId?: string) {
+export class Permission extends Entity<IPermissionProps> {
+  private constructor(props: IPermissionProps, id?: string, orgId?: string) {
     super(props, id, orgId);
   }
 
-  public static create(props: PermissionProps, orgId: string): Permission {
+  public static create(props: IPermissionProps, orgId: string): Permission {
     return new Permission(props, undefined, orgId);
   }
 
-  public static reconstitute(props: PermissionProps, id: string, orgId: string): Permission {
+  public static reconstitute(props: IPermissionProps, id: string, orgId: string): Permission {
     return new Permission(props, id, orgId);
   }
 
-  public update(props: Partial<PermissionProps>): void {
+  public update(props: Partial<IPermissionProps>): void {
     if (props.name !== undefined) this.props.name = props.name;
     if (props.description !== undefined) this.props.description = props.description;
     if (props.module !== undefined) this.props.module = props.module;
