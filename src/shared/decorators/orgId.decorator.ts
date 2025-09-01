@@ -3,7 +3,6 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 export const OrgId = createParamDecorator((_data: unknown, ctx: ExecutionContext): string => {
   const request = ctx.switchToHttp().getRequest();
 
-  // Intentar obtener orgId del header
   const orgIdFromHeader = request.headers['x-organization-id'];
   if (orgIdFromHeader) {
     return orgIdFromHeader;

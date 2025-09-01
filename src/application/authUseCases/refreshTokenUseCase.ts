@@ -1,4 +1,4 @@
-import { JwtService } from '@auth/domain/services/jwtService';
+import { IJwtPayloadWithExp, JwtService } from '@auth/domain/services/jwtService';
 import { RateLimitService } from '@auth/domain/services/rateLimitService';
 import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
 import {
@@ -58,7 +58,7 @@ export class RefreshTokenUseCase {
       }
 
       // Verificar y decodificar refresh token
-      let refreshTokenPayload;
+      let refreshTokenPayload: IJwtPayloadWithExp;
       try {
         refreshTokenPayload = await this.jwtService.verifyToken(request.refreshToken);
       } catch (_error) {

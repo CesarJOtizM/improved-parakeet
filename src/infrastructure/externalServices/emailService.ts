@@ -141,4 +141,34 @@ export class EmailService {
 
     return this.sendEmail(request);
   }
+
+  /**
+   * Sends password reset OTP email
+   */
+  async sendPasswordResetOtpEmail(
+    email: string,
+    firstName: string,
+    lastName: string,
+    otpCode: string,
+    orgId: string,
+    expiryMinutes: number = 15
+  ): Promise<IEmailResponse> {
+    const request: IEmailRequest = {
+      to: email,
+      subject: 'Password Reset Code - Inventory System',
+      body: `Hello ${firstName} ${lastName}, you have requested a password reset. Your verification code is: ${otpCode}`,
+      template: 'password-reset-otp',
+      variables: {
+        firstName,
+        lastName,
+        otpCode,
+        expiryMinutes,
+        resetUrl: `https://app.inventory.com/reset-password?email=${encodeURIComponent(email)}`,
+        supportEmail: 'support@inventory.com',
+      },
+      orgId,
+    };
+
+    return this.sendEmail(request);
+  }
 }

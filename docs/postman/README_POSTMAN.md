@@ -2,14 +2,64 @@
 
 Esta colección de Postman contiene todos los endpoints disponibles del Sistema de Inventario Multi-Tenant con arquitectura DDD y Hexagonal.
 
+## 🔧 Configuración de Variables
+
+### Variables de Entorno Requeridas
+
+La colección utiliza las siguientes variables que debes configurar:
+
+- **`baseUrl`**: URL base de la API (ej: `http://localhost:3000`)
+- **`accessToken`**: Token JWT de acceso (se obtiene al hacer login)
+- **`refreshToken`**: Token JWT de refresco (se obtiene al hacer login)
+- **`organizationId`**: ID de la organización (ej: `dev-org`)
+- **`userAgent`**: User-Agent del cliente (ej: `PostmanRuntime/7.32.3`)
+- **`requestId`**: ID único para correlación de requests (opcional)
+
+### Headers Requeridos
+
+#### Headers Obligatorios
+
+- **`Content-Type`**: `application/json` (para requests con body)
+- **`Authorization`**: `Bearer {{accessToken}}` (para endpoints protegidos)
+- **`X-Organization-ID`**: ID de la organización (ej: `dev-org`)
+
+#### Headers Recomendados
+
+- **`User-Agent`**: Identificador del cliente (ej: `PostmanRuntime/7.32.3`)
+- **`Accept`**: `application/json` (tipo de respuesta esperada)
+- **`Accept-Language`**: `es-ES,es;q=0.9,en;q=0.8` (idioma preferido)
+
+#### Headers Opcionales
+
+- **`X-Request-ID`**: ID único para correlación de requests
+- **`X-Forwarded-For`**: IP del cliente (cuando se usa proxy)
+
+### Cuándo Usar Cada Header
+
+- **`X-Organization-ID`**: Requerido en endpoints de autenticación, registro, recuperación de contraseña y todos los endpoints de inventario
+- **`Authorization`**: Requerido en todos los endpoints protegidos (logout, refresh, inventario, etc.)
+- **`User-Agent`**: Recomendado en todos los endpoints para tracking de sesiones y auditoría
+- **`Accept`**: Recomendado en todos los endpoints para especificar el tipo de respuesta
+- **`Accept-Language`**: Recomendado para internacionalización
+
 ## 📋 Contenido de la Colección
 
-### 🔐 Authentication
+### 🔐 Authenticationsudo lsof -i :3000
 
 - **POST** `/auth/login` - Iniciar sesión de usuario
 - **POST** `/auth/logout` - Cerrar sesión del usuario
 - **POST** `/auth/refresh` - Refrescar token de acceso
 - **POST** `/auth/logout-all` - Cerrar todas las sesiones activas
+
+### 👤 User Registration
+
+- **POST** `/register` - Registrar nuevo usuario
+
+### 🔑 Password Reset
+
+- **POST** `/password-reset/request` - Solicitar recuperación de contraseña
+- **POST** `/password-reset/verify-otp` - Verificar código OTP
+- **POST** `/password-reset/reset` - Restablecer contraseña
 
 ### 🏥 Health Check
 

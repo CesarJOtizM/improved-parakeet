@@ -138,6 +138,31 @@ model Session {
   @@map("sessions")
 }
 
+// OTP (One-Time Password) for password reset and account activation
+model Otp {
+  id         String   @id @default(cuid())
+  email      String
+  code       String
+  type       String   // PASSWORD_RESET, ACCOUNT_ACTIVATION, TWO_FACTOR
+  expiresAt  DateTime
+  isUsed     Boolean  @default(false)
+  attempts   Int      @default(0)
+  maxAttempts Int     @default(3)
+  ipAddress  String?
+  userAgent  String?
+  orgId      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Indexes for performance
+  @@index([email, type, orgId])
+  @@index([expiresAt])
+  @@index([isUsed])
+  @@index([orgId])
+  
+  @@map("otp")
+}
+
 // Products
 model Product {
   id          String   @id @default(cuid())

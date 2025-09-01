@@ -9,8 +9,11 @@ export interface IJwtPayload {
   roles: string[];
   permissions: string[];
   iat: number;
-  exp: number;
   jti: string; // unique token id
+}
+
+export interface IJwtPayloadWithExp extends IJwtPayload {
+  exp: number;
 }
 
 export interface ITokenPair {
@@ -47,7 +50,6 @@ export class JwtService {
       roles,
       permissions,
       iat: Math.floor(now.getTime() / 1000),
-      exp: Math.floor(accessTokenExpiresAt.getTime() / 1000),
       jti: this.generateTokenId(),
     };
 
@@ -59,12 +61,15 @@ export class JwtService {
       roles,
       permissions,
       iat: Math.floor(now.getTime() / 1000),
-      exp: Math.floor(refreshTokenExpiresAt.getTime() / 1000),
       jti: this.generateTokenId(),
     };
 
-    const accessToken = await this.nestJwtService.signAsync(accessTokenPayload);
-    const refreshToken = await this.nestJwtService.signAsync(refreshTokenPayload);
+    const accessToken = await this.nestJwtService.signAsync(accessTokenPayload, {
+      expiresIn: '15m',
+    });
+    const refreshToken = await this.nestJwtService.signAsync(refreshTokenPayload, {
+      expiresIn: '7d',
+    });
 
     return {
       accessToken,
@@ -97,11 +102,12 @@ export class JwtService {
       roles,
       permissions,
       iat: Math.floor(now.getTime() / 1000),
-      exp: Math.floor(accessTokenExpiresAt.getTime() / 1000),
       jti: this.generateTokenId(),
     };
 
-    const accessToken = await this.nestJwtService.signAsync(accessTokenPayload);
+    const accessToken = await this.nestJwtService.signAsync(accessTokenPayload, {
+      expiresIn: '15m',
+    });
 
     return {
       accessToken,
@@ -112,9 +118,9 @@ export class JwtService {
   /**
    * Verifica y decodifica un token JWT
    */
-  async verifyToken(token: string): Promise<IJwtPayload> {
+  async verifyToken(token: string): Promise<IJwtPayloadWithExp> {
     try {
-      const payload = await this.nestJwtService.verifyAsync<IJwtPayload>(token);
+      const payload = await this.nestJwtService.verifyAsync<IJwtPayloadWithExp>(token);
       return payload;
     } catch (error) {
       throw new Error(
@@ -126,9 +132,9 @@ export class JwtService {
   /**
    * Decodifica un token JWT sin verificar la firma (útil para debugging)
    */
-  decodeToken(token: string): IJwtPayload | null {
+  decodeToken(token: string): IJwtPayloadWithExp | null {
     try {
-      return this.nestJwtService.decode(token) as IJwtPayload;
+      return this.nestJwtService.decode(token) as IJwtPayloadWithExp;
     } catch (_error) {
       return null;
     }
@@ -154,7 +160,7 @@ export class JwtService {
   /**
    * Valida si un token está próximo a expirar (útil para refresh automático)
    */
-  isTokenNearExpiration(payload: IJwtPayload, thresholdMinutes: number = 5): boolean {
+  isTokenNearExpiration(payload: IJwtPayloadWithExp, thresholdMinutes: number = 5): boolean {
     const now = Math.floor(Date.now() / 1000);
     const thresholdSeconds = thresholdMinutes * 60;
     return payload.exp - now <= thresholdSeconds;

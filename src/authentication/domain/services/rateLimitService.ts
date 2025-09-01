@@ -53,6 +53,11 @@ export class RateLimitService {
       windowMs: 60 * 1000, // 1 minuto
       blockDurationMs: 10 * 60 * 1000, // 10 minutos
     },
+    PASSWORD_RESET: {
+      maxRequests: 3,
+      windowMs: 60 * 60 * 1000, // 1 hora
+      blockDurationMs: 60 * 60 * 1000, // 1 hora
+    },
   };
 
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
@@ -149,6 +154,17 @@ export class RateLimitService {
   ): Promise<IRateLimitResult> {
     const type = isIp ? 'IP' : 'USER';
     return this.checkRateLimit(identifier, type, this.DEFAULT_CONFIGS.REFRESH_TOKEN);
+  }
+
+  /**
+   * Verifica rate limiting para recuperación de contraseña
+   */
+  async checkPasswordResetRateLimit(
+    identifier: string,
+    isIp: boolean = true
+  ): Promise<IRateLimitResult> {
+    const type = isIp ? 'IP' : 'USER';
+    return this.checkRateLimit(identifier, type, this.DEFAULT_CONFIGS.PASSWORD_RESET);
   }
 
   /**

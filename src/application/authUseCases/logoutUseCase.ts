@@ -1,4 +1,4 @@
-import { JwtService } from '@auth/domain/services/jwtService';
+import { IJwtPayloadWithExp, JwtService } from '@auth/domain/services/jwtService';
 import { RateLimitService } from '@auth/domain/services/rateLimitService';
 import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
 import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
@@ -48,7 +48,9 @@ export class LogoutUseCase {
 
       try {
         // Verificar y decodificar access token
-        const accessTokenPayload = await this.jwtService.verifyToken(request.accessToken);
+        const accessTokenPayload: IJwtPayloadWithExp = await this.jwtService.verifyToken(
+          request.accessToken
+        );
 
         // Verificar que el token pertenezca al usuario
         if (
@@ -71,7 +73,9 @@ export class LogoutUseCase {
         // Blacklist refresh token si se proporciona
         if (request.refreshToken) {
           try {
-            const refreshTokenPayload = await this.jwtService.verifyToken(request.refreshToken);
+            const refreshTokenPayload: IJwtPayloadWithExp = await this.jwtService.verifyToken(
+              request.refreshToken
+            );
 
             if (
               refreshTokenPayload.sub === request.userId &&

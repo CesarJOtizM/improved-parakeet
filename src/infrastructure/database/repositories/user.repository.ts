@@ -40,7 +40,7 @@ export class UserRepository implements UserRepositoryInterface {
         {
           email: Email.create(userData.email),
           username: userData.username,
-          passwordHash: Password.create(userData.passwordHash),
+          passwordHash: Password.createHashed(userData.passwordHash),
           firstName: userData.firstName,
           lastName: userData.lastName,
           status: UserStatus.create(userData.isActive ? 'ACTIVE' : 'INACTIVE'),
@@ -92,7 +92,7 @@ export class UserRepository implements UserRepositoryInterface {
         {
           email: Email.create(userData.email),
           username: userData.username,
-          passwordHash: Password.create(userData.passwordHash),
+          passwordHash: Password.createHashed(userData.passwordHash),
           firstName: userData.firstName,
           lastName: userData.lastName,
           status: UserStatus.create(userData.isActive ? 'ACTIVE' : 'INACTIVE'),
@@ -144,7 +144,7 @@ export class UserRepository implements UserRepositoryInterface {
         {
           email: Email.create(userData.email),
           username: userData.username,
-          passwordHash: Password.create(userData.passwordHash),
+          passwordHash: Password.createHashed(userData.passwordHash),
           firstName: userData.firstName,
           lastName: userData.lastName,
           status: UserStatus.create(userData.isActive ? 'ACTIVE' : 'INACTIVE'),
@@ -196,7 +196,7 @@ export class UserRepository implements UserRepositoryInterface {
           {
             email: Email.create(userData.email),
             username: userData.username,
-            passwordHash: Password.create(userData.passwordHash),
+            passwordHash: Password.createHashed(userData.passwordHash),
             firstName: userData.firstName,
             lastName: userData.lastName,
             status: UserStatus.create(userData.isActive ? 'ACTIVE' : 'INACTIVE'),
@@ -256,7 +256,7 @@ export class UserRepository implements UserRepositoryInterface {
           {
             email: Email.create(userData.email),
             username: userData.username,
-            passwordHash: Password.create(userData.passwordHash),
+            passwordHash: Password.createHashed(userData.passwordHash),
             firstName: userData.firstName,
             lastName: userData.lastName,
             status: UserStatus.create(userData.isActive ? 'ACTIVE' : 'INACTIVE'),
@@ -370,7 +370,7 @@ export class UserRepository implements UserRepositoryInterface {
           {
             email: Email.create(userData.email),
             username: userData.username,
-            passwordHash: Password.create(userData.passwordHash),
+            passwordHash: Password.createHashed(userData.passwordHash),
             firstName: userData.firstName,
             lastName: userData.lastName,
             status: UserStatus.create(userData.isActive ? 'ACTIVE' : 'INACTIVE'),
@@ -422,7 +422,7 @@ export class UserRepository implements UserRepositoryInterface {
           {
             email: Email.create(updatedUser.email),
             username: updatedUser.username,
-            passwordHash: Password.create(updatedUser.passwordHash),
+            passwordHash: Password.createHashed(updatedUser.passwordHash),
             firstName: updatedUser.firstName,
             lastName: updatedUser.lastName,
             status: UserStatus.create(updatedUser.isActive ? 'ACTIVE' : 'INACTIVE'),
@@ -445,7 +445,7 @@ export class UserRepository implements UserRepositoryInterface {
           {
             email: Email.create(newUser.email),
             username: newUser.username,
-            passwordHash: Password.create(newUser.passwordHash),
+            passwordHash: Password.createHashed(newUser.passwordHash),
             firstName: newUser.firstName,
             lastName: newUser.lastName,
             status: UserStatus.create(newUser.isActive ? 'ACTIVE' : 'INACTIVE'),

@@ -355,10 +355,10 @@ export class AuthSeed {
 
   private async createAdminUser(organizationId: string, adminRoleId: string): Promise<IUser> {
     const adminUser = await this.prisma.user.upsert({
-      where: { email: 'admin@demo.com' },
+      where: { email: 'user@example.com' },
       update: {},
       create: {
-        email: 'admin@demo.com',
+        email: 'user@example.com',
         username: 'admin',
         firstName: 'Admin',
         lastName: 'Demo',

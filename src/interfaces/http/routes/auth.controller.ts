@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import {
   Body,
   Controller,
+  Get,
   Headers,
   HttpCode,
   HttpStatus,
@@ -238,5 +239,19 @@ export class AuthController {
     };
 
     return this.logoutUseCase.execute(request);
+  }
+
+  @Get('test-orgid')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Test orgId extraction',
+    description: 'Test endpoint to verify orgId extraction logic',
+  })
+  async testOrgId(@OrgId() orgId: string): Promise<{ orgId: string; defaultOrgId: string }> {
+    return {
+      orgId,
+      defaultOrgId: process.env.DEFAULT_ORG_ID || 'dev-org',
+    };
   }
 }

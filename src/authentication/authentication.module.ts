@@ -2,9 +2,13 @@ import { LoginUseCase } from '@application/authUseCases/loginUseCase';
 import { LogoutUseCase } from '@application/authUseCases/logoutUseCase';
 import { RefreshTokenUseCase } from '@application/authUseCases/refreshTokenUseCase';
 import { RegisterUserUseCase } from '@application/authUseCases/registerUserUseCase';
+import { RequestPasswordResetUseCase } from '@application/authUseCases/requestPasswordResetUseCase';
+import { ResetPasswordUseCase } from '@application/authUseCases/resetPasswordUseCase';
+import { VerifyOtpUseCase } from '@application/authUseCases/verifyOtpUseCase';
 import authConfig from '@auth/config/auth.config';
 import { AuthenticationService } from '@auth/domain/services/authenticationService';
 import { JwtService } from '@auth/domain/services/jwtService';
+import { OtpCleanupService } from '@auth/domain/services/otpCleanupService';
 import { RateLimitService } from '@auth/domain/services/rateLimitService';
 import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
@@ -14,11 +18,13 @@ import { JwtStrategy } from '@auth/security/strategies/jwtStrategy';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import {
   OrganizationRepository,
+  OtpRepository,
   SessionRepository,
   UserRepository,
 } from '@infrastructure/database/repositories';
 import { EmailService } from '@infrastructure/externalServices';
 import { AuthController } from '@interface/http/routes/auth.controller';
+import { PasswordResetController } from '@interface/http/routes/passwordReset.controller';
 import { RegisterController } from '@interface/http/routes/register.controller';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
@@ -35,9 +41,6 @@ import { PassportModule } from '@nestjs/passport';
         const auth = configService.get('auth');
         return {
           secret: auth?.jwt?.secret || 'your-super-secret-jwt-key-change-in-production',
-          signOptions: {
-            expiresIn: auth?.jwt?.accessTokenExpiry || '15m',
-          },
         };
       },
       inject: [ConfigService],
@@ -60,13 +63,14 @@ import { PassportModule } from '@nestjs/passport';
     }),
     ConfigModule.forFeature(authConfig),
   ],
-  controllers: [AuthController, RegisterController],
+  controllers: [AuthController, RegisterController, PasswordResetController],
   providers: [
     // Domain services
     AuthenticationService,
     JwtService,
     TokenBlacklistService,
     RateLimitService,
+    OtpCleanupService,
 
     // Security guards
     JwtAuthGuard,
@@ -81,6 +85,9 @@ import { PassportModule } from '@nestjs/passport';
     LogoutUseCase,
     RefreshTokenUseCase,
     RegisterUserUseCase,
+    RequestPasswordResetUseCase,
+    VerifyOtpUseCase,
+    ResetPasswordUseCase,
 
     // Infrastructure services
     PrismaService,
@@ -98,6 +105,10 @@ import { PassportModule } from '@nestjs/passport';
     {
       provide: 'OrganizationRepository',
       useClass: OrganizationRepository,
+    },
+    {
+      provide: 'OtpRepository',
+      useClass: OtpRepository,
     },
   ],
   exports: [

@@ -33,6 +33,16 @@
     },
     {
       "key": "organizationId",
+      "value": "dev-org",
+      "type": "string"
+    },
+    {
+      "key": "userAgent",
+      "value": "PostmanRuntime/7.32.3",
+      "type": "string"
+    },
+    {
+      "key": "requestId",
       "value": "",
       "type": "string"
     }
@@ -50,6 +60,26 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es-ES,es;q=0.9,en;q=0.8",
+                "type": "text"
               }
             ],
             "body": {
@@ -105,6 +135,21 @@
               {
                 "key": "Authorization",
                 "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es-ES,es;q=0.9,en;q=0.8",
+                "type": "text"
               }
             ],
             "body": {
@@ -156,6 +201,21 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es-ES,es;q=0.9,en;q=0.8",
+                "type": "text"
               }
             ],
             "body": {
@@ -211,6 +271,21 @@
               {
                 "key": "Authorization",
                 "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es-ES,es;q=0.9,en;q=0.8",
+                "type": "text"
               }
             ],
             "body": {
@@ -253,6 +328,296 @@
               "body": "{\n  \"success\": true,\n  \"message\": \"All sessions logged out successfully\",\n  \"blacklistedTokens\": 3\n}"
             }
           ]
+        },
+        {
+          "name": "Request Password Reset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es-ES,es;q=0.9,en;q=0.8",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/password-reset/request",
+              "host": ["{{baseUrl}}"],
+              "path": ["password-reset", "request"]
+            },
+            "description": "Request password reset by sending OTP to user email"
+          },
+          "response": [
+            {
+              "name": "Password Reset Request Successful",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/password-reset/request",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "password-reset", "request"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"If the email exists in our system, you will receive a verification code.\",\n  \"email\": \"user@example.com\",\n  \"expiresAt\": \"2024-12-20T10:15:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es-ES,es;q=0.9,en;q=0.8",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"otpCode\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/password-reset/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["password-reset", "verify-otp"]
+            },
+            "description": "Verify OTP code for password reset"
+          },
+          "response": [
+            {
+              "name": "OTP Verification Successful",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"otp\": \"123456\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/password-reset/verify",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "password-reset", "verify"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"OTP verified successfully\",\n  \"email\": \"user@example.com\",\n  \"isValid\": true,\n  \"expiresAt\": \"2024-12-20T10:15:00.000Z\",\n  \"attemptsRemaining\": 3\n}"
+            }
+          ]
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es-ES,es;q=0.9,en;q=0.8",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"otpCode\": \"123456\",\n  \"newPassword\": \"NewPassword123!\",\n  \"confirmPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/password-reset/reset",
+              "host": ["{{baseUrl}}"],
+              "path": ["password-reset", "reset"]
+            },
+            "description": "Reset password with verified OTP and new password"
+          },
+          "response": [
+            {
+              "name": "Password Reset Successful",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"NewPassword123!\",\n  \"confirmPassword\": \"NewPassword123!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/password-reset/reset",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "password-reset", "reset"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Password reset successfully\",\n  \"email\": \"user@example.com\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User Registration",
+      "description": "Endpoints para registro de nuevos usuarios",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es-ES,es;q=0.9,en;q=0.8",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"username\": \"newuser\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"organizationSlug\": \"empresa-ejemplo\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["register"]
+            },
+            "description": "Registrar un nuevo usuario en el sistema"
+          },
+          "response": [
+            {
+              "name": "User Registration Successful",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"username\": \"newuser\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"organizationSlug\": \"empresa-ejemplo\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/register",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["register"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"user\": {\n    \"id\": \"user-123\",\n    \"email\": \"newuser@example.com\",\n    \"username\": \"newuser\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"isActive\": false,\n    \"orgId\": \"org-123\",\n    \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n  },\n  \"message\": \"User registered successfully. Please contact administrator for activation.\"\n}"
+            }
+          ]
         }
       ]
     },
@@ -264,7 +629,18 @@
           "name": "Basic Health Check",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es-ES,es;q=0.9,en;q=0.8",
+                "type": "text"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/health",
               "host": ["{{baseUrl}}"],
@@ -302,7 +678,18 @@
           "name": "Detailed Health Check",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es-ES,es;q=0.9,en;q=0.8",
+                "type": "text"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/health/detailed",
               "host": ["{{baseUrl}}"],
@@ -340,7 +727,18 @@
           "name": "Full Health Check",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es-ES,es;q=0.9,en;q=0.8",
+                "type": "text"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/health/full",
               "host": ["{{baseUrl}}"],
@@ -397,7 +795,31 @@
             },
             "description": "Obtener todos los productos del inventario"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Products List Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/products",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "products"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"products\": [\n    {\n      \"id\": \"product-1\",\n      \"name\": \"Laptop Dell XPS 13\",\n      \"description\": \"Laptop ultrabook de 13 pulgadas\",\n      \"sku\": \"LAP001\",\n      \"category\": \"Electrónicos\",\n      \"price\": 1299.99,\n      \"cost\": 800.00,\n      \"isActive\": true,\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n    }\n  ],\n  \"total\": 1,\n  \"page\": 1,\n  \"limit\": 10\n}"
+            }
+          ]
         },
         {
           "name": "Products - Get by ID",
@@ -423,7 +845,31 @@
             },
             "description": "Obtener un producto específico por ID"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Product Details Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/products/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "products", ":id"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"product-1\",\n  \"name\": \"Laptop Dell XPS 13\",\n  \"description\": \"Laptop ultrabook de 13 pulgadas\",\n  \"sku\": \"LAP001\",\n  \"category\": \"Electrónicos\",\n  \"price\": 1299.99,\n  \"cost\": 800.00,\n  \"isActive\": true,\n  \"stock\": {\n    \"quantity\": 25,\n    \"warehouse\": \"Bodega Principal\"\n  },\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n  \"updatedAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
         },
         {
           "name": "Products - Create",
@@ -450,7 +896,97 @@
             },
             "description": "Crear un nuevo producto en el inventario"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Product Created Exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Producto Ejemplo\",\n  \"description\": \"Descripción del producto\",\n  \"sku\": \"SKU001\",\n  \"category\": \"Electrónicos\",\n  \"price\": 99.99,\n  \"cost\": 50.00\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/products",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "products"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"product-2\",\n  \"name\": \"Producto Ejemplo\",\n  \"description\": \"Descripción del producto\",\n  \"sku\": \"SKU001\",\n  \"category\": \"Electrónicos\",\n  \"price\": 99.99,\n  \"cost\": 50.00,\n  \"isActive\": true,\n  \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Products - Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Producto Actualizado\",\n  \"description\": \"Descripción actualizada\",\n  \"price\": 149.99,\n  \"cost\": 75.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/inventory/products/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory", "products", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "product-id",
+                  "description": "ID del producto"
+                }
+              ]
+            },
+            "description": "Actualizar un producto existente"
+          },
+          "response": [
+            {
+              "name": "Product Updated Exitoso",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Producto Actualizado\",\n  \"description\": \"Descripción actualizada\",\n  \"price\": 149.99,\n  \"cost\": 75.00\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/products/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "products", ":id"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"product-1\",\n  \"name\": \"Producto Actualizado\",\n  \"description\": \"Descripción actualizada\",\n  \"sku\": \"SKU001\",\n  \"category\": \"Electrónicos\",\n  \"price\": 149.99,\n  \"cost\": 75.00,\n  \"isActive\": true,\n  \"updatedAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
         },
         {
           "name": "Warehouses - Get All",
@@ -469,7 +1005,86 @@
             },
             "description": "Obtener todas las bodegas"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Warehouses List Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/warehouses",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "warehouses"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"warehouses\": [\n    {\n      \"id\": \"warehouse-1\",\n      \"name\": \"Bodega Principal\",\n      \"code\": \"BOD001\",\n      \"address\": \"Calle Principal 123\",\n      \"isActive\": true,\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n    }\n  ],\n  \"total\": 1\n}"
+            }
+          ]
+        },
+        {
+          "name": "Warehouses - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bodega Secundaria\",\n  \"code\": \"BOD002\",\n  \"address\": \"Avenida Secundaria 456\",\n  \"description\": \"Bodega para productos de bajo volumen\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/inventory/warehouses",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory", "warehouses"]
+            },
+            "description": "Crear una nueva bodega"
+          },
+          "response": [
+            {
+              "name": "Warehouse Created Exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Bodega Secundaria\",\n  \"code\": \"BOD002\",\n  \"address\": \"Avenida Secundaria 456\",\n  \"description\": \"Bodega para productos de bajo volumen\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/warehouses",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "warehouses"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"warehouse-2\",\n  \"name\": \"Bodega Secundaria\",\n  \"code\": \"BOD002\",\n  \"address\": \"Avenida Secundaria 456\",\n  \"description\": \"Bodega para productos de bajo volumen\",\n  \"isActive\": true,\n  \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
         },
         {
           "name": "Stock - Get Current Stock",
@@ -488,7 +1103,74 @@
             },
             "description": "Obtener el stock actual de todos los productos"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Stock List Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/stock",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "stock"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"stock\": [\n    {\n      \"productId\": \"product-1\",\n      \"productName\": \"Laptop Dell XPS 13\",\n      \"sku\": \"LAP001\",\n      \"warehouseId\": \"warehouse-1\",\n      \"warehouseName\": \"Bodega Principal\",\n      \"quantity\": 25,\n      \"unitCost\": 800.00,\n      \"totalValue\": 20000.00,\n      \"lastUpdated\": \"2024-12-20T10:00:00.000Z\"\n    }\n  ],\n  \"total\": 1,\n  \"totalValue\": 20000.00\n}"
+            }
+          ]
+        },
+        {
+          "name": "Stock - Get Low Stock",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/inventory/stock/low",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory", "stock", "low"]
+            },
+            "description": "Obtener productos con stock bajo"
+          },
+          "response": [
+            {
+              "name": "Low Stock List Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/stock/low",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "stock", "low"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"lowStock\": [\n    {\n      \"productId\": \"product-2\",\n      \"productName\": \"Mouse Inalámbrico\",\n      \"sku\": \"MOU001\",\n      \"warehouseId\": \"warehouse-1\",\n      \"warehouseName\": \"Bodega Principal\",\n      \"quantity\": 3,\n      \"minQuantity\": 10,\n      \"status\": \"CRITICAL\",\n      \"lastUpdated\": \"2024-12-20T10:00:00.000Z\"\n    }\n  ],\n  \"total\": 1\n}"
+            }
+          ]
         },
         {
           "name": "Movements - Get All",
@@ -507,7 +1189,86 @@
             },
             "description": "Obtener todos los movimientos de inventario"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Movements List Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/movements",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "movements"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"movements\": [\n    {\n      \"id\": \"movement-1\",\n      \"type\": \"IN\",\n      \"reference\": \"PO-001\",\n      \"warehouseId\": \"warehouse-1\",\n      \"warehouseName\": \"Bodega Principal\",\n      \"status\": \"POSTED\",\n      \"totalValue\": 20000.00,\n      \"createdBy\": \"user-1\",\n      \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n    }\n  ],\n  \"total\": 1,\n  \"page\": 1,\n  \"limit\": 10\n}"
+            }
+          ]
+        },
+        {
+          "name": "Movements - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"IN\",\n  \"reference\": \"PO-002\",\n  \"warehouseId\": \"warehouse-1\",\n  \"items\": [\n    {\n      \"productId\": \"product-1\",\n      \"quantity\": 10,\n      \"unitCost\": 800.00\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/inventory/movements",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory", "movements"]
+            },
+            "description": "Crear un nuevo movimiento de inventario"
+          },
+          "response": [
+            {
+              "name": "Movement Created Exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"IN\",\n  \"reference\": \"PO-002\",\n  \"warehouseId\": \"warehouse-1\",\n  \"items\": [\n    {\n      \"productId\": \"product-1\",\n      \"quantity\": 10,\n      \"unitCost\": 800.00\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/movements",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "movements"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"movement-2\",\n  \"type\": \"IN\",\n  \"reference\": \"PO-002\",\n  \"warehouseId\": \"warehouse-1\",\n  \"status\": \"DRAFT\",\n  \"totalValue\": 8000.00,\n  \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
         },
         {
           "name": "Transfers - Get All",
@@ -526,7 +1287,31 @@
             },
             "description": "Obtener todas las transferencias entre bodegas"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Transfers List Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/inventory/transfers",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["inventory", "transfers"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"transfers\": [\n    {\n      \"id\": \"transfer-1\",\n      \"fromWarehouseId\": \"warehouse-1\",\n      \"fromWarehouseName\": \"Bodega Principal\",\n      \"toWarehouseId\": \"warehouse-2\",\n      \"toWarehouseName\": \"Bodega Secundaria\",\n      \"status\": \"IN_TRANSIT\",\n      \"totalValue\": 5000.00,\n      \"createdBy\": \"user-1\",\n      \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n    }\n  ],\n  \"total\": 1\n}"
+            }
+          ]
         }
       ]
     },
@@ -551,7 +1336,86 @@
             },
             "description": "Obtener configuración de la organización"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Organization Settings Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/organization/settings",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["organization", "settings"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"organization\": {\n    \"id\": \"org-1\",\n    \"name\": \"Empresa Ejemplo S.A.\",\n    \"slug\": \"empresa-ejemplo\",\n    \"domain\": \"empresa-ejemplo.inventory.com\",\n    \"isActive\": true,\n    \"timezone\": \"America/Santiago\",\n    \"currency\": \"CLP\",\n    \"language\": \"es\",\n    \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n  },\n  \"settings\": {\n  \t\"inventory\": {\n  \t\t\"allowNegativeStock\": false,\n  \t\t\"requireApprovalForMovements\": true,\n  \t\t\"defaultWarehouse\": \"warehouse-1\",\n  \t\t\"lowStockThreshold\": 10\n  \t},\n  \t\"notifications\": {\n  \t\t\"emailNotifications\": true,\n  \t\t\"lowStockAlerts\": true,\n  \t\t\"movementNotifications\": false\n  \t},\n  \t\"security\": {\n  \t\t\"sessionTimeout\": 3600,\n  \t\t\"maxLoginAttempts\": 5,\n  \t\t\"passwordExpiryDays\": 90\n  \t}\n  }"
+            }
+          ]
+        },
+        {
+          "name": "Organization Settings - Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"inventory\": {\n    \"allowNegativeStock\": true,\n    \"requireApprovalForMovements\": false,\n    \"lowStockThreshold\": 5\n  },\n  \"notifications\": {\n    \"emailNotifications\": true,\n    \"lowStockAlerts\": true,\n    \"movementNotifications\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/organization/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["organization", "settings"]
+            },
+            "description": "Actualizar configuración de la organización"
+          },
+          "response": [
+            {
+              "name": "Settings Updated Exitoso",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"inventory\": {\n    \"allowNegativeStock\": true,\n    \"requireApprovalForMovements\": false,\n    \"lowStockThreshold\": 5\n  },\n  \"notifications\": {\n    \"emailNotifications\": true,\n    \"lowStockAlerts\": true,\n    \"movementNotifications\": true\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/organization/settings",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["organization", "settings"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Organization settings updated successfully\",\n  \"updatedAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
         },
         {
           "name": "Branding - Get",
@@ -570,7 +1434,86 @@
             },
             "description": "Obtener información de marca de la organización"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Branding Info Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/organization/branding",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["organization", "branding"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"branding\": {\n    \"logo\": \"https://cdn.example.com/logo.png\",\n    \"favicon\": \"https://cdn.example.com/favicon.ico\",\n    \"primaryColor\": \"#2563eb\",\n    \"secondaryColor\": \"#64748b\",\n    \"companyName\": \"Empresa Ejemplo S.A.\",\n    \"tagline\": \"Soluciones de inventario inteligentes\",\n    \"contactEmail\": \"contacto@empresa-ejemplo.com\",\n    \"website\": \"https://www.empresa-ejemplo.com\"\n  },\n  \"customization\": {\n    \"enableCustomBranding\": true,\n    \"allowCustomColors\": true,\n    \"allowCustomLogo\": true\n  }"
+            }
+          ]
+        },
+        {
+          "name": "Branding - Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"primaryColor\": \"#dc2626\",\n  \"secondaryColor\": \"#1f2937\",\n  \"tagline\": \"Nueva línea de negocio\",\n  \"contactEmail\": \"nuevo@empresa-ejemplo.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/organization/branding",
+              "host": ["{{baseUrl}}"],
+              "path": ["organization", "branding"]
+            },
+            "description": "Actualizar información de marca de la organización"
+          },
+          "response": [
+            {
+              "name": "Branding Updated Exitoso",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"primaryColor\": \"#dc2626\",\n  \"secondaryColor\": \"#1f2937\",\n  \"tagline\": \"Nueva línea de negocio\",\n  \"contactEmail\": \"nuevo@empresa-ejemplo.com\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/organization/branding",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["organization", "branding"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Branding updated successfully\",\n  \"updatedAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
         },
         {
           "name": "Multi-tenancy - Get Tenant Info",
@@ -589,7 +1532,31 @@
             },
             "description": "Obtener información del tenant actual"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Tenant Info Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/organization/tenant",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["organization", "tenant"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"tenant\": {\n    \"id\": \"tenant-1\",\n    \"name\": \"Empresa Ejemplo S.A.\",\n    \"slug\": \"empresa-ejemplo\",\n    \"domain\": \"empresa-ejemplo.inventory.com\",\n    \"subdomain\": \"empresa-ejemplo\",\n    \"isActive\": true,\n    \"plan\": \"premium\",\n    \"features\": [\"multi-warehouse\", \"advanced-reports\", \"api-access\"],\n    \"limits\": {\n      \"users\": 50,\n      \"warehouses\": 10,\n      \"products\": 10000,\n      \"apiCalls\": 1000000\n    },\n    \"usage\": {\n      \"users\": 15,\n      \"warehouses\": 3,\n      \"products\": 2500,\n      \"apiCalls\": 150000\n    },\n    \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n    \"expiresAt\": \"2025-01-01T00:00:00.000Z\"\n  }\n}"
+            }
+          ]
         }
       ]
     },
@@ -613,7 +1580,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"reportType\": \"inventory-summary\",\n  \"dateRange\": {\n    \"start\": \"2024-01-01\",\n    \"end\": \"2024-12-31\"\n  },\n  \"format\": \"pdf\"\n}"
+              "raw": "{\n  \"reportType\": \"inventory-summary\",\n  \"dateRange\": {\n    \"start\": \"2024-01-01\",\n    \"end\": \"2024-12-31\"\n  },\n  \"format\": \"pdf\",\n  \"filters\": {\n    \"warehouseId\": \"warehouse-1\",\n    \"category\": \"Electrónicos\",\n    \"includeInactive\": false\n  }\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/reporting/inventory",
@@ -622,7 +1589,35 @@
             },
             "description": "Generar reporte de inventario"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Inventory Report Generated Exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reportType\": \"inventory-summary\",\n  \"dateRange\": {\n    \"start\": \"2024-01-01\",\n    \"end\": \"2024-12-31\"\n  },\n  \"format\": \"pdf\",\n  \"filters\": {\n    \"warehouseId\": \"warehouse-1\",\n    \"category\": \"Electrónicos\",\n    \"includeInactive\": false\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reporting/inventory",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reporting", "inventory"]
+                }
+              },
+              "status": "Accepted",
+              "code": 202,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"reportId\": \"report-123\",\n  \"status\": \"PROCESSING\",\n  \"message\": \"Report generation started\",\n  \"estimatedCompletion\": \"2024-12-20T10:05:00.000Z\",\n  \"downloadUrl\": \"{{baseUrl}}/reporting/export/report-123\",\n  \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
         },
         {
           "name": "Financial Reports - Generate",
@@ -640,7 +1635,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"reportType\": \"financial-summary\",\n  \"dateRange\": {\n    \"start\": \"2024-01-01\",\n    \"end\": \"2024-12-31\"\n  },\n  \"format\": \"excel\"\n}"
+              "raw": "{\n  \"reportType\": \"financial-summary\",\n  \"dateRange\": {\n    \"start\": \"2024-01-01\",\n    \"end\": \"2024-12-31\"\n  },\n  \"format\": \"excel\",\n  \"includeCharts\": true,\n  \"groupBy\": \"month\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/reporting/financial",
@@ -649,7 +1644,35 @@
             },
             "description": "Generar reporte financiero"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Financial Report Generated Exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reportType\": \"financial-summary\",\n  \"dateRange\": {\n    \"start\": \"2024-01-01\",\n    \"end\": \"2024-12-31\"\n  },\n  \"format\": \"excel\",\n  \"includeCharts\": true,\n  \"groupBy\": \"month\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reporting/financial",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reporting", "financial"]
+                }
+              },
+              "status": "Accepted",
+              "code": 202,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"reportId\": \"report-456\",\n  \"status\": \"PROCESSING\",\n  \"message\": \"Financial report generation started\",\n  \"estimatedCompletion\": \"2024-12-20T10:08:00.000Z\",\n  \"downloadUrl\": \"{{baseUrl}}/reporting/export/report-456\",\n  \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
         },
         {
           "name": "Movement Reports - Generate",
@@ -667,7 +1690,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"reportType\": \"movement-summary\",\n  \"dateRange\": {\n    \"start\": \"2024-01-01\",\n    \"end\": \"2024-12-31\"\n  },\n  \"format\": \"csv\"\n}"
+              "raw": "{\n  \"reportType\": \"movement-summary\",\n  \"dateRange\": {\n    \"start\": \"2024-01-01\",\n    \"end\": \"2024-12-31\"\n  },\n  \"format\": \"csv\",\n  \"movementTypes\": [\"IN\", \"OUT\", \"TRANSFER\"],\n  \"warehouseId\": \"warehouse-1\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/reporting/movements",
@@ -676,7 +1699,85 @@
             },
             "description": "Generar reporte de movimientos"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Movement Report Generated Exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reportType\": \"movement-summary\",\n  \"dateRange\": {\n    \"start\": \"2024-01-01\",\n    \"end\": \"2024-12-31\"\n  },\n  \"format\": \"csv\",\n  \"movementTypes\": [\"IN\", \"OUT\", \"TRANSFER\"],\n  \"warehouseId\": \"warehouse-1\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reporting/movements",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reporting", "movements"]
+                }
+              },
+              "status": "Accepted",
+              "code": 202,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"reportId\": \"report-789\",\n  \"status\": \"PROCESSING\",\n  \"message\": \"Movement report generation started\",\n  \"estimatedCompletion\": \"2024-12-20T10:03:00.000Z\",\n  \"downloadUrl\": \"{{baseUrl}}/reporting/export/report-789\",\n  \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Reports - Get Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reporting/status/:reportId",
+              "host": ["{{baseUrl}}"],
+              "path": ["reporting", "status", ":reportId"],
+              "variable": [
+                {
+                  "key": "reportId",
+                  "value": "report-id",
+                  "description": "ID del reporte"
+                }
+              ]
+            },
+            "description": "Obtener estado de un reporte en proceso"
+          },
+          "response": [
+            {
+              "name": "Report Status Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/reporting/status/:reportId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reporting", "status", ":reportId"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"reportId\": \"report-123\",\n  \"status\": \"COMPLETED\",\n  \"progress\": 100,\n  \"message\": \"Report generation completed\",\n  \"downloadUrl\": \"{{baseUrl}}/reporting/export/report-123\",\n  \"fileSize\": \"2.5MB\",\n  \"completedAt\": \"2024-12-20T10:05:00.000Z\"\n}"
+            }
+          ]
         },
         {
           "name": "Export - Download Report",
@@ -702,7 +1803,411 @@
             },
             "description": "Descargar reporte generado"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Report Download Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/reporting/export/:reportId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reporting", "export", ":reportId"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/pdf"
+                },
+                {
+                  "key": "Content-Disposition",
+                  "value": "attachment; filename=\"inventory-report-2024.pdf\""
+                }
+              ],
+              "cookie": [],
+              "body": "Binary file content (PDF/Excel/CSV)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "description": "Endpoints para gestión de usuarios y roles",
+      "item": [
+        {
+          "name": "Users - Get All",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Obtener todos los usuarios de la organización"
+          },
+          "response": [
+            {
+              "name": "Users List Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"users\": [\n    {\n      \"id\": \"user-1\",\n      \"email\": \"user1@example.com\",\n      \"username\": \"user1\",\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\",\n      \"isActive\": true,\n      \"roles\": [\"ADMIN\"],\n      \"lastLoginAt\": \"2024-12-20T10:00:00.000Z\",\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n    }\n  ],\n  \"total\": 1,\n  \"page\": 1,\n  \"limit\": 10\n}"
+            }
+          ]
+        },
+        {
+          "name": "Users - Get by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "user-id",
+                  "description": "ID del usuario"
+                }
+              ]
+            },
+            "description": "Obtener un usuario específico por ID"
+          },
+          "response": [
+            {
+              "name": "User Details Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", ":id"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"user-1\",\n  \"email\": \"user1@example.com\",\n  \"username\": \"user1\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"isActive\": true,\n  \"roles\": [\"ADMIN\"],\n  \"permissions\": [\"USERS:CREATE\", \"USERS:READ\", \"USERS:UPDATE\"],\n  \"lastLoginAt\": \"2024-12-20T10:00:00.000Z\",\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n  \"updatedAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Users - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"username\": \"newuser\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"password\": \"password123\",\n  \"roles\": [\"USER\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Crear un nuevo usuario en la organización"
+          },
+          "response": [
+            {
+              "name": "User Created Exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"username\": \"newuser\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"password\": \"password123\",\n  \"roles\": [\"USER\"]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/users",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"user-2\",\n  \"email\": \"newuser@example.com\",\n  \"username\": \"newuser\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"isActive\": true,\n  \"roles\": [\"USER\"],\n  \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Users - Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John Updated\",\n  \"lastName\": \"Doe Updated\",\n  \"isActive\": true,\n  \"roles\": [\"ADMIN\", \"SUPERVISOR\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "user-id",
+                  "description": "ID del usuario"
+                }
+              ]
+            },
+            "description": "Actualizar información de un usuario"
+          },
+          "response": [
+            {
+              "name": "User Updated Exitoso",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"firstName\": \"John Updated\",\n  \"lastName\": \"Doe Updated\",\n  \"isActive\": true,\n  \"roles\": [\"ADMIN\", \"SUPERVISOR\"]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", ":id"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"user-1\",\n  \"email\": \"user1@example.com\",\n  \"username\": \"user1\",\n  \"firstName\": \"John Updated\",\n  \"lastName\": \"Doe Updated\",\n  \"isActive\": true,\n  \"roles\": [\"ADMIN\", \"SUPERVISOR\"],\n  \"updatedAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Users - Change Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false,\n  \"reason\": \"User requested deactivation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/:id/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", ":id", "status"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "user-id",
+                  "description": "ID del usuario"
+                }
+              ]
+            },
+            "description": "Cambiar el estado de un usuario (activar/desactivar)"
+          },
+          "response": [
+            {
+              "name": "User Status Changed Exitoso",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"isActive\": false,\n  \"reason\": \"User requested deactivation\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id/status",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", ":id", "status"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"User status updated successfully\",\n  \"user\": {\n    \"id\": \"user-1\",\n    \"isActive\": false,\n    \"updatedAt\": \"2024-12-20T10:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Roles - Get All",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["roles"]
+            },
+            "description": "Obtener todos los roles de la organización"
+          },
+          "response": [
+            {
+              "name": "Roles List Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/roles",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["roles"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"roles\": [\n    {\n      \"id\": \"role-1\",\n      \"name\": \"ADMIN\",\n      \"description\": \"Administrador del sistema\",\n      \"isActive\": true,\n      \"permissions\": [\"USERS:CREATE\", \"USERS:READ\", \"USERS:UPDATE\", \"USERS:DELETE\"],\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n    },\n    {\n      \"id\": \"role-2\",\n      \"name\": \"USER\",\n      \"description\": \"Usuario estándar\",\n      \"isActive\": true,\n      \"permissions\": [\"USERS:READ_OWN\", \"USERS:UPDATE_OWN\"],\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n    }\n  ],\n  \"total\": 2\n}"
+            }
+          ]
+        },
+        {
+          "name": "Roles - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"SUPERVISOR\",\n  \"description\": \"Supervisor de inventario\",\n  \"permissions\": [\"PRODUCTS:CREATE\", \"PRODUCTS:READ\", \"PRODUCTS:UPDATE\", \"MOVEMENTS:CREATE\", \"MOVEMENTS:READ\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["roles"]
+            },
+            "description": "Crear un nuevo rol en la organización"
+          },
+          "response": [
+            {
+              "name": "Role Created Exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"SUPERVISOR\",\n  \"description\": \"Supervisor de inventario\",\n  \"permissions\": [\"PRODUCTS:CREATE\", \"PRODUCTS:READ\", \"PRODUCTS:UPDATE\", \"MOVEMENTS:CREATE\", \"MOVEMENTS:READ\"]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/roles",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["roles"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"role-3\",\n  \"name\": \"SUPERVISOR\",\n  \"description\": \"Supervisor de inventario\",\n  \"isActive\": true,\n  \"permissions\": [\"PRODUCTS:CREATE\", \"PRODUCTS:READ\", \"PRODUCTS:UPDATE\", \"MOVEMENTS:CREATE\", \"MOVEMENTS:READ\"],\n  \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
         }
       ]
     },
@@ -732,6 +2237,11 @@
                   "key": "type",
                   "value": "products",
                   "type": "text"
+                },
+                {
+                  "key": "options",
+                  "value": "{\"skipDuplicates\": true, \"updateExisting\": false}",
+                  "type": "text"
                 }
               ]
             },
@@ -742,7 +2252,46 @@
             },
             "description": "Importar productos masivamente desde archivo"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Products Import Started Exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": []
+                    },
+                    {
+                      "key": "type",
+                      "value": "products",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/imports/products",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["imports", "products"]
+                }
+              },
+              "status": "Accepted",
+              "code": 202,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"importId\": \"import-123\",\n  \"type\": \"products\",\n  \"status\": \"VALIDATING\",\n  \"message\": \"File uploaded successfully, validation in progress\",\n  \"fileName\": \"products-import.xlsx\",\n  \"fileSize\": \"1.2MB\",\n  \"totalRows\": 150,\n  \"estimatedCompletion\": \"2024-12-20T10:10:00.000Z\",\n  \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
         },
         {
           "name": "Import Stock",
@@ -766,6 +2315,11 @@
                   "key": "type",
                   "value": "stock",
                   "type": "text"
+                },
+                {
+                  "key": "warehouseId",
+                  "value": "warehouse-1",
+                  "type": "text"
                 }
               ]
             },
@@ -776,7 +2330,51 @@
             },
             "description": "Importar stock masivamente desde archivo"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Stock Import Started Exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": []
+                    },
+                    {
+                      "key": "type",
+                      "value": "stock",
+                      "type": "text"
+                    },
+                    {
+                      "key": "warehouseId",
+                      "value": "warehouse-1",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/imports/stock",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["imports", "stock"]
+                }
+              },
+              "status": "Accepted",
+              "code": 202,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"importId\": \"import-456\",\n  \"type\": \"stock\",\n  \"status\": \"VALIDATING\",\n  \"message\": \"Stock import validation in progress\",\n  \"fileName\": \"stock-update.xlsx\",\n  \"fileSize\": \"856KB\",\n  \"totalRows\": 75,\n  \"warehouseId\": \"warehouse-1\",\n  \"estimatedCompletion\": \"2024-12-20T10:08:00.000Z\",\n  \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n}"
+            }
+          ]
         },
         {
           "name": "Get Import Status",
@@ -802,7 +2400,85 @@
             },
             "description": "Obtener estado de una importación"
           },
-          "response": []
+          "response": [
+            {
+              "name": "Import Status Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/imports/status/:importId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["imports", "status", ":importId"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"importId\": \"import-123\",\n  \"type\": \"products\",\n  \"status\": \"COMPLETED\",\n  \"progress\": 100,\n  \"message\": \"Import completed successfully\",\n  \"summary\": {\n    \"totalRows\": 150,\n    \"processedRows\": 150,\n    \"successfulRows\": 145,\n    \"failedRows\": 5,\n    \"skippedRows\": 0\n  },\n  \"errors\": [\n    {\n      \"row\": 23,\n      \"field\": \"sku\",\n      \"message\": \"SKU already exists\",\n      \"value\": \"SKU001\"\n    },\n    {\n      \"row\": 45,\n      \"field\": \"price\",\n      \"message\": \"Invalid price format\",\n      \"value\": \"abc\"\n    }\n  ],\n  \"completedAt\": \"2024-12-20T10:10:00.000Z\",\n  \"downloadUrl\": \"{{baseUrl}}/imports/download/import-123\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Download Import Results",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/imports/download/:importId",
+              "host": ["{{baseUrl}}"],
+              "path": ["imports", "download", ":importId"],
+              "variable": [
+                {
+                  "key": "importId",
+                  "value": "import-id",
+                  "description": "ID de la importación"
+                }
+              ]
+            },
+            "description": "Descargar resultados de la importación"
+          },
+          "response": [
+            {
+              "name": "Import Results Download Exitoso",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/imports/download/:importId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["imports", "download", ":importId"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                },
+                {
+                  "key": "Content-Disposition",
+                  "value": "attachment; filename=\"import-results-import-123.xlsx\""
+                }
+              ],
+              "cookie": [],
+              "body": "Binary file content (Excel file with import results)"
+            }
+          ]
         }
       ]
     }
