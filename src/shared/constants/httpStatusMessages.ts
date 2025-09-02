@@ -49,5 +49,8 @@ export const getHttpStatusMessage = (
   key: string
 ): string => {
   const categoryMessages = HTTP_STATUS_MESSAGES[category];
+  if (!categoryMessages) {
+    return 'Message not found';
+  }
   return (categoryMessages as Record<string, string>)[key] || 'Message not found';
 };

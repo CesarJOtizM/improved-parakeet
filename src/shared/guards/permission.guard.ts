@@ -49,9 +49,12 @@ export class PermissionGuard implements CanActivate {
     const hasPermission = this.checkPermissions(requiredPermissions, userPermissions, userRoles);
 
     if (!hasPermission) {
-      throw new ForbiddenException(
-        `Permisos insuficientes. Requeridos: ${requiredPermissions.join(', ')}`
-      );
+      const permissionList =
+        typeof requiredPermissions === 'object' && 'type' in requiredPermissions
+          ? requiredPermissions.permissions.join(', ')
+          : requiredPermissions.join(', ');
+
+      throw new ForbiddenException(`Permisos insuficientes. Requeridos: ${permissionList}`);
     }
 
     return true;
