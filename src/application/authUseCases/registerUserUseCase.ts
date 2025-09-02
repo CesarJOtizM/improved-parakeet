@@ -5,6 +5,7 @@ import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
 import { EmailService } from '@infrastructure/externalServices/emailService';
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IUserRepository } from '@auth/domain/repositories';
 import type { IOrganizationRepository } from '@organization/domain/repositories';
@@ -19,18 +20,17 @@ export interface IRegisterUserRequest {
   organizationId?: string;
 }
 
-export interface IRegisterUserResponse {
-  success: boolean;
-  user: {
-    id: string;
-    email: string;
-    username: string;
-    firstName: string;
-    lastName: string;
-    status: string;
-    orgId: string;
-  };
-  message: string;
+export interface IUserData {
+  id: string;
+  email: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  status: string;
+  orgId: string;
+}
+
+export interface IRegisterUserResponse extends IApiResponseSuccess<IUserData> {
   requiresAdminActivation: boolean;
 }
 
@@ -158,7 +158,7 @@ export class RegisterUserUseCase {
 
       return {
         success: true,
-        user: {
+        data: {
           id: user.id,
           email: user.email,
           username: user.username,
@@ -169,6 +169,7 @@ export class RegisterUserUseCase {
         },
         message:
           'User registered successfully. Your account requires activation by the administrator.',
+        timestamp: new Date().toISOString(),
         requiresAdminActivation: true,
       };
     } catch (error) {
@@ -181,7 +182,7 @@ export class RegisterUserUseCase {
         email: request.email,
       });
 
-      throw new BadRequestException('Error registering user');
+      throw new BadRequestException(error instanceof Error ? error.message : 'Unknown error');
     }
   }
 }

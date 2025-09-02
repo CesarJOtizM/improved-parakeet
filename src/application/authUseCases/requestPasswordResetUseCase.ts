@@ -2,6 +2,7 @@ import { Otp } from '@auth/domain/entities/otp.entity';
 import { RateLimitService } from '@auth/domain/services/rateLimitService';
 import { EmailService } from '@infrastructure/externalServices';
 import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IOtpRepository, IUserRepository } from '@auth/domain/repositories';
 
@@ -12,12 +13,12 @@ export interface IRequestPasswordResetRequest {
   userAgent?: string;
 }
 
-export interface IRequestPasswordResetResponse {
-  success: boolean;
-  message: string;
+export interface IRequestPasswordResetData {
   email: string;
   expiresAt: Date;
 }
+
+export type IRequestPasswordResetResponse = IApiResponseSuccess<IRequestPasswordResetData>;
 
 @Injectable()
 export class RequestPasswordResetUseCase {
@@ -53,8 +54,11 @@ export class RequestPasswordResetUseCase {
         return {
           success: true,
           message: 'If the email exists in our system, you will receive a verification code.',
-          email: request.email,
-          expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+          data: {
+            email: request.email,
+            expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+          },
+          timestamp: new Date().toISOString(),
         };
       }
 
@@ -64,8 +68,11 @@ export class RequestPasswordResetUseCase {
         return {
           success: true,
           message: 'If the email exists in our system, you will receive a verification code.',
-          email: request.email,
-          expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+          data: {
+            email: request.email,
+            expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+          },
+          timestamp: new Date().toISOString(),
         };
       }
 
@@ -83,8 +90,11 @@ export class RequestPasswordResetUseCase {
           success: true,
           message:
             'A verification code has already been sent. Check your email or wait before requesting a new one.',
-          email: request.email,
-          expiresAt: validRecentOtp.expiresAt,
+          data: {
+            email: request.email,
+            expiresAt: validRecentOtp.expiresAt,
+          },
+          timestamp: new Date().toISOString(),
         };
       }
 
@@ -122,8 +132,11 @@ export class RequestPasswordResetUseCase {
       return {
         success: true,
         message: 'A verification code has been sent to your email.',
-        email: request.email,
-        expiresAt: otp.expiresAt,
+        data: {
+          email: request.email,
+          expiresAt: otp.expiresAt,
+        },
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       if (error instanceof HttpException && error.getStatus() === HttpStatus.TOO_MANY_REQUESTS) {

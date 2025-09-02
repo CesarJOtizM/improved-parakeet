@@ -23,6 +23,8 @@ export class SessionRepository implements SessionRepositoryInterface {
           token: sessionData.token,
           expiresAt: sessionData.expiresAt,
           isActive: sessionData.isActive,
+          ipAddress: sessionData.ipAddress ?? undefined,
+          userAgent: sessionData.userAgent ?? undefined,
         },
         sessionData.id,
         orgId
@@ -53,6 +55,8 @@ export class SessionRepository implements SessionRepositoryInterface {
             token: sessionData.token,
             expiresAt: sessionData.expiresAt,
             isActive: sessionData.isActive,
+            ipAddress: sessionData.ipAddress ?? undefined,
+            userAgent: sessionData.userAgent ?? undefined,
           },
           sessionData.id,
           orgId
@@ -86,6 +90,8 @@ export class SessionRepository implements SessionRepositoryInterface {
             token: sessionData.token,
             expiresAt: sessionData.expiresAt,
             isActive: sessionData.isActive,
+            ipAddress: sessionData.ipAddress ?? undefined,
+            userAgent: sessionData.userAgent ?? undefined,
           },
           sessionData.id,
           orgId
@@ -129,6 +135,8 @@ export class SessionRepository implements SessionRepositoryInterface {
           token: sessionData.token,
           expiresAt: sessionData.expiresAt,
           isActive: sessionData.isActive,
+          ipAddress: sessionData.ipAddress ?? undefined,
+          userAgent: sessionData.userAgent ?? undefined,
         },
         sessionData.id,
         orgId
@@ -147,21 +155,22 @@ export class SessionRepository implements SessionRepositoryInterface {
     try {
       const sessionData = await this.prisma.session.findFirst({
         where: { token },
+        include: { user: true },
       });
 
       if (!sessionData) return null;
 
-      // Por ahora usamos un orgId por defecto ya que el schema no incluye la relación user
-      // TODO: Agregar orgId al schema de Session o incluir la relación user
       return Session.reconstitute(
         {
           userId: sessionData.userId,
           token: sessionData.token,
           expiresAt: sessionData.expiresAt,
           isActive: sessionData.isActive,
+          ipAddress: sessionData.ipAddress ?? undefined,
+          userAgent: sessionData.userAgent ?? undefined,
         },
         sessionData.id,
-        'unknown' // TODO: Obtener orgId real
+        sessionData.user.orgId
       );
     } catch (error) {
       if (error instanceof Error) {
@@ -206,16 +215,70 @@ export class SessionRepository implements SessionRepositoryInterface {
     }
   }
 
-  async findSessionsByIpAddress(_ipAddress: string, _orgId: string): Promise<Session[]> {
-    // Por ahora retornamos sesiones vacías ya que el schema actual no tiene ipAddress
-    // TODO: Agregar ipAddress al schema de Session
-    return [];
+  async findSessionsByIpAddress(ipAddress: string, orgId: string): Promise<Session[]> {
+    try {
+      const sessionsData = await this.prisma.session.findMany({
+        where: {
+          ipAddress,
+          user: { orgId },
+        },
+      });
+
+      return sessionsData.map(sessionData =>
+        Session.reconstitute(
+          {
+            userId: sessionData.userId,
+            token: sessionData.token,
+            expiresAt: sessionData.expiresAt,
+            isActive: sessionData.isActive,
+            ipAddress: sessionData.ipAddress ?? undefined,
+            userAgent: sessionData.userAgent ?? undefined,
+          },
+          sessionData.id,
+          orgId
+        )
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error finding sessions by IP address: ${error.message}`);
+      } else {
+        this.logger.error(`Error finding sessions by IP address: ${error}`);
+      }
+      throw error;
+    }
   }
 
-  async findSessionsByUserAgent(_userAgent: string, _orgId: string): Promise<Session[]> {
-    // Por ahora retornamos sesiones vacías ya que el schema actual no tiene userAgent
-    // TODO: Agregar userAgent al schema de Session
-    return [];
+  async findSessionsByUserAgent(userAgent: string, orgId: string): Promise<Session[]> {
+    try {
+      const sessionsData = await this.prisma.session.findMany({
+        where: {
+          userAgent,
+          user: { orgId },
+        },
+      });
+
+      return sessionsData.map(sessionData =>
+        Session.reconstitute(
+          {
+            userId: sessionData.userId,
+            token: sessionData.token,
+            expiresAt: sessionData.expiresAt,
+            isActive: sessionData.isActive,
+            ipAddress: sessionData.ipAddress ?? undefined,
+            userAgent: sessionData.userAgent ?? undefined,
+          },
+          sessionData.id,
+          orgId
+        )
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error finding sessions by user agent: ${error.message}`);
+      } else {
+        this.logger.error(`Error finding sessions by user agent: ${error}`);
+      }
+      throw error;
+    }
   }
 
   async findSessionsByDateRange(startDate: Date, endDate: Date, orgId: string): Promise<Session[]> {
@@ -237,6 +300,8 @@ export class SessionRepository implements SessionRepositoryInterface {
             token: sessionData.token,
             expiresAt: sessionData.expiresAt,
             isActive: sessionData.isActive,
+            ipAddress: sessionData.ipAddress ?? undefined,
+            userAgent: sessionData.userAgent ?? undefined,
           },
           sessionData.id,
           orgId
@@ -355,42 +420,33 @@ export class SessionRepository implements SessionRepositoryInterface {
         token: session.token,
         expiresAt: session.expiresAt,
         isActive: session.isActive,
+        ipAddress: session.ipAddress,
+        userAgent: session.userAgent,
+        orgId: session.orgId,
       };
 
-      if (session.id) {
-        // Update existing session
-        const updatedSession = await this.prisma.session.update({
-          where: { id: session.id },
-          data: sessionData,
-        });
+      // Usar upsert para manejar tanto creación como actualización
+      const savedSession = await this.prisma.session.upsert({
+        where: { id: session.id },
+        update: sessionData,
+        create: {
+          id: session.id, // Usar el ID generado por la entidad
+          ...sessionData,
+        },
+      });
 
-        return Session.reconstitute(
-          {
-            userId: updatedSession.userId,
-            token: updatedSession.token,
-            expiresAt: updatedSession.expiresAt,
-            isActive: updatedSession.isActive,
-          },
-          updatedSession.id,
-          session.orgId
-        );
-      } else {
-        // Create new session
-        const newSession = await this.prisma.session.create({
-          data: sessionData,
-        });
-
-        return Session.reconstitute(
-          {
-            userId: newSession.userId,
-            token: newSession.token,
-            expiresAt: newSession.expiresAt,
-            isActive: newSession.isActive,
-          },
-          newSession.id,
-          session.orgId
-        );
-      }
+      return Session.reconstitute(
+        {
+          userId: savedSession.userId,
+          token: savedSession.token,
+          expiresAt: savedSession.expiresAt,
+          isActive: savedSession.isActive,
+          ipAddress: savedSession.ipAddress ?? undefined,
+          userAgent: savedSession.userAgent ?? undefined,
+        },
+        savedSession.id,
+        session.orgId
+      );
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Error saving session: ${error.message}`);

@@ -8,6 +8,7 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
+import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISessionRepository, IUserRepository } from '@auth/domain/repositories';
 
@@ -17,7 +18,7 @@ export interface IRefreshTokenRequest {
   userAgent?: string;
 }
 
-export interface IRefreshTokenResponse {
+export interface IRefreshTokenData {
   accessToken: string;
   refreshToken: string;
   accessTokenExpiresAt: Date;
@@ -32,6 +33,8 @@ export interface IRefreshTokenResponse {
     permissions: string[];
   };
 }
+
+export type IRefreshTokenResponse = IApiResponseSuccess<IRefreshTokenData>;
 
 @Injectable()
 export class RefreshTokenUseCase {
@@ -142,19 +145,24 @@ export class RefreshTokenUseCase {
       this.logger.log(`Token refreshed successfully for user: ${user.id}`);
 
       return {
-        accessToken: newTokenPair.accessToken,
-        refreshToken: newTokenPair.refreshToken,
-        accessTokenExpiresAt: newTokenPair.accessTokenExpiresAt,
-        refreshTokenExpiresAt: newTokenPair.refreshTokenExpiresAt,
-        user: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          roles: user.roles || [],
-          permissions: user.permissions || [],
+        success: true,
+        message: 'Token refreshed successfully',
+        data: {
+          accessToken: newTokenPair.accessToken,
+          refreshToken: newTokenPair.refreshToken,
+          accessTokenExpiresAt: newTokenPair.accessTokenExpiresAt,
+          refreshTokenExpiresAt: newTokenPair.refreshTokenExpiresAt,
+          user: {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            roles: user.roles || [],
+            permissions: user.permissions || [],
+          },
         },
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       if (error instanceof UnauthorizedException || error instanceof ForbiddenException) {

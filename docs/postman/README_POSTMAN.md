@@ -22,6 +22,7 @@ La colección utiliza las siguientes variables que debes configurar:
 - **`Content-Type`**: `application/json` (para requests con body)
 - **`Authorization`**: `Bearer {{accessToken}}` (para endpoints protegidos)
 - **`X-Organization-ID`**: ID de la organización (ej: `dev-org`)
+- **`X-Organization-Slug`**: Slug de la organización (ej: `demo-org`) - Alternativo al X-Organization-ID
 
 #### Headers Recomendados
 
@@ -37,6 +38,7 @@ La colección utiliza las siguientes variables que debes configurar:
 ### Cuándo Usar Cada Header
 
 - **`X-Organization-ID`**: Requerido en endpoints de autenticación, registro, recuperación de contraseña y todos los endpoints de inventario
+- **`X-Organization-Slug`**: Alternativo al X-Organization-ID, puede usarse en lugar del ID de la organización
 - **`Authorization`**: Requerido en todos los endpoints protegidos (logout, refresh, inventario, etc.)
 - **`User-Agent`**: Recomendado en todos los endpoints para tracking de sesiones y auditoría
 - **`Accept`**: Recomendado en todos los endpoints para especificar el tipo de respuesta

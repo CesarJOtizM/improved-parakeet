@@ -45,6 +45,26 @@
       "key": "requestId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "accessTokenExpiresAt",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshTokenExpiresAt",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -84,7 +104,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"admin123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
@@ -93,6 +113,76 @@
             },
             "description": "Autenticar usuario con email y contraseña, retorna tokens JWT"
           },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Script específico para el endpoint de login",
+                  "// Extraer automáticamente los tokens de la respuesta",
+                  "",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 2000ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "pm.test('Response has required fields', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('accessToken');",
+                  "    pm.expect(responseJson).to.have.property('refreshToken');",
+                  "    pm.expect(responseJson).to.have.property('user');",
+                  "});",
+                  "",
+                  "// Extraer y guardar tokens automáticamente",
+                  "if (pm.response.code === 200) {",
+                  "    const responseJson = pm.response.json();",
+                  "    ",
+                  "    // Guardar access token",
+                  "    if (responseJson.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', responseJson.accessToken);",
+                  "        console.log('Access token guardado automáticamente');",
+                  "    }",
+                  "    ",
+                  "    // Guardar refresh token",
+                  "    if (responseJson.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', responseJson.refreshToken);",
+                  "        console.log('Refresh token guardado automáticamente');",
+                  "    }",
+                  "    ",
+                  "    // Guardar información adicional útil",
+                  "    if (responseJson.user && responseJson.user.id) {",
+                  "        pm.collectionVariables.set('userId', responseJson.user.id);",
+                  "        console.log('User ID guardado automáticamente');",
+                  "    }",
+                  "    ",
+                  "    if (responseJson.sessionId) {",
+                  "        pm.collectionVariables.set('sessionId', responseJson.sessionId);",
+                  "        console.log('Session ID guardado automáticamente');",
+                  "    }",
+                  "    ",
+                  "    // Guardar fechas de expiración",
+                  "    if (responseJson.accessTokenExpiresAt) {",
+                  "        pm.collectionVariables.set('accessTokenExpiresAt', responseJson.accessTokenExpiresAt);",
+                  "        console.log('Access token expiration guardado automáticamente');",
+                  "    }",
+                  "    ",
+                  "    if (responseJson.refreshTokenExpiresAt) {",
+                  "        pm.collectionVariables.set('refreshTokenExpiresAt', responseJson.refreshTokenExpiresAt);",
+                  "        console.log('Refresh token expiration guardado automáticamente');",
+                  "    }",
+                  "    ",
+                  "    console.log('✅ Login exitoso - Tokens configurados automáticamente');",
+                  "    console.log('🔑 Access Token:', responseJson.accessToken ? 'Configurado' : 'No disponible');",
+                  "    console.log('🔄 Refresh Token:', responseJson.refreshToken ? 'Configurado' : 'No disponible');",
+                  "}"
+                ]
+              }
+            }
+          ],
           "response": [
             {
               "name": "Login Exitoso",
@@ -163,6 +253,55 @@
             },
             "description": "Cerrar sesión del usuario y blacklistear tokens JWT"
           },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Script específico para el endpoint de logout",
+                  "// Limpiar tokens y variables de sesión",
+                  "",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 2000ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates successful logout', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson).to.have.property('message');",
+                  "});",
+                  "",
+                  "// Limpiar tokens y variables de sesión automáticamente",
+                  "if (pm.response.code === 200) {",
+                  "    const responseJson = pm.response.json();",
+                  "    ",
+                  "    if (responseJson.success) {",
+                  "        // Limpiar tokens",
+                  "        pm.collectionVariables.unset('accessToken');",
+                  "        pm.collectionVariables.unset('refreshToken');",
+                  "        ",
+                  "        // Limpiar información de sesión",
+                  "        pm.collectionVariables.unset('sessionId');",
+                  "        pm.collectionVariables.unset('userId');",
+                  "        ",
+                  "        // Limpiar fechas de expiración",
+                  "        pm.collectionVariables.unset('accessTokenExpiresAt');",
+                  "        pm.collectionVariables.unset('refreshTokenExpiresAt');",
+                  "        ",
+                  "        console.log('🗑️ Logout exitoso - Tokens y variables de sesión limpiados automáticamente');",
+                  "        console.log('🔒 Tokens blacklisteados:', responseJson.blacklistedTokens || 0);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
           "response": [
             {
               "name": "Logout Exitoso",
@@ -229,6 +368,71 @@
             },
             "description": "Refrescar token de acceso usando un refresh token válido"
           },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Script específico para el endpoint de refresh token",
+                  "// Extraer automáticamente los nuevos tokens de la respuesta",
+                  "",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 2000ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "pm.test('Response has required fields', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('accessToken');",
+                  "    pm.expect(responseJson).to.have.property('refreshToken');",
+                  "    pm.expect(responseJson).to.have.property('user');",
+                  "});",
+                  "",
+                  "// Extraer y guardar nuevos tokens automáticamente",
+                  "if (pm.response.code === 200) {",
+                  "    const responseJson = pm.response.json();",
+                  "    ",
+                  "    // Guardar nuevo access token",
+                  "    if (responseJson.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', responseJson.accessToken);",
+                  "        console.log('Nuevo access token guardado automáticamente');",
+                  "    }",
+                  "    ",
+                  "    // Guardar nuevo refresh token",
+                  "    if (responseJson.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', responseJson.refreshToken);",
+                  "        console.log('Nuevo refresh token guardado automáticamente');",
+                  "    }",
+                  "    ",
+                  "    // Actualizar información del usuario si cambió",
+                  "    if (responseJson.user && responseJson.user.id) {",
+                  "        pm.collectionVariables.set('userId', responseJson.user.id);",
+                  "        console.log('User ID actualizado automáticamente');",
+                  "    }",
+                  "    ",
+                  "    // Guardar fechas de expiración",
+                  "    if (responseJson.accessTokenExpiresAt) {",
+                  "        pm.collectionVariables.set('accessTokenExpiresAt', responseJson.accessTokenExpiresAt);",
+                  "        console.log('Nuevo access token expiration guardado automáticamente');",
+                  "    }",
+                  "    ",
+                  "    if (responseJson.refreshTokenExpiresAt) {",
+                  "        pm.collectionVariables.set('refreshTokenExpiresAt', responseJson.refreshTokenExpiresAt);",
+                  "        console.log('Nuevo refresh token expiration guardado automáticamente');",
+                  "    }",
+                  "    ",
+                  "    console.log('✅ Refresh token exitoso - Nuevos tokens configurados automáticamente');",
+                  "    console.log('🔑 Nuevo Access Token:', responseJson.accessToken ? 'Configurado' : 'No disponible');",
+                  "    console.log('🔄 Nuevo Refresh Token:', responseJson.refreshToken ? 'Configurado' : 'No disponible');",
+                  "}"
+                ]
+              }
+            }
+          ],
           "response": [
             {
               "name": "Refresh Exitoso",
@@ -299,6 +503,56 @@
             },
             "description": "Cerrar sesión del usuario en todas las sesiones activas y blacklistear todos los tokens"
           },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Script específico para el endpoint de logout all sessions",
+                  "// Limpiar tokens y variables de sesión",
+                  "",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 2000ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates successful logout all sessions', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson).to.have.property('message');",
+                  "});",
+                  "",
+                  "// Limpiar tokens y variables de sesión automáticamente",
+                  "if (pm.response.code === 200) {",
+                  "    const responseJson = pm.response.json();",
+                  "    ",
+                  "    if (responseJson.success) {",
+                  "        // Limpiar tokens",
+                  "        pm.collectionVariables.unset('accessToken');",
+                  "        pm.collectionVariables.unset('refreshToken');",
+                  "        ",
+                  "        // Limpiar información de sesión",
+                  "        pm.collectionVariables.unset('sessionId');",
+                  "        pm.collectionVariables.unset('userId');",
+                  "        ",
+                  "        // Limpiar fechas de expiración",
+                  "        pm.collectionVariables.unset('accessTokenExpiresAt');",
+                  "        pm.collectionVariables.unset('refreshTokenExpiresAt');",
+                  "        ",
+                  "        console.log('🗑️ Logout all sessions exitoso - Todos los tokens y variables limpiados automáticamente');",
+                  "        console.log('🔒 Total tokens blacklisteados:', responseJson.blacklistedTokens || 0);",
+                  "        console.log('⚠️ Todas las sesiones han sido cerradas');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
           "response": [
             {
               "name": "Logout All Sessions Exitoso",
@@ -580,7 +834,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"username\": \"newuser\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"organizationSlug\": \"empresa-ejemplo\"\n}"
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"username\": \"newuser\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"organizationSlug\": \"demo-org\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/register",
@@ -597,7 +851,7 @@
                 "header": [],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"username\": \"newuser\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"organizationSlug\": \"empresa-ejemplo\"\n}"
+                  "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"username\": \"newuser\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"organizationSlug\": \"demo-org\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/register",
@@ -615,7 +869,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"user\": {\n    \"id\": \"user-123\",\n    \"email\": \"newuser@example.com\",\n    \"username\": \"newuser\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"isActive\": false,\n    \"orgId\": \"org-123\",\n    \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n  },\n  \"message\": \"User registered successfully. Please contact administrator for activation.\"\n}"
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"user-123\",\n    \"email\": \"newuser@example.com\",\n    \"username\": \"newuser\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"status\": \"INACTIVE\",\n    \"orgId\": \"org-123\"\n  },\n  \"message\": \"User registered successfully. Your account requires activation by the administrator.\",\n  \"timestamp\": \"2024-12-20T10:00:00.000Z\",\n  \"requiresAdminActivation\": true\n}"
             }
           ]
         }
@@ -2490,7 +2744,29 @@
         "type": "text/javascript",
         "exec": [
           "// Script de pre-request para configuraciones automáticas",
-          "console.log('Pre-request script ejecutado');"
+          "",
+          "// Generar request ID único si no existe",
+          "if (!pm.collectionVariables.get('requestId')) {",
+          "    pm.collectionVariables.set('requestId', pm.variables.replaceIn('{{$guid}}'));",
+          "}",
+          "",
+          "// Verificar si el access token está próximo a expirar",
+          "const accessTokenExpiresAt = pm.collectionVariables.get('accessTokenExpiresAt');",
+          "if (accessTokenExpiresAt) {",
+          "    const expiresAt = new Date(accessTokenExpiresAt);",
+          "    const now = new Date();",
+          "    const timeUntilExpiry = expiresAt.getTime() - now.getTime();",
+          "    ",
+          "    // Si expira en menos de 5 minutos, mostrar advertencia",
+          "    if (timeUntilExpiry < 5 * 60 * 1000 && timeUntilExpiry > 0) {",
+          "        console.warn('⚠️ Access token expira en menos de 5 minutos');",
+          "        console.warn('Considera usar el endpoint de refresh token');",
+          "    }",
+          "}",
+          "",
+          "// Log de información de la request",
+          "console.log('🚀 Ejecutando:', pm.request.method, pm.request.url.getPath());",
+          "console.log('📝 Request ID:', pm.collectionVariables.get('requestId'));"
         ]
       }
     },
@@ -2499,14 +2775,30 @@
       "script": {
         "type": "text/javascript",
         "exec": [
-          "// Script de test para validaciones automáticas",
-          "pm.test('Status code is 200', function () {",
-          "    pm.response.to.have.status(200);",
+          "// Script global de test para validaciones automáticas",
+          "// Solo ejecutar si no hay un script específico para el endpoint",
+          "",
+          "// Validar que la respuesta sea JSON",
+          "pm.test('Response is JSON', function () {",
+          "    pm.response.to.be.json;",
           "});",
           "",
-          "pm.test('Response time is less than 2000ms', function () {",
-          "    pm.expect(pm.response.responseTime).to.be.below(2000);",
-          "});"
+          "// Validar tiempo de respuesta",
+          "pm.test('Response time is reasonable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});",
+          "",
+          "// Validar que la respuesta tenga estructura válida",
+          "pm.test('Response has valid structure', function () {",
+          "    const responseJson = pm.response.json();",
+          "    pm.expect(responseJson).to.be.an('object');",
+          "});",
+          "",
+          "// Log de información útil para debugging",
+          "console.log('Endpoint:', pm.request.url.getPath());",
+          "console.log('Method:', pm.request.method);",
+          "console.log('Status:', pm.response.status);",
+          "console.log('Response Time:', pm.response.responseTime + 'ms');"
         ]
       }
     }

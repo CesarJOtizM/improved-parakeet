@@ -2,6 +2,7 @@ import { IJwtPayloadWithExp, JwtService } from '@auth/domain/services/jwtService
 import { RateLimitService } from '@auth/domain/services/rateLimitService';
 import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
 import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISessionRepository } from '@auth/domain/repositories';
 
@@ -14,11 +15,11 @@ export interface ILogoutRequest {
   reason?: 'LOGOUT' | 'SECURITY' | 'ADMIN_ACTION';
 }
 
-export interface ILogoutResponse {
-  success: boolean;
-  message: string;
+export interface ILogoutData {
   blacklistedTokens: number;
 }
+
+export type ILogoutResponse = IApiResponseSuccess<ILogoutData>;
 
 @Injectable()
 export class LogoutUseCase {
@@ -105,7 +106,10 @@ export class LogoutUseCase {
         return {
           success: true,
           message: 'Logout successful',
-          blacklistedTokens,
+          data: {
+            blacklistedTokens,
+          },
+          timestamp: new Date().toISOString(),
         };
       } catch (tokenError) {
         if (tokenError instanceof UnauthorizedException) {
@@ -127,7 +131,10 @@ export class LogoutUseCase {
         return {
           success: true,
           message: 'Logout completed with security measures',
-          blacklistedTokens,
+          data: {
+            blacklistedTokens,
+          },
+          timestamp: new Date().toISOString(),
         };
       }
     } catch (error) {

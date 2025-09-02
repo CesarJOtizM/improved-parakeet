@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IOtpRepository } from '@auth/domain/repositories';
 
@@ -8,14 +9,14 @@ export interface IVerifyOtpRequest {
   orgId: string;
 }
 
-export interface IVerifyOtpResponse {
-  success: boolean;
-  message: string;
+export interface IOtpVerificationData {
   isValid: boolean;
   email: string;
   expiresAt?: Date;
   attemptsRemaining?: number;
 }
+
+export type IVerifyOtpResponse = IApiResponseSuccess<IOtpVerificationData>;
 
 @Injectable()
 export class VerifyOtpUseCase {
@@ -37,10 +38,13 @@ export class VerifyOtpUseCase {
           `OTP verification attempt with invalid/expired OTP for email: ${request.email}`
         );
         return {
-          success: false,
+          success: true,
           message: 'Invalid or expired verification code.',
-          isValid: false,
-          email: request.email,
+          data: {
+            isValid: false,
+            email: request.email,
+          },
+          timestamp: new Date().toISOString(),
         };
       }
 
@@ -55,9 +59,12 @@ export class VerifyOtpUseCase {
         return {
           success: true,
           message: 'Valid verification code.',
-          isValid: true,
-          email: request.email,
-          expiresAt: otp.expiresAt,
+          data: {
+            isValid: true,
+            email: request.email,
+            expiresAt: otp.expiresAt,
+          },
+          timestamp: new Date().toISOString(),
         };
       } else {
         const attemptsRemaining = otp.maxAttempts - otp.attempts;
@@ -65,11 +72,14 @@ export class VerifyOtpUseCase {
         if (otp.hasExceededMaxAttempts()) {
           this.logger.warn(`OTP max attempts exceeded for email: ${request.email}`);
           return {
-            success: false,
+            success: true,
             message: 'Maximum number of attempts exceeded. Request a new code.',
-            isValid: false,
-            email: request.email,
-            attemptsRemaining: 0,
+            data: {
+              isValid: false,
+              email: request.email,
+              attemptsRemaining: 0,
+            },
+            timestamp: new Date().toISOString(),
           };
         }
 
@@ -77,11 +87,14 @@ export class VerifyOtpUseCase {
           `OTP verification failed for email: ${request.email}, attempts: ${otp.attempts}`
         );
         return {
-          success: false,
+          success: true,
           message: `Incorrect code. Attempts remaining: ${attemptsRemaining}`,
-          isValid: false,
-          email: request.email,
-          attemptsRemaining,
+          data: {
+            isValid: false,
+            email: request.email,
+            attemptsRemaining,
+          },
+          timestamp: new Date().toISOString(),
         };
       }
     } catch (error) {

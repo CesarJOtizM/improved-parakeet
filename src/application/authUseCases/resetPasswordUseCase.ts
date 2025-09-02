@@ -1,5 +1,12 @@
 import { AuthenticationService } from '@auth/domain/services/authenticationService';
-import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IOtpRepository, IUserRepository } from '@auth/domain/repositories';
 
@@ -11,11 +18,11 @@ export interface IResetPasswordRequest {
   orgId: string;
 }
 
-export interface IResetPasswordResponse {
-  success: boolean;
-  message: string;
+export interface IResetPasswordData {
   email: string;
 }
+
+export type IResetPasswordResponse = IApiResponseSuccess<IResetPasswordData>;
 
 @Injectable()
 export class ResetPasswordUseCase {
@@ -108,11 +115,25 @@ export class ResetPasswordUseCase {
       return {
         success: true,
         message: 'Password updated successfully. You can now log in with your new password.',
-        email: request.email,
+        data: {
+          email: request.email,
+        },
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
+      }
+
+      // Si es un error de validación de contraseña, convertirlo a BadRequestException
+      if (
+        error instanceof Error &&
+        (error.message.includes('Password must be at least') ||
+          error.message.includes('Password too long') ||
+          error.message.includes('Password must contain at least') ||
+          error.message.includes('Password contains common patterns'))
+      ) {
+        throw new BadRequestException(error.message);
       }
 
       this.logger.error('Reset password use case failed:', error);

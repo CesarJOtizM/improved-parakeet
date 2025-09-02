@@ -13,7 +13,7 @@ export function getSecurityConfig(authConfig: IAuthConfig) {
       allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Organization-ID'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Organization-ID', 'X-Organization-Slug'],
     },
 
     // Password policies
@@ -66,7 +66,7 @@ export const defaultSecurityConfig = {
     allowedOrigins: ['http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Organization-ID'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Organization-ID', 'X-Organization-Slug'],
   },
   password: {
     minLength: SECURITY_CONFIG.PASSWORD_MIN_LENGTH,

@@ -16,7 +16,7 @@ async function bootstrap() {
     origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Organization-ID'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Organization-ID', 'X-Organization-Slug'],
   });
 
   // Configuración de rate limiting global

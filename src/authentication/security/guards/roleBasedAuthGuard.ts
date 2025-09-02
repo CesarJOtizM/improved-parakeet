@@ -126,7 +126,8 @@ export class RoleBasedAuthGuard implements CanActivate {
       request.params.orgId ||
       request.query.orgId ||
       request.body?.orgId ||
-      request.headers['x-organization-id'];
+      request.headers['x-organization-id'] ||
+      request.headers['x-organization-slug'];
 
     return orgId ? String(orgId) : null;
   }

@@ -3,12 +3,19 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 export const OrgId = createParamDecorator((_data: unknown, ctx: ExecutionContext): string => {
   const request = ctx.switchToHttp().getRequest();
 
+  // 1. Desde el header X-Organization-ID
   const orgIdFromHeader = request.headers['x-organization-id'];
   if (orgIdFromHeader) {
     return orgIdFromHeader;
   }
 
-  // Intentar obtener orgId del subdominio
+  // 2. Desde el header X-Organization-Slug
+  const orgSlugFromHeader = request.headers['x-organization-slug'];
+  if (orgSlugFromHeader) {
+    return orgSlugFromHeader;
+  }
+
+  // 3. Intentar obtener orgId del subdominio
   const host = request.headers.host;
   if (host) {
     const subdomain = host.split('.')[0];

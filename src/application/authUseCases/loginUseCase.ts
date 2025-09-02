@@ -4,6 +4,7 @@ import { JwtService } from '@auth/domain/services/jwtService';
 import { RateLimitService } from '@auth/domain/services/rateLimitService';
 import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
 import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISessionRepository, IUserRepository } from '@auth/domain/repositories';
 
@@ -15,7 +16,7 @@ export interface ILoginRequest {
   userAgent?: string;
 }
 
-export interface ILoginResponse {
+export interface ILoginData {
   user: {
     id: string;
     email: string;
@@ -31,6 +32,8 @@ export interface ILoginResponse {
   refreshTokenExpiresAt: Date;
   sessionId: string;
 }
+
+export type ILoginResponse = IApiResponseSuccess<ILoginData>;
 
 @Injectable()
 export class LoginUseCase {
@@ -99,12 +102,12 @@ export class LoginUseCase {
         user.permissions || []
       );
 
-      // Crear sesión
+      // Crear sesión con refresh token
       const session = Session.create(
         {
           userId: user.id,
-          token: tokenPair.accessToken,
-          expiresAt: tokenPair.accessTokenExpiresAt,
+          token: tokenPair.refreshToken,
+          expiresAt: tokenPair.refreshTokenExpiresAt,
           isActive: true,
           ipAddress: request.ipAddress,
           userAgent: request.userAgent,
@@ -132,20 +135,25 @@ export class LoginUseCase {
       this.logger.log(`Successful login for user: ${user.id}`);
 
       return {
-        user: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          roles: user.roles || [],
-          permissions: user.permissions || [],
+        success: true,
+        message: 'Login successful',
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            roles: user.roles || [],
+            permissions: user.permissions || [],
+          },
+          accessToken: tokenPair.accessToken,
+          refreshToken: tokenPair.refreshToken,
+          accessTokenExpiresAt: tokenPair.accessTokenExpiresAt,
+          refreshTokenExpiresAt: tokenPair.refreshTokenExpiresAt,
+          sessionId: session.id,
         },
-        accessToken: tokenPair.accessToken,
-        refreshToken: tokenPair.refreshToken,
-        accessTokenExpiresAt: tokenPair.accessTokenExpiresAt,
-        refreshTokenExpiresAt: tokenPair.refreshTokenExpiresAt,
-        sessionId: session.id,
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) {

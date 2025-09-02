@@ -76,9 +76,9 @@ export class RegisterController {
     const result = await this.registerUserUseCase.execute(request);
 
     this.logger.log('User registered successfully', {
-      userId: result.user.id,
-      email: result.user.email,
-      orgId: result.user.orgId,
+      userId: result.data.id,
+      email: result.data.email,
+      orgId: result.data.orgId,
     });
 
     return result;

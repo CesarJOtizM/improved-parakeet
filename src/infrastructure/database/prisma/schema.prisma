@@ -130,10 +130,19 @@ model Session {
   token     String   @unique
   expiresAt DateTime
   isActive  Boolean  @default(true)
+  ipAddress String?
+  userAgent String?
+  orgId     String
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   
   // Relations
   user User @relation(fields: [userId], references: [id])
+  
+  @@index([userId, orgId])
+  @@index([token])
+  @@index([expiresAt])
+  @@index([isActive])
   
   @@map("sessions")
 }

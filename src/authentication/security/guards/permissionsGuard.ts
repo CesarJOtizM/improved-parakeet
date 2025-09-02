@@ -111,6 +111,7 @@ export class PermissionsGuard implements CanActivate {
       request.query?.orgId ||
       request.body?.orgId ||
       request.headers['x-organization-id'] ||
+      request.headers['x-organization-slug'] ||
       null
     );
   }

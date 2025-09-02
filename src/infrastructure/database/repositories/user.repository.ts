@@ -398,6 +398,14 @@ export class UserRepository implements UserRepositoryInterface {
 
   async save(user: User): Promise<User> {
     try {
+      this.logger.debug('Saving user', {
+        userId: user.id,
+        email: user.email,
+        username: user.username,
+        orgId: user.orgId,
+        hasId: !!user.id,
+      });
+
       // Usar firstName y lastName directamente de la entidad
 
       const userData = {
@@ -411,60 +419,82 @@ export class UserRepository implements UserRepositoryInterface {
         orgId: user.orgId,
       };
 
+      this.logger.debug('User data prepared', { userData });
+
       if (user.id) {
-        // Update existing user
-        const updatedUser = await this.prisma.user.update({
+        // Verificar si el usuario realmente existe en la base de datos
+        const existingUser = await this.prisma.user.findUnique({
           where: { id: user.id },
-          data: userData,
         });
 
-        return User.reconstitute(
-          {
-            email: Email.create(updatedUser.email),
-            username: updatedUser.username,
-            passwordHash: Password.createHashed(updatedUser.passwordHash),
-            firstName: updatedUser.firstName,
-            lastName: updatedUser.lastName,
-            status: UserStatus.create(updatedUser.isActive ? 'ACTIVE' : 'INACTIVE'),
-            lastLoginAt: updatedUser.lastLoginAt || undefined,
-            failedLoginAttempts: user.failedLoginAttempts,
-            lockedUntil: user.lockedUntil,
-            roles: user.roles,
-            permissions: user.permissions,
-          },
-          updatedUser.id,
-          updatedUser.orgId
-        );
-      } else {
-        // Create new user
-        const newUser = await this.prisma.user.create({
-          data: userData,
-        });
+        if (existingUser) {
+          // Update existing user
+          this.logger.debug('Updating existing user', { userId: user.id });
+          const updatedUser = await this.prisma.user.update({
+            where: { id: user.id },
+            data: userData,
+          });
 
-        return User.reconstitute(
-          {
-            email: Email.create(newUser.email),
-            username: newUser.username,
-            passwordHash: Password.createHashed(newUser.passwordHash),
-            firstName: newUser.firstName,
-            lastName: newUser.lastName,
-            status: UserStatus.create(newUser.isActive ? 'ACTIVE' : 'INACTIVE'),
-            lastLoginAt: newUser.lastLoginAt || undefined,
-            failedLoginAttempts: user.failedLoginAttempts,
-            lockedUntil: user.lockedUntil,
-            roles: user.roles,
-            permissions: user.permissions,
-          },
-          newUser.id,
-          newUser.orgId
-        );
+          this.logger.debug('User updated successfully', { userId: updatedUser.id });
+
+          return User.reconstitute(
+            {
+              email: Email.create(updatedUser.email),
+              username: updatedUser.username,
+              passwordHash: Password.createHashed(updatedUser.passwordHash),
+              firstName: updatedUser.firstName,
+              lastName: updatedUser.lastName,
+              status: UserStatus.create(updatedUser.isActive ? 'ACTIVE' : 'INACTIVE'),
+              lastLoginAt: updatedUser.lastLoginAt || undefined,
+              failedLoginAttempts: user.failedLoginAttempts,
+              lockedUntil: user.lockedUntil,
+              roles: user.roles,
+              permissions: user.permissions,
+            },
+            updatedUser.id,
+            updatedUser.orgId
+          );
+        } else {
+          // El ID existe pero no está en la base de datos, crear nuevo usuario
+          this.logger.debug('User ID exists but not in database, creating new user', {
+            userId: user.id,
+          });
+        }
       }
+
+      // Create new user (either no ID or ID doesn't exist in database)
+      this.logger.debug('Creating new user');
+      const newUser = await this.prisma.user.create({
+        data: userData,
+      });
+
+      this.logger.debug('User created successfully', { userId: newUser.id });
+
+      return User.reconstitute(
+        {
+          email: Email.create(newUser.email),
+          username: newUser.username,
+          passwordHash: Password.createHashed(newUser.passwordHash),
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          status: UserStatus.create(newUser.isActive ? 'ACTIVE' : 'INACTIVE'),
+          lastLoginAt: newUser.lastLoginAt || undefined,
+          failedLoginAttempts: user.failedLoginAttempts,
+          lockedUntil: user.lockedUntil,
+          roles: user.roles,
+          permissions: user.permissions,
+        },
+        newUser.id,
+        newUser.orgId
+      );
     } catch (error) {
-      if (error instanceof Error) {
-        this.logger.error(`Error saving user: ${error.message}`);
-      } else {
-        this.logger.error(`Error saving user: ${error}`);
-      }
+      this.logger.error('Error saving user', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        userId: user.id,
+        email: user.email,
+        orgId: user.orgId,
+      });
       throw error;
     }
   }
