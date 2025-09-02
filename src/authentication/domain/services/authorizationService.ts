@@ -180,13 +180,14 @@ export class AuthorizationService {
   ): string[] {
     const permissions = new Set<string>();
 
-    userRoles.forEach(role => {
-      if (role) {
-        rolePermissions.forEach(permission => {
-          if (permission && typeof permission === 'string') {
-            permissions.add(permission);
-          }
-        });
+    if (!userRoles || userRoles.length === 0) {
+      return [];
+    }
+
+    // Agregar todos los permisos de rolePermissions
+    rolePermissions.forEach(permission => {
+      if (permission && permission.name) {
+        permissions.add(permission.name);
       }
     });
 
@@ -200,19 +201,28 @@ export class AuthorizationService {
     userPermissions: string[],
     requiredPermission: string
   ): boolean {
-    // Implementar lógica de jerarquía de permisos si es necesario
-    // Por ejemplo, si tienes USERS:ADMIN, automáticamente tienes USERS:READ
+    // Verificar si el usuario tiene el permiso requerido directamente
+    if (userPermissions.includes(requiredPermission)) {
+      return true;
+    }
+
+    // Verificar si el usuario tiene permisos que impliquen el permiso requerido
     const permissionHierarchy: Record<string, string[]> = {
       'USERS:ADMIN': ['USERS:CREATE', 'USERS:READ', 'USERS:UPDATE', 'USERS:DELETE'],
       'PRODUCTS:ADMIN': ['PRODUCTS:CREATE', 'PRODUCTS:READ', 'PRODUCTS:UPDATE', 'PRODUCTS:DELETE'],
       'INVENTORY:ADMIN': ['INVENTORY:VIEW', 'INVENTORY:MANAGE', 'INVENTORY:REPORTS'],
     };
 
-    const impliedPermissions = permissionHierarchy[requiredPermission] || [];
+    // Verificar si el usuario tiene algún permiso de administrador que implique el permiso requerido
+    for (const [adminPermission, impliedPermissions] of Object.entries(permissionHierarchy)) {
+      if (
+        userPermissions.includes(adminPermission) &&
+        impliedPermissions.includes(requiredPermission)
+      ) {
+        return true;
+      }
+    }
 
-    return (
-      userPermissions.includes(requiredPermission) ||
-      impliedPermissions.some(permission => userPermissions.includes(permission))
-    );
+    return false;
   }
 }

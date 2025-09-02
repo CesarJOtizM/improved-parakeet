@@ -38,45 +38,51 @@ export class JwtService {
     roles: string[],
     permissions: string[]
   ): Promise<ITokenPair> {
-    const now = new Date();
-    const accessTokenExpiresAt = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutos
-    const refreshTokenExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 días
+    try {
+      const now = new Date();
+      const accessTokenExpiresAt = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutos
+      const refreshTokenExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 días
 
-    const accessTokenPayload: IJwtPayload = {
-      sub: userId,
-      org_id: orgId,
-      email,
-      username,
-      roles,
-      permissions,
-      iat: Math.floor(now.getTime() / 1000),
-      jti: this.generateTokenId(),
-    };
+      const accessTokenPayload: IJwtPayload = {
+        sub: userId,
+        org_id: orgId,
+        email,
+        username,
+        roles,
+        permissions,
+        iat: Math.floor(now.getTime() / 1000),
+        jti: this.generateTokenId(),
+      };
 
-    const refreshTokenPayload: IJwtPayload = {
-      sub: userId,
-      org_id: orgId,
-      email,
-      username,
-      roles,
-      permissions,
-      iat: Math.floor(now.getTime() / 1000),
-      jti: this.generateTokenId(),
-    };
+      const refreshTokenPayload: IJwtPayload = {
+        sub: userId,
+        org_id: orgId,
+        email,
+        username,
+        roles,
+        permissions,
+        iat: Math.floor(now.getTime() / 1000),
+        jti: this.generateTokenId(),
+      };
 
-    const accessToken = await this.nestJwtService.signAsync(accessTokenPayload, {
-      expiresIn: '15m',
-    });
-    const refreshToken = await this.nestJwtService.signAsync(refreshTokenPayload, {
-      expiresIn: '7d',
-    });
+      const accessToken = await this.nestJwtService.signAsync(accessTokenPayload, {
+        expiresIn: '15m',
+      });
+      const refreshToken = await this.nestJwtService.signAsync(refreshTokenPayload, {
+        expiresIn: '7d',
+      });
 
-    return {
-      accessToken,
-      refreshToken,
-      accessTokenExpiresAt,
-      refreshTokenExpiresAt,
-    };
+      return {
+        accessToken,
+        refreshToken,
+        accessTokenExpiresAt,
+        refreshTokenExpiresAt,
+      };
+    } catch (error) {
+      throw new Error(
+        `Invalid JWT token: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
   }
 
   /**
@@ -91,28 +97,34 @@ export class JwtService {
     roles: string[],
     permissions: string[]
   ): Promise<{ accessToken: string; accessTokenExpiresAt: Date }> {
-    const now = new Date();
-    const accessTokenExpiresAt = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutos
+    try {
+      const now = new Date();
+      const accessTokenExpiresAt = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutos
 
-    const accessTokenPayload: IJwtPayload = {
-      sub: userId,
-      org_id: orgId,
-      email,
-      username,
-      roles,
-      permissions,
-      iat: Math.floor(now.getTime() / 1000),
-      jti: this.generateTokenId(),
-    };
+      const accessTokenPayload: IJwtPayload = {
+        sub: userId,
+        org_id: orgId,
+        email,
+        username,
+        roles,
+        permissions,
+        iat: Math.floor(now.getTime() / 1000),
+        jti: this.generateTokenId(),
+      };
 
-    const accessToken = await this.nestJwtService.signAsync(accessTokenPayload, {
-      expiresIn: '15m',
-    });
+      const accessToken = await this.nestJwtService.signAsync(accessTokenPayload, {
+        expiresIn: '15m',
+      });
 
-    return {
-      accessToken,
-      accessTokenExpiresAt,
-    };
+      return {
+        accessToken,
+        accessTokenExpiresAt,
+      };
+    } catch (error) {
+      throw new Error(
+        `Invalid JWT token: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
   }
 
   /**

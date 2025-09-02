@@ -102,7 +102,7 @@ describe('SecurityMiddleware', () => {
 
     it('Given: request with different IP When: applying security headers Then: should set headers regardless of IP', () => {
       // Arrange
-      mockRequest.ip = '192.168.1.100';
+      (mockRequest as { ip: string }).ip = '192.168.1.100';
 
       // Act
       middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
@@ -166,9 +166,11 @@ describe('SecurityMiddleware', () => {
       // Act
       for (let i = 0; i < 3; i++) {
         // Reset mock to clear previous calls
-        mockResponse.setHeader.mockClear();
+        (mockResponse.setHeader as jest.Mock).mockClear();
         middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
-        const call = mockResponse.setHeader.mock.calls.find(call => call[0] === 'X-Request-ID');
+        const call = (mockResponse.setHeader as jest.Mock).mock.calls.find(
+          (call: [string, string]) => call[0] === 'X-Request-ID'
+        );
         if (call) {
           requestIds.push(call[1]);
         }
@@ -193,8 +195,8 @@ describe('SecurityMiddleware', () => {
 
       // Assert
       const afterTime = Date.now();
-      const setHeaderCall = mockResponse.setHeader.mock.calls.find(
-        call => call[0] === 'X-Response-Time'
+      const setHeaderCall = (mockResponse.setHeader as jest.Mock).mock.calls.find(
+        (call: [string, string]) => call[0] === 'X-Response-Time'
       );
       expect(setHeaderCall).toBeDefined();
 
@@ -211,7 +213,7 @@ describe('SecurityMiddleware', () => {
 
       // Act
       for (let i = 0; i < 10; i++) {
-        const id = (middleware as { generateRequestId(): string }).generateRequestId();
+        const id = (middleware as unknown as { generateRequestId(): string }).generateRequestId();
         requestIds.add(id);
       }
 
@@ -224,7 +226,9 @@ describe('SecurityMiddleware', () => {
 
     it('Given: request ID generation When: checking format Then: should follow correct pattern', () => {
       // Arrange & Act
-      const requestId = (middleware as { generateRequestId(): string }).generateRequestId();
+      const requestId = (
+        middleware as unknown as { generateRequestId(): string }
+      ).generateRequestId();
 
       // Assert
       expect(requestId).toMatch(/^req_\d+_[a-z0-9]{9}$/);
@@ -274,7 +278,11 @@ describe('SecurityMiddleware', () => {
       const loggerSpy = jest.spyOn(middleware['logger'], 'debug').mockImplementation();
 
       // Act
-      middleware.use(requestWithoutUserAgent as Request, mockResponse as Response, mockNext);
+      middleware.use(
+        requestWithoutUserAgent as unknown as Request,
+        mockResponse as Response,
+        mockNext
+      );
 
       // Assert
       expect(loggerSpy).toHaveBeenCalledWith(

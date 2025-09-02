@@ -32,6 +32,7 @@ export class User extends AggregateRoot<IUserProps> {
     const userProps: IUserProps = {
       ...props,
       passwordHash,
+      failedLoginAttempts: props.failedLoginAttempts || 0,
     };
 
     const user = new User(userProps, undefined, orgId);

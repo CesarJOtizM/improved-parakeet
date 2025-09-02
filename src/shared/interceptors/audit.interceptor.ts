@@ -22,15 +22,15 @@ export class AuditInterceptor implements NestInterceptor {
     );
 
     // Log de detalles de la operación
-    if (Object.keys(body).length > 0) {
+    if (body && Object.keys(body).length > 0) {
       this.logger.debug(`[AUDIT] Request Body: ${JSON.stringify(body)}`);
     }
 
-    if (Object.keys(query).length > 0) {
+    if (query && Object.keys(query).length > 0) {
       this.logger.debug(`[AUDIT] Query Params: ${JSON.stringify(query)}`);
     }
 
-    if (Object.keys(params).length > 0) {
+    if (params && Object.keys(params).length > 0) {
       this.logger.debug(`[AUDIT] Path Params: ${JSON.stringify(params)}`);
     }
 

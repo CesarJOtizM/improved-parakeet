@@ -81,8 +81,25 @@ export class AuthenticationService {
     refreshToken: JwtToken;
   } {
     // En un caso real, aquí se generaría el JWT real
-    const accessTokenValue = `access_${userId}_${Date.now()}`;
-    const refreshTokenValue = `refresh_${userId}_${Date.now()}`;
+    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
+    const accessPayload = Buffer.from(
+      JSON.stringify({
+        sub: userId,
+        type: 'access',
+        iat: Date.now(),
+      })
+    ).toString('base64');
+    const refreshPayload = Buffer.from(
+      JSON.stringify({
+        sub: userId,
+        type: 'refresh',
+        iat: Date.now(),
+      })
+    ).toString('base64');
+    const signature = Buffer.from('signature').toString('base64');
+
+    const accessTokenValue = `${header}.${accessPayload}.${signature}`;
+    const refreshTokenValue = `${header}.${refreshPayload}.${signature}`;
 
     const accessToken = JwtToken.createAccessToken(accessTokenValue, accessTokenExpiryMinutes);
     const refreshToken = JwtToken.createRefreshToken(refreshTokenValue, refreshTokenExpiryDays);

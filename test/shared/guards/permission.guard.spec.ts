@@ -10,7 +10,7 @@ import type { IAuthenticatedUser } from '@shared/types/http.types';
 describe('PermissionGuard', () => {
   let guard: PermissionGuard;
   let mockReflector: jest.Mocked<Reflector>;
-  let mockExecutionContext: ExecutionContext;
+  let mockExecutionContext: jest.Mocked<ExecutionContext>;
 
   beforeEach(() => {
     mockReflector = {
@@ -29,7 +29,7 @@ describe('PermissionGuard', () => {
       }),
       getHandler: jest.fn(),
       getClass: jest.fn(),
-    } as unknown as ExecutionContext;
+    } as unknown as jest.Mocked<ExecutionContext>;
   });
 
   describe('canActivate', () => {
@@ -58,7 +58,7 @@ describe('PermissionGuard', () => {
         userPermissions: [],
         userRoles: [],
       };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
 
       // Act & Assert
       expect(() => guard.canActivate(mockExecutionContext)).toThrow(UnauthorizedException);
@@ -85,7 +85,7 @@ describe('PermissionGuard', () => {
         userPermissions: [],
         userRoles: [],
       };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
 
       // Act & Assert
       expect(() => guard.canActivate(mockExecutionContext)).toThrow(ForbiddenException);
@@ -114,7 +114,7 @@ describe('PermissionGuard', () => {
         userPermissions: [],
         userRoles: ['ADMIN'],
       };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
 
       // Act
       const result = guard.canActivate(mockExecutionContext);
@@ -143,7 +143,7 @@ describe('PermissionGuard', () => {
         userPermissions: ['PRODUCTS:CREATE', 'PRODUCTS:UPDATE'],
         userRoles: ['USER'],
       };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
 
       // Act
       const result = guard.canActivate(mockExecutionContext);
@@ -172,7 +172,7 @@ describe('PermissionGuard', () => {
         userPermissions: ['PRODUCTS:CREATE'],
         userRoles: ['USER'],
       };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
 
       // Act & Assert
       expect(() => guard.canActivate(mockExecutionContext)).toThrow(ForbiddenException);
@@ -206,7 +206,7 @@ describe('PermissionGuard', () => {
         userPermissions: ['PRODUCTS:CREATE'],
         userRoles: ['USER'],
       };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
 
       // Act
       const result = guard.canActivate(mockExecutionContext);
@@ -238,7 +238,7 @@ describe('PermissionGuard', () => {
         userPermissions: ['PRODUCTS:DELETE'],
         userRoles: ['USER'],
       };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
 
       // Act & Assert
       expect(() => guard.canActivate(mockExecutionContext)).toThrow(ForbiddenException);
@@ -269,7 +269,7 @@ describe('PermissionGuard', () => {
         userPermissions: ['PRODUCTS:CREATE', 'PRODUCTS:UPDATE'],
         userRoles: ['USER'],
       };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
 
       // Act
       const result = guard.canActivate(mockExecutionContext);
@@ -301,7 +301,7 @@ describe('PermissionGuard', () => {
         userPermissions: ['PRODUCTS:CREATE'],
         userRoles: ['USER'],
       };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
 
       // Act & Assert
       expect(() => guard.canActivate(mockExecutionContext)).toThrow(ForbiddenException);
@@ -329,7 +329,7 @@ describe('PermissionGuard', () => {
         userPermissions: [],
         userRoles: ['USER'],
       };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
 
       // Act
       const result = guard.canActivate(mockExecutionContext);
@@ -358,7 +358,7 @@ describe('PermissionGuard', () => {
         userPermissions: ['PRODUCTS:CREATE', 'PRODUCTS:UPDATE', 'PRODUCTS:DELETE'],
         userRoles: ['USER'],
       };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
 
       // Act
       const result = guard.canActivate(mockExecutionContext);
@@ -390,7 +390,7 @@ describe('PermissionGuard', () => {
         userPermissions: ['PRODUCTS:CREATE'],
         userRoles: ['USER'],
       };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
 
       // Act & Assert
       expect(() => guard.canActivate(mockExecutionContext)).toThrow(ForbiddenException);

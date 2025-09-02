@@ -37,4 +37,8 @@ export class UserStatus extends ValueObject<{ value: UserStatusValue }> {
   public getValue(): UserStatusValue {
     return this.props.value;
   }
+
+  public toString(): string {
+    return this.props.value;
+  }
 }

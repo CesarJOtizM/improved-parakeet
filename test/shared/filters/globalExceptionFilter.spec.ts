@@ -14,7 +14,7 @@ describe('GlobalExceptionFilter', () => {
     filter = new GlobalExceptionFilter();
 
     mockResponse = {
-      status: jest.fn().mockReturnThis(),
+      status: jest.fn().mockReturnThis() as unknown as number,
       json: jest.fn(),
     };
 
@@ -188,7 +188,7 @@ describe('GlobalExceptionFilter', () => {
       const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
 
       methods.forEach(method => {
-        mockRequest.method = method;
+        (mockRequest as { method: string }).method = method;
         const httpException = new HttpException('Error', HttpStatus.BAD_REQUEST);
 
         // Act
@@ -210,7 +210,7 @@ describe('GlobalExceptionFilter', () => {
       const urls = ['/api/users', '/api/products', '/api/warehouses'];
 
       urls.forEach(url => {
-        mockRequest.url = url;
+        (mockRequest as { url: string }).url = url;
         const httpException = new HttpException('Error', HttpStatus.BAD_REQUEST);
 
         // Act
@@ -229,7 +229,7 @@ describe('GlobalExceptionFilter', () => {
 
     it('Given: HttpException with null response When: catching exception Then: should use exception message', () => {
       // Arrange
-      const httpException = new HttpException(null, HttpStatus.BAD_REQUEST);
+      const httpException = new HttpException(null as unknown as string, HttpStatus.BAD_REQUEST);
 
       // Act
       filter.catch(httpException, mockArgumentsHost);
@@ -244,7 +244,10 @@ describe('GlobalExceptionFilter', () => {
 
     it('Given: HttpException with undefined response When: catching exception Then: should use exception message', () => {
       // Arrange
-      const httpException = new HttpException(undefined, HttpStatus.BAD_REQUEST);
+      const httpException = new HttpException(
+        undefined as unknown as string,
+        HttpStatus.BAD_REQUEST
+      );
 
       // Act
       filter.catch(httpException, mockArgumentsHost);

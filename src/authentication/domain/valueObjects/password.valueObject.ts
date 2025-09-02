@@ -61,10 +61,23 @@ export class Password extends ValueObject<IPasswordProps> {
     return this.props.isHashed ? '[HIDDEN]' : this.props.value;
   }
 
-  public equals(password: Password): boolean {
-    if (this.props.isHashed !== password.props.isHashed) {
+  public equals(vo?: ValueObject<IPasswordProps>): boolean {
+    if (vo === null || vo === undefined) {
       return false;
     }
-    return this.props.value === password.props.value;
+
+    if (this === vo) {
+      return true;
+    }
+
+    if (!(vo instanceof Password)) {
+      return false;
+    }
+
+    if (this.props.isHashed !== vo.props.isHashed) {
+      return false;
+    }
+
+    return this.props.value === vo.props.value;
   }
 }

@@ -1,14 +1,14 @@
 // Audit Interceptor Tests - Interceptor de auditoría
 // Tests unitarios para el interceptor de auditoría siguiendo AAA y Given-When-Then
 
-import { CallHandler, ExecutionContext } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Logger } from '@nestjs/common';
 import { AuditInterceptor } from '@shared/interceptors/audit.interceptor';
 import { of, throwError } from 'rxjs';
 
 describe('Audit Interceptor', () => {
   let interceptor: AuditInterceptor;
-  let mockExecutionContext: ExecutionContext;
-  let mockCallHandler: CallHandler;
+  let mockExecutionContext: jest.Mocked<ExecutionContext>;
+  let mockCallHandler: jest.Mocked<CallHandler>;
   let mockRequest: Partial<Request>;
   let mockLogger: jest.Mocked<Logger>;
 
@@ -20,7 +20,7 @@ describe('Audit Interceptor', () => {
       log: jest.fn(),
       debug: jest.fn(),
       error: jest.fn(),
-    };
+    } as unknown as jest.Mocked<Logger>;
     // @ts-expect-error - Testing private property assignment
     (interceptor as { logger: Logger }).logger = mockLogger;
 
@@ -29,7 +29,6 @@ describe('Audit Interceptor', () => {
       method: 'POST',
       url: '/api/test',
       body: { name: 'test', value: 42 },
-      query: { page: '1', limit: '10' },
       params: { id: '123' },
       user: {
         id: 'user-123',
@@ -39,19 +38,19 @@ describe('Audit Interceptor', () => {
         id: 'org-123',
         name: 'Test Organization',
       },
-    };
+    } as unknown as Partial<Request>;
 
     // Mock del ExecutionContext
     mockExecutionContext = {
       switchToHttp: jest.fn().mockReturnValue({
         getRequest: jest.fn().mockReturnValue(mockRequest),
       }),
-    } as unknown as ExecutionContext;
+    } as unknown as jest.Mocked<ExecutionContext>;
 
     // Mock del CallHandler
     mockCallHandler = {
       handle: jest.fn(),
-    };
+    } as jest.Mocked<CallHandler>;
   });
 
   describe('intercept', () => {
@@ -123,7 +122,9 @@ describe('Audit Interceptor', () => {
     it('Given: request without user When: intercepting Then: should log anonymous user', () => {
       // Arrange
       const requestWithoutUser = { ...mockRequest, user: undefined };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(requestWithoutUser);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(
+        requestWithoutUser
+      );
       const response = { data: 'success' };
       mockCallHandler.handle.mockReturnValue(of(response));
 
@@ -141,7 +142,9 @@ describe('Audit Interceptor', () => {
     it('Given: request without organization When: intercepting Then: should log unknown organization', () => {
       // Arrange
       const requestWithoutOrg = { ...mockRequest, organization: undefined };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(requestWithoutOrg);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(
+        requestWithoutOrg
+      );
       const response = { data: 'success' };
       mockCallHandler.handle.mockReturnValue(of(response));
 
@@ -159,7 +162,9 @@ describe('Audit Interceptor', () => {
     it('Given: request with empty body When: intercepting Then: should not log body', () => {
       // Arrange
       const requestWithEmptyBody = { ...mockRequest, body: {} };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(requestWithEmptyBody);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(
+        requestWithEmptyBody
+      );
       const response = { data: 'success' };
       mockCallHandler.handle.mockReturnValue(of(response));
 
@@ -177,7 +182,9 @@ describe('Audit Interceptor', () => {
     it('Given: request with empty query When: intercepting Then: should not log query', () => {
       // Arrange
       const requestWithEmptyQuery = { ...mockRequest, query: {} };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(requestWithEmptyQuery);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(
+        requestWithEmptyQuery
+      );
       const response = { data: 'success' };
       mockCallHandler.handle.mockReturnValue(of(response));
 
@@ -195,7 +202,9 @@ describe('Audit Interceptor', () => {
     it('Given: request with empty params When: intercepting Then: should not log params', () => {
       // Arrange
       const requestWithEmptyParams = { ...mockRequest, params: {} };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue(requestWithEmptyParams);
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(
+        requestWithEmptyParams
+      );
       const response = { data: 'success' };
       mockCallHandler.handle.mockReturnValue(of(response));
 

@@ -114,7 +114,7 @@ describe('ResponseInterceptor', () => {
     it('Given: POST request When: intercepting Then: should use correct default message', done => {
       // Arrange
       const responseData = { id: '123' };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue({
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue({
         method: 'POST',
         url: '/api/test',
       });
@@ -126,8 +126,8 @@ describe('ResponseInterceptor', () => {
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
 
       // Assert
-      result$.subscribe(result => {
-        expect(result.message).toBe('Resource created successfully');
+      result$.subscribe((result: unknown) => {
+        expect((result as { message: string }).message).toBe('Resource created successfully');
         done();
       });
     });
@@ -135,7 +135,7 @@ describe('ResponseInterceptor', () => {
     it('Given: PUT request When: intercepting Then: should use correct default message', done => {
       // Arrange
       const responseData = { id: '123' };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue({
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue({
         method: 'PUT',
         url: '/api/test',
       });
@@ -147,8 +147,8 @@ describe('ResponseInterceptor', () => {
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
 
       // Assert
-      result$.subscribe(result => {
-        expect(result.message).toBe('Resource updated successfully');
+      result$.subscribe((result: unknown) => {
+        expect((result as { message: string }).message).toBe('Resource updated successfully');
         done();
       });
     });
@@ -156,7 +156,7 @@ describe('ResponseInterceptor', () => {
     it('Given: PATCH request When: intercepting Then: should use correct default message', done => {
       // Arrange
       const responseData = { id: '123' };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue({
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue({
         method: 'PATCH',
         url: '/api/test',
       });
@@ -168,8 +168,10 @@ describe('ResponseInterceptor', () => {
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
 
       // Assert
-      result$.subscribe(result => {
-        expect(result.message).toBe('Resource partially updated successfully');
+      result$.subscribe((result: unknown) => {
+        expect((result as { message: string }).message).toBe(
+          'Resource partially updated successfully'
+        );
         done();
       });
     });
@@ -177,7 +179,7 @@ describe('ResponseInterceptor', () => {
     it('Given: DELETE request When: intercepting Then: should use correct default message', done => {
       // Arrange
       const responseData = { id: '123' };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue({
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue({
         method: 'DELETE',
         url: '/api/test',
       });
@@ -189,8 +191,8 @@ describe('ResponseInterceptor', () => {
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
 
       // Assert
-      result$.subscribe(result => {
-        expect(result.message).toBe('Resource deleted successfully');
+      result$.subscribe((result: unknown) => {
+        expect((result as { message: string }).message).toBe('Resource deleted successfully');
         done();
       });
     });
@@ -198,7 +200,7 @@ describe('ResponseInterceptor', () => {
     it('Given: unknown HTTP method When: intercepting Then: should use generic message', done => {
       // Arrange
       const responseData = { id: '123' };
-      mockExecutionContext.switchToHttp().getRequest.mockReturnValue({
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue({
         method: 'OPTIONS',
         url: '/api/test',
       });
@@ -210,8 +212,8 @@ describe('ResponseInterceptor', () => {
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
 
       // Assert
-      result$.subscribe(result => {
-        expect(result.message).toBe('Operation completed successfully');
+      result$.subscribe((result: unknown) => {
+        expect((result as { message: string }).message).toBe('Operation completed successfully');
         done();
       });
     });
@@ -290,7 +292,7 @@ describe('ResponseInterceptor', () => {
 
       // Act
       const result = (
-        interceptor as { generateDefaultMessage(method: string, path: string): string }
+        interceptor as unknown as { generateDefaultMessage(method: string, path: string): string }
       ).generateDefaultMessage(method, '/test');
 
       // Assert
@@ -303,7 +305,7 @@ describe('ResponseInterceptor', () => {
 
       // Act
       const result = (
-        interceptor as { generateDefaultMessage(method: string, path: string): string }
+        interceptor as unknown as { generateDefaultMessage(method: string, path: string): string }
       ).generateDefaultMessage(method, '/test');
 
       // Assert
@@ -316,7 +318,7 @@ describe('ResponseInterceptor', () => {
 
       // Act
       const result = (
-        interceptor as { generateDefaultMessage(method: string, path: string): string }
+        interceptor as unknown as { generateDefaultMessage(method: string, path: string): string }
       ).generateDefaultMessage(method, '/test');
 
       // Assert
@@ -329,7 +331,7 @@ describe('ResponseInterceptor', () => {
 
       // Act
       const result = (
-        interceptor as { generateDefaultMessage(method: string, path: string): string }
+        interceptor as unknown as { generateDefaultMessage(method: string, path: string): string }
       ).generateDefaultMessage(method, '/test');
 
       // Assert
@@ -342,7 +344,7 @@ describe('ResponseInterceptor', () => {
 
       // Act
       const result = (
-        interceptor as { generateDefaultMessage(method: string, path: string): string }
+        interceptor as unknown as { generateDefaultMessage(method: string, path: string): string }
       ).generateDefaultMessage(method, '/test');
 
       // Assert
@@ -355,7 +357,7 @@ describe('ResponseInterceptor', () => {
 
       // Act
       const result = (
-        interceptor as { generateDefaultMessage(method: string, path: string): string }
+        interceptor as unknown as { generateDefaultMessage(method: string, path: string): string }
       ).generateDefaultMessage(method, '/test');
 
       // Assert

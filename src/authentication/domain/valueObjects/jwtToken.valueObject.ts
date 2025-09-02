@@ -44,6 +44,16 @@ export class JwtToken extends ValueObject<IJwtTokenProps> {
     if (parts.length !== 3) {
       throw new Error('Invalid JWT format');
     }
+
+    // Verificar que ninguna parte esté vacía
+    if (parts.some(part => part.trim().length === 0)) {
+      throw new Error('Invalid JWT format');
+    }
+
+    // Verificar que las partes tengan contenido válido (no solo puntos)
+    if (parts.some(part => part === '' || part === '.')) {
+      throw new Error('Invalid JWT format');
+    }
   }
 
   public isExpired(): boolean {

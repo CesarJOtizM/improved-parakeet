@@ -35,7 +35,9 @@ describe('Value Object Base', () => {
 
       // Assert
       expect(valueObject.getValue()).toBe(testValue);
-      expect(Object.isFrozen(valueObject.props)).toBe(true);
+      expect(Object.isFrozen((valueObject as unknown as { props: { value: string } }).props)).toBe(
+        true
+      );
     });
 
     it('Given: two value objects with same value When: comparing Then: should be equal', () => {
@@ -69,7 +71,7 @@ describe('Value Object Base', () => {
       const valueObject = new TestValueObject('test-value');
 
       // Act & Assert
-      expect(valueObject.equals(null)).toBe(false);
+      expect(valueObject.equals(null as unknown as ValueObject<{ value: string }>)).toBe(false);
     });
 
     it('Given: value object When: comparing with undefined Then: should not be equal', () => {
@@ -97,7 +99,7 @@ describe('Value Object Base', () => {
       const valueObject = new TestValueObject('test-value');
 
       // Act
-      const props = valueObject.props;
+      const props = (valueObject as unknown as { props: { value: string } }).props;
 
       // Assert
       expect(Object.isFrozen(props)).toBe(true);
@@ -132,7 +134,7 @@ describe('Value Object Base', () => {
       const valueObject = new TestValueObject('test-value');
 
       // Act
-      const props = valueObject.props;
+      const props = (valueObject as unknown as { props: { value: string } }).props;
 
       // Assert
       expect(Object.isFrozen(props)).toBe(true);
@@ -188,8 +190,12 @@ describe('Value Object Base', () => {
       const valueObject = new TestValueObject('test-value');
 
       // Act & Assert
-      expect(valueObject.props).toHaveProperty('value');
-      expect(typeof valueObject.props.value).toBe('string');
+      expect((valueObject as unknown as { props: { value: string } }).props).toHaveProperty(
+        'value'
+      );
+      expect(typeof (valueObject as unknown as { props: { value: string } }).props.value).toBe(
+        'string'
+      );
     });
   });
 

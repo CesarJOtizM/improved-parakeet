@@ -50,8 +50,9 @@ export class LoginUseCase {
   async execute(request: ILoginRequest): Promise<ILoginResponse> {
     try {
       // Verificar rate limiting para login
-      const rateLimitResult = await this.rateLimitService.checkLoginRateLimit(
-        request.ipAddress || 'unknown'
+      const rateLimitResult = await this.rateLimitService.checkRateLimit(
+        request.ipAddress || 'unknown',
+        'LOGIN'
       );
 
       if (!rateLimitResult.allowed) {

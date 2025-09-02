@@ -1,0 +1,63 @@
+[1mdiff --git a/src/authentication/domain/services/authorizationService.ts b/src/authentication/domain/services/authorizationService.ts[m
+[1mindex 8b9c7b8..cccbd8e 100644[m
+[1m--- a/src/authentication/domain/services/authorizationService.ts[m
+[1m+++ b/src/authentication/domain/services/authorizationService.ts[m
+[36m@@ -180,13 +180,15 @@[m [mexport class AuthorizationService {[m
+   ): string[] {[m
+     const permissions = new Set<string>();[m
+ [m
+[31m-    userRoles.forEach(role => {[m
+[31m-      if (role) {[m
+[31m-        rolePermissions.forEach(permission => {[m
+[31m-          if (permission && typeof permission === 'string') {[m
+[31m-            permissions.add(permission);[m
+[31m-          }[m
+[31m-        });[m
+[32m+[m[32m    // Si no hay roles, retornar array vacío[m
+[32m+[m[32m    if (!userRoles || userRoles.length === 0) {[m
+[32m+[m[32m      return [];[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // Agregar todos los permisos de rolePermissions[m
+[32m+[m[32m    rolePermissions.forEach(permission => {[m
+[32m+[m[32m      if (permission && permission.name) {[m
+[32m+[m[32m        permissions.add(permission.name);[m
+       }[m
+     });[m
+ [m
+[36m@@ -200,19 +202,28 @@[m [mexport class AuthorizationService {[m
+     userPermissions: string[],[m
+     requiredPermission: string[m
+   ): boolean {[m
+[31m-    // Implementar lógica de jerarquía de permisos si es necesario[m
+[31m-    // Por ejemplo, si tienes USERS:ADMIN, automáticamente tienes USERS:READ[m
+[32m+[m[32m    // Verificar si el usuario tiene el permiso requerido directamente[m
+[32m+[m[32m    if (userPermissions.includes(requiredPermission)) {[m
+[32m+[m[32m      return true;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // Verificar si el usuario tiene permisos que impliquen el permiso requerido[m
+     const permissionHierarchy: Record<string, string[]> = {[m
+       'USERS:ADMIN': ['USERS:CREATE', 'USERS:READ', 'USERS:UPDATE', 'USERS:DELETE'],[m
+       'PRODUCTS:ADMIN': ['PRODUCTS:CREATE', 'PRODUCTS:READ', 'PRODUCTS:UPDATE', 'PRODUCTS:DELETE'],[m
+       'INVENTORY:ADMIN': ['INVENTORY:VIEW', 'INVENTORY:MANAGE', 'INVENTORY:REPORTS'],[m
+     };[m
+ [m
+[31m-    const impliedPermissions = permissionHierarchy[requiredPermission] || [];[m
+[32m+[m[32m    // Verificar si el usuario tiene algún permiso de administrador que implique el permiso requerido[m
+[32m+[m[32m    for (const [adminPermission, impliedPermissions] of Object.entries(permissionHierarchy)) {[m
+[32m+[m[32m      if ([m
+[32m+[m[32m        userPermissions.includes(adminPermission) &&[m
+[32m+[m[32m        impliedPermissions.includes(requiredPermission)[m
+[32m+[m[32m      ) {[m
+[32m+[m[32m        return true;[m
+[32m+[m[32m      }[m
+[32m+[m[32m    }[m
+ [m
+[31m-    return ([m
+[31m-      userPermissions.includes(requiredPermission) ||[m
+[31m-      impliedPermissions.some(permission => userPermissions.includes(permission))[m
+[31m-    );[m
+[32m+[m[32m    return false;[m
+   }[m
+ }[m

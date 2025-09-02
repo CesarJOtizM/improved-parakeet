@@ -197,8 +197,7 @@ describe('Domain Event Base', () => {
       // Act & Assert
       expect(typeof event.isMarkedForDispatch).toBe('boolean');
       expect(() => {
-        // @ts-expect-error - Testing readonly behavior
-        (event as { isMarkedForDispatch: boolean }).isMarkedForDispatch = true;
+        (event as unknown as { isMarkedForDispatch: boolean }).isMarkedForDispatch = true;
       }).toThrow();
     });
   });

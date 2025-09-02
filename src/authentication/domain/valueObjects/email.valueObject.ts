@@ -19,8 +19,25 @@ export class Email extends ValueObject<IEmailProps> {
       throw new Error('Email cannot be empty');
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Expresión regular más estricta que evita puntos consecutivos y otros problemas
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(props.value)) {
+      throw new Error('Invalid email format');
+    }
+
+    // Validación adicional para evitar puntos consecutivos
+    if (props.value.includes('..')) {
+      throw new Error('Invalid email format');
+    }
+
+    // Validación para evitar dominios que empiecen o terminen con punto
+    const parts = props.value.split('@');
+    if (parts.length !== 2) {
+      throw new Error('Invalid email format');
+    }
+
+    const domain = parts[1];
+    if (domain.startsWith('.') || domain.endsWith('.') || domain.includes('..')) {
       throw new Error('Invalid email format');
     }
 

@@ -127,7 +127,7 @@ describe('Entity Base', () => {
       const entity = new TestEntity({ name: 'Test', value: 42 });
 
       // Act
-      const result = entity.equals(null);
+      const result = entity.equals(null as unknown as Entity<{ name: string; value: number }>);
 
       // Assert
       expect(result).toBe(false);

@@ -1,9 +1,9 @@
 // Security Config Tests - Configuración de seguridad
 // Tests unitarios para la configuración de seguridad siguiendo AAA y Given-When-Then
 
+import { IAuthConfig } from '@auth/config/auth.config';
 import { defaultSecurityConfig, getSecurityConfig } from '@shared/config/security.config';
 import { SECURITY_CONFIG } from '@shared/constants';
-import { IAuthConfig } from '@shared/types';
 
 describe('Security Config', () => {
   const originalEnv = process.env.ALLOWED_ORIGINS;

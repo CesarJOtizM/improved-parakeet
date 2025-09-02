@@ -133,7 +133,7 @@ describe('HTTP Types', () => {
 
     it('Given: Express Request When: setting user Then: should have user property', () => {
       // Arrange & Act
-      const mockRequest: Partial<Request> = {};
+      const mockRequest: Partial<Request> & { user?: IAuthenticatedUser } = {};
       const user: IAuthenticatedUser = {
         id: 'user-123',
         orgId: 'org-123',
@@ -154,7 +154,7 @@ describe('HTTP Types', () => {
 
     it('Given: Express Request When: setting organization Then: should have organization property', () => {
       // Arrange & Act
-      const mockRequest: Partial<Request> = {};
+      const mockRequest: Partial<Request> & { organization?: IOrganizationContext } = {};
       const organization: IOrganizationContext = {
         id: 'org-123',
         name: 'Test Organization',
@@ -171,7 +171,11 @@ describe('HTTP Types', () => {
 
     it('Given: Express Request When: setting permissions Then: should have permissions properties', () => {
       // Arrange & Act
-      const mockRequest: Partial<Request> = {};
+      const mockRequest: Partial<Request> & {
+        userPermissions?: string[];
+        userRoles?: string[];
+        orgId?: string;
+      } = {};
       const permissions = ['USERS:CREATE', 'USERS:READ'];
       const roles = ['ADMIN', 'USER'];
 

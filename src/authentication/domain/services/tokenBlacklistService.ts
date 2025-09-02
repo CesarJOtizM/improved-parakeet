@@ -85,7 +85,14 @@ export class TokenBlacklistService {
       if (!blacklistedTokenData) {
         return null;
       }
-      return JSON.parse(blacklistedTokenData) as IBlacklistedToken;
+      const parsed = JSON.parse(blacklistedTokenData) as IBlacklistedToken;
+
+      // Convertir fechas de vuelta a objetos Date
+      return {
+        ...parsed,
+        blacklistedAt: new Date(parsed.blacklistedAt),
+        expiresAt: new Date(parsed.expiresAt),
+      };
     } catch (error) {
       this.logger.error(`Error getting blacklisted token ${tokenId}:`, error);
       return null;
@@ -195,7 +202,12 @@ export class TokenBlacklistService {
     try {
       const userTokensKey = `${this.USER_TOKENS_PREFIX}${userId}`;
       const userTokensData = await this.cacheManager.get<string>(userTokensKey);
-      return userTokensData ? JSON.parse(userTokensData) : [];
+      if (!userTokensData) {
+        return [];
+      }
+
+      const parsed = JSON.parse(userTokensData);
+      return Array.isArray(parsed) ? parsed : [];
     } catch (error) {
       this.logger.warn(`Failed to get tokens list for user ${userId}:`, error);
       return [];

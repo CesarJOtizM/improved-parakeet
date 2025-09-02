@@ -217,7 +217,10 @@ describe('HTTP Status Messages', () => {
       const key = 'SOME_KEY';
 
       // Act
-      const message = getHttpStatusMessage(category as keyof typeof HTTP_STATUS_MESSAGES, key);
+      const message = getHttpStatusMessage(
+        category as unknown as keyof typeof HTTP_STATUS_MESSAGES,
+        key
+      );
 
       // Assert
       expect(message).toBe('Message not found');
@@ -241,7 +244,10 @@ describe('HTTP Status Messages', () => {
       const key = 'SOME_KEY';
 
       // Act
-      const message = getHttpStatusMessage(category as keyof typeof HTTP_STATUS_MESSAGES, key);
+      const message = getHttpStatusMessage(
+        category as unknown as keyof typeof HTTP_STATUS_MESSAGES,
+        key
+      );
 
       // Assert
       expect(message).toBe('Message not found');
@@ -253,7 +259,7 @@ describe('HTTP Status Messages', () => {
       const key = null;
 
       // Act
-      const message = getHttpStatusMessage(category, key as string);
+      const message = getHttpStatusMessage(category, key as unknown as string);
 
       // Assert
       expect(message).toBe('Message not found');
@@ -265,7 +271,10 @@ describe('HTTP Status Messages', () => {
       const key = 'SOME_KEY';
 
       // Act
-      const message = getHttpStatusMessage(category as keyof typeof HTTP_STATUS_MESSAGES, key);
+      const message = getHttpStatusMessage(
+        category as unknown as keyof typeof HTTP_STATUS_MESSAGES,
+        key
+      );
 
       // Assert
       expect(message).toBe('Message not found');
@@ -277,7 +286,7 @@ describe('HTTP Status Messages', () => {
       const key = undefined;
 
       // Act
-      const message = getHttpStatusMessage(category, key as string);
+      const message = getHttpStatusMessage(category, key as unknown as string);
 
       // Assert
       expect(message).toBe('Message not found');
@@ -286,11 +295,31 @@ describe('HTTP Status Messages', () => {
     it('Given: all valid combinations When: getting messages Then: should return correct messages', () => {
       // Arrange
       const testCases = [
-        { category: 'SUCCESS', key: 'CREATED', expected: 'Resource created successfully' },
-        { category: 'SUCCESS', key: 'UPDATED', expected: 'Resource updated successfully' },
-        { category: 'VALIDATION', key: 'INVALID_INPUT', expected: 'Invalid input data' },
-        { category: 'BUSINESS', key: 'RESOURCE_NOT_FOUND', expected: 'Resource not found' },
-        { category: 'SYSTEM', key: 'INTERNAL_ERROR', expected: 'Internal server error' },
+        {
+          category: 'SUCCESS' as const,
+          key: 'CREATED' as const,
+          expected: 'Resource created successfully',
+        },
+        {
+          category: 'SUCCESS' as const,
+          key: 'UPDATED' as const,
+          expected: 'Resource updated successfully',
+        },
+        {
+          category: 'VALIDATION' as const,
+          key: 'INVALID_INPUT' as const,
+          expected: 'Invalid input data',
+        },
+        {
+          category: 'BUSINESS' as const,
+          key: 'RESOURCE_NOT_FOUND' as const,
+          expected: 'Resource not found',
+        },
+        {
+          category: 'SYSTEM' as const,
+          key: 'INTERNAL_ERROR' as const,
+          expected: 'Internal server error',
+        },
       ];
 
       // Act & Assert
