@@ -1,21 +1,28 @@
 
-echo '🏗️  ¡Hora de poner guapo tu código antes del commit!'
+echo "🔍 Running pre-commit checks..."
 
-# Ejecutar lint-staged
-bun run lint-staged || {
-    echo ''
-    echo '❌❌❌ ¡Ups! Algo salió mal en el pre-commit ❌❌❌'
-    echo ''
-    echo '🔧 Posibles soluciones:'
-    echo '   • Ejecuta "bun run lint-staged" manualmente para ver errores detallados'
-    echo '   • O ejecuta los comandos individuales:'
-    echo '     - "bun run eslint:fix" para arreglar ESLint'
-    echo '     - "bun run prettier:fix" para arreglar Prettier'
-    echo '     - "bun run stylelint:fix" para arreglar Stylelint'
-    echo '   • Agrega los archivos corregidos y vuelve a intentar'
-    echo ''
-    echo '💡 Tip: lint-staged solo procesa archivos modificados, así que es súper rápido!'
+# Get staged TypeScript/JavaScript files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx)$' | tr '\n' ' ')
+
+if [ -n "$STAGED_FILES" ]; then
+  echo "📝 Running ESLint on staged files..."
+  echo "Files to lint: $STAGED_FILES"
+  
+  # Run ESLint only on staged files
+  echo "$STAGED_FILES" | xargs eslint --fix
+  
+  # Check if ESLint passed
+  if [ $? -ne 0 ]; then
+    echo "❌ ESLint failed on staged files. Please fix the issues and try again."
     exit 1
-}
+  fi
+  
+  echo "✅ ESLint passed on staged files"
+else
+  echo "📝 No TypeScript/JavaScript files to lint"
+fi
 
-echo '🎉✅ ¡Éxito! Tu código está más limpio que tu conciencia después de un deploy en viernes. ¡A commitear! 🎉✅'
+# Run formatting check
+echo "✨ Checking code formatting..."
+bun run format:check
+

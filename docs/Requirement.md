@@ -2,10 +2,11 @@
 
 ## Ficha Ejecutiva:
 
-| Sección | Descripción |
-| --- | --- |
-| **Objetivo** | Optimizar el control de inventarios en múltiples bodegas y organizaciones, garantizando trazabilidad, reducción de pérdidas y soporte para la toma de decisiones. |
-| **Alcance Funcional** | • Gestión de productos (crear, editar, eliminar, clasificar).• Control de entradas y salidas.
+| Sección               | Descripción                                                                                                                                                       |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Objetivo**          | Optimizar el control de inventarios en múltiples bodegas y organizaciones, garantizando trazabilidad, reducción de pérdidas y soporte para la toma de decisiones. |
+| **Alcance Funcional** | • Gestión de productos (crear, editar, eliminar, clasificar).• Control de entradas y salidas.                                                                     |
+
 • Movimientos entre bodegas (en tránsito, recibido, rechazado).
 • Alertas de stock mínimo/máximo.
 • Reportes (disponible, histórico, valorización).• Gestión de usuarios y permisos.
@@ -47,19 +48,17 @@ El sistema incluirá las siguientes funcionalidades principales:
 - **Reportes y consultas**: genera reportes de inventario disponible, histórico de movimientos y valorización del inventario. Estos reportes serán exportables a PDF y Excel.
 - **Gestión de usuarios y permisos**: ofrece administración de roles y perfiles con accesos diferenciados, controlando acciones por módulo como consultar, registrar o aprobar.
 - **Importación masiva vía Excel/CSV**: permite la carga inicial o actualización de productos desde plantillas prediseñadas. Los campos requeridos son:
-    - Ubicación
-    - Código
-    - Nombre
-    - Unidad de medida
-    - Cantidad
-    - Costo Unitario
-    - Costo Total
-    - Precio Venta Unitario
-    - Precio Venta Total
-    
-    El sistema validará estructura, duplicados y datos obligatorios, generando reportes de errores y vista previa antes de confirmar la carga.
-    
-- **Integraciones externas**: el sistema estará preparado para integrarse con facturación, compras o ERP mediante API, facilitando su extensión en el futuro.
+  - Ubicación
+  - Código
+  - Nombre
+  - Unidad de medida
+  - Cantidad
+  - Costo Unitario
+  - Costo Total
+  - Precio Venta Unitario
+  - Precio Venta Total
+  El sistema validará estructura, duplicados y datos obligatorios, generando reportes de errores y vista previa antes de confirmar la carga.
+- **External integrations**: the system will be prepared to integrate with billing, purchasing or ERP through API, facilitating its extension in the future.
 
 ---
 
@@ -105,7 +104,7 @@ El sistema incluirá las siguientes funcionalidades principales:
 ## 7. Stack Tecnológico Sugerido (nota interna)
 
 - **Frontend:** React o Next.js
-- **Backend:** Node.js con API GraphQL o REST
+- **Backend:** Node.js with GraphQL or REST API
 - **Base de Datos:** PostgreSQL (relacional) o MongoDB (documental)
 - **Autenticación y Autorización:** Supabase Auth o AWS Cognito
 - **Infraestructura / Hosting:** AWS, Supabase o Google Cloud, según análisis de costo-beneficio

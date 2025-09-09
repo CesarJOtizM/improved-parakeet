@@ -1,0 +1,228 @@
+import { Permission } from '@auth/domain/entities/permission.entity';
+import { Role } from '@auth/domain/entities/role.entity';
+import { User } from '@auth/domain/entities/user.entity';
+
+export interface IAuthorizationResult {
+  isAuthorized: boolean;
+  reason?: string;
+  requiredPermissions: string[];
+  userPermissions: string[];
+}
+
+export interface IPermissionCheck {
+  module: string;
+  action: string;
+}
+
+export class AuthorizationService {
+  /**
+   * Verifica si un usuario tiene un permiso específico
+   */
+  public static checkPermission(
+    _user: User,
+    userPermissions: string[],
+    requiredPermission: string
+  ): IAuthorizationResult {
+    const hasPermission = userPermissions.includes(requiredPermission);
+
+    return {
+      isAuthorized: hasPermission,
+      reason: hasPermission ? undefined : 'Insufficient permissions',
+      requiredPermissions: [requiredPermission],
+      userPermissions,
+    };
+  }
+
+  /**
+   * Verifica si un usuario tiene al menos uno de los permisos requeridos
+   */
+  public static checkAnyPermission(
+    _user: User,
+    userPermissions: string[],
+    requiredPermissions: string[]
+  ): IAuthorizationResult {
+    const hasAnyPermission = requiredPermissions.some(permission =>
+      userPermissions.includes(permission)
+    );
+
+    return {
+      isAuthorized: hasAnyPermission,
+      reason: hasAnyPermission ? undefined : 'No required permissions found',
+      requiredPermissions,
+      userPermissions,
+    };
+  }
+
+  /**
+   * Verifica si un usuario tiene todos los permisos requeridos
+   */
+  public static checkAllPermissions(
+    _user: User,
+    userPermissions: string[],
+    requiredPermissions: string[]
+  ): IAuthorizationResult {
+    const hasAllPermissions = requiredPermissions.every(permission =>
+      userPermissions.includes(permission)
+    );
+
+    const missingPermissions = requiredPermissions.filter(
+      permission => !userPermissions.includes(permission)
+    );
+
+    return {
+      isAuthorized: hasAllPermissions,
+      reason: hasAllPermissions
+        ? undefined
+        : `Missing permissions: ${missingPermissions.join(', ')}`,
+      requiredPermissions,
+      userPermissions,
+    };
+  }
+
+  /**
+   * Verifica si un usuario tiene acceso a un módulo específico
+   */
+  public static checkModuleAccess(
+    _user: User,
+    userPermissions: string[],
+    module: string
+  ): IAuthorizationResult {
+    const modulePermissions = userPermissions.filter(permission =>
+      permission.startsWith(`${module}:`)
+    );
+
+    const hasModuleAccess = modulePermissions.length > 0;
+
+    return {
+      isAuthorized: hasModuleAccess,
+      reason: hasModuleAccess ? undefined : `No access to module: ${module}`,
+      requiredPermissions: [`${module}:*`],
+      userPermissions: modulePermissions,
+    };
+  }
+
+  /**
+   * Verifica si un usuario puede realizar una acción específica en un módulo
+   */
+  public static checkActionPermission(
+    _user: User,
+    userPermissions: string[],
+    module: string,
+    action: string
+  ): IAuthorizationResult {
+    const requiredPermission = `${module}:${action}`;
+    const hasPermission = userPermissions.includes(requiredPermission);
+
+    return {
+      isAuthorized: hasPermission,
+      reason: hasPermission ? undefined : `Cannot perform ${action} on ${module}`,
+      requiredPermissions: [requiredPermission],
+      userPermissions,
+    };
+  }
+
+  /**
+   * Verifica si un usuario tiene un rol específico
+   */
+  public static checkRole(
+    _user: User,
+    userRoles: string[],
+    requiredRole: string
+  ): IAuthorizationResult {
+    const hasRole = userRoles.includes(requiredRole);
+
+    return {
+      isAuthorized: hasRole,
+      reason: hasRole ? undefined : `Required role not found: ${requiredRole}`,
+      requiredPermissions: [`ROLE:${requiredRole}`],
+      userPermissions: userRoles,
+    };
+  }
+
+  /**
+   * Verifica si un usuario tiene al menos uno de los roles requeridos
+   */
+  public static checkAnyRole(
+    _user: User,
+    userRoles: string[],
+    requiredRoles: string[]
+  ): IAuthorizationResult {
+    const hasAnyRole = requiredRoles.some(role => userRoles.includes(role));
+
+    return {
+      isAuthorized: hasAnyRole,
+      reason: hasAnyRole ? undefined : 'No required roles found',
+      requiredPermissions: requiredRoles.map(role => `ROLE:${role}`),
+      userPermissions: userRoles,
+    };
+  }
+
+  /**
+   * Verifica si un usuario es administrador
+   */
+  public static isAdmin(_user: User, userRoles: string[]): boolean {
+    return userRoles.includes('ADMIN');
+  }
+
+  /**
+   * Verifica si un usuario es superusuario
+   */
+  public static isSuperUser(_user: User, userRoles: string[]): boolean {
+    return userRoles.includes('SUPER_USER') || userRoles.includes('ADMIN');
+  }
+
+  /**
+   * Obtiene los permisos de un usuario basados en sus roles
+   */
+  public static getUserPermissionsFromRoles(
+    userRoles: Role[],
+    rolePermissions: Permission[]
+  ): string[] {
+    const permissions = new Set<string>();
+
+    if (!userRoles || userRoles.length === 0) {
+      return [];
+    }
+
+    // Agregar todos los permisos de rolePermissions
+    rolePermissions.forEach(permission => {
+      if (permission && permission.name) {
+        permissions.add(permission.name);
+      }
+    });
+
+    return Array.from(permissions);
+  }
+
+  /**
+   * Valida la jerarquía de permisos
+   */
+  public static validatePermissionHierarchy(
+    userPermissions: string[],
+    requiredPermission: string
+  ): boolean {
+    // Verificar si el usuario tiene el permiso requerido directamente
+    if (userPermissions.includes(requiredPermission)) {
+      return true;
+    }
+
+    // Verificar si el usuario tiene permisos que impliquen el permiso requerido
+    const permissionHierarchy: Record<string, string[]> = {
+      'USERS:ADMIN': ['USERS:CREATE', 'USERS:READ', 'USERS:UPDATE', 'USERS:DELETE'],
+      'PRODUCTS:ADMIN': ['PRODUCTS:CREATE', 'PRODUCTS:READ', 'PRODUCTS:UPDATE', 'PRODUCTS:DELETE'],
+      'INVENTORY:ADMIN': ['INVENTORY:VIEW', 'INVENTORY:MANAGE', 'INVENTORY:REPORTS'],
+    };
+
+    // Verificar si el usuario tiene algún permiso de administrador que implique el permiso requerido
+    for (const [adminPermission, impliedPermissions] of Object.entries(permissionHierarchy)) {
+      if (
+        userPermissions.includes(adminPermission) &&
+        impliedPermissions.includes(requiredPermission)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+}

@@ -1,0 +1,32 @@
+// Tipos para extensiones de Express Request
+
+export interface IAuthenticatedUser {
+  id: string;
+  orgId: string;
+  email: string;
+  username: string;
+  roles: string[];
+  permissions: string[];
+  jti: string;
+}
+
+export interface IOrganizationContext {
+  id: string;
+  name: string;
+  slug: string;
+  domain?: string;
+}
+
+// Extender la interfaz Request de Express
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      user?: IAuthenticatedUser;
+      organization?: IOrganizationContext;
+      orgId?: string;
+      userPermissions?: string[];
+      userRoles?: string[];
+    }
+  }
+}

@@ -1,0 +1,15 @@
+# Prisma generated files
+generated/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
