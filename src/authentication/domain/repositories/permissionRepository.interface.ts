@@ -1,5 +1,6 @@
 import { Permission } from '@auth/domain/entities/permission.entity';
 import { IReadRepository, IWriteRepository } from '@shared/domain/repository';
+import { IPaginationOptions, IPermissionFilters } from '@shared/types/filters.types';
 
 export interface IPermissionRepository
   extends IReadRepository<Permission>,
@@ -15,4 +16,6 @@ export interface IPermissionRepository
   existsByName(name: string): Promise<boolean>;
   countByModule(module: string): Promise<number>;
   findPermissionsByModules(modules: string[]): Promise<Permission[]>;
+  findMany(filters: IPermissionFilters, pagination: IPaginationOptions): Promise<Permission[]>;
+  count(filters: IPermissionFilters): Promise<number>;
 }

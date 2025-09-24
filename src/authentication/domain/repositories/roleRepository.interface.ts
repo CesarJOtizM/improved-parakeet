@@ -1,5 +1,6 @@
 import { Role } from '@auth/domain/entities/role.entity';
 import { IReadRepository, IWriteRepository } from '@shared/domain/repository';
+import { IPaginationOptions, IRoleFilters } from '@shared/types/filters.types';
 
 export interface IRoleRepository extends IReadRepository<Role>, IWriteRepository<Role> {
   findByName(name: string, orgId: string): Promise<Role | null>;
@@ -9,4 +10,6 @@ export interface IRoleRepository extends IReadRepository<Role>, IWriteRepository
   existsByName(name: string, orgId: string): Promise<boolean>;
   countByStatus(isActive: boolean, orgId: string): Promise<number>;
   findRolesWithPermissions(permissionIds: string[], orgId: string): Promise<Role[]>;
+  findMany(filters: IRoleFilters, pagination: IPaginationOptions): Promise<Role[]>;
+  count(filters: IRoleFilters): Promise<number>;
 }

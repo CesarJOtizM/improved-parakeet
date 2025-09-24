@@ -5,6 +5,7 @@ import { Password } from '@auth/domain/valueObjects/password.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Injectable, Logger } from '@nestjs/common';
+import { IPaginationOptions, IUserFilters, IWhereClause } from '@shared/types/filters.types';
 
 @Injectable()
 export class UserRepository implements UserRepositoryInterface {
@@ -525,6 +526,101 @@ export class UserRepository implements UserRepositoryInterface {
         this.logger.error(`Error checking user existence: ${error.message}`);
       } else {
         this.logger.error(`Error checking user existence: ${error}`);
+      }
+      throw error;
+    }
+  }
+
+  async findMany(filters: IUserFilters, pagination: IPaginationOptions): Promise<User[]> {
+    try {
+      const { limit, offset } = pagination;
+      const { orgId, status, search } = filters;
+
+      const where: IWhereClause = { orgId };
+      if (status) where.isActive = status === 'ACTIVE';
+      if (search) {
+        where.OR = [
+          { email: { contains: search, mode: 'insensitive' } },
+          { username: { contains: search, mode: 'insensitive' } },
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+
+      const usersData = await this.prisma.user.findMany({
+        where,
+        include: {
+          userRoles: {
+            include: {
+              role: {
+                include: {
+                  permissions: {
+                    include: {
+                      permission: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        skip: offset,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return usersData.map(userData =>
+        User.reconstitute(
+          {
+            email: Email.create(userData.email),
+            username: userData.username,
+            passwordHash: Password.createHashed(userData.passwordHash),
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            status: UserStatus.create(userData.isActive ? 'ACTIVE' : 'INACTIVE'),
+            lastLoginAt: userData.lastLoginAt || undefined,
+            failedLoginAttempts: 0, // TODO: Agregar campo a la base de datos
+            lockedUntil: undefined, // TODO: Agregar campo a la base de datos
+            roles: userData.userRoles.map(ur => ur.role.name),
+            permissions: userData.userRoles.flatMap(ur =>
+              ur.role.permissions.map(rp => rp.permission.name)
+            ),
+          },
+          userData.id,
+          userData.orgId
+        )
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error finding users: ${error.message}`);
+      } else {
+        this.logger.error(`Error finding users: ${error}`);
+      }
+      throw error;
+    }
+  }
+
+  async count(filters: IUserFilters): Promise<number> {
+    try {
+      const { orgId, status, search } = filters;
+
+      const where: IWhereClause = { orgId };
+      if (status) where.isActive = status === 'ACTIVE';
+      if (search) {
+        where.OR = [
+          { email: { contains: search, mode: 'insensitive' } },
+          { username: { contains: search, mode: 'insensitive' } },
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+
+      return await this.prisma.user.count({ where });
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error counting users: ${error.message}`);
+      } else {
+        this.logger.error(`Error counting users: ${error}`);
       }
       throw error;
     }

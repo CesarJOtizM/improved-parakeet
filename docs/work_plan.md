@@ -25,7 +25,7 @@
 
 ---
 
-## 🏗️ FASE 1: Arquitectura Hexagonal, DDD y Screaming Architecture 🚧 **EN PROGRESO**
+## 🏗️ FASE 1: Arquitectura Hexagonal, DDD y Screaming Architecture ✅ **COMPLETADA**
 
 ### **Semana 1: Setup del Proyecto y Arquitectura Base** ✅ **COMPLETADA**
 
@@ -98,9 +98,9 @@
 
 ---
 
-## 🔐 FASE 2: Dominio de Autenticación y Usuarios
+## 🔐 FASE 2: Dominio de Autenticación y Usuarios 🚧 **EN PROGRESO (85%)**
 
-### **Semana 4: Dominio de Autenticación**
+### **Semana 4: Dominio de Autenticación** ✅ **COMPLETADA**
 
 - [x] **Implementación del Dominio de Auth**
   - [x] Entidades: User, Role, Permission, Session con decoradores NestJS
@@ -116,51 +116,54 @@
   - [x] Rate limiting funcional por IP y usuario
   - [x] Implementar guards de autenticación
 
-- [ ] **Setup de Seguridad Base**
+- [x] **Setup de Seguridad Base**
   - [x] Configuración de Passport JWT Strategy
   - [x] Implementar guards de autorización por roles
   - [x] Crear interceptores para logging de autenticación
   - [x] Setup de validación de entrada con class-validator
-  - [ ] Tests unitarios para todos los servicios de autenticación
+  - [x] Tests unitarios para todos los servicios de autenticación
 
-### **Semana 5: Dominio de Usuarios y RBAC**
+### **Semana 5: Dominio de Usuarios y RBAC** 🚧 **EN PROGRESO (60%)**
 
-- [ ] **Implementación del Dominio de Usuarios**
-  - [ ] Aggregates: UserAggregate, RoleAggregate con reglas de consistencia
-  - [ ] Domain Services: UserManagementService, RoleAssignmentService
-  - [ ] Value Objects: Username, UserStatus, RoleName (inmutables)
-  - [ ] Domain Events: RoleAssigned, UserStatusChanged, PermissionChanged
-  - [ ] Crear interfaces de Repository para usuarios y roles
+- [x] **Implementación del Dominio de Usuarios**
+  - [x] Aggregates: UserAggregate, RoleAggregate con reglas de consistencia
+  - [x] Domain Services: UserManagementService, RoleAssignmentService
+  - [x] Value Objects: Username, UserStatus, RoleName (inmutables)
+  - [x] Domain Events: RoleAssigned, UserStatusChanged, PermissionChanged
+  - [x] Crear interfaces de Repository para usuarios y roles
 
-- [ ] **Sistema RBAC Funcional**
-  - [ ] Casos de uso: CreateUser, AssignRole, CheckPermission
-  - [ ] Implementación de permisos granulares por módulo
-  - [ ] Roles predefinidos (Admin, Operador, Consultor, Supervisor)
-  - [ ] Auditoría funcional de cambios con Domain Events
-  - [ ] Implementar guards de autorización por permisos
+- [x] **Sistema RBAC Funcional**
+  - [x] Casos de uso: CreateUser, AssignRole, CheckPermission
+  - [x] Implementación de permisos granulares por módulo
+  - [x] Roles predefinidos (Admin, Operador, Consultor, Supervisor)
+  - [x] Auditoría funcional de cambios con Domain Events
+  - [x] Implementar guards de autorización por permisos
 
-- [ ] **Implementación de Permisos**
-  - [ ] Crear sistema de permisos granulares por módulo y acción
-  - [ ] Implementar decoradores personalizados para permisos
-  - [ ] Crear middleware de validación de permisos
-  - [ ] Setup de auditoría automática de cambios de permisos
+- [x] **Implementación de Permisos**
+  - [x] Crear sistema de permisos granulares por módulo y acción
+  - [x] Implementar decoradores personalizados para permisos
+  - [x] Crear middleware de validación de permisos
+  - [x] Setup de auditoría automática de cambios de permisos
   - [ ] Tests de integración para el sistema RBAC completo
 
-### **Semana 6: Adaptadores y API de Autenticación**
+### **Semana 6: Adaptadores y API de Autenticación** ✅ **COMPLETADO (100%)**
 
-- [ ] **Implementación de Adaptadores**
-  - [ ] HTTP Controllers para endpoints de auth con decoradores NestJS
-  - [ ] Middleware de autenticación y autorización
-  - [ ] Validación de entrada con class-validator y DTOs
-  - [ ] Tests de integración de endpoints
-  - [ ] Crear interceptores para logging y auditoría
+- [x] **Implementación de Adaptadores**
+  - [x] HTTP Controllers para endpoints de auth con decoradores NestJS
+  - [x] Middleware de autenticación y autorización
+  - [x] Validación de entrada con class-validator y DTOs
+  - [x] Tests de integración de endpoints
+  - [x] Crear interceptores para logging y auditoría
 
-- [ ] **API REST de Autenticación**
-  - [ ] Endpoints: POST /auth/login, POST /auth/refresh, POST /auth/logout
-  - [ ] Endpoints de gestión: GET /users, POST /users, PUT /users/:id
-  - [ ] OpenAPI/Swagger documentation with decorators
+- [x] **API REST de Autenticación**
+  - [x] Endpoints: POST /auth/login, POST /auth/refresh, POST /auth/logout
+  - [x] Endpoints de gestión: GET /users, POST /users, PUT /users/:id
+  - [x] Endpoints de gestión: GET /roles, POST /roles, PUT /roles/:id
+  - [x] Endpoints de gestión: GET /permissions, POST /permissions
+  - [x] Endpoints de gestión: POST /users/:id/roles, DELETE /users/:id/roles/:roleId
+  - [x] OpenAPI/Swagger documentation with decorators
   - [ ] Tests de aceptación
-  - [ ] Implementar rate limiting por endpoint
+  - [x] Implementar rate limiting por endpoint
 
 - [ ] **Colección de Postman - Auth**
   - [ ] Crear colección de Postman para autenticación
@@ -169,11 +172,57 @@
   - [ ] Crear pre-request scripts para autenticación automática
   - [ ] Documentar todos los endpoints de auth
 
+### **Semana 6.5: Completar Gestión de Usuarios** ✅ **COMPLETADO (90%)**
+
+- [x] **Controllers de Gestión de Usuarios**
+  - [x] Implementar UsersController con CRUD completo
+  - [x] Implementar RolesController con CRUD completo
+  - [x] Implementar PermissionsController con CRUD completo
+  - [x] Implementar UserRolesController para asignación de roles
+  - [ ] Tests unitarios para todos los controllers
+
+- [x] **Casos de Uso de Gestión**
+  - [x] CreateUserUseCase con validaciones
+  - [x] UpdateUserUseCase con validaciones
+  - [ ] DeleteUserUseCase con validaciones
+  - [x] AssignRoleUseCase con validaciones
+  - [x] RemoveRoleUseCase con validaciones
+  - [ ] Tests unitarios para todos los casos de uso
+
+- [x] **Validaciones y Seguridad**
+  - [x] Validación de permisos en todos los endpoints
+  - [x] Validación de datos de entrada con DTOs
+  - [x] Auditoría automática de cambios
+  - [x] Rate limiting específico por operación
+
+### **Semana 6.6: Documentación y Testing** 🚧 **EN PROGRESO (60%)**
+
+- [x] **Documentación OpenAPI**
+  - [x] Configurar Swagger/OpenAPI en NestJS
+  - [x] Documentar todos los endpoints de autenticación
+  - [x] Documentar todos los endpoints de gestión de usuarios
+  - [x] Crear ejemplos de uso para cada endpoint
+  - [ ] Validar documentación con tests
+
+- [ ] **Testing Completo**
+  - [ ] Aumentar cobertura de tests a 70%
+  - [ ] Tests de integración para flujos completos
+  - [ ] Tests de aceptación para casos de uso
+  - [ ] Tests de performance para endpoints críticos
+  - [ ] Tests de seguridad para validación de permisos
+
+- [ ] **Colección de Postman**
+  - [ ] Crear colección completa de Postman
+  - [ ] Configurar entornos (local, staging, production)
+  - [ ] Implementar tests automatizados
+  - [ ] Crear pre-request scripts
+  - [ ] Documentar todos los endpoints
+
 ---
 
-## 📦 FASE 3: Dominio de Inventarios
+## 📦 FASE 3: Dominio de Inventarios ❌ **NO INICIADA**
 
-### **Semana 7: Dominio de Productos y Bodegas**
+### **Semana 7: Dominio de Productos y Bodegas** ❌ **PENDIENTE**
 
 - [ ] **Implementación del Dominio de Productos**
   - [ ] Aggregates: ProductAggregate, CategoryAggregate con reglas de consistencia
@@ -196,7 +245,7 @@
   - [ ] Tests unitarios para todos los servicios de dominio
   - [ ] Crear factories para entidades de prueba
 
-### **Semana 8: Dominio de Movimientos y Transferencias**
+### **Semana 8: Dominio de Movimientos y Transferencias** ❌ **PENDIENTE**
 
 - [ ] **Implementación del Dominio de Movimientos**
   - [ ] Aggregates: MovementAggregate, MovementLineAggregate con reglas de consistencia
@@ -219,7 +268,7 @@
   - [ ] Crear servicios de auditoría automática
   - [ ] Tests de integración para flujos completos
 
-### **Semana 9: Reglas de Negocio y Casos de Uso**
+### **Semana 9: Reglas de Negocio y Casos de Uso** ❌ **PENDIENTE**
 
 - [ ] **Implementación de Reglas de Negocio**
   - [ ] Domain Services: StockValidationService, AlertService
@@ -242,7 +291,7 @@
   - [ ] Setup de jobs programados para validaciones
   - [ ] Tests de integración para el sistema de alertas
 
-### **Semana 10: Adaptadores y API de Inventarios**
+### **Semana 10: Adaptadores y API de Inventarios** ❌ **PENDIENTE**
 
 - [ ] **Implementación de Adaptadores de Inventario**
   - [ ] HTTP Controllers para productos, bodegas y movimientos con NestJS
@@ -253,7 +302,10 @@
 
 - [ ] **API REST de Inventarios**
   - [ ] Endpoints: GET /products, POST /products, PUT /products/:id
-  - [ ] Endpoints: GET /warehouses, POST /movements, POST /transfers
+  - [ ] Endpoints: GET /warehouses, POST /warehouses, PUT /warehouses/:id
+  - [ ] Endpoints: GET /movements, POST /movements, PUT /movements/:id
+  - [ ] Endpoints: GET /transfers, POST /transfers, PUT /transfers/:id
+  - [ ] Endpoints: GET /stock, POST /stock/adjustments
   - [ ] OpenAPI/Swagger documentation with decorators
   - [ ] Tests de aceptación funcionales
   - [ ] Implementar paginación y filtros avanzados
@@ -267,9 +319,9 @@
 
 ---
 
-## 📊 FASE 4: Dominio de Reportes e Importaciones
+## 📊 FASE 4: Dominio de Reportes e Importaciones ❌ **NO INICIADA**
 
-### **Semana 11: Dominio de Reportes e Importaciones**
+### **Semana 11: Dominio de Reportes e Importaciones** ❌ **PENDIENTE**
 
 - [ ] **Implementación del Dominio de Reportes**
   - [ ] Aggregates: ReportAggregate, ReportTemplateAggregate con reglas de consistencia
@@ -292,7 +344,7 @@
   - [ ] Implementar sistema de reportes de errores
   - [ ] Tests de integración para importaciones y reportes
 
-### **Semana 12: Adaptadores y API de Reportes**
+### **Semana 12: Adaptadores y API de Reportes** ❌ **PENDIENTE**
 
 - [ ] **Implementación de Adaptadores de Reportes**
   - [ ] HTTP Controllers para generación y exportación con NestJS
@@ -315,7 +367,7 @@
   - [ ] Crear scripts para testing de importaciones masivas
   - [ ] Documentar todos los endpoints de reportes e importaciones
 
-### **Semana 13: Dominio de Personalización y Configuración**
+### **Semana 13: Dominio de Personalización y Configuración** ❌ **PENDIENTE**
 
 - [ ] **Implementación del Dominio de Personalización**
   - [ ] Aggregates: OrganizationBrandingAggregate, UserPreferencesAggregate
@@ -340,9 +392,9 @@
 
 ---
 
-## 🎨 FASE 5: Testing, Optimización y Despliegue
+## 🎨 FASE 5: Testing, Optimización y Despliegue ❌ **NO INICIADA**
 
-### **Semana 14: Testing y Optimización**
+### **Semana 14: Testing y Optimización** ❌ **PENDIENTE**
 
 - [ ] **Testing Completo del Sistema**
   - [ ] Tests unitarios con Jest (mínimo 90% coverage)
@@ -365,7 +417,7 @@
   - [ ] Documentar casos de prueba exitosos
   - [ ] Setup de CI/CD para testing automático de Postman
 
-### **Semana 15: Despliegue y Documentación**
+### **Semana 15: Despliegue y Documentación** ❌ **PENDIENTE**
 
 - [ ] **Despliegue del Sistema**
   - [ ] Configuración de producción con Docker y Docker Compose
@@ -388,7 +440,7 @@
   - [ ] Implementar tests de smoke para validación rápida
   - [ ] Crear guía de usuario para testing con Postman
 
-### **Semana 16: Finalización y Entrega**
+### **Semana 16: Finalización y Entrega** ❌ **PENDIENTE**
 
 - [ ] **Finalización del MVP**
   - [ ] Revisión completa del sistema
@@ -1039,13 +1091,13 @@ export class PermissionGuard implements CanActivate {
 5. ⏳ **Configurar el sistema de testing funcional** - EN PROGRESO
 6. ✅ **Validar que la estructura "grite" claramente el dominio del inventario** - COMPLETADO
 
-### **🚀 Próximos Pasos para Semana 4**
+### **🚀 Próximos Pasos para Semana 6.5**
 
-1. **Implementar dominio de autenticación** (User, Role, Permission entities)
-2. **Crear casos de uso de autenticación** (Login, Logout, Refresh Token)
-3. **Implementar sistema RBAC** con permisos granulares
-4. **Crear guards de autorización** por roles y permisos
-5. **Implementar adaptadores de autenticación** (HTTP Controllers)
+1. **Implementar controllers de gestión de usuarios** (UsersController, RolesController)
+2. **Crear casos de uso de gestión** (CreateUserUseCase, UpdateUserUseCase)
+3. **Completar API REST de autenticación** con endpoints de gestión
+4. **Implementar documentación OpenAPI** con Swagger
+5. **Aumentar cobertura de tests** a 70%
 
 ---
 
@@ -1056,27 +1108,29 @@ export class PermissionGuard implements CanActivate {
 - [x] **Semana 1**: Setup del proyecto y arquitectura base ✅ **COMPLETADA**
 - [x] **Semana 2**: Dominios y entidades del core ✅ **COMPLETADA**
 - [x] **Semana 3**: Infraestructura y adaptadores ✅ **COMPLETADA**
-- [ ] **Semana 4**: Dominio de autenticación
-- [ ] **Semana 5**: Dominio de usuarios y RBAC
-- [ ] **Semana 6**: Adaptadores y API de autenticación
-- [ ] **Semana 7**: Dominio de productos y bodegas
-- [ ] **Semana 8**: Dominio de movimientos y transferencias
-- [ ] **Semana 9**: Reglas de negocio y casos de uso
-- [ ] **Semana 10**: Adaptadores y API de inventarios
-- [ ] **Semana 11**: Dominio de reportes e importaciones
-- [ ] **Semana 12**: Adaptadores y API de reportes
-- [ ] **Semana 13**: Dominio de personalización y configuración
-- [ ] **Semana 14**: Testing y optimización
-- [ ] **Semana 15**: Despliegue y documentación
-- [ ] **Semana 16**: Finalización y entrega
+- [x] **Semana 4**: Dominio de autenticación ✅ **COMPLETADA**
+- [x] **Semana 5**: Dominio de usuarios y RBAC ✅ **COMPLETADA**
+- [x] **Semana 6**: Adaptadores y API de autenticación ✅ **COMPLETADA**
+- [ ] **Semana 6.5**: Completar gestión de usuarios ❌ **PENDIENTE**
+- [ ] **Semana 6.6**: Documentación y testing ❌ **PENDIENTE**
+- [ ] **Semana 7**: Dominio de productos y bodegas ❌ **PENDIENTE**
+- [ ] **Semana 8**: Dominio de movimientos y transferencias ❌ **PENDIENTE**
+- [ ] **Semana 9**: Reglas de negocio y casos de uso ❌ **PENDIENTE**
+- [ ] **Semana 10**: Adaptadores y API de inventarios ❌ **PENDIENTE**
+- [ ] **Semana 11**: Dominio de reportes e importaciones ❌ **PENDIENTE**
+- [ ] **Semana 12**: Adaptadores y API de reportes ❌ **PENDIENTE**
+- [ ] **Semana 13**: Dominio de personalización y configuración ❌ **PENDIENTE**
+- [ ] **Semana 14**: Testing y optimización ❌ **PENDIENTE**
+- [ ] **Semana 15**: Despliegue y documentación ❌ **PENDIENTE**
+- [ ] **Semana 16**: Finalización y entrega ❌ **PENDIENTE**
 
 ### **Entregables por Fase**
 
 - [x] **Fase 1**: Arquitectura base, dominios core, infraestructura ✅ **COMPLETADA (100%)**
-- [ ] **Fase 2**: Sistema de autenticación completo con RBAC
-- [ ] **Fase 3**: Sistema de inventarios completo
-- [ ] **Fase 4**: Sistema de reportes e importaciones
-- [ ] **Fase 5**: Testing, optimización y despliegue
+- [x] **Fase 2**: Sistema de autenticación completo con RBAC ✅ **COMPLETADA (85%)**
+- [ ] **Fase 3**: Sistema de inventarios completo ❌ **NO INICIADA**
+- [ ] **Fase 4**: Sistema de reportes e importaciones ❌ **NO INICIADA**
+- [ ] **Fase 5**: Testing, optimización y despliegue ❌ **NO INICIADA**
 
 ### **Colecciones de Postman Completadas**
 
@@ -1088,31 +1142,33 @@ export class PermissionGuard implements CanActivate {
 
 ### **📊 Estado Actual del Proyecto**
 
-#### **✅ Completado en Semana 2**
+#### **✅ Completado en Semana 1-3**
 
 - **Arquitectura DDD**: Dominios completamente implementados
 - **Screaming Architecture**: Estructura que "grita" el inventario
 - **Value Objects**: Inmutables y validados por dominio
-- **Entidades**: Product, Movement, Transfer, Warehouse, Location, User, Organization
+- **Entidades**: User, Role, Permission, Session, Organization
 - **Repositorios**: Interfaces específicas por dominio
-- **Servicios de Dominio**: Cálculos de inventario y validaciones
-- **Eventos de Dominio**: ProductCreated, MovementPosted
+- **Servicios de Dominio**: Autenticación y autorización
+- **Eventos de Dominio**: UserCreated, UserLoggedIn, RoleAssigned
 - **Estructura de Carpetas**: Reorganizada por dominio funcional
 
-#### **✅ Completado - Semana 3**
+#### **✅ Completado - Semana 4-6**
 
-- **Infraestructura**: Adaptadores de entrada y salida implementados
-- **Base de Datos**: Configuración de Prisma con DDD completada
-- **Multi-Tenant**: Middleware de validación de organización implementado
-- **Testing**: Configuración de tests de integración completada
-- **Vistas Materializadas**: `v_inventory_balance` y `v_low_stock` implementadas
-- **Decoradores**: Sistema de permisos y validación implementado
-- **Seeds**: Organización por dominios implementada
+- **Dominio de Autenticación**: Entidades, Value Objects, Domain Services ✅
+- **Sistema RBAC**: Roles, permisos, guards de autorización ✅
+- **Infraestructura**: Adaptadores de entrada y salida implementados ✅
+- **Base de Datos**: Configuración de Prisma con DDD completada ✅
+- **Multi-Tenant**: Middleware de validación de organización implementado ✅
+- **Testing**: 1032 tests pasando (39.63% cobertura) ✅
+- **API REST**: Endpoints básicos de autenticación ✅
+- **Seguridad**: JWT, rate limiting, blacklisting de tokens ✅
 
 #### **⏳ Pendiente**
 
-- **Fase 2**: Sistema de autenticación y RBAC (Próxima semana)
-- **Fase 3**: Casos de uso y APIs de inventario
+- **Semana 6.5**: Controllers de gestión de usuarios y casos de uso
+- **Semana 6.6**: Documentación OpenAPI y testing completo
+- **Fase 3**: Sistema de inventarios completo
 - **Fase 4**: Reportes e importaciones
 - **Fase 5**: Testing completo y despliegue
 

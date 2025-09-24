@@ -53,6 +53,7 @@ describe('LoginUseCase', () => {
       countLockedUsers: jest.fn(),
       findUsersWithFailedLogins: jest.fn(),
       findAll: jest.fn(),
+      count: jest.fn(),
     } as jest.Mocked<IUserRepository>;
 
     mockJwtService = {
