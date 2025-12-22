@@ -13,7 +13,8 @@ export interface IRoleBasedAuthOptions {
   requiredRoles: string[];
   requireAllRoles: boolean; // true = requiere todos los roles, false = requiere al menos uno
   checkOrganization: boolean;
-  allowSuperAdmin: boolean; // Permitir acceso a super administradores
+  allowSuperAdmin: boolean; // Permitir acceso a super administradores (sin orgId)
+  allowOrganizationAdmin: boolean; // Permitir acceso a administradores de organización (con orgId)
 }
 
 @Injectable()
@@ -50,9 +51,15 @@ export class RoleBasedAuthGuard implements CanActivate {
         }
       }
 
-      // Verificar si es super administrador
+      // Verificar si es super administrador (rol de sistema, sin orgId)
       if (options.allowSuperAdmin && this.isSuperAdmin(user)) {
         this.logger.debug(`Super admin access granted for user ${user.id}`);
+        return true;
+      }
+
+      // Verificar si es administrador de organización (rol de organización, con orgId)
+      if (options.allowOrganizationAdmin && this.isOrganizationAdmin(user)) {
+        this.logger.debug(`Organization admin access granted for user ${user.id}`);
         return true;
       }
 
@@ -100,6 +107,7 @@ export class RoleBasedAuthGuard implements CanActivate {
       requireAllRoles: options?.requireAllRoles || false,
       checkOrganization: options?.checkOrganization ?? true,
       allowSuperAdmin: options?.allowSuperAdmin ?? true,
+      allowOrganizationAdmin: options?.allowOrganizationAdmin ?? true,
     };
   }
 
@@ -133,6 +141,10 @@ export class RoleBasedAuthGuard implements CanActivate {
   }
 
   private isSuperAdmin(user: IAuthenticatedUser): boolean {
-    return user.roles.includes('SUPER_ADMIN') || user.roles.includes('SYSTEM_ADMIN');
+    return user.roles.includes('SYSTEM_ADMIN');
+  }
+
+  private isOrganizationAdmin(user: IAuthenticatedUser): boolean {
+    return user.roles.includes('ADMIN');
   }
 }

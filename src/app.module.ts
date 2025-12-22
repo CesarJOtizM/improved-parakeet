@@ -5,6 +5,7 @@ import { HealthCheckModule } from '@interface/http/healthCheck/healthCheck.modul
 import { ClientIpMiddleware } from '@interface/http/middlewares/clientIpMiddleware';
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { OrganizationModule } from '@organization/organization.module';
 import { SecurityMiddleware } from '@shared/middleware';
 
 @Module({
@@ -18,6 +19,7 @@ import { SecurityMiddleware } from '@shared/middleware';
     PrismaModule,
     HealthCheckModule,
     AuthenticationModule,
+    OrganizationModule,
   ],
   controllers: [],
   providers: [],

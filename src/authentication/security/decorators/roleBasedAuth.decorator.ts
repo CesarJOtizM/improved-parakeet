@@ -6,7 +6,8 @@ export interface IRoleBasedAuthMetadata {
   requiredRoles: string[];
   requireAllRoles?: boolean;
   checkOrganization?: boolean;
-  allowSuperAdmin?: boolean;
+  allowSuperAdmin?: boolean; // Permitir acceso a super administradores (sin orgId)
+  allowOrganizationAdmin?: boolean; // Permitir acceso a administradores de organización (con orgId)
 }
 
 /**
@@ -40,16 +41,33 @@ export const RequireOrganizationAccess = () =>
   SetMetadata(ROLE_BASED_AUTH_KEY, { checkOrganization: true });
 
 /**
- * Decorador para permitir acceso a super administradores
+ * Decorador para permitir acceso a super administradores (rol de sistema, sin orgId)
  */
 export const AllowSuperAdmin = () => SetMetadata(ROLE_BASED_AUTH_KEY, { allowSuperAdmin: true });
+
+/**
+ * Decorador para permitir acceso a administradores de organización (rol de organización, con orgId)
+ * El rol ADMIN tiene acceso total dentro de su organización
+ */
+export const AllowOrganizationAdmin = () =>
+  SetMetadata(ROLE_BASED_AUTH_KEY, { allowOrganizationAdmin: true });
 
 /**
  * Decorador para restringir acceso solo a super administradores
  */
 export const SuperAdminOnly = () =>
   SetMetadata(ROLE_BASED_AUTH_KEY, {
-    requiredRoles: ['SUPER_ADMIN'],
+    requiredRoles: ['SYSTEM_ADMIN'],
     requireAllRoles: true,
     allowSuperAdmin: false,
+  });
+
+/**
+ * Decorador para restringir acceso solo a administradores de organización
+ */
+export const OrganizationAdminOnly = () =>
+  SetMetadata(ROLE_BASED_AUTH_KEY, {
+    requiredRoles: ['ADMIN'],
+    requireAllRoles: true,
+    allowOrganizationAdmin: false,
   });

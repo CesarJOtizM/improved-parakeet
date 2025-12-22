@@ -1,8 +1,13 @@
 // Constantes de roles del sistema
 export const SYSTEM_ROLES = {
-  SUPER_ADMIN: 'SUPER_ADMIN',
+  // Rol de sistema (sin orgId) - Para operaciones que trascienden organizaciones
   SYSTEM_ADMIN: 'SYSTEM_ADMIN',
-  ORGANIZATION_ADMIN: 'ORGANIZATION_ADMIN',
+
+  // Rol de organización (con orgId) - Administrador máximo dentro de una organización
+  // Tiene acceso total a todos los módulos y permisos de su organización
+  ADMIN: 'ADMIN',
+
+  // Roles de organización (con orgId) - Roles operativos
   WAREHOUSE_MANAGER: 'WAREHOUSE_MANAGER',
   WAREHOUSE_OPERATOR: 'WAREHOUSE_OPERATOR',
   INVENTORY_AUDITOR: 'INVENTORY_AUDITOR',

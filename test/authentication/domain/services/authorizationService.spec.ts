@@ -339,7 +339,7 @@ describe('AuthorizationService', () => {
     it('Given: user with none of required roles When: checking any role Then: should return unauthorized result', () => {
       // Arrange
       const userRoles = ['USER', 'MODERATOR'];
-      const requiredRoles = ['ADMIN', 'SUPER_ADMIN'];
+      const requiredRoles = ['ADMIN', 'SYSTEM_ADMIN'];
 
       // Act
       const result = AuthorizationService.checkAnyRole(mockUser, userRoles, requiredRoles);
@@ -347,7 +347,7 @@ describe('AuthorizationService', () => {
       // Assert
       expect(result.isAuthorized).toBe(false);
       expect(result.reason).toBe('No required roles found');
-      expect(result.requiredPermissions).toEqual(['ROLE:ADMIN', 'ROLE:SUPER_ADMIN']);
+      expect(result.requiredPermissions).toEqual(['ROLE:ADMIN', 'ROLE:SYSTEM_ADMIN']);
       expect(result.userPermissions).toEqual(userRoles);
     });
   });

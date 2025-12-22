@@ -1,0 +1,393 @@
+# Cursor Rules - Multi-Tenant Inventory System
+
+## 🏗️ Project Architecture
+
+This project follows **Hexagonal Architecture + DDD + Screaming Architecture** with **Functional Programming**.
+
+### Folder Structure (Screaming Architecture)
+
+```
+src/
+├── inventory/          # 🎯 Main domain (Screaming Architecture)
+│   ├── products/       # Products
+│   ├── warehouses/     # Warehouses
+│   ├── movements/      # Inventory movements
+│   ├── transfers/      # Transfers between warehouses
+│   └── stock/          # Stock control
+├── authentication/     # 🔐 Authentication and authorization
+├── infrastructure/     # 🔌 Output adapters
+│   ├── database/       # Prisma + PostgreSQL
+│   └── externalServices/ # External services
+├── interfaces/         # 🌐 Input adapters (HTTP)
+├── application/        # 🚀 Use cases
+├── shared/             # 🛠️ Shared utilities
+└── organization/       # 🏢 Multi-tenancy
+```
+
+### Architectural Principles
+
+1. **Screaming Architecture**: The structure "screams" the business domain. Inventory is the main domain.
+2. **Domain-Driven Design (DDD)**:
+   - **Bounded Contexts**: Clear separation between domains (Auth, Inventory, Reports)
+   - **Aggregates**: Aggregates with well-defined roots (extend `AggregateRoot`)
+   - **Value Objects**: Immutable objects representing domain concepts
+   - **Domain Services**: Services that encapsulate complex business logic
+   - **Repository Pattern**: Interfaces in domain, implementations in infrastructure
+3. **Hexagonal Architecture**:
+   - **Domain**: Pure business logic (no external dependencies)
+   - **Application**: Use cases that orchestrate the domain
+   - **Infrastructure**: Output adapters (Prisma, Redis, etc.)
+   - **Interfaces**: Input adapters (HTTP controllers, DTOs)
+
+## 📝 Code Conventions
+
+### Code Language
+
+**ALL texts in code MUST be in ENGLISH**:
+
+- ✅ **Variable, function, class names**: `createOrganization`, `OrganizationController`
+- ✅ **Log messages**: `'Creating organization'`, `'User authenticated successfully'`
+- ✅ **Error messages**: `'Organization not found'`, `'Invalid credentials'`
+- ✅ **Code comments**: `// Validate user permissions`, `// Calculate total stock`
+- ✅ **String literals**: `'active'`, `'pending'`, `'User created successfully'`
+- ✅ **Validation messages**: `'Email is required'`, `'Password must be at least 8 characters'`
+- ✅ **Swagger documentation**: `summary: 'Create new organization'`, `description: 'Creates a new organization'`
+- ✅ **Test names**: `'Given: valid user When: logging in Then: should return token'`
+
+```typescript
+// ✅ CORRECT
+this.logger.log('Creating organization', { name: request.name });
+throw new BadRequestException('Organization not found');
+
+// ❌ INCORRECT
+this.logger.log('Creando organización', { name: request.name });
+throw new BadRequestException('Organización no encontrada');
+```
+
+**Exceptions**:
+- Complex technical documentation comments may include explanations in Spanish if necessary
+- Documentation in `.md` files can be in Spanish (like this file)
+
+### Naming Conventions
+
+- **Folders**: `CAMEL_CASE` (e.g., `organizationUseCases`, `healthCheck`)
+- **Files**: `camelCase.ts` for regular files, `*.spec.ts` for tests, `*.e2e-spec.ts` for E2E
+- **Variables**: `camelCase`, `UPPER_CASE` (constants), or `PascalCase` (types/classes)
+- **Functions**: `camelCase` or `PascalCase` (constructors)
+- **Parameters**: `camelCase` (can start with `_` if unused)
+- **Classes**: `PascalCase`
+- **Interfaces**: `I` + `PascalCase` (e.g., `IOrganizationRepository`)
+- **Types**: `PascalCase` or `I` + `PascalCase`
+- **Enums**: `PascalCase` with `UPPER_SNAKE_CASE` values
+
+### Path Aliases
+
+**ALWAYS** use path aliases defined in `tsconfig.json`:
+
+```typescript
+// ✅ CORRECT
+import { Organization } from '@organization/domain/entities/organization.entity';
+import { CreateOrganizationUseCase } from '@application/organizationUseCases/createOrganizationUseCase';
+import { PrismaService } from '@infrastructure/database/prisma.service';
+
+// ❌ INCORRECT
+import { Organization } from '../../../organization/domain/entities/organization.entity';
+```
+
+Available aliases:
+- `@src/*`, `@auth/*`, `@user/*`, `@role/*`, `@session/*`, `@security/*`
+- `@inventory/*`, `@product/*`, `@warehouse/*`, `@movement/*`, `@transfer/*`, `@stock/*`
+- `@report/*`, `@import/*`, `@organization/*`, `@application/*`
+- `@infrastructure/*`, `@interface/*`, `@shared/*`, `@healthCheck/*`
+
+### TypeScript
+
+- **Strict Mode**: Always enabled. DO NOT use `any` - use specific types or `unknown`
+- **Null Safety**: Use `strictNullChecks` - explicitly validate nulls/undefined
+- **Explicit Types**: Prefer explicit types over inference when it improves readability
+- **Interfaces vs Types**: Use `interface` for objects that can be extended, `type` for unions/intersections
+
+### Imports
+
+Import order (according to ESLint):
+1. Built-in modules (Node.js)
+2. External packages (npm)
+3. Internal (@ aliases)
+4. Parent directory
+5. Sibling files
+6. Index files
+7. Type imports
+
+Separate groups with blank lines.
+
+```typescript
+// ✅ CORRECT
+import { Injectable, Logger } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+
+import { CreateOrganizationUseCase } from '@application/organizationUseCases/createOrganizationUseCase';
+import { CreateOrganizationDto } from '@organization/dto';
+
+// ❌ INCORRECT
+import { Injectable, Logger } from '@nestjs/common';
+import { CreateOrganizationUseCase } from '@application/organizationUseCases/createOrganizationUseCase';
+import { ApiTags } from '@nestjs/swagger';
+```
+
+## 🏛️ Domain Patterns
+
+### Entities (Aggregate Roots)
+
+- Extend `AggregateRoot<TProps>` from `@shared/domain/base/aggregateRoot.base`
+- Static methods `create()` and `reconstitute()`
+- Private props, access through getters
+- Business methods that validate domain rules
+- Immutability when possible
+
+```typescript
+export class Organization extends AggregateRoot<IOrganizationProps> {
+  private constructor(props: IOrganizationProps, id?: string, orgId?: string) {
+    super(props, id, orgId);
+  }
+
+  public static create(props: IOrganizationProps, orgId: string): Organization {
+    const organization = new Organization(props, undefined, orgId);
+    return organization;
+  }
+
+  public static reconstitute(props: IOrganizationProps, id: string, orgId: string): Organization {
+    return new Organization(props, id, orgId);
+  }
+
+  // Business methods
+  public activate(): void {
+    this.props.isActive = true;
+    this.updateTimestamp();
+  }
+}
+```
+
+### Value Objects
+
+- Immutable
+- Validation in constructor
+- Value comparison, not reference
+- No setters
+
+### Repositories
+
+- Interfaces in `domain/repositories/` with `I` prefix (e.g., `IOrganizationRepository`)
+- Implementations in `infrastructure/database/repositories/`
+- Use dependency injection with tokens (`@Inject('OrganizationRepository')`)
+
+```typescript
+// Interface in domain
+export interface IOrganizationRepository {
+  save(organization: Organization, slug: string, domain?: string): Promise<Organization>;
+  existsBySlug(slug: string): Promise<boolean>;
+}
+
+// Implementation in infrastructure
+@Injectable()
+export class PrismaOrganizationRepository implements IOrganizationRepository {
+  // ...
+}
+```
+
+### Use Cases
+
+- Location: `src/application/{domain}UseCases/`
+- Name: `{action}{Entity}UseCase.ts` (e.g., `createOrganizationUseCase.ts`)
+- Class: `{Action}{Entity}UseCase` (e.g., `CreateOrganizationUseCase`)
+- Inject necessary repositories and services
+- Return `IApiResponseSuccess<T>` or `IApiResponseError`
+- Logging with NestJS `Logger`
+
+```typescript
+@Injectable()
+export class CreateOrganizationUseCase {
+  private readonly logger = new Logger(CreateOrganizationUseCase.name);
+
+  constructor(
+    @Inject('OrganizationRepository')
+    private readonly organizationRepository: IOrganizationRepository
+  ) {}
+
+  async execute(request: ICreateOrganizationRequest): Promise<ICreateOrganizationResponse> {
+    this.logger.log('Creating organization', { name: request.name });
+    // Use case logic
+  }
+}
+```
+
+## 🌐 Controllers (HTTP)
+
+- Location: `src/interfaces/http/{domain}/` or `src/{domain}/`
+- NestJS decorators: `@Controller()`, `@Get()`, `@Post()`, etc.
+- Swagger: `@ApiTags()`, `@ApiOperation()`, `@ApiResponse()`
+- DTOs: Use class-validator for validation
+- Logging: NestJS Logger for important requests
+- Guards: `@UseGuards(JwtAuthGuard)`, `@UseGuards(PermissionsGuard)`
+- Multi-tenancy: Extract `orgId` from headers (`X-Organization-ID` or `X-Organization-Slug`)
+
+```typescript
+@ApiTags('Organization')
+@Controller('organizations')
+export class OrganizationController {
+  private readonly logger = new Logger(OrganizationController.name);
+
+  constructor(private readonly createOrganizationUseCase: CreateOrganizationUseCase) {}
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create new organization' })
+  @ApiResponse({ status: HttpStatus.CREATED, type: CreateOrganizationResponseDto })
+  async createOrganization(@Body() dto: CreateOrganizationDto): Promise<CreateOrganizationResponseDto> {
+    this.logger.log('Creating organization request', { name: dto.name });
+    return await this.createOrganizationUseCase.execute(dto);
+  }
+}
+```
+
+## 📦 DTOs (Data Transfer Objects)
+
+- Location: `src/{domain}/dto/`
+- Use `class-validator` decorators for validation
+- Swagger decorators: `@ApiProperty()` for documentation
+- Export from `dto/index.ts`
+- Names: `{Action}{Entity}Dto.ts` (e.g., `createOrganization.dto.ts`)
+
+```typescript
+export class CreateOrganizationDto {
+  @ApiProperty({ description: 'Organization name', example: 'Acme Corp' })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(3)
+  @MaxLength(100)
+  name: string;
+
+  @ApiProperty({ description: 'Unique slug', example: 'acme-corp' })
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^[a-z0-9-]+$/)
+  slug: string;
+}
+```
+
+## 🗄️ Database (Prisma)
+
+- Schema in `prisma/schema.prisma`
+- Multi-tenancy: `orgId` in all tables (except `Organization`)
+- Soft deletes: `deletedAt DateTime?`
+- Timestamps: `createdAt DateTime @default(now())`, `updatedAt DateTime @updatedAt`
+- Indexes: Optimize common queries
+- Migrations: Use `npm run db:migrate` (never `db push` in production)
+
+## 🧪 Testing
+
+### Structure
+
+- Unit tests: `*.spec.ts` in the same structure as `src/`
+- E2E tests: `*.e2e-spec.ts` in `test/`
+- Pattern: **AAA (Arrange, Act, Assert)** and **Given-When-Then**
+
+### Test Naming
+
+```typescript
+it('Given: precondition When: action Then: expected result', () => {
+  // Arrange: Prepare data and mocks
+  // Act: Execute the function
+  // Assert: Verify the result
+});
+```
+
+### Example
+
+```typescript
+describe('CreateOrganizationUseCase', () => {
+  it('Given: valid organization data When: creating organization Then: should return created organization', async () => {
+    // Arrange
+    const request = { name: 'Test Org', slug: 'test-org' };
+    mockRepository.save.mockResolvedValue(mockOrganization);
+
+    // Act
+    const result = await useCase.execute(request);
+
+    // Assert
+    expect(result.success).toBe(true);
+    expect(mockRepository.save).toHaveBeenCalled();
+  });
+});
+```
+
+## 🔐 Multi-Tenancy
+
+- **All entities** (except `Organization`) must have `orgId`
+- Extract `orgId` from:
+  - Header `X-Organization-ID`
+  - Header `X-Organization-Slug` (resolve to ID)
+  - Subdomain (future)
+- **All queries** must filter by `orgId`
+- Validate that the user belongs to the organization
+
+## 🚫 Anti-Patterns (DO NOT Do)
+
+1. ❌ DO NOT use `any` - use specific types or `unknown`
+2. ❌ DO NOT use relative imports (`../../../`) - use path aliases
+3. ❌ DO NOT put business logic in controllers - use use cases
+4. ❌ DO NOT access Prisma directly from use cases - use repositories
+5. ❌ DO NOT create entities without extending `AggregateRoot`
+6. ❌ DO NOT forget `orgId` in multi-tenant queries
+7. ❌ DO NOT use `console.log` - use NestJS `Logger`
+8. ❌ DO NOT create DTOs without validation (`class-validator`)
+9. ❌ DO NOT create endpoints without Swagger documentation
+10. ❌ DO NOT create functions without explicit return types when necessary
+11. ❌ DO NOT use Spanish in code - ALL texts must be in English
+
+## ✅ Checklist for New Features
+
+When creating a new feature, follow this order:
+
+1. **Domain**:
+   - [ ] Create entity (extend `AggregateRoot`)
+   - [ ] Create Value Objects if necessary
+   - [ ] Create repository interface
+   - [ ] Create Domain Services if necessary
+
+2. **Infrastructure**:
+   - [ ] Implement Prisma repository
+   - [ ] Update Prisma schema if necessary
+   - [ ] Create migration
+
+3. **Application**:
+   - [ ] Create use case
+   - [ ] Inject repository
+
+4. **Interfaces**:
+   - [ ] Create DTOs with validation
+   - [ ] Create controller with Swagger
+   - [ ] Inject use case
+
+5. **Module**:
+   - [ ] Register providers (repository, use case)
+   - [ ] Export controller
+
+6. **Testing**:
+   - [ ] Unit tests for use case
+   - [ ] E2E tests for endpoint
+
+## 📚 References
+
+- Documentation: See `docs/` for more details
+- Project status: `docs/REPOSITORY_STATUS.md`
+- Work plan: `docs/work_plan.md`
+- Test structure: `docs/testing-structure.md`
+
+## 🎯 Priorities
+
+1. **Domain First**: Always start with the domain
+2. **Type Safety**: TypeScript strict mode always
+3. **English First**: All texts in code must be in English
+4. **Multi-Tenancy**: Never forget `orgId`
+5. **Testing**: Write tests along with code
+6. **Documentation**: Swagger for all endpoints

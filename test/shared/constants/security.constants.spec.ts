@@ -17,7 +17,7 @@ describe('Security Constants', () => {
       const roles = Object.values(SYSTEM_ROLES);
 
       // Assert
-      expect(roles).toContain('SUPER_ADMIN');
+      expect(roles).toContain('SYSTEM_ADMIN');
       expect(roles).toContain('SYSTEM_ADMIN');
       expect(roles).toContain('ORGANIZATION_ADMIN');
       expect(roles).toContain('WAREHOUSE_MANAGER');
@@ -224,10 +224,10 @@ describe('Security Constants', () => {
   describe('Type definitions', () => {
     it('Given: SystemRole type When: checking type Then: should be valid role type', () => {
       // Arrange & Act
-      const validRole: SystemRole = 'SUPER_ADMIN';
+      const validRole: SystemRole = 'SYSTEM_ADMIN';
 
       // Assert
-      expect(validRole).toBe('SUPER_ADMIN');
+      expect(validRole).toBe('SYSTEM_ADMIN');
     });
 
     it('Given: SystemPermission type When: checking type Then: should be valid permission type', () => {
@@ -241,9 +241,8 @@ describe('Security Constants', () => {
     it('Given: role values When: checking against type Then: should match SystemRole type', () => {
       // Arrange & Act
       const roles: SystemRole[] = [
-        'SUPER_ADMIN',
         'SYSTEM_ADMIN',
-        'ORGANIZATION_ADMIN',
+        'ADMIN',
         'WAREHOUSE_MANAGER',
         'WAREHOUSE_OPERATOR',
         'INVENTORY_AUDITOR',

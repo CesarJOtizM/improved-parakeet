@@ -170,16 +170,25 @@ export class OrganizationRepository implements IOrganizationRepository {
     }
   }
 
-  async save(organization: Organization): Promise<Organization> {
+  async save(organization: Organization, slug?: string, domain?: string): Promise<Organization> {
     try {
-      const organizationData = {
+      const organizationData: {
+        name: string;
+        slug?: string;
+        domain?: string;
+        isActive: boolean;
+      } = {
         name: organization.name,
-        settings: organization.settings,
-        timezone: organization.timezone,
-        currency: organization.currency,
-        dateFormat: organization.dateFormat,
         isActive: organization.isActive,
       };
+
+      if (slug) {
+        organizationData.slug = slug;
+      }
+
+      if (domain) {
+        organizationData.domain = domain;
+      }
 
       if (organization.id) {
         // Update existing organization
@@ -202,10 +211,15 @@ export class OrganizationRepository implements IOrganizationRepository {
         );
       } else {
         // Create new organization
+        if (!slug) {
+          throw new Error('Slug is required when creating a new organization');
+        }
         const newOrg = await this.prisma.organization.create({
           data: {
-            ...organizationData,
-            slug: `org-${Date.now()}`, // Generate temporary slug
+            name: organizationData.name,
+            slug: slug,
+            domain: organizationData.domain,
+            isActive: organizationData.isActive,
           },
         });
         return Organization.reconstitute(

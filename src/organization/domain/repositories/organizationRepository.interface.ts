@@ -3,7 +3,7 @@ import { IReadRepository, IWriteRepository } from '@shared/domain/repository';
 
 export interface IOrganizationRepository
   extends IReadRepository<Organization>,
-    IWriteRepository<Organization> {
+    Omit<IWriteRepository<Organization>, 'save'> {
   findBySlug(slug: string): Promise<Organization | null>;
   findById(id: string): Promise<Organization | null>;
   findByDomain(domain: string): Promise<Organization | null>;
@@ -11,4 +11,5 @@ export interface IOrganizationRepository
   existsBySlug(slug: string): Promise<boolean>;
   existsByDomain(domain: string): Promise<boolean>;
   countActiveOrganizations(): Promise<number>;
+  save(organization: Organization, slug?: string, domain?: string): Promise<Organization>;
 }
