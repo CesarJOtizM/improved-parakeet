@@ -76,9 +76,20 @@ export class AuthSeed {
     const roles = [];
     for (const roleData of rolesData) {
       const role = await this.prisma.role.upsert({
-        where: { name_orgId: { name: roleData.name, orgId: roleData.orgId } },
+        where: {
+          name_orgId: {
+            name: roleData.name,
+            orgId: roleData.orgId,
+          },
+        } as unknown as Parameters<typeof this.prisma.role.upsert>[0]['where'],
         update: {},
-        create: roleData,
+        create: {
+          name: roleData.name,
+          description: roleData.description,
+          isActive: roleData.isActive,
+          isSystem: roleData.isSystem,
+          orgId: roleData.orgId,
+        },
       });
       roles.push(role);
     }

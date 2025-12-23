@@ -1340,7 +1340,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Semana 4**: Dominio de autenticación ✅ **COMPLETADA**
 - [x] **Semana 5**: Dominio de usuarios y RBAC ✅ **COMPLETADA**
 - [x] **Semana 6**: Adaptadores y API de autenticación ✅ **COMPLETADA**
-- [ ] **Semana 7**: Dominio de productos y bodegas
+- [x] **Semana 7**: Dominio de productos y bodegas ✅ **PARCIALMENTE COMPLETADA** (~70%)
 - [ ] **Semana 8**: Dominio de movimientos y transferencias
 - [ ] **Semana 9**: Reglas de negocio y casos de uso
 - [ ] **Semana 10**: Adaptadores y API de inventarios
@@ -1355,7 +1355,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 
 - [x] **Fase 1**: Arquitectura base, dominios core, infraestructura ✅ **COMPLETADA (100%)**
 - [x] **Fase 2**: Sistema de autenticación completo con RBAC ✅ **COMPLETADA (~95%)** (falta solo setup automático de auditoría)
-- [ ] **Fase 3**: Sistema de inventarios completo
+- [ ] **Fase 3**: Sistema de inventarios completo ⏳ **EN PROGRESO** (~25%)
 - [ ] **Fase 4**: Sistema de reportes e importaciones
 - [ ] **Fase 5**: Testing, optimización y despliegue
 
@@ -1413,12 +1413,28 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - **Token Blacklisting**: Implementado con Redis
 - **Multi-Tenancy**: Validación de orgId en todos los endpoints
 
-#### **⏳ Estructura Base del Dominio de Inventario (Parcial)**
+#### **✅ Estructura Base del Dominio de Inventario - Productos y Bodegas (Completada)**
 
-- **Entidades de Dominio**: Product, Warehouse, Movement, Transfer (estructura base creada)
-- **Value Objects**: Quantity, MovementType, MovementStatus, ProductStatus, CostMethod (implementados)
-- **Servicios de Dominio**: InventoryCalculationService, StockValidationService (implementados)
-- **Faltan**: Controllers, Use Cases, APIs REST, Repositorios implementados
+- **Entidades de Dominio**: 
+  - ✅ Product (AggregateRoot con value objects y eventos)
+  - ✅ Warehouse (AggregateRoot con value objects y eventos)
+  - ✅ Location (AggregateRoot con value objects y eventos)
+  - ⏳ Movement, Transfer (estructura base creada)
+- **Value Objects**: 
+  - ✅ Productos: SKU, ProductName, ProductStatus, CostMethod, UnitValueObject, Price
+  - ✅ Bodegas: WarehouseCode, LocationCode, Address
+  - ✅ Movimientos: Quantity, MovementType, MovementStatus
+- **Domain Services**: 
+  - ✅ ProductValidationService, PricingService
+  - ✅ WarehouseAssignmentService
+  - ✅ InventoryCalculationService, StockValidationService
+- **Domain Events**: 
+  - ✅ ProductCreated, ProductUpdated
+  - ✅ WarehouseCreated, LocationAdded
+- **Repository Interfaces**: 
+  - ✅ IProductRepository, ICategoryRepository
+  - ✅ IWarehouseRepository, ILocationRepository
+- **Faltan**: Controllers, Use Cases, APIs REST, Repositorios implementados (Prisma)
 
 #### **⏳ Pendiente**
 

@@ -1,3 +1,9 @@
+import {
+  GetAuditLogsUseCase,
+  GetAuditLogUseCase,
+  GetUserActivityUseCase,
+  GetEntityHistoryUseCase,
+} from '@application/auditUseCases';
 import { LoginUseCase } from '@application/authUseCases/loginUseCase';
 import { LogoutUseCase } from '@application/authUseCases/logoutUseCase';
 import { RefreshTokenUseCase } from '@application/authUseCases/refreshTokenUseCase';
@@ -41,11 +47,13 @@ import { PrismaService } from '@infrastructure/database/prisma.service';
 import {
   OrganizationRepository,
   OtpRepository,
+  PrismaAuditLogRepository,
   RoleRepository,
   SessionRepository,
   UserRepository,
 } from '@infrastructure/database/repositories';
 import { EmailService } from '@infrastructure/externalServices';
+import { AuditController } from '@interface/http/audit/audit.controller';
 import { AuthController } from '@interface/http/routes/auth.controller';
 import { PasswordResetController } from '@interface/http/routes/passwordReset.controller';
 import { RegisterController } from '@interface/http/routes/register.controller';
@@ -96,6 +104,7 @@ import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatch
     PasswordResetController,
     UsersController,
     RolesController,
+    AuditController,
   ],
   providers: [
     // Event Bus and Dispatcher
@@ -145,6 +154,11 @@ import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatch
     UpdateRoleUseCase,
     DeleteRoleUseCase,
     AssignPermissionsToRoleUseCase,
+    // Audit use cases
+    GetAuditLogsUseCase,
+    GetAuditLogUseCase,
+    GetUserActivityUseCase,
+    GetEntityHistoryUseCase,
 
     // Infrastructure services
     PrismaService,
@@ -170,6 +184,10 @@ import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatch
     {
       provide: 'OtpRepository',
       useClass: OtpRepository,
+    },
+    {
+      provide: 'AuditLogRepository',
+      useClass: PrismaAuditLogRepository,
     },
   ],
   exports: [

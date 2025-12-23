@@ -1,10 +1,20 @@
 import { PermissionChangedEvent } from '@auth/domain/events/permissionChanged.event';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
+import { AuditService } from '@shared/audit/domain/services/auditService';
+import { AuditAction } from '@shared/audit/domain/valueObjects/auditAction.valueObject';
+import { EntityType } from '@shared/audit/domain/valueObjects/entityType.valueObject';
 import { IDomainEventHandler } from '@shared/domain/events/domainEventBus.service';
+
+import type { IAuditLogRepository } from '@shared/audit/domain/repositories/auditLogRepository.interface';
 
 @Injectable()
 export class PermissionChangedEventHandler implements IDomainEventHandler<PermissionChangedEvent> {
   private readonly logger = new Logger(PermissionChangedEventHandler.name);
+
+  constructor(
+    @Inject('AuditLogRepository')
+    private readonly auditRepository: IAuditLogRepository
+  ) {}
 
   async handle(event: PermissionChangedEvent): Promise<void> {
     this.logger.log('Handling PermissionChanged event', {
@@ -17,22 +27,23 @@ export class PermissionChangedEventHandler implements IDomainEventHandler<Permis
     });
 
     try {
-      // TODO: Create audit log entry when AuditLog table is added to schema
-      // For now, we log the event for audit purposes
-      this.logger.log('[AUDIT] Permission changed', {
-        entityType: 'Permission',
-        entityId: event.permissionId,
-        action: `PERMISSION_${event.changeType}`,
-        performedBy: event.changedBy,
-        orgId: event.orgId,
-        metadata: {
-          permissionName: event.permissionName,
-          module: event.module,
-          action: event.action,
-          changeType: event.changeType,
-          changedAt: event.occurredOn.toISOString(),
-        },
-      });
+      await AuditService.logEvent(
+        event,
+        EntityType.create('Permission'),
+        AuditAction.create('PERMISSION_CHANGED'),
+        this.auditRepository,
+        {
+          entityId: event.permissionId,
+          performedBy: event.changedBy,
+          orgId: event.orgId,
+          additionalMetadata: {
+            permissionName: event.permissionName,
+            module: event.module,
+            action: event.action,
+            changeType: event.changeType,
+          },
+        }
+      );
 
       this.logger.log('Permission change audit logged successfully', {
         permissionId: event.permissionId,

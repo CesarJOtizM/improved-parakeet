@@ -266,3 +266,30 @@ model MovementLine {
   
   @@map("movement_lines")
 }
+
+// Audit Logs
+model AuditLog {
+  id            String   @id @default(cuid())
+  orgId         String?  // Nullable for system-level audits
+  entityType    String   // User, Product, Warehouse, etc.
+  entityId      String?  // Nullable for system-level actions
+  action        String   // CREATE, UPDATE, DELETE, ASSIGN_ROLE, etc.
+  performedBy   String?  // User ID, nullable for system actions
+  metadata      Json?    // Flexible JSON for additional data
+  ipAddress     String?
+  userAgent     String?
+  httpMethod    String?  // GET, POST, PUT, DELETE, etc.
+  httpUrl       String?
+  httpStatusCode Int?
+  duration      Int?     // Request duration in ms
+  createdAt     DateTime @default(now())
+  
+  // Indexes for performance
+  @@index([orgId, createdAt])
+  @@index([orgId, entityType, createdAt])
+  @@index([orgId, entityId, entityType])
+  @@index([orgId, performedBy, createdAt])
+  @@index([orgId, action, createdAt])
+  @@index([createdAt]) // For date range queries
+  @@map("audit_logs")
+}

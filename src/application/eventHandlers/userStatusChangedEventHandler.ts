@@ -1,10 +1,20 @@
 import { UserStatusChangedEvent } from '@auth/domain/events/userStatusChanged.event';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
+import { AuditService } from '@shared/audit/domain/services/auditService';
+import { AuditAction } from '@shared/audit/domain/valueObjects/auditAction.valueObject';
+import { EntityType } from '@shared/audit/domain/valueObjects/entityType.valueObject';
 import { IDomainEventHandler } from '@shared/domain/events/domainEventBus.service';
+
+import type { IAuditLogRepository } from '@shared/audit/domain/repositories/auditLogRepository.interface';
 
 @Injectable()
 export class UserStatusChangedEventHandler implements IDomainEventHandler<UserStatusChangedEvent> {
   private readonly logger = new Logger(UserStatusChangedEventHandler.name);
+
+  constructor(
+    @Inject('AuditLogRepository')
+    private readonly auditRepository: IAuditLogRepository
+  ) {}
 
   async handle(event: UserStatusChangedEvent): Promise<void> {
     this.logger.log('Handling UserStatusChanged event', {
@@ -18,21 +28,22 @@ export class UserStatusChangedEventHandler implements IDomainEventHandler<UserSt
     });
 
     try {
-      // TODO: Create audit log entry when AuditLog table is added to schema
-      // For now, we log the event for audit purposes
-      this.logger.log('[AUDIT] User status changed', {
-        entityType: 'User',
-        entityId: event.userId,
-        action: 'STATUS_CHANGED',
-        performedBy: event.changedBy,
-        orgId: event.orgId,
-        metadata: {
-          oldStatus: event.oldStatus,
-          newStatus: event.newStatus,
-          reason: event.reason,
-          changedAt: event.occurredOn.toISOString(),
-        },
-      });
+      await AuditService.logEvent(
+        event,
+        EntityType.create('User'),
+        AuditAction.create('STATUS_CHANGED'),
+        this.auditRepository,
+        {
+          entityId: event.userId,
+          performedBy: event.changedBy,
+          orgId: event.orgId,
+          additionalMetadata: {
+            oldStatus: event.oldStatus,
+            newStatus: event.newStatus,
+            reason: event.reason,
+          },
+        }
+      );
 
       this.logger.log('User status change audit logged successfully', {
         userId: event.userId,

@@ -1,13 +1,27 @@
-import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  Inject,
+  Logger,
+  NestInterceptor,
+} from '@nestjs/common';
+import { AuditService } from '@shared/audit/domain/services/auditService';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 
+import type { IAuditLogRepository } from '@shared/audit/domain/repositories/auditLogRepository.interface';
 import type { IAuthenticatedUser, IOrganizationContext } from '@shared/types/http.types';
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
   private readonly logger = new Logger(AuditInterceptor.name);
+
+  constructor(
+    @Inject('AuditLogRepository')
+    private readonly auditRepository: IAuditLogRepository
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest<Request>();
@@ -16,40 +30,44 @@ export class AuditInterceptor implements NestInterceptor {
     const organization = request.organization as IOrganizationContext | undefined;
     const startTime = Date.now();
 
+    // Get IP address and user agent
+    const ipAddress =
+      request.ip || request.headers['x-forwarded-for'] || request.socket.remoteAddress || undefined;
+    const userAgent = request.headers['user-agent'] || undefined;
+
     // Log de inicio de operación
-    this.logger.log(
+    this.logger.debug(
       `[AUDIT] ${method} ${url} - User: ${user?.id || 'anonymous'} - Org: ${organization?.id || 'unknown'}`
     );
 
-    // Log de detalles de la operación
-    if (body && Object.keys(body).length > 0) {
-      this.logger.debug(`[AUDIT] Request Body: ${JSON.stringify(body)}`);
-    }
-
-    if (query && Object.keys(query).length > 0) {
-      this.logger.debug(`[AUDIT] Query Params: ${JSON.stringify(query)}`);
-    }
-
-    if (params && Object.keys(params).length > 0) {
-      this.logger.debug(`[AUDIT] Path Params: ${JSON.stringify(params)}`);
-    }
-
     return next.handle().pipe(
-      tap(response => {
+      tap(async response => {
         const endTime = Date.now();
         const duration = endTime - startTime;
 
         // Log de éxito
-        this.logger.log(
+        this.logger.debug(
           `[AUDIT] ${method} ${url} - SUCCESS - Duration: ${duration}ms - User: ${user?.id || 'anonymous'} - Org: ${organization?.id || 'unknown'}`
         );
 
-        // Log de respuesta (solo en debug)
-        if (response && typeof response === 'object') {
-          this.logger.debug(`[AUDIT] Response: ${JSON.stringify(response)}`);
-        }
+        // Log HTTP request to audit system
+        await AuditService.logHttpRequest(
+          {
+            method,
+            url,
+            statusCode: 200, // Success
+            duration,
+            performedBy: user?.id,
+            orgId: organization?.id,
+            ipAddress: Array.isArray(ipAddress) ? ipAddress[0] : ipAddress,
+            userAgent,
+            requestBody: { body, query, params },
+            responseBody: response,
+          },
+          this.auditRepository
+        );
       }),
-      catchError(error => {
+      catchError(async error => {
         const endTime = Date.now();
         const duration = endTime - startTime;
 
@@ -58,10 +76,22 @@ export class AuditInterceptor implements NestInterceptor {
           `[AUDIT] ${method} ${url} - ERROR - Duration: ${duration}ms - User: ${user?.id || 'anonymous'} - Org: ${organization?.id || 'unknown'} - Error: ${error.message}`
         );
 
-        // Log de stack trace en debug
-        if (error.stack) {
-          this.logger.debug(`[AUDIT] Error Stack: ${error.stack}`);
-        }
+        // Log HTTP request error to audit system
+        await AuditService.logHttpRequest(
+          {
+            method,
+            url,
+            statusCode: error.status || 500,
+            duration,
+            performedBy: user?.id,
+            orgId: organization?.id,
+            ipAddress: Array.isArray(ipAddress) ? ipAddress[0] : ipAddress,
+            userAgent,
+            requestBody: { body, query, params },
+            responseBody: { error: error.message },
+          },
+          this.auditRepository
+        );
 
         throw error;
       })
