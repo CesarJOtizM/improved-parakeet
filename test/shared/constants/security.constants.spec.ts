@@ -19,10 +19,10 @@ describe('Security Constants', () => {
       // Assert
       expect(roles).toContain('SYSTEM_ADMIN');
       expect(roles).toContain('ADMIN');
-      expect(roles).toContain('WAREHOUSE_MANAGER');
+      expect(roles).toContain('SUPERVISOR');
       expect(roles).toContain('WAREHOUSE_OPERATOR');
-      expect(roles).toContain('INVENTORY_AUDITOR');
-      expect(roles).toContain('READ_ONLY_USER');
+      expect(roles).toContain('CONSULTANT');
+      expect(roles).toContain('IMPORT_OPERATOR');
     });
 
     it('Given: system roles When: checking count Then: should have exactly 7 roles', () => {
@@ -120,12 +120,12 @@ describe('Security Constants', () => {
       expect(permissions).toContain('AUDIT:EXPORT');
     });
 
-    it('Given: system permissions When: checking count Then: should have exactly 27 permissions', () => {
+    it('Given: system permissions When: checking count Then: should have exactly 31 permissions', () => {
       // Arrange & Act
       const permissions = Object.values(SYSTEM_PERMISSIONS);
 
       // Assert
-      expect(permissions).toHaveLength(27);
+      expect(permissions).toHaveLength(31);
     });
 
     it('Given: system permissions When: checking uniqueness Then: should have unique permission names', () => {
@@ -242,10 +242,10 @@ describe('Security Constants', () => {
       const roles: SystemRole[] = [
         'SYSTEM_ADMIN',
         'ADMIN',
-        'WAREHOUSE_MANAGER',
+        'SUPERVISOR',
         'WAREHOUSE_OPERATOR',
-        'INVENTORY_AUDITOR',
-        'READ_ONLY_USER',
+        'CONSULTANT',
+        'IMPORT_OPERATOR',
       ];
 
       // Assert

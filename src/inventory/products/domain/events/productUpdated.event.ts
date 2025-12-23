@@ -23,10 +23,10 @@ export class ProductUpdatedEvent extends DomainEvent {
   }
 
   get sku(): string {
-    return this.product.sku;
+    return this.product.sku.getValue();
   }
 
   get name(): string {
-    return this.product.name;
+    return this.product.name.getValue();
   }
 }

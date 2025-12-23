@@ -1,14 +1,17 @@
 import { ProductCreatedEvent } from '@product/domain/events/productCreated.event';
 import { ProductUpdatedEvent } from '@product/domain/events/productUpdated.event';
 import { CostMethod } from '@product/domain/valueObjects/costMethod.valueObject';
+import { ProductName } from '@product/domain/valueObjects/productName.valueObject';
 import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
+import { SKU } from '@product/domain/valueObjects/sku.valueObject';
+import { UnitValueObject } from '@product/domain/valueObjects/unit.valueObject';
 import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
 
 export interface IProductProps {
-  sku: string;
-  name: string;
+  sku: SKU;
+  name: ProductName;
   description?: string;
-  unitId: string;
+  unit: UnitValueObject;
   barcode?: string;
   brand?: string;
   model?: string;
@@ -34,6 +37,7 @@ export class Product extends AggregateRoot<IProductProps> {
   public update(props: Partial<IProductProps>): void {
     if (props.name !== undefined) this.props.name = props.name;
     if (props.description !== undefined) this.props.description = props.description;
+    if (props.unit !== undefined) this.props.unit = props.unit;
     if (props.barcode !== undefined) this.props.barcode = props.barcode;
     if (props.brand !== undefined) this.props.brand = props.brand;
     if (props.model !== undefined) this.props.model = props.model;
@@ -57,11 +61,11 @@ export class Product extends AggregateRoot<IProductProps> {
   }
 
   // Getters
-  get sku(): string {
+  get sku(): SKU {
     return this.props.sku;
   }
 
-  get name(): string {
+  get name(): ProductName {
     return this.props.name;
   }
 
@@ -69,8 +73,8 @@ export class Product extends AggregateRoot<IProductProps> {
     return this.props.description;
   }
 
-  get unitId(): string {
-    return this.props.unitId;
+  get unit(): UnitValueObject {
+    return this.props.unit;
   }
 
   get barcode(): string | undefined {

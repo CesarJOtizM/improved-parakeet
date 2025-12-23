@@ -61,7 +61,7 @@ describe('AssignRoleToUserUseCase', () => {
       save: jest.fn(),
       delete: jest.fn(),
       exists: jest.fn(),
-    } as jest.Mocked<IRoleRepository>;
+    } as unknown as jest.Mocked<IRoleRepository>;
 
     mockPrismaService = {
       userRole: {
@@ -71,8 +71,8 @@ describe('AssignRoleToUserUseCase', () => {
     } as jest.Mocked<PrismaService>;
 
     mockEventDispatcher = {
-      dispatchEvents: jest.fn().mockResolvedValue(undefined),
-      markAndDispatch: jest.fn().mockResolvedValue(undefined),
+      dispatchEvents: jest.fn().mockResolvedValue(undefined as never),
+      markAndDispatch: jest.fn().mockResolvedValue(undefined as never),
     } as any;
 
     useCase = new AssignRoleToUserUseCase(
@@ -120,6 +120,7 @@ describe('AssignRoleToUserUseCase', () => {
           name,
           description: `Role ${name}`,
           isActive,
+          isSystem: false,
         },
         mockRoleId,
         mockOrgId
@@ -152,7 +153,7 @@ describe('AssignRoleToUserUseCase', () => {
       expect(result.message).toBe('Role assigned successfully');
       expect(result.data.roleName).toBe('SUPERVISOR');
       expect(mockUserRepository.findById).toHaveBeenCalledWith(mockUserId, mockOrgId);
-      expect(mockRoleRepository.findById).toHaveBeenCalledWith(mockRoleId, mockOrgId);
+      expect(mockRoleRepository.findById).toHaveBeenCalledWith(mockRoleId);
       expect(mockPrismaService.userRole.create).toHaveBeenCalled();
     });
 

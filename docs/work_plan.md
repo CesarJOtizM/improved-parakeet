@@ -188,13 +188,13 @@
 
 ### **Semana 7: Dominio de Productos y Bodegas**
 
-- [x] **Estructura Base del Dominio de Productos** ✅ **PARCIALMENTE IMPLEMENTADO**
+- [x] **Estructura Base del Dominio de Productos** ✅ **COMPLETADO**
   - [x] Entidad Product (extiende AggregateRoot)
   - [x] Value Objects: ProductStatus, CostMethod (inmutables)
   - [x] Domain Events: ProductCreated, ProductUpdated (estructura base)
-  - [ ] Value Objects adicionales: SKU, ProductName, Unit, Price
-  - [ ] Domain Services: ProductValidationService, PricingService
-  - [ ] Crear interfaces de Repository para productos y categorías
+  - [x] Value Objects adicionales: SKU, ProductName, UnitValueObject, Price
+  - [x] Domain Services: ProductValidationService, PricingService
+  - [x] Crear interfaces de Repository para productos y categorías (ICategoryRepository)
 
 - [x] **Estructura Base del Dominio de Bodegas** ✅ **PARCIALMENTE IMPLEMENTADO**
   - [x] Entidad Warehouse (estructura base)
