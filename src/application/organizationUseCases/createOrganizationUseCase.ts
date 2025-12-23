@@ -105,10 +105,10 @@ export class CreateOrganizationUseCase {
 
       this.logger.log('Organization created', { organizationId: savedOrg.id });
 
-      // Create roles and permissions
+      // Create roles and permissions (system roles are created once, not per org)
       const authSeed = new AuthSeed(this.prisma);
       const authResult = await authSeed.seed(savedOrg.id);
-      this.logger.log('Roles and permissions created', {
+      this.logger.log('System roles and permissions initialized', {
         rolesCount: authResult.roles.length,
         permissionsCount: authResult.permissions.length,
       });
@@ -131,11 +131,19 @@ export class CreateOrganizationUseCase {
           },
         });
 
+        // Find ADMIN system role
+        const adminRole = authResult.roles.find(r => r.name === 'ADMIN');
+        if (!adminRole) {
+          throw new BadRequestException(
+            'ADMIN role not found. Please ensure system roles are initialized.'
+          );
+        }
+
         // Assign ADMIN role
         await this.prisma.userRole.create({
           data: {
             userId: adminUser.id,
-            roleId: authResult.roles[0].id, // ADMIN role
+            roleId: adminRole.id,
             orgId: savedOrg.id,
           },
         });

@@ -61,6 +61,19 @@ export class RoleAssignmentService {
       errors.push('Cannot assign SYSTEM_ADMIN role to organization users');
     }
 
+    // Validate system vs custom role assignment
+    if (role.isSystem) {
+      // System roles can be assigned to any organization user
+      if (!user.orgId) {
+        errors.push('System roles can only be assigned to organization users');
+      }
+    } else {
+      // Custom roles can only be assigned within their organization
+      if (role.orgId && user.orgId && role.orgId !== user.orgId) {
+        errors.push('Custom roles can only be assigned to users in the same organization');
+      }
+    }
+
     return {
       isValid: errors.length === 0,
       errors,
@@ -237,6 +250,37 @@ export class RoleAssignmentService {
     // Check if role is system role and user belongs to organization
     if (role.name === SYSTEM_ROLES.SYSTEM_ADMIN && user.orgId) {
       errors.push('System roles cannot be assigned to organization users');
+    }
+
+    // Validate system vs custom role assignment
+    if (role.isSystem) {
+      // System roles can be assigned to any organization user
+      if (!user.orgId) {
+        errors.push('System roles can only be assigned to organization users');
+      }
+    } else {
+      // Custom roles can only be assigned within their organization
+      if (role.orgId && user.orgId && role.orgId !== user.orgId) {
+        errors.push('Custom roles can only be assigned to users in the same organization');
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      canAssign: errors.length === 0,
+    };
+  }
+
+  /**
+   * Validates if a role can be deleted
+   */
+  public static canDeleteRole(role: Role): IRoleAssignmentValidationResult {
+    const errors: string[] = [];
+
+    // Cannot delete system roles
+    if (role.isSystem) {
+      errors.push('Cannot delete system roles');
     }
 
     return {

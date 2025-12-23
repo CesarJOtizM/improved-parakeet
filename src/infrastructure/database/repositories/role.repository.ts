@@ -9,10 +9,15 @@ export class RoleRepository implements IRoleRepository {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async findById(id: string, orgId: string): Promise<Role | null> {
+  async findById(id: string, orgId?: string): Promise<Role | null> {
     try {
+      const whereClause: { id: string; orgId?: string | null } = { id };
+      if (orgId !== undefined) {
+        whereClause.orgId = orgId;
+      }
+
       const roleData = await this.prisma.role.findFirst({
-        where: { id, orgId },
+        where: whereClause,
       });
 
       if (!roleData) return null;
@@ -22,9 +27,10 @@ export class RoleRepository implements IRoleRepository {
           name: roleData.name,
           description: roleData.description || undefined,
           isActive: roleData.isActive,
+          isSystem: roleData.isSystem,
         },
         roleData.id,
-        roleData.orgId
+        roleData.orgId || undefined
       );
     } catch (error) {
       if (error instanceof Error) {
@@ -37,40 +43,22 @@ export class RoleRepository implements IRoleRepository {
   }
 
   async findAll(orgId: string): Promise<Role[]> {
-    try {
-      const rolesData = await this.prisma.role.findMany({
-        where: { orgId },
-        orderBy: { name: 'asc' },
-      });
-
-      return rolesData.map(roleData =>
-        Role.reconstitute(
-          {
-            name: roleData.name,
-            description: roleData.description || undefined,
-            isActive: roleData.isActive,
-          },
-          roleData.id,
-          roleData.orgId
-        )
-      );
-    } catch (error) {
-      if (error instanceof Error) {
-        this.logger.error(`Error finding all roles: ${error.message}`);
-      } else {
-        this.logger.error(`Error finding all roles: ${error}`);
-      }
-      throw error;
-    }
+    // Return available roles for organization (system + custom)
+    return this.findAvailableRolesForOrganization(orgId);
   }
 
-  async findByName(name: string, orgId: string): Promise<Role | null> {
+  async findByName(name: string, orgId?: string): Promise<Role | null> {
     try {
+      const whereClause: { name: string; orgId?: string | null } = { name };
+      if (orgId !== undefined) {
+        whereClause.orgId = orgId;
+      } else {
+        // If orgId is not provided, search for system role first
+        whereClause.orgId = null;
+      }
+
       const roleData = await this.prisma.role.findFirst({
-        where: {
-          name,
-          orgId,
-        },
+        where: whereClause,
       });
 
       if (!roleData) return null;
@@ -80,9 +68,10 @@ export class RoleRepository implements IRoleRepository {
           name: roleData.name,
           description: roleData.description || undefined,
           isActive: roleData.isActive,
+          isSystem: roleData.isSystem,
         },
         roleData.id,
-        roleData.orgId
+        roleData.orgId || undefined
       );
     } catch (error) {
       if (error instanceof Error) {
@@ -107,9 +96,10 @@ export class RoleRepository implements IRoleRepository {
             name: roleData.name,
             description: roleData.description || undefined,
             isActive: roleData.isActive,
+            isSystem: roleData.isSystem,
           },
           roleData.id,
-          roleData.orgId
+          roleData.orgId || undefined
         )
       );
     } catch (error) {
@@ -139,9 +129,10 @@ export class RoleRepository implements IRoleRepository {
             name: ur.role.name,
             description: ur.role.description || undefined,
             isActive: ur.role.isActive,
+            isSystem: ur.role.isSystem,
           },
           ur.role.id,
-          ur.role.orgId
+          ur.role.orgId || undefined
         )
       );
     } catch (error) {
@@ -154,13 +145,17 @@ export class RoleRepository implements IRoleRepository {
     }
   }
 
-  async existsByName(name: string, orgId: string): Promise<boolean> {
+  async existsByName(name: string, orgId?: string): Promise<boolean> {
     try {
+      const whereClause: { name: string; orgId?: string | null } = { name };
+      if (orgId !== undefined) {
+        whereClause.orgId = orgId;
+      } else {
+        whereClause.orgId = null;
+      }
+
       const count = await this.prisma.role.count({
-        where: {
-          name,
-          orgId,
-        },
+        where: whereClause,
       });
       return count > 0;
     } catch (error) {
@@ -216,9 +211,10 @@ export class RoleRepository implements IRoleRepository {
             name: roleData.name,
             description: roleData.description || undefined,
             isActive: roleData.isActive,
+            isSystem: roleData.isSystem,
           },
           roleData.id,
-          roleData.orgId
+          roleData.orgId || undefined
         )
       );
     } catch (error) {
@@ -233,6 +229,15 @@ export class RoleRepository implements IRoleRepository {
 
   async save(role: Role): Promise<Role> {
     try {
+      // Validate: system roles must not have orgId
+      if (role.isSystem && role.orgId) {
+        throw new Error('System roles cannot have an organization ID');
+      }
+      // Validate: custom roles must have orgId
+      if (!role.isSystem && !role.orgId) {
+        throw new Error('Custom roles must have an organization ID');
+      }
+
       if (role.id) {
         // Update existing role
         const updatedRole = await this.prisma.role.update({
@@ -241,6 +246,8 @@ export class RoleRepository implements IRoleRepository {
             name: role.name,
             description: role.description,
             isActive: role.isActive,
+            isSystem: role.isSystem,
+            orgId: role.orgId || null,
           },
         });
 
@@ -249,9 +256,10 @@ export class RoleRepository implements IRoleRepository {
             name: updatedRole.name,
             description: updatedRole.description || undefined,
             isActive: updatedRole.isActive,
+            isSystem: updatedRole.isSystem,
           },
           updatedRole.id,
-          updatedRole.orgId
+          updatedRole.orgId || undefined
         );
       } else {
         // Create new role
@@ -260,7 +268,8 @@ export class RoleRepository implements IRoleRepository {
             name: role.name,
             description: role.description,
             isActive: role.isActive,
-            orgId: role.orgId,
+            isSystem: role.isSystem,
+            orgId: role.orgId || null,
           },
         });
 
@@ -269,9 +278,10 @@ export class RoleRepository implements IRoleRepository {
             name: newRole.name,
             description: newRole.description || undefined,
             isActive: newRole.isActive,
+            isSystem: newRole.isSystem,
           },
           newRole.id,
-          newRole.orgId
+          newRole.orgId || undefined
         );
       }
     } catch (error) {
@@ -299,10 +309,15 @@ export class RoleRepository implements IRoleRepository {
     }
   }
 
-  async exists(id: string, orgId: string): Promise<boolean> {
+  async exists(id: string, orgId?: string): Promise<boolean> {
     try {
+      const whereClause: { id: string; orgId?: string | null } = { id };
+      if (orgId !== undefined) {
+        whereClause.orgId = orgId;
+      }
+
       const count = await this.prisma.role.count({
-        where: { id, orgId },
+        where: whereClause,
       });
       return count > 0;
     } catch (error) {
@@ -310,6 +325,104 @@ export class RoleRepository implements IRoleRepository {
         this.logger.error(`Error checking role existence: ${error.message}`);
       } else {
         this.logger.error(`Error checking role existence: ${error}`);
+      }
+      throw error;
+    }
+  }
+
+  async findSystemRoles(): Promise<Role[]> {
+    try {
+      const rolesData = await this.prisma.role.findMany({
+        where: {
+          isSystem: true,
+          orgId: null,
+        },
+        orderBy: { name: 'asc' },
+      });
+
+      return rolesData.map(roleData =>
+        Role.reconstitute(
+          {
+            name: roleData.name,
+            description: roleData.description || undefined,
+            isActive: roleData.isActive,
+            isSystem: roleData.isSystem,
+          },
+          roleData.id,
+          roleData.orgId || undefined
+        )
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error finding system roles: ${error.message}`);
+      } else {
+        this.logger.error(`Error finding system roles: ${error}`);
+      }
+      throw error;
+    }
+  }
+
+  async findCustomRoles(orgId: string): Promise<Role[]> {
+    try {
+      const rolesData = await this.prisma.role.findMany({
+        where: {
+          isSystem: false,
+          orgId,
+        },
+        orderBy: { name: 'asc' },
+      });
+
+      return rolesData.map(roleData =>
+        Role.reconstitute(
+          {
+            name: roleData.name,
+            description: roleData.description || undefined,
+            isActive: roleData.isActive,
+            isSystem: roleData.isSystem,
+          },
+          roleData.id,
+          roleData.orgId || undefined
+        )
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error finding custom roles: ${error.message}`);
+      } else {
+        this.logger.error(`Error finding custom roles: ${error}`);
+      }
+      throw error;
+    }
+  }
+
+  async findAvailableRolesForOrganization(orgId: string): Promise<Role[]> {
+    try {
+      const rolesData = await this.prisma.role.findMany({
+        where: {
+          OR: [
+            { isSystem: true, orgId: null },
+            { isSystem: false, orgId },
+          ],
+        },
+        orderBy: { name: 'asc' },
+      });
+
+      return rolesData.map(roleData =>
+        Role.reconstitute(
+          {
+            name: roleData.name,
+            description: roleData.description || undefined,
+            isActive: roleData.isActive,
+            isSystem: roleData.isSystem,
+          },
+          roleData.id,
+          roleData.orgId || undefined
+        )
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error finding available roles: ${error.message}`);
+      } else {
+        this.logger.error(`Error finding available roles: ${error}`);
       }
       throw error;
     }

@@ -8,10 +8,10 @@ export class AuthSeed {
   async seed(organizationId: string): Promise<ISeedResult> {
     console.log('🌱 Sembrando dominio de autenticación...');
 
-    // Crear roles predefinidos
-    const roles = await this.createRoles(organizationId);
+    // Crear roles predefinidos (una sola vez, sin orgId)
+    const roles = await this.createSystemRoles();
     console.log(
-      '✅ Roles creados:',
+      '✅ Roles predefinidos creados:',
       roles.map(r => r.name)
     );
 
@@ -19,48 +19,57 @@ export class AuthSeed {
     const permissions = await this.createPermissions();
     console.log('✅ Permisos creados:', permissions.length);
 
-    // Asignar permisos a roles
+    // Asignar permisos a roles predefinidos
     await this.assignPermissionsToRoles(roles, permissions);
     console.log('✅ Permisos asignados a roles');
 
     // Crear usuario administrador
-    const adminUser = await this.createAdminUser(organizationId, roles[0].id);
+    const adminRole = roles.find(r => r.name === 'ADMIN');
+    if (!adminRole) {
+      throw new Error('ADMIN role not found');
+    }
+    const adminUser = await this.createAdminUser(organizationId, adminRole.id);
     console.log('✅ Usuario administrador creado:', adminUser.email);
 
     return { roles, permissions, adminUser };
   }
 
-  private async createRoles(organizationId: string): Promise<IRole[]> {
+  private async createSystemRoles(): Promise<IRole[]> {
     const rolesData = [
       {
         name: 'ADMIN',
         description: 'Administrador del sistema con acceso total',
         isActive: true,
-        orgId: organizationId,
+        isSystem: true,
+        orgId: null,
       },
       {
         name: 'SUPERVISOR',
         description: 'Supervisor de bodegas con acceso amplio',
         isActive: true,
-        orgId: organizationId,
+        isSystem: true,
+        orgId: null,
       },
       {
         name: 'WAREHOUSE_OPERATOR',
         description: 'Operador de bodega con acceso limitado',
         isActive: true,
-        orgId: organizationId,
+        isSystem: true,
+        orgId: null,
       },
       {
         name: 'CONSULTANT',
         description: 'Consultor con acceso de solo lectura',
         isActive: true,
-        orgId: organizationId,
+        isSystem: true,
+        orgId: null,
       },
       {
         name: 'IMPORT_OPERATOR',
         description: 'Operador de importaciones masivas',
         isActive: true,
-        orgId: organizationId,
+        isSystem: true,
+        orgId: null,
       },
     ];
 

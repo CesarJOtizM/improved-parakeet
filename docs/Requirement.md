@@ -46,7 +46,10 @@ El sistema incluirá las siguientes funcionalidades principales:
 - **Movimientos entre bodegas**: habilita transferencias de productos entre bodegas o ubicaciones, manejando estados como en tránsito, recibido o rechazado.
 - **Alertas de stock**: incluye la definición de mínimos y máximos por producto y bodega, con notificaciones automáticas cuando los umbrales sean superados.
 - **Reportes y consultas**: genera reportes de inventario disponible, histórico de movimientos y valorización del inventario. Estos reportes serán exportables a PDF y Excel.
-- **Gestión de usuarios y permisos**: ofrece administración de roles y perfiles con accesos diferenciados, controlando acciones por módulo como consultar, registrar o aprobar.
+- **Gestión de usuarios y permisos**: ofrece administración de roles y perfiles con accesos diferenciados, controlando acciones por módulo como consultar, registrar o aprobar. El sistema incluye:
+  - **Roles predefinidos:** roles del sistema (ADMIN, SUPERVISOR, WAREHOUSE_OPERATOR, CONSULTANT, IMPORT_OPERATOR) disponibles globalmente para todas las organizaciones
+  - **Roles personalizados:** cada organización puede crear roles personalizados con permisos específicos según sus necesidades
+  - **Permisos granulares:** control de acceso por módulo (USERS, PRODUCTS, WAREHOUSES, MOVEMENTS, etc.) y acción (CREATE, READ, UPDATE, DELETE, etc.)
 - **Importación masiva vía Excel/CSV**: permite la carga inicial o actualización de productos desde plantillas prediseñadas. Los campos requeridos son:
   - Ubicación
   - Código
@@ -84,9 +87,27 @@ El sistema incluirá las siguientes funcionalidades principales:
 
 ## 5. Actores del Sistema
 
-- **Administrador:** tiene acceso total a todos los módulos y configuraciones, incluyendo la gestión de usuarios, permisos y parámetros globales. Puede realizar importaciones masivas.
-- **Operador de bodega:** puede registrar entradas, salidas y transferencias, con acceso restringido únicamente a la bodega asignada. Podrá realizar importaciones si el administrador lo habilita.
-- **Consultor / Auditor:** accede en modo lectura a reportes, movimientos históricos y resultados de importaciones, sin posibilidad de modificar datos.
+### Roles Predefinidos del Sistema
+
+El sistema incluye roles predefinidos (maestros globales) que están disponibles para todas las organizaciones:
+
+- **ADMIN:** Administrador con acceso total a todos los módulos y configuraciones, incluyendo la gestión de usuarios, roles personalizados, permisos y parámetros globales. Puede realizar importaciones masivas.
+- **SUPERVISOR:** Supervisor de bodegas con acceso amplio a productos, movimientos, transferencias, stock y reportes. No puede gestionar usuarios ni roles.
+- **WAREHOUSE_OPERATOR:** Operador de bodega que puede registrar entradas, salidas y transferencias, con acceso restringido únicamente a la(s) bodega(s) asignada(s). Puede realizar importaciones si está habilitado.
+- **CONSULTANT:** Consultor/Auditor con acceso de solo lectura a reportes, movimientos históricos y resultados de importaciones, sin posibilidad de modificar datos.
+- **IMPORT_OPERATOR:** Operador especializado en importaciones masivas, con acceso a productos y reportes básicos.
+
+### Roles Personalizados
+
+Las organizaciones pueden crear roles personalizados con permisos específicos según sus necesidades. Los roles personalizados:
+- Solo están disponibles dentro de la organización que los crea
+- Pueden tener cualquier combinación de permisos del sistema
+- Pueden ser actualizados o eliminados por administradores de la organización
+- No pueden eliminarse si están asignados a usuarios
+
+### Rol Especial de Sistema
+
+- **SYSTEM_ADMIN:** Rol de sistema que trasciende organizaciones. Puede crear nuevas organizaciones y tiene acceso total al sistema completo. No se crea automáticamente, se asigna manualmente.
 
 ---
 

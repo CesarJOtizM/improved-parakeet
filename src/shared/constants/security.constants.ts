@@ -1,17 +1,16 @@
 // Constantes de roles del sistema
 export const SYSTEM_ROLES = {
   // Rol de sistema (sin orgId) - Para operaciones que trascienden organizaciones
+  // Este rol no se crea automáticamente en el seed, se asigna manualmente
   SYSTEM_ADMIN: 'SYSTEM_ADMIN',
 
-  // Rol de organización (con orgId) - Administrador máximo dentro de una organización
-  // Tiene acceso total a todos los módulos y permisos de su organización
+  // Roles predefinidos del sistema (isSystem=true, orgId=null)
+  // Estos roles se crean automáticamente en el seed y están disponibles para todas las organizaciones
   ADMIN: 'ADMIN',
-
-  // Roles de organización (con orgId) - Roles operativos
-  WAREHOUSE_MANAGER: 'WAREHOUSE_MANAGER',
+  SUPERVISOR: 'SUPERVISOR',
   WAREHOUSE_OPERATOR: 'WAREHOUSE_OPERATOR',
-  INVENTORY_AUDITOR: 'INVENTORY_AUDITOR',
-  READ_ONLY_USER: 'READ_ONLY_USER',
+  CONSULTANT: 'CONSULTANT',
+  IMPORT_OPERATOR: 'IMPORT_OPERATOR',
 } as const;
 
 // Constantes de permisos del sistema
@@ -22,6 +21,12 @@ export const SYSTEM_PERMISSIONS = {
   USERS_UPDATE: 'USERS:UPDATE',
   USERS_DELETE: 'USERS:DELETE',
   USERS_MANAGE_ROLES: 'USERS:MANAGE_ROLES',
+
+  // Gestión de roles
+  ROLES_CREATE: 'ROLES:CREATE',
+  ROLES_READ: 'ROLES:READ',
+  ROLES_UPDATE: 'ROLES:UPDATE',
+  ROLES_DELETE: 'ROLES:DELETE',
 
   // Gestión de organizaciones
   ORGANIZATIONS_CREATE: 'ORGANIZATIONS:CREATE',

@@ -1178,15 +1178,155 @@ export class ProductsController {
 - Solo usuarios con rol `SYSTEM_ADMIN` pueden crear organizaciones
 - Implementado en: `src/organization/organization.controller.ts`
 
-#### **Seed Automático de Roles y Permisos**
+#### **Sistema de Roles Predefinidos y Personalizados** ✅ **COMPLETADO**
+
+✅ **Arquitectura Híbrida de Roles**
+- **Roles Predefinidos (Maestros Globales):**
+  - Se crean una sola vez en el sistema (no por organización)
+  - `isSystem = true`, `orgId = null`
+  - Disponibles para todas las organizaciones
+  - Roles: `ADMIN`, `SUPERVISOR`, `WAREHOUSE_OPERATOR`, `CONSULTANT`, `IMPORT_OPERATOR`
+  - No se pueden modificar ni eliminar desde la aplicación
+  - Implementado en: `src/infrastructure/database/prisma/seeds/auth.seed.ts`
+
+- **Roles Personalizados (Multi-Tenant):**
+  - Creados por organizaciones según sus necesidades
+  - `isSystem = false`, `orgId` requerido
+  - Solo disponibles dentro de la organización que los crea
+  - Pueden ser creados, actualizados y eliminados por ADMIN
+  - Implementado en: `src/application/roleUseCases/` y `src/interfaces/http/routes/roles.controller.ts`
 
 ✅ **AuthSeed** (`src/infrastructure/database/prisma/seeds/auth.seed.ts`)
-- Crea automáticamente roles al crear una organización:
+- Crea roles predefinidos una sola vez (no por organización):
   - `ADMIN`: Todos los permisos
   - `SUPERVISOR`: Permisos amplios (sin gestión de usuarios)
   - `WAREHOUSE_OPERATOR`: Permisos limitados a bodegas asignadas
   - `CONSULTANT`: Solo lectura
   - `IMPORT_OPERATOR`: Solo importaciones
+
+✅ **Endpoints de Gestión de Roles** (`src/interfaces/http/routes/roles.controller.ts`)
+- `POST /roles` - Crear rol personalizado (requiere ROLES:CREATE)
+- `GET /roles` - Listar roles disponibles (sistema + personalizados) (requiere ROLES:READ)
+- `GET /roles/:id` - Obtener rol por ID (requiere ROLES:READ)
+- `PATCH /roles/:id` - Actualizar rol personalizado (requiere ROLES:UPDATE)
+- `DELETE /roles/:id` - Eliminar rol personalizado (requiere ROLES:DELETE)
+- `POST /roles/:id/permissions` - Asignar permisos a rol (requiere ROLES:UPDATE)
+
+✅ **Validaciones Implementadas**
+- Los roles de sistema no se pueden modificar ni eliminar
+- Los roles personalizados solo pueden ser gestionados por ADMIN de la organización
+- No se pueden eliminar roles asignados a usuarios
+- Los roles de sistema pueden asignarse a cualquier organización
+- Los roles personalizados solo pueden asignarse dentro de su organización
+
+---
+
+## 🎯 Implementación de Roles Predefinidos y Personalizados
+
+### **Resumen de la Implementación**
+
+Se ha implementado un sistema híbrido de roles que combina roles predefinidos (maestros globales) con roles personalizados (multi-tenant):
+
+#### **Cambios en Base de Datos**
+
+✅ **Schema de Prisma Actualizado**
+- Campo `isSystem Boolean @default(false)` agregado a `Role`
+- Campo `orgId` hecho opcional (`String?`) para permitir roles de sistema
+- Índice agregado: `@@index([isSystem])`
+- Constraint único actualizado: `@@unique([name, orgId])` (permite null en orgId)
+
+✅ **Migración Creada**
+- `20251223125735_add_role_system/migration.sql`
+- Agrega columna `isSystem` y hace `orgId` nullable
+
+#### **Cambios en Dominio**
+
+✅ **Entidad Role Actualizada** (`src/authentication/domain/entities/role.entity.ts`)
+- Propiedad `isSystem` agregada a `IRoleProps`
+- Validaciones: roles de sistema no pueden tener `orgId`, roles personalizados deben tenerlo
+- Método `isSystemRole()` agregado
+- Prevención de modificación de `isSystem` después de creación
+
+✅ **Repositorio Actualizado** (`src/infrastructure/database/repositories/role.repository.ts`)
+- Métodos nuevos:
+  - `findSystemRoles()`: Busca roles predefinidos
+  - `findCustomRoles(orgId)`: Busca roles personalizados de una organización
+  - `findAvailableRolesForOrganization(orgId)`: Retorna roles disponibles (sistema + personalizados)
+- Métodos existentes actualizados para manejar `orgId` opcional
+
+✅ **Servicios de Dominio Actualizados**
+- `RoleAssignmentService`: Validaciones para roles de sistema vs personalizados
+- `AuthorizationService`: Sin cambios (trabaja con nombres de roles)
+
+#### **Cambios en Aplicación**
+
+✅ **Casos de Uso Creados** (`src/application/roleUseCases/`)
+- `CreateRoleUseCase`: Crear roles personalizados
+- `GetRolesUseCase`: Listar roles disponibles
+- `GetRoleUseCase`: Obtener rol por ID
+- `UpdateRoleUseCase`: Actualizar roles personalizados (no permite modificar roles de sistema)
+- `DeleteRoleUseCase`: Eliminar roles personalizados (no permite eliminar roles de sistema)
+- `AssignPermissionsToRoleUseCase`: Asignar permisos a roles
+
+✅ **Casos de Uso Existentes Actualizados**
+- `AssignRoleToUserUseCase`: Actualizado para buscar roles globales
+- `CreateOrganizationUseCase`: Actualizado para buscar rol ADMIN del sistema
+
+#### **Cambios en Interfaces**
+
+✅ **DTOs Creados** (`src/authentication/dto/`)
+- `CreateRoleDto`, `CreateRoleResponseDto`
+- `UpdateRoleDto`, `UpdateRoleResponseDto`
+- `AssignPermissionsToRoleDto`, `AssignPermissionsToRoleResponseDto`
+- `GetRolesResponseDto`, `GetRoleResponseDto`
+
+✅ **Controlador Creado** (`src/interfaces/http/routes/roles.controller.ts`)
+- Endpoints CRUD completos para roles
+- Endpoint para asignar permisos
+- Protección con guards y decoradores de permisos
+
+✅ **Constantes Actualizadas** (`src/shared/constants/security.constants.ts`)
+- Permisos de roles agregados: `ROLES_CREATE`, `ROLES_READ`, `ROLES_UPDATE`, `ROLES_DELETE`
+- Roles predefinidos sincronizados con el seed
+
+#### **Documentación Actualizada**
+
+✅ **Postman Collection** (`docs/postman/postman_collection.json`)
+- Endpoints de Roles agregados/actualizados:
+  - `GET /roles` - Listar roles disponibles
+  - `GET /roles/:id` - Obtener rol por ID
+  - `POST /roles` - Crear rol personalizado
+  - `PATCH /roles/:id` - Actualizar rol personalizado
+  - `DELETE /roles/:id` - Eliminar rol personalizado
+  - `POST /roles/:id/permissions` - Asignar permisos a rol
+
+✅ **Requirement.md**
+- Sección de Actores actualizada con roles predefinidos y personalizados
+- Descripción de gestión de usuarios y permisos ampliada
+
+✅ **work_plan.md**
+- Documentación completa de la implementación
+- Arquitectura híbrida documentada
+
+### **Características Clave**
+
+1. **Roles Predefinidos (Maestros Globales)**
+   - Creados una sola vez en el sistema
+   - Disponibles para todas las organizaciones
+   - No modificables ni eliminables desde la aplicación
+   - Incluyen: ADMIN, SUPERVISOR, WAREHOUSE_OPERATOR, CONSULTANT, IMPORT_OPERATOR
+
+2. **Roles Personalizados (Multi-Tenant)**
+   - Creados por organizaciones según sus necesidades
+   - Solo disponibles dentro de la organización que los crea
+   - Modificables y eliminables por ADMIN
+   - Pueden tener cualquier combinación de permisos
+
+3. **Validaciones Implementadas**
+   - Roles de sistema no se pueden modificar/eliminar
+   - Roles personalizados solo gestionables por ADMIN
+   - No se pueden eliminar roles asignados a usuarios
+   - Asignación de roles validada por organización
 
 ---
 
@@ -1222,6 +1362,7 @@ export class ProductsController {
 ### **Colecciones de Postman Completadas**
 
 - [x] **Auth Collection**: Autenticación y gestión de usuarios ✅ **COMPLETADA** (documentación y colección implementadas)
+- [x] **Roles Collection**: Gestión de roles predefinidos y personalizados ✅ **COMPLETADA** (endpoints CRUD y asignación de permisos)
 - [ ] **Inventory Collection**: Productos, bodegas, movimientos
 - [ ] **Reports Collection**: Reportes y exportaciones
 - [ ] **Imports Collection**: Importaciones masivas
@@ -1255,6 +1396,11 @@ export class ProductsController {
 - **Dominio de Autenticación**: Entidades User, Role, Permission, Session implementadas
 - **Value Objects**: Email, Password, JWT Token, UserStatus, RoleName (inmutables)
 - **Domain Services**: AuthenticationService, AuthorizationService, UserManagementService, RoleAssignmentService
+- **Sistema de Roles Híbrido**: Roles predefinidos (maestros globales) + roles personalizados (multi-tenant)
+  - Roles predefinidos: ADMIN, SUPERVISOR, WAREHOUSE_OPERATOR, CONSULTANT, IMPORT_OPERATOR
+  - Roles personalizados: Creados por organizaciones con permisos específicos
+  - Endpoints CRUD completos para gestión de roles personalizados
+  - Asignación de permisos a roles (sistema y personalizados)
 - **Domain Events**: UserCreated, UserLoggedIn, RoleAssigned, PermissionChanged, UserStatusChanged (handlers implementados)
 - **Casos de Uso**: Login, Logout, Refresh Token, Register, Password Reset, User Management completo
 - **Guards de Seguridad**: JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard, PermissionsGuard

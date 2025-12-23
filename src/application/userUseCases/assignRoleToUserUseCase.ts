@@ -55,10 +55,16 @@ export class AssignRoleToUserUseCase {
       throw new NotFoundException('User not found');
     }
 
-    // Get role
-    const role = await this.roleRepository.findById(request.roleId, request.orgId);
+    // Get role (can be system or custom)
+    const role = await this.roleRepository.findById(request.roleId);
     if (!role) {
       throw new NotFoundException('Role not found');
+    }
+
+    // Verify role is available for this organization
+    // System roles are available to all, custom roles only to their org
+    if (!role.isSystem && role.orgId !== request.orgId) {
+      throw new NotFoundException('Role not available for this organization');
     }
 
     // Get current user roles for validation

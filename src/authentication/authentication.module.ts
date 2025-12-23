@@ -11,6 +11,14 @@ import {
   UserStatusChangedEventHandler,
 } from '@application/eventHandlers';
 import {
+  AssignPermissionsToRoleUseCase,
+  CreateRoleUseCase,
+  DeleteRoleUseCase,
+  GetRoleUseCase,
+  GetRolesUseCase,
+  UpdateRoleUseCase,
+} from '@application/roleUseCases';
+import {
   AssignRoleToUserUseCase,
   ChangeUserStatusUseCase,
   CreateUserUseCase,
@@ -41,6 +49,7 @@ import { EmailService } from '@infrastructure/externalServices';
 import { AuthController } from '@interface/http/routes/auth.controller';
 import { PasswordResetController } from '@interface/http/routes/passwordReset.controller';
 import { RegisterController } from '@interface/http/routes/register.controller';
+import { RolesController } from '@interface/http/routes/roles.controller';
 import { UsersController } from '@interface/http/routes/users.controller';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Module, OnModuleInit } from '@nestjs/common';
@@ -81,7 +90,13 @@ import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatch
     }),
     ConfigModule.forFeature(authConfig),
   ],
-  controllers: [AuthController, RegisterController, PasswordResetController, UsersController],
+  controllers: [
+    AuthController,
+    RegisterController,
+    PasswordResetController,
+    UsersController,
+    RolesController,
+  ],
   providers: [
     // Event Bus and Dispatcher
     DomainEventBus,
@@ -123,6 +138,13 @@ import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatch
     ChangeUserStatusUseCase,
     AssignRoleToUserUseCase,
     RemoveRoleFromUserUseCase,
+    // Role management use cases
+    CreateRoleUseCase,
+    GetRolesUseCase,
+    GetRoleUseCase,
+    UpdateRoleUseCase,
+    DeleteRoleUseCase,
+    AssignPermissionsToRoleUseCase,
 
     // Infrastructure services
     PrismaService,

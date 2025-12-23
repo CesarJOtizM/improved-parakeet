@@ -68,7 +68,8 @@ model Role {
   name        String
   description String?
   isActive    Boolean  @default(true)
-  orgId       String
+  isSystem    Boolean  @default(false)
+  orgId       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
@@ -77,6 +78,7 @@ model Role {
   permissions RolePermission[]
   
   @@unique([name, orgId])
+  @@index([isSystem])
   @@map("roles")
 }
 
