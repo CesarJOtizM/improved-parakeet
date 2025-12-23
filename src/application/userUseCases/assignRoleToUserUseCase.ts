@@ -9,6 +9,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IRoleRepository, IUserRepository } from '@auth/domain/repositories';
@@ -36,7 +37,8 @@ export class AssignRoleToUserUseCase {
   constructor(
     @Inject('UserRepository') private readonly userRepository: IUserRepository,
     @Inject('RoleRepository') private readonly roleRepository: IRoleRepository,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
   async execute(request: IAssignRoleToUserRequest): Promise<IAssignRoleToUserResponse> {
@@ -106,6 +108,10 @@ export class AssignRoleToUserUseCase {
       request.orgId
     );
     user.addDomainEventFromService(event);
+
+    // Dispatch domain events
+    await this.eventDispatcher.markAndDispatch(user.domainEvents);
+    user.clearEvents();
 
     this.logger.log('Role assigned successfully', {
       userId: request.userId,

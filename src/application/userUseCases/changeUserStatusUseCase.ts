@@ -1,6 +1,7 @@
 import { UserManagementService } from '@auth/domain/services/userManagementService';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IUserRepository } from '@auth/domain/repositories';
@@ -32,7 +33,8 @@ export class ChangeUserStatusUseCase {
 
   constructor(
     @Inject('UserRepository') private readonly userRepository: IUserRepository,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
   async execute(request: IChangeUserStatusRequest): Promise<IChangeUserStatusResponse> {
@@ -75,6 +77,10 @@ export class ChangeUserStatusUseCase {
 
     // Save updated user
     const updatedUser = await this.userRepository.save(user);
+
+    // Dispatch domain events
+    await this.eventDispatcher.markAndDispatch(updatedUser.domainEvents);
+    updatedUser.clearEvents();
 
     // Update isActive in database to match status
     await this.prisma.user.update({

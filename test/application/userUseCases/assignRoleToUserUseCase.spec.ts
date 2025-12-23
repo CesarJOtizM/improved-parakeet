@@ -20,6 +20,7 @@ describe('AssignRoleToUserUseCase', () => {
   let mockUserRepository: jest.Mocked<IUserRepository>;
   let mockRoleRepository: jest.Mocked<IRoleRepository>;
   let mockPrismaService: jest.Mocked<PrismaService>;
+  let mockEventDispatcher: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -69,10 +70,16 @@ describe('AssignRoleToUserUseCase', () => {
       } as any,
     } as jest.Mocked<PrismaService>;
 
+    mockEventDispatcher = {
+      dispatchEvents: jest.fn().mockResolvedValue(undefined),
+      markAndDispatch: jest.fn().mockResolvedValue(undefined),
+    } as any;
+
     useCase = new AssignRoleToUserUseCase(
       mockUserRepository,
       mockRoleRepository,
-      mockPrismaService
+      mockPrismaService,
+      mockEventDispatcher
     );
   });
 

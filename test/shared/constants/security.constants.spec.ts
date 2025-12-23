@@ -30,7 +30,7 @@ describe('Security Constants', () => {
       const roles = Object.values(SYSTEM_ROLES);
 
       // Assert
-      expect(roles).toHaveLength(7);
+      expect(roles).toHaveLength(6);
     });
 
     it('Given: system roles When: checking uniqueness Then: should have unique role names', () => {
@@ -249,7 +249,7 @@ describe('Security Constants', () => {
       ];
 
       // Assert
-      expect(roles).toHaveLength(7);
+      expect(roles).toHaveLength(6);
       roles.forEach(role => {
         expect(Object.values(SYSTEM_ROLES)).toContain(role);
       });

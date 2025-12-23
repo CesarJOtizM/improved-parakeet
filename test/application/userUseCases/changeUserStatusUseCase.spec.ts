@@ -7,6 +7,7 @@ import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 
 describe('ChangeUserStatusUseCase', () => {
   const mockOrgId = 'test-org-id';
@@ -16,6 +17,7 @@ describe('ChangeUserStatusUseCase', () => {
   let useCase: ChangeUserStatusUseCase;
   let mockUserRepository: jest.Mocked<IUserRepository>;
   let mockPrismaService: jest.Mocked<PrismaService>;
+  let mockEventDispatcher: jest.Mocked<DomainEventDispatcher>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -48,7 +50,16 @@ describe('ChangeUserStatusUseCase', () => {
       } as any,
     } as jest.Mocked<PrismaService>;
 
-    useCase = new ChangeUserStatusUseCase(mockUserRepository, mockPrismaService);
+    mockEventDispatcher = {
+      dispatchEvents: jest.fn().mockResolvedValue(undefined),
+      markAndDispatch: jest.fn().mockResolvedValue(undefined),
+    } as any;
+
+    useCase = new ChangeUserStatusUseCase(
+      mockUserRepository,
+      mockPrismaService,
+      mockEventDispatcher
+    );
   });
 
   describe('execute', () => {

@@ -6,6 +6,11 @@ import { RequestPasswordResetUseCase } from '@application/authUseCases/requestPa
 import { ResetPasswordUseCase } from '@application/authUseCases/resetPasswordUseCase';
 import { VerifyOtpUseCase } from '@application/authUseCases/verifyOtpUseCase';
 import {
+  PermissionChangedEventHandler,
+  RoleAssignedEventHandler,
+  UserStatusChangedEventHandler,
+} from '@application/eventHandlers';
+import {
   AssignRoleToUserUseCase,
   ChangeUserStatusUseCase,
   CreateUserUseCase,
@@ -38,10 +43,12 @@ import { PasswordResetController } from '@interface/http/routes/passwordReset.co
 import { RegisterController } from '@interface/http/routes/register.controller';
 import { UsersController } from '@interface/http/routes/users.controller';
 import { CacheModule } from '@nestjs/cache-manager';
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
+import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 
 @Module({
   imports: [
@@ -76,6 +83,15 @@ import { PassportModule } from '@nestjs/passport';
   ],
   controllers: [AuthController, RegisterController, PasswordResetController, UsersController],
   providers: [
+    // Event Bus and Dispatcher
+    DomainEventBus,
+    DomainEventDispatcher,
+
+    // Event Handlers
+    RoleAssignedEventHandler,
+    UserStatusChangedEventHandler,
+    PermissionChangedEventHandler,
+
     // Domain services
     AuthenticationService,
     JwtService,
@@ -144,6 +160,22 @@ import { PassportModule } from '@nestjs/passport';
     PermissionsGuard,
     RoleBasedAuthGuard,
     JwtStrategy,
+    DomainEventBus,
+    DomainEventDispatcher,
   ],
 })
-export class AuthenticationModule {}
+export class AuthenticationModule implements OnModuleInit {
+  constructor(
+    private readonly eventBus: DomainEventBus,
+    private readonly roleAssignedHandler: RoleAssignedEventHandler,
+    private readonly userStatusChangedHandler: UserStatusChangedEventHandler,
+    private readonly permissionChangedHandler: PermissionChangedEventHandler
+  ) {}
+
+  onModuleInit() {
+    // Register event handlers
+    this.eventBus.registerHandler('RoleAssigned', this.roleAssignedHandler);
+    this.eventBus.registerHandler('UserStatusChanged', this.userStatusChangedHandler);
+    this.eventBus.registerHandler('PermissionChanged', this.permissionChangedHandler);
+  }
+}
