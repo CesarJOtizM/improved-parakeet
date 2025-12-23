@@ -1,20 +1,24 @@
-import { Entity } from '@shared/domain/base/entity.base';
+import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
+import { LocationAddedEvent } from '@warehouse/domain/events/locationAdded.event';
+import { LocationCode } from '@warehouse/domain/valueObjects/locationCode.valueObject';
 
 export interface ILocationProps {
-  code: string;
+  code: LocationCode;
   name: string;
   warehouseId: string;
   isDefault: boolean;
   isActive: boolean;
 }
 
-export class Location extends Entity<ILocationProps> {
+export class Location extends AggregateRoot<ILocationProps> {
   private constructor(props: ILocationProps, id?: string, orgId?: string) {
     super(props, id, orgId);
   }
 
   public static create(props: ILocationProps, orgId: string): Location {
-    return new Location(props, undefined, orgId);
+    const location = new Location(props, undefined, orgId);
+    location.addDomainEvent(new LocationAddedEvent(location));
+    return location;
   }
 
   public static reconstitute(props: ILocationProps, id: string, orgId: string): Location {
@@ -51,7 +55,7 @@ export class Location extends Entity<ILocationProps> {
   }
 
   // Getters
-  get code(): string {
+  get code(): LocationCode {
     return this.props.code;
   }
 

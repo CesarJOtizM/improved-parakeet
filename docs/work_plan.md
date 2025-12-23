@@ -196,20 +196,20 @@
   - [x] Domain Services: ProductValidationService, PricingService
   - [x] Crear interfaces de Repository para productos y categorías (ICategoryRepository)
 
-- [x] **Estructura Base del Dominio de Bodegas** ✅ **PARCIALMENTE IMPLEMENTADO**
+- [x] **Estructura Base del Dominio de Bodegas** ✅ **COMPLETADO**
   - [x] Entidad Warehouse (estructura base)
-  - [ ] Aggregates: WarehouseAggregate, LocationAggregate con reglas de consistencia
-  - [ ] Value Objects: WarehouseCode, LocationCode, Address (inmutables)
-  - [ ] Domain Services: WarehouseAssignmentService
-  - [ ] Domain Events: WarehouseCreated, LocationAdded
-  - [ ] Crear interfaces de Repository para bodegas y ubicaciones
+  - [x] Aggregates: WarehouseAggregate, LocationAggregate con reglas de consistencia
+  - [x] Value Objects: WarehouseCode, LocationCode, Address (inmutables)
+  - [x] Domain Services: WarehouseAssignmentService
+  - [x] Domain Events: WarehouseCreated, LocationAdded
+  - [x] Crear interfaces de Repository para bodegas y ubicaciones
 
-- [ ] **Implementación del Dominio de Bodegas**
-  - [ ] Aggregates: WarehouseAggregate, LocationAggregate con reglas de consistencia
-  - [ ] Value Objects: WarehouseCode, LocationCode, Address (inmutables)
-  - [ ] Domain Services: WarehouseAssignmentService
-  - [ ] Domain Events: WarehouseCreated, LocationAdded
-  - [ ] Crear interfaces de Repository para bodegas y ubicaciones
+- [x] **Implementación del Dominio de Bodegas** ✅ **COMPLETADO**
+  - [x] Aggregates: WarehouseAggregate, LocationAggregate con reglas de consistencia
+  - [x] Value Objects: WarehouseCode, LocationCode, Address (inmutables)
+  - [x] Domain Services: WarehouseAssignmentService
+  - [x] Domain Events: WarehouseCreated, LocationAdded
+  - [x] Crear interfaces de Repository para bodegas y ubicaciones
 
 - [ ] **Setup de Validaciones de Dominio**
   - [ ] Implementar validaciones de SKU único por organización

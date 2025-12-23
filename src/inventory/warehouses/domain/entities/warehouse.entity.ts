@@ -1,19 +1,24 @@
-import { Entity } from '@shared/domain/base/entity.base';
+import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
+import { WarehouseCreatedEvent } from '@warehouse/domain/events/warehouseCreated.event';
+import { Address } from '@warehouse/domain/valueObjects/address.valueObject';
+import { WarehouseCode } from '@warehouse/domain/valueObjects/warehouseCode.valueObject';
 
 export interface IWarehouseProps {
-  code: string;
+  code: WarehouseCode;
   name: string;
-  address?: string;
+  address?: Address;
   isActive: boolean;
 }
 
-export class Warehouse extends Entity<IWarehouseProps> {
+export class Warehouse extends AggregateRoot<IWarehouseProps> {
   private constructor(props: IWarehouseProps, id?: string, orgId?: string) {
     super(props, id, orgId);
   }
 
   public static create(props: IWarehouseProps, orgId: string): Warehouse {
-    return new Warehouse(props, undefined, orgId);
+    const warehouse = new Warehouse(props, undefined, orgId);
+    warehouse.addDomainEvent(new WarehouseCreatedEvent(warehouse));
+    return warehouse;
   }
 
   public static reconstitute(props: IWarehouseProps, id: string, orgId: string): Warehouse {
@@ -40,7 +45,7 @@ export class Warehouse extends Entity<IWarehouseProps> {
   }
 
   // Getters
-  get code(): string {
+  get code(): WarehouseCode {
     return this.props.code;
   }
 
@@ -48,7 +53,7 @@ export class Warehouse extends Entity<IWarehouseProps> {
     return this.props.name;
   }
 
-  get address(): string | undefined {
+  get address(): Address | undefined {
     return this.props.address;
   }
 
