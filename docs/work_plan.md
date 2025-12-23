@@ -125,16 +125,16 @@
   - [x] Protección de endpoints de creación de organizaciones (solo SYSTEM_ADMIN)
   - [x] Crear interceptores para logging de autenticación
   - [x] Setup de validación de entrada con class-validator
-  - [ ] Tests unitarios para todos los servicios de autenticación
+  - [x] Tests unitarios para todos los servicios de autenticación
 
 ### **Semana 5: Dominio de Usuarios y RBAC**
 
-- [ ] **Implementación del Dominio de Usuarios**
-  - [ ] Aggregates: UserAggregate, RoleAggregate con reglas de consistencia
-  - [ ] Domain Services: UserManagementService, RoleAssignmentService
-  - [ ] Value Objects: Username, UserStatus, RoleName (inmutables)
-  - [ ] Domain Events: RoleAssigned, UserStatusChanged, PermissionChanged
-  - [ ] Crear interfaces de Repository para usuarios y roles
+- [x] **Implementación del Dominio de Usuarios** ✅ **IMPLEMENTADO**
+  - [x] Aggregates: UserAggregate, RoleAggregate con reglas de consistencia (User y Role ya son aggregates)
+  - [x] Domain Services: UserManagementService, RoleAssignmentService
+  - [x] Value Objects: Username, UserStatus, RoleName (inmutables)
+  - [x] Domain Events: RoleAssigned, UserStatusChanged, PermissionChanged
+  - [x] Crear interfaces de Repository para usuarios y roles
 
 - [x] **Sistema RBAC Funcional** ✅ **EN PROGRESO**
   - [x] Casos de uso: CreateUser, AssignRole, CheckPermission
@@ -159,19 +159,19 @@
 
 ### **Semana 6: Adaptadores y API de Autenticación**
 
-- [ ] **Implementación de Adaptadores**
-  - [ ] HTTP Controllers para endpoints de auth con decoradores NestJS
-  - [ ] Middleware de autenticación y autorización
-  - [ ] Validación de entrada con class-validator y DTOs
+- [x] **Implementación de Adaptadores** ✅ **IMPLEMENTADO**
+  - [x] HTTP Controllers para endpoints de auth con decoradores NestJS
+  - [x] Middleware de autenticación y autorización
+  - [x] Validación de entrada con class-validator y DTOs
   - [ ] Tests de integración de endpoints
-  - [ ] Crear interceptores para logging y auditoría
+  - [x] Crear interceptores para logging y auditoría
 
-- [ ] **API REST de Autenticación**
-  - [ ] Endpoints: POST /auth/login, POST /auth/refresh, POST /auth/logout
-  - [ ] Endpoints de gestión: GET /users, POST /users, PUT /users/:id
-  - [ ] OpenAPI/Swagger documentation with decorators
+- [x] **API REST de Autenticación** ✅ **IMPLEMENTADO**
+  - [x] Endpoints: POST /auth/login, POST /auth/refresh, POST /auth/logout
+  - [x] Endpoints de gestión: GET /users, POST /users, PUT /users/:id, PATCH /users/:id/status, POST /users/:id/roles, DELETE /users/:id/roles/:roleId
+  - [x] OpenAPI/Swagger documentation with decorators
   - [ ] Tests de aceptación
-  - [ ] Implementar rate limiting por endpoint
+  - [x] Implementar rate limiting por endpoint
 
 - [ ] **Colección de Postman - Auth**
   - [ ] Crear colección de Postman para autenticación

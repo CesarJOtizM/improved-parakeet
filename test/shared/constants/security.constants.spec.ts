@@ -18,8 +18,7 @@ describe('Security Constants', () => {
 
       // Assert
       expect(roles).toContain('SYSTEM_ADMIN');
-      expect(roles).toContain('SYSTEM_ADMIN');
-      expect(roles).toContain('ORGANIZATION_ADMIN');
+      expect(roles).toContain('ADMIN');
       expect(roles).toContain('WAREHOUSE_MANAGER');
       expect(roles).toContain('WAREHOUSE_OPERATOR');
       expect(roles).toContain('INVENTORY_AUDITOR');
