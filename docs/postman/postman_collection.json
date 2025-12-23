@@ -65,6 +65,11 @@
       "key": "refreshTokenExpiresAt",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "roleId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -108,8 +113,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             },
             "description": "Autenticar usuario con email y contraseña, retorna tokens JWT"
           },
@@ -195,8 +205,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/login",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "login"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
                 }
               },
               "status": "OK",
@@ -248,8 +263,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/logout",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "logout"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
             },
             "description": "Cerrar sesión del usuario y blacklistear tokens JWT"
           },
@@ -314,8 +334,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/logout",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "logout"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "logout"
+                  ]
                 }
               },
               "status": "OK",
@@ -363,8 +388,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/refresh",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "refresh"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
             },
             "description": "Refrescar token de acceso usando un refresh token válido"
           },
@@ -445,8 +475,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/refresh",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "refresh"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "refresh"
+                  ]
                 }
               },
               "status": "OK",
@@ -498,8 +533,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/logout-all",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "logout-all"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout-all"
+              ]
             },
             "description": "Cerrar sesión del usuario en todas las sesiones activas y blacklistear todos los tokens"
           },
@@ -565,8 +605,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/logout-all",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "logout-all"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "logout-all"
+                  ]
                 }
               },
               "status": "OK",
@@ -619,8 +664,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/password-reset/request",
-              "host": ["{{baseUrl}}"],
-              "path": ["password-reset", "request"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "password-reset",
+                "request"
+              ]
             },
             "description": "Request password reset by sending OTP to user email"
           },
@@ -636,8 +686,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/password-reset/request",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "password-reset", "request"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password-reset",
+                    "request"
+                  ]
                 }
               },
               "status": "OK",
@@ -690,8 +746,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/password-reset/verify-otp",
-              "host": ["{{baseUrl}}"],
-              "path": ["password-reset", "verify-otp"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "password-reset",
+                "verify-otp"
+              ]
             },
             "description": "Verify OTP code for password reset"
           },
@@ -707,8 +768,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/password-reset/verify",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "password-reset", "verify"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password-reset",
+                    "verify"
+                  ]
                 }
               },
               "status": "OK",
@@ -761,8 +828,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/password-reset/reset",
-              "host": ["{{baseUrl}}"],
-              "path": ["password-reset", "reset"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "password-reset",
+                "reset"
+              ]
             },
             "description": "Reset password with verified OTP and new password"
           },
@@ -778,8 +850,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/password-reset/reset",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "password-reset", "reset"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password-reset",
+                    "reset"
+                  ]
                 }
               },
               "status": "OK",
@@ -838,8 +916,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["register"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "register"
+              ]
             },
             "description": "Registrar un nuevo usuario en el sistema"
           },
@@ -855,8 +937,12 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/register",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["register"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "register"
+                  ]
                 }
               },
               "status": "Created",
@@ -870,6 +956,450 @@
               ],
               "cookie": [],
               "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"user-123\",\n    \"email\": \"newuser@example.com\",\n    \"username\": \"newuser\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"status\": \"INACTIVE\",\n    \"orgId\": \"org-123\"\n  },\n  \"message\": \"User registered successfully. Your account requires activation by the administrator.\",\n  \"timestamp\": \"2024-12-20T10:00:00.000Z\",\n  \"requiresAdminActivation\": true\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users Management",
+      "description": "Endpoints para gestión de usuarios, roles y permisos",
+      "item": [
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"username\": \"newuser\",\n  \"password\": \"ValidPass123!\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Create a new user in the organization. Requires USERS:CREATE permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has user data\", function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property(\"success\");",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.have.property(\"id\");",
+                  "    ",
+                  "    // Guardar user ID para uso posterior",
+                  "    if (responseJson.data && responseJson.data.id) {",
+                  "        pm.collectionVariables.set(\"userId\", responseJson.data.id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filter by status (ACTIVE, INACTIVE, LOCKED)",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search term",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get a paginated list of users. Requires USERS:READ permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has users array and pagination\", function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property(\"data\");",
+                  "    pm.expect(responseJson.data).to.be.an(\"array\");",
+                  "    pm.expect(responseJson).to.have.property(\"pagination\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            },
+            "description": "Get a specific user by ID. Requires USERS:READ permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has user data\", function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.data).to.have.property(\"id\");",
+                  "    pm.expect(responseJson.data).to.have.property(\"email\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"username\": \"janesmith\",\n  \"email\": \"jane@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            },
+            "description": "Update user information. Requires USERS:UPDATE permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"User updated successfully\", function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change User Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"INACTIVE\",\n  \"reason\": \"User requested deactivation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "status"
+              ]
+            },
+            "description": "Change user status (ACTIVE, INACTIVE, LOCKED). Requires USERS:UPDATE permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Status changed successfully\", function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.have.property(\"status\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Assign Role to User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleId\": \"role-123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "roles"
+              ]
+            },
+            "description": "Assign a role to a user. Requires USERS:MANAGE_ROLES permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Role assigned successfully\", function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.have.property(\"roleName\");",
+                  "    ",
+                  "    // Guardar roleId para uso posterior",
+                  "    if (responseJson.data && responseJson.data.roleId) {",
+                  "        pm.collectionVariables.set(\"roleId\", responseJson.data.roleId);",
+                  "        console.log(\"Role ID guardado automáticamente:\", responseJson.data.roleId);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Remove Role from User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/roles/{{roleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "roles",
+                "{{roleId}}"
+              ]
+            },
+            "description": "Remove a role from a user. Requires USERS:MANAGE_ROLES permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Role removed successfully\", function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "});"
+                ]
+              }
             }
           ]
         }
@@ -897,8 +1427,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["health"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
             },
             "description": "Verificación básica de salud del sistema"
           },
@@ -910,8 +1444,12 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/health",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["health"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "health"
+                  ]
                 }
               },
               "status": "OK",
@@ -946,8 +1484,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/health/detailed",
-              "host": ["{{baseUrl}}"],
-              "path": ["health", "detailed"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "detailed"
+              ]
             },
             "description": "Verificación detallada de salud con métricas del sistema"
           },
@@ -959,8 +1502,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/health/detailed",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["health", "detailed"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "health",
+                    "detailed"
+                  ]
                 }
               },
               "status": "OK",
@@ -995,8 +1543,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/health/full",
-              "host": ["{{baseUrl}}"],
-              "path": ["health", "full"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "full"
+              ]
             },
             "description": "Verificación completa de salud orquestada por el dominio"
           },
@@ -1008,8 +1561,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/health/full",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["health", "full"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "health",
+                    "full"
+                  ]
                 }
               },
               "status": "OK",
@@ -1044,8 +1602,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "products"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "products"
+              ]
             },
             "description": "Obtener todos los productos del inventario"
           },
@@ -1057,8 +1620,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/inventory/products",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "products"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "products"
+                  ]
                 }
               },
               "status": "OK",
@@ -1087,8 +1655,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory/products/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "products", ":id"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "products",
+                ":id"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -1107,8 +1681,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/inventory/products/:id",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "products", ":id"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "products",
+                    ":id"
+                  ]
                 }
               },
               "status": "OK",
@@ -1145,8 +1725,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/inventory/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "products"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "products"
+              ]
             },
             "description": "Crear un nuevo producto en el inventario"
           },
@@ -1162,8 +1747,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/inventory/products",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "products"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "products"
+                  ]
                 }
               },
               "status": "Created",
@@ -1200,8 +1790,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/inventory/products/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "products", ":id"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "products",
+                ":id"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -1224,8 +1820,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/inventory/products/:id",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "products", ":id"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "products",
+                    ":id"
+                  ]
                 }
               },
               "status": "OK",
@@ -1254,8 +1856,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory/warehouses",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "warehouses"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "warehouses"
+              ]
             },
             "description": "Obtener todas las bodegas"
           },
@@ -1267,8 +1874,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/inventory/warehouses",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "warehouses"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "warehouses"
+                  ]
                 }
               },
               "status": "OK",
@@ -1305,8 +1917,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/inventory/warehouses",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "warehouses"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "warehouses"
+              ]
             },
             "description": "Crear una nueva bodega"
           },
@@ -1322,8 +1939,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/inventory/warehouses",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "warehouses"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "warehouses"
+                  ]
                 }
               },
               "status": "Created",
@@ -1352,8 +1974,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory/stock",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "stock"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "stock"
+              ]
             },
             "description": "Obtener el stock actual de todos los productos"
           },
@@ -1365,8 +1992,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/inventory/stock",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "stock"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "stock"
+                  ]
                 }
               },
               "status": "OK",
@@ -1395,8 +2027,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory/stock/low",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "stock", "low"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "stock",
+                "low"
+              ]
             },
             "description": "Obtener productos con stock bajo"
           },
@@ -1408,8 +2046,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/inventory/stock/low",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "stock", "low"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "stock",
+                    "low"
+                  ]
                 }
               },
               "status": "OK",
@@ -1438,8 +2082,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory/movements",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "movements"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "movements"
+              ]
             },
             "description": "Obtener todos los movimientos de inventario"
           },
@@ -1451,8 +2100,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/inventory/movements",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "movements"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "movements"
+                  ]
                 }
               },
               "status": "OK",
@@ -1489,8 +2143,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/inventory/movements",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "movements"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "movements"
+              ]
             },
             "description": "Crear un nuevo movimiento de inventario"
           },
@@ -1506,8 +2165,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/inventory/movements",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "movements"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "movements"
+                  ]
                 }
               },
               "status": "Created",
@@ -1536,8 +2200,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory/transfers",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "transfers"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "transfers"
+              ]
             },
             "description": "Obtener todas las transferencias entre bodegas"
           },
@@ -1549,8 +2218,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/inventory/transfers",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "transfers"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "transfers"
+                  ]
                 }
               },
               "status": "OK",
@@ -1585,8 +2259,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/organization/settings",
-              "host": ["{{baseUrl}}"],
-              "path": ["organization", "settings"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "settings"
+              ]
             },
             "description": "Obtener configuración de la organización"
           },
@@ -1598,8 +2277,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/organization/settings",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["organization", "settings"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "organization",
+                    "settings"
+                  ]
                 }
               },
               "status": "OK",
@@ -1636,8 +2320,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/organization/settings",
-              "host": ["{{baseUrl}}"],
-              "path": ["organization", "settings"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "settings"
+              ]
             },
             "description": "Actualizar configuración de la organización"
           },
@@ -1653,8 +2342,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/organization/settings",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["organization", "settings"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "organization",
+                    "settings"
+                  ]
                 }
               },
               "status": "OK",
@@ -1683,8 +2377,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/organization/branding",
-              "host": ["{{baseUrl}}"],
-              "path": ["organization", "branding"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "branding"
+              ]
             },
             "description": "Obtener información de marca de la organización"
           },
@@ -1696,8 +2395,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/organization/branding",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["organization", "branding"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "organization",
+                    "branding"
+                  ]
                 }
               },
               "status": "OK",
@@ -1734,8 +2438,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/organization/branding",
-              "host": ["{{baseUrl}}"],
-              "path": ["organization", "branding"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "branding"
+              ]
             },
             "description": "Actualizar información de marca de la organización"
           },
@@ -1751,8 +2460,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/organization/branding",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["organization", "branding"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "organization",
+                    "branding"
+                  ]
                 }
               },
               "status": "OK",
@@ -1781,8 +2495,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/organization/tenant",
-              "host": ["{{baseUrl}}"],
-              "path": ["organization", "tenant"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "tenant"
+              ]
             },
             "description": "Obtener información del tenant actual"
           },
@@ -1794,8 +2513,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/organization/tenant",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["organization", "tenant"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "organization",
+                    "tenant"
+                  ]
                 }
               },
               "status": "OK",
@@ -1838,8 +2562,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/reporting/inventory",
-              "host": ["{{baseUrl}}"],
-              "path": ["reporting", "inventory"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reporting",
+                "inventory"
+              ]
             },
             "description": "Generar reporte de inventario"
           },
@@ -1855,8 +2584,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/reporting/inventory",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reporting", "inventory"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reporting",
+                    "inventory"
+                  ]
                 }
               },
               "status": "Accepted",
@@ -1893,8 +2627,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/reporting/financial",
-              "host": ["{{baseUrl}}"],
-              "path": ["reporting", "financial"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reporting",
+                "financial"
+              ]
             },
             "description": "Generar reporte financiero"
           },
@@ -1910,8 +2649,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/reporting/financial",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reporting", "financial"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reporting",
+                    "financial"
+                  ]
                 }
               },
               "status": "Accepted",
@@ -1948,8 +2692,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/reporting/movements",
-              "host": ["{{baseUrl}}"],
-              "path": ["reporting", "movements"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reporting",
+                "movements"
+              ]
             },
             "description": "Generar reporte de movimientos"
           },
@@ -1965,8 +2714,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/reporting/movements",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reporting", "movements"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reporting",
+                    "movements"
+                  ]
                 }
               },
               "status": "Accepted",
@@ -1995,8 +2749,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/reporting/status/:reportId",
-              "host": ["{{baseUrl}}"],
-              "path": ["reporting", "status", ":reportId"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reporting",
+                "status",
+                ":reportId"
+              ],
               "variable": [
                 {
                   "key": "reportId",
@@ -2015,8 +2775,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/reporting/status/:reportId",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reporting", "status", ":reportId"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reporting",
+                    "status",
+                    ":reportId"
+                  ]
                 }
               },
               "status": "OK",
@@ -2045,8 +2811,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/reporting/export/:reportId",
-              "host": ["{{baseUrl}}"],
-              "path": ["reporting", "export", ":reportId"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reporting",
+                "export",
+                ":reportId"
+              ],
               "variable": [
                 {
                   "key": "reportId",
@@ -2065,8 +2837,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/reporting/export/:reportId",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reporting", "export", ":reportId"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reporting",
+                    "export",
+                    ":reportId"
+                  ]
                 }
               },
               "status": "OK",
@@ -2105,8 +2883,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["users"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
             },
             "description": "Obtener todos los usuarios de la organización"
           },
@@ -2118,8 +2900,12 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/users",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["users"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users"
+                  ]
                 }
               },
               "status": "OK",
@@ -2148,8 +2934,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/users/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", ":id"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":id"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -2168,8 +2959,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/users/:id",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["users", ":id"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ]
                 }
               },
               "status": "OK",
@@ -2206,8 +3002,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["users"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
             },
             "description": "Crear un nuevo usuario en la organización"
           },
@@ -2223,8 +3023,12 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/users",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["users"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users"
+                  ]
                 }
               },
               "status": "Created",
@@ -2261,8 +3065,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/users/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", ":id"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":id"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -2285,8 +3094,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/users/:id",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["users", ":id"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ]
                 }
               },
               "status": "OK",
@@ -2323,8 +3137,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/users/:id/status",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", ":id", "status"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":id",
+                "status"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -2347,8 +3167,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/users/:id/status",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["users", ":id", "status"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id",
+                    "status"
+                  ]
                 }
               },
               "status": "OK",
@@ -2377,8 +3203,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/roles",
-              "host": ["{{baseUrl}}"],
-              "path": ["roles"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles"
+              ]
             },
             "description": "Obtener todos los roles de la organización"
           },
@@ -2390,8 +3220,12 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/roles",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["roles"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "roles"
+                  ]
                 }
               },
               "status": "OK",
@@ -2428,8 +3262,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/roles",
-              "host": ["{{baseUrl}}"],
-              "path": ["roles"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles"
+              ]
             },
             "description": "Crear un nuevo rol en la organización"
           },
@@ -2445,8 +3283,12 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/roles",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["roles"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "roles"
+                  ]
                 }
               },
               "status": "Created",
@@ -2501,8 +3343,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/imports/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["imports", "products"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "imports",
+                "products"
+              ]
             },
             "description": "Importar productos masivamente desde archivo"
           },
@@ -2529,8 +3376,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/imports/products",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports", "products"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "imports",
+                    "products"
+                  ]
                 }
               },
               "status": "Accepted",
@@ -2579,8 +3431,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/imports/stock",
-              "host": ["{{baseUrl}}"],
-              "path": ["imports", "stock"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "imports",
+                "stock"
+              ]
             },
             "description": "Importar stock masivamente desde archivo"
           },
@@ -2612,8 +3469,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/imports/stock",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports", "stock"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "imports",
+                    "stock"
+                  ]
                 }
               },
               "status": "Accepted",
@@ -2642,8 +3504,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/imports/status/:importId",
-              "host": ["{{baseUrl}}"],
-              "path": ["imports", "status", ":importId"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "imports",
+                "status",
+                ":importId"
+              ],
               "variable": [
                 {
                   "key": "importId",
@@ -2662,8 +3530,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/imports/status/:importId",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports", "status", ":importId"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "imports",
+                    "status",
+                    ":importId"
+                  ]
                 }
               },
               "status": "OK",
@@ -2692,8 +3566,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/imports/download/:importId",
-              "host": ["{{baseUrl}}"],
-              "path": ["imports", "download", ":importId"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "imports",
+                "download",
+                ":importId"
+              ],
               "variable": [
                 {
                   "key": "importId",
@@ -2712,8 +3592,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/imports/download/:importId",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports", "download", ":importId"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "imports",
+                    "download",
+                    ":importId"
+                  ]
                 }
               },
               "status": "OK",

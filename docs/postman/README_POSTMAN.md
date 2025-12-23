@@ -63,6 +63,16 @@ La colección utiliza las siguientes variables que debes configurar:
 - **POST** `/password-reset/verify-otp` - Verificar código OTP
 - **POST** `/password-reset/reset` - Restablecer contraseña
 
+### 👥 Users Management
+
+- **POST** `/users` - Crear nuevo usuario (Requiere USERS:CREATE)
+- **GET** `/users` - Obtener lista paginada de usuarios (Requiere USERS:READ)
+- **GET** `/users/:id` - Obtener usuario por ID (Requiere USERS:READ)
+- **PUT** `/users/:id` - Actualizar información de usuario (Requiere USERS:UPDATE)
+- **PATCH** `/users/:id/status` - Cambiar estado de usuario (Requiere USERS:UPDATE)
+- **POST** `/users/:id/roles` - Asignar rol a usuario (Requiere USERS:MANAGE_ROLES)
+- **DELETE** `/users/:id/roles/:roleId` - Remover rol de usuario (Requiere USERS:MANAGE_ROLES)
+
 ### 🏥 Health Check
 
 - **GET** `/health` - Verificación básica de salud del sistema
@@ -137,7 +147,9 @@ Una vez configurado el token, todos los endpoints protegidos funcionarán autom�
   "baseUrl": "http://localhost:3000",
   "accessToken": "",
   "refreshToken": "",
-  "organizationId": ""
+  "organizationId": "",
+  "userId": "",
+  "roleId": ""
 }
 ```
 
@@ -150,6 +162,9 @@ Puedes crear un entorno en Postman con estas variables para mayor flexibilidad.
 ### Endpoints Implementados
 
 - ✅ **Authentication**: Completamente implementado
+- ✅ **User Registration**: Completamente implementado
+- ✅ **Password Reset**: Completamente implementado
+- ✅ **Users Management**: Completamente implementado
 - ✅ **Health Check**: Completamente implementado
 
 ### Endpoints Pendientes
