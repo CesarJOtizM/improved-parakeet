@@ -116,9 +116,13 @@
   - [x] Rate limiting funcional por IP y usuario
   - [x] Implementar guards de autenticación
 
-- [ ] **Setup de Seguridad Base**
+- [x] **Setup de Seguridad Base** ✅ **IMPLEMENTADO**
   - [x] Configuración de Passport JWT Strategy
-  - [x] Implementar guards de autorización por roles
+  - [x] Implementar guards de autorización por roles (RoleBasedAuthGuard)
+  - [x] Implementar guards de autorización por permisos (PermissionGuard)
+  - [x] Implementar guards de autenticación JWT (JwtAuthGuard)
+  - [x] Decoradores para control de acceso: @RequireRoles, @AllowSuperAdmin, @AllowOrganizationAdmin
+  - [x] Protección de endpoints de creación de organizaciones (solo SYSTEM_ADMIN)
   - [x] Crear interceptores para logging de autenticación
   - [x] Setup de validación de entrada con class-validator
   - [ ] Tests unitarios para todos los servicios de autenticación
@@ -132,17 +136,24 @@
   - [ ] Domain Events: RoleAssigned, UserStatusChanged, PermissionChanged
   - [ ] Crear interfaces de Repository para usuarios y roles
 
-- [ ] **Sistema RBAC Funcional**
-  - [ ] Casos de uso: CreateUser, AssignRole, CheckPermission
-  - [ ] Implementación de permisos granulares por módulo
-  - [ ] Roles predefinidos (Admin, Operador, Consultor, Supervisor)
+- [x] **Sistema RBAC Funcional** ✅ **EN PROGRESO**
+  - [x] Casos de uso: CreateUser, AssignRole, CheckPermission
+  - [x] Implementación de permisos granulares por módulo
+  - [x] Roles predefinidos (ADMIN, SUPERVISOR, WAREHOUSE_OPERATOR, CONSULTANT, IMPORT_OPERATOR)
+  - [x] Arquitectura de roles: SYSTEM_ADMIN (sistema) y ADMIN (organización)
+  - [x] Guards de autorización por roles y permisos implementados
+  - [x] Decoradores para control de acceso por roles
   - [ ] Auditoría funcional de cambios con Domain Events
-  - [ ] Implementar guards de autorización por permisos
+  - [x] Seed automático de roles y permisos al crear organización
 
-- [ ] **Implementación de Permisos**
-  - [ ] Crear sistema de permisos granulares por módulo y acción
-  - [ ] Implementar decoradores personalizados para permisos
-  - [ ] Crear middleware de validación de permisos
+- [x] **Implementación de Permisos** ✅ **IMPLEMENTADO**
+  - [x] Crear sistema de permisos granulares por módulo y acción
+  - [x] Implementar decoradores personalizados para permisos y roles
+  - [x] Crear guards de validación de permisos (PermissionGuard)
+  - [x] Crear guards de validación de roles (RoleBasedAuthGuard)
+  - [x] Implementar decoradores: @RequireRoles, @AllowSuperAdmin, @AllowOrganizationAdmin
+  - [x] Seed automático de permisos al crear organización
+  - [x] El rol ADMIN recibe automáticamente todos los permisos
   - [ ] Setup de auditoría automática de cambios de permisos
   - [ ] Tests de integración para el sistema RBAC completo
 
@@ -941,14 +952,34 @@ inventory-system/
 - **SETTINGS:VIEW_LOGS** - Ver logs del sistema
 - **SETTINGS:MANAGE_BACKUPS** - Gestionar respaldos
 
+### **Arquitectura de Roles del Sistema**
+
+El sistema implementa una arquitectura de roles en dos niveles:
+
+#### **Roles de Sistema (sin orgId)**
+- **SYSTEM_ADMIN**: Rol de sistema que trasciende organizaciones
+  - Puede crear nuevas organizaciones
+  - Acceso total al sistema completo
+  - No está asociado a una organización específica
+  - Se usa para operaciones administrativas globales
+
+#### **Roles de Organización (con orgId)**
+- **ADMIN**: Administrador máximo dentro de una organización
+  - **Acceso total** a todos los módulos y permisos de su organización
+  - **Gestión completa** de usuarios, roles y permisos dentro de la organización
+  - **Configuración total** de la organización
+  - **Auditoría completa** de todas las operaciones de la organización
+  - Se crea automáticamente en el seed con todos los permisos asignados
+
 ### **Roles Predefinidos con Permisos**
 
-#### **🔴 Administrador (ADMIN)**
+#### **🔴 Administrador de Organización (ADMIN)**
 
-- **Acceso total** a todos los módulos y permisos
-- **Gestión completa** de usuarios, roles y permisos
-- **Configuración total** del sistema
-- **Auditoría completa** de todas las operaciones
+- **Acceso total** a todos los módulos y permisos de su organización
+- **Gestión completa** de usuarios, roles y permisos dentro de la organización
+- **Configuración total** de la organización
+- **Auditoría completa** de todas las operaciones de la organización
+- **Nota**: Este rol se crea automáticamente al crear una nueva organización y tiene todos los permisos asignados
 
 #### **🟠 Supervisor (SUPERVISOR)**
 
@@ -997,7 +1028,7 @@ inventory-system/
 - **REPORTS**: VIEW_INVENTORY, EXPORT_EXCEL, EXPORT_CSV
 - **AUDIT**: VIEW_LOGS
 
-### **Implementación de Permisos**
+### **Implementación de Permisos** ✅ **IMPLEMENTADO**
 
 #### **Decoradores de Permisos**
 
@@ -1009,24 +1040,57 @@ export class ProductsController {
 }
 ```
 
-#### **Guards de Autorización**
+#### **Guards de Autorización** ✅ **IMPLEMENTADO**
+
+**PermissionGuard**: Valida permisos específicos
+- Verifica que el usuario tenga los permisos requeridos
+- El rol `ADMIN` tiene acceso automático a todos los permisos dentro de su organización
+- Implementado en: `src/shared/guards/permission.guard.ts`
+
+**RoleBasedAuthGuard**: Valida roles específicos
+- Soporta verificación de roles de sistema (`SYSTEM_ADMIN`) y de organización (`ADMIN`)
+- Opciones configurables:
+  - `allowSuperAdmin`: Permite acceso a `SYSTEM_ADMIN` (rol de sistema)
+  - `allowOrganizationAdmin`: Permite acceso a `ADMIN` (rol de organización)
+  - `checkOrganization`: Verifica que el usuario pertenezca a la organización
+- Implementado en: `src/authentication/security/guards/roleBasedAuthGuard.ts`
+
+**JwtAuthGuard**: Valida autenticación JWT
+- Verifica y decodifica tokens JWT
+- Soporta blacklisting de tokens
+- Rate limiting por IP/usuario
+- Implementado en: `src/authentication/security/guards/jwtAuthGuard.ts`
+
+#### **Decoradores de Roles** ✅ **IMPLEMENTADO**
 
 ```typescript
-@Injectable()
-export class PermissionGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
-    const requiredPermissions = this.reflector.get<string[]>('permissions', context.getHandler());
-    // Validate permissions logic
-  }
-}
+// Requerir roles específicos
+@RequireRoles([SYSTEM_ROLES.ADMIN])
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+
+// Permitir acceso a super administradores (SYSTEM_ADMIN)
+@AllowSuperAdmin()
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+
+// Permitir acceso a administradores de organización (ADMIN)
+@AllowOrganizationAdmin()
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+
+// Solo super administradores
+@SuperAdminOnly()
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+
+// Solo administradores de organización
+@OrganizationAdminOnly()
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
 ```
 
 #### **Middleware de Validación**
 
-- **Validación automática** de permisos en cada endpoint
-- **Cache de permisos** del usuario (5 minutos)
-- **Auditoría automática** de accesos denegados
-- **Rate limiting** por tipo de operación
+- ✅ **Validación automática** de permisos en cada endpoint
+- ✅ **Cache de permisos** del usuario (implementado en JWT payload)
+- ✅ **Auditoría automática** de accesos denegados (logs en guards)
+- ✅ **Rate limiting** por tipo de operación (implementado en JwtAuthGuard)
 
 ---
 
@@ -1041,11 +1105,72 @@ export class PermissionGuard implements CanActivate {
 
 ### **🚀 Próximos Pasos para Semana 4**
 
-1. **Implementar dominio de autenticación** (User, Role, Permission entities)
-2. **Crear casos de uso de autenticación** (Login, Logout, Refresh Token)
-3. **Implementar sistema RBAC** con permisos granulares
-4. **Crear guards de autorización** por roles y permisos
-5. **Implementar adaptadores de autenticación** (HTTP Controllers)
+1. ✅ **Implementar dominio de autenticación** (User, Role, Permission entities) - COMPLETADO
+2. ✅ **Crear casos de uso de autenticación** (Login, Logout, Refresh Token) - COMPLETADO
+3. ✅ **Implementar sistema RBAC** con permisos granulares - EN PROGRESO
+4. ✅ **Crear guards de autorización** por roles y permisos - COMPLETADO
+5. ⏳ **Implementar adaptadores de autenticación** (HTTP Controllers) - EN PROGRESO
+
+---
+
+## 📝 Cambios Recientes y Actualizaciones
+
+### **Sistema de Roles y Permisos - Actualización (Última actualización)**
+
+#### **Arquitectura de Roles Implementada**
+
+1. **Roles de Sistema (sin orgId)**
+   - **SYSTEM_ADMIN**: Rol de sistema que trasciende organizaciones
+     - Puede crear nuevas organizaciones
+     - Acceso total al sistema completo
+     - Implementado en: `src/shared/constants/security.constants.ts`
+     - Protección aplicada en: `src/organization/organization.controller.ts`
+
+2. **Roles de Organización (con orgId)**
+   - **ADMIN**: Administrador máximo dentro de una organización
+     - Acceso total a todos los módulos y permisos de su organización
+     - Se crea automáticamente en el seed con todos los permisos
+     - Implementado en: `src/infrastructure/database/prisma/seeds/auth.seed.ts`
+
+#### **Guards y Decoradores Implementados**
+
+✅ **JwtAuthGuard** (`src/authentication/security/guards/jwtAuthGuard.ts`)
+- Validación y decodificación de tokens JWT
+- Soporte para blacklisting de tokens
+- Rate limiting por IP/usuario
+
+✅ **RoleBasedAuthGuard** (`src/authentication/security/guards/roleBasedAuthGuard.ts`)
+- Validación de roles de sistema (`SYSTEM_ADMIN`) y de organización (`ADMIN`)
+- Opciones configurables: `allowSuperAdmin`, `allowOrganizationAdmin`, `checkOrganization`
+- Métodos: `isSuperAdmin()`, `isOrganizationAdmin()`
+
+✅ **PermissionGuard** (`src/shared/guards/permission.guard.ts`)
+- Validación de permisos específicos
+- El rol `ADMIN` tiene acceso automático a todos los permisos
+
+✅ **Decoradores** (`src/authentication/security/decorators/roleBasedAuth.decorator.ts`)
+- `@RequireRoles([roles])`: Requerir roles específicos
+- `@AllowSuperAdmin()`: Permitir acceso a SYSTEM_ADMIN
+- `@AllowOrganizationAdmin()`: Permitir acceso a ADMIN
+- `@SuperAdminOnly()`: Solo SYSTEM_ADMIN
+- `@OrganizationAdminOnly()`: Solo ADMIN
+
+#### **Protección de Endpoints**
+
+✅ **Creación de Organizaciones**
+- Endpoint protegido: `POST /organizations`
+- Solo usuarios con rol `SYSTEM_ADMIN` pueden crear organizaciones
+- Implementado en: `src/organization/organization.controller.ts`
+
+#### **Seed Automático de Roles y Permisos**
+
+✅ **AuthSeed** (`src/infrastructure/database/prisma/seeds/auth.seed.ts`)
+- Crea automáticamente roles al crear una organización:
+  - `ADMIN`: Todos los permisos
+  - `SUPERVISOR`: Permisos amplios (sin gestión de usuarios)
+  - `WAREHOUSE_OPERATOR`: Permisos limitados a bodegas asignadas
+  - `CONSULTANT`: Solo lectura
+  - `IMPORT_OPERATOR`: Solo importaciones
 
 ---
 
@@ -1056,8 +1181,8 @@ export class PermissionGuard implements CanActivate {
 - [x] **Semana 1**: Setup del proyecto y arquitectura base ✅ **COMPLETADA**
 - [x] **Semana 2**: Dominios y entidades del core ✅ **COMPLETADA**
 - [x] **Semana 3**: Infraestructura y adaptadores ✅ **COMPLETADA**
-- [ ] **Semana 4**: Dominio de autenticación
-- [ ] **Semana 5**: Dominio de usuarios y RBAC
+- [x] **Semana 4**: Dominio de autenticación ✅ **COMPLETADA** (parcialmente)
+- [x] **Semana 5**: Dominio de usuarios y RBAC ✅ **EN PROGRESO** (guards y decoradores implementados)
 - [ ] **Semana 6**: Adaptadores y API de autenticación
 - [ ] **Semana 7**: Dominio de productos y bodegas
 - [ ] **Semana 8**: Dominio de movimientos y transferencias

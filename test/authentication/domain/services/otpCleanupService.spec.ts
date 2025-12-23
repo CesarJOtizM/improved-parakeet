@@ -169,5 +169,62 @@ describe('OtpCleanupService', () => {
       await expect(otpCleanupService.manualCleanupUsedOtp(_orgId, hoursOld)).rejects.toThrow(error);
       expect(mockOtpRepository.deleteUsedOtp).toHaveBeenCalledWith(_orgId, hoursOld);
     });
+
+    it('Given: zero hours When: manually cleaning up used OTPs Then: should handle zero hours', async () => {
+      // Arrange
+      const _orgId = 'test-org';
+      const hoursOld = 0;
+      const deletedCount = 0;
+      mockOtpRepository.deleteUsedOtp.mockResolvedValue(deletedCount);
+
+      // Act
+      const result = await otpCleanupService.manualCleanupUsedOtp(_orgId, hoursOld);
+
+      // Assert
+      expect(result).toBe(deletedCount);
+      expect(mockOtpRepository.deleteUsedOtp).toHaveBeenCalledWith(_orgId, hoursOld);
+    });
+
+    it('Given: very large hours value When: manually cleaning up used OTPs Then: should handle large hours', async () => {
+      // Arrange
+      const _orgId = 'test-org';
+      const hoursOld = 8760; // 1 year
+      const deletedCount = 10;
+      mockOtpRepository.deleteUsedOtp.mockResolvedValue(deletedCount);
+
+      // Act
+      const result = await otpCleanupService.manualCleanupUsedOtp(_orgId, hoursOld);
+
+      // Assert
+      expect(result).toBe(deletedCount);
+      expect(mockOtpRepository.deleteUsedOtp).toHaveBeenCalledWith(_orgId, hoursOld);
+    });
+
+    it('Given: multiple organizations When: cleaning up expired OTPs Then: should handle default organization', async () => {
+      // Arrange
+      const deletedCount = 5;
+      mockOtpRepository.deleteExpiredOtp.mockResolvedValue(deletedCount);
+
+      // Act
+      await otpCleanupService.cleanupExpiredOtp();
+
+      // Assert
+      expect(mockOtpRepository.deleteExpiredOtp).toHaveBeenCalledWith('default');
+      expect(mockOtpRepository.deleteExpiredOtp).toHaveBeenCalledTimes(1);
+    });
+
+    it('Given: empty orgId When: manually cleaning up expired OTPs Then: should still process cleanup', async () => {
+      // Arrange
+      const _orgId = '';
+      const deletedCount = 0;
+      mockOtpRepository.deleteExpiredOtp.mockResolvedValue(deletedCount);
+
+      // Act
+      const result = await otpCleanupService.manualCleanupExpiredOtp(_orgId);
+
+      // Assert
+      expect(result).toBe(deletedCount);
+      expect(mockOtpRepository.deleteExpiredOtp).toHaveBeenCalledWith(_orgId);
+    });
   });
 });

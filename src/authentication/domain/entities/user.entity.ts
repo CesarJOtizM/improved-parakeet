@@ -1,5 +1,6 @@
 import { UserStatus } from '@auth/domain';
 import { UserCreatedEvent } from '@auth/domain/events/userCreated.event';
+import { UserStatusChangedEvent } from '@auth/domain/events/userStatusChanged.event';
 import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { Password } from '@auth/domain/valueObjects/password.valueObject';
 import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
@@ -62,29 +63,72 @@ export class User extends AggregateRoot<IUserProps> {
     this.updateTimestamp();
   }
 
-  public activate(): void {
+  public activate(changedBy?: string, reason?: string): void {
+    const oldStatus = this.props.status.getValue();
     this.props.status = UserStatus.create('ACTIVE');
     this.props.failedLoginAttempts = 0;
     this.props.lockedUntil = undefined;
     this.updateTimestamp();
+
+    if (changedBy) {
+      this.addDomainEvent(
+        new UserStatusChangedEvent(this.id, oldStatus, 'ACTIVE', changedBy, this.orgId, reason)
+      );
+    }
   }
 
-  public deactivate(): void {
+  public deactivate(changedBy?: string, reason?: string): void {
+    const oldStatus = this.props.status.getValue();
     this.props.status = UserStatus.create('INACTIVE');
     this.updateTimestamp();
+
+    if (changedBy) {
+      this.addDomainEvent(
+        new UserStatusChangedEvent(this.id, oldStatus, 'INACTIVE', changedBy, this.orgId, reason)
+      );
+    }
   }
 
-  public lock(lockDurationMinutes: number = 30): void {
+  public lock(lockDurationMinutes: number = 30, changedBy?: string, reason?: string): void {
+    const oldStatus = this.props.status.getValue();
     this.props.status = UserStatus.create('LOCKED');
     this.props.lockedUntil = new Date(Date.now() + lockDurationMinutes * 60 * 1000);
     this.updateTimestamp();
+
+    if (changedBy) {
+      this.addDomainEvent(
+        new UserStatusChangedEvent(this.id, oldStatus, 'LOCKED', changedBy, this.orgId, reason)
+      );
+    }
   }
 
-  public unlock(): void {
+  public unlock(changedBy?: string, reason?: string): void {
+    const oldStatus = this.props.status.getValue();
     this.props.status = UserStatus.create('ACTIVE');
     this.props.failedLoginAttempts = 0;
     this.props.lockedUntil = undefined;
     this.updateTimestamp();
+
+    if (changedBy) {
+      this.addDomainEvent(
+        new UserStatusChangedEvent(this.id, oldStatus, 'ACTIVE', changedBy, this.orgId, reason)
+      );
+    }
+  }
+
+  public changeStatus(
+    newStatus: 'ACTIVE' | 'INACTIVE' | 'LOCKED',
+    changedBy: string,
+    reason?: string,
+    lockDurationMinutes?: number
+  ): void {
+    if (newStatus === 'ACTIVE') {
+      this.activate(changedBy, reason);
+    } else if (newStatus === 'INACTIVE') {
+      this.deactivate(changedBy, reason);
+    } else if (newStatus === 'LOCKED') {
+      this.lock(lockDurationMinutes || 30, changedBy, reason);
+    }
   }
 
   public recordFailedLogin(): void {

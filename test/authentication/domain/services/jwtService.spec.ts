@@ -124,6 +124,26 @@ describe('JwtService', () => {
         )
       ).rejects.toThrow(errorMessage);
     });
+
+    it('Given: jwt service error on refresh token When: generating token pair Then: should throw error', async () => {
+      // Arrange
+      const errorMessage = 'JWT signing failed';
+      mockNestJwtService.signAsync
+        .mockResolvedValueOnce('access.token')
+        .mockRejectedValueOnce(new Error(errorMessage));
+
+      // Act & Assert
+      await expect(
+        jwtService.generateTokenPair(
+          mockUserId,
+          mockOrgId,
+          mockEmail,
+          mockUsername,
+          mockRoles,
+          mockPermissions
+        )
+      ).rejects.toThrow(errorMessage);
+    });
   });
 
   describe('refreshAccessToken', () => {
@@ -183,6 +203,26 @@ describe('JwtService', () => {
         }),
         { expiresIn: '15m' }
       );
+    });
+
+    it('Given: jwt service error When: refreshing access token Then: should throw error', async () => {
+      // Arrange
+      const mockRefreshToken = 'mock.refresh.token';
+      const errorMessage = 'JWT signing failed';
+      mockNestJwtService.signAsync.mockRejectedValue(new Error(errorMessage));
+
+      // Act & Assert
+      await expect(
+        jwtService.refreshAccessToken(
+          mockRefreshToken,
+          mockUserId,
+          mockOrgId,
+          mockEmail,
+          mockUsername,
+          mockRoles,
+          mockPermissions
+        )
+      ).rejects.toThrow(errorMessage);
     });
   });
 
@@ -401,6 +441,54 @@ describe('JwtService', () => {
 
       // Assert
       expect(result).toBe(true);
+    });
+
+    it('Given: token expiring exactly at threshold When: checking if near expiration Then: should return true', () => {
+      // Arrange
+      const now = Math.floor(Date.now() / 1000);
+      const thresholdMinutes = 5;
+      const thresholdSeconds = thresholdMinutes * 60;
+      const payload: IJwtPayload & { exp: number } = {
+        sub: mockUserId,
+        org_id: mockOrgId,
+        email: mockEmail,
+        username: mockUsername,
+        roles: mockRoles,
+        permissions: mockPermissions,
+        iat: now,
+        jti: 'jti_123',
+        exp: now + thresholdSeconds, // Exactly at threshold
+      };
+
+      // Act
+      const result = jwtService.isTokenNearExpiration(payload, thresholdMinutes);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('Given: token expiring one second after threshold When: checking if near expiration Then: should return false', () => {
+      // Arrange
+      const now = Math.floor(Date.now() / 1000);
+      const thresholdMinutes = 5;
+      const thresholdSeconds = thresholdMinutes * 60;
+      const payload: IJwtPayload & { exp: number } = {
+        sub: mockUserId,
+        org_id: mockOrgId,
+        email: mockEmail,
+        username: mockUsername,
+        roles: mockRoles,
+        permissions: mockPermissions,
+        iat: now,
+        jti: 'jti_123',
+        exp: now + thresholdSeconds + 1, // One second after threshold
+      };
+
+      // Act
+      const result = jwtService.isTokenNearExpiration(payload, thresholdMinutes);
+
+      // Assert
+      expect(result).toBe(false);
     });
   });
 

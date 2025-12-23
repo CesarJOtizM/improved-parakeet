@@ -445,6 +445,61 @@ describe('AuthorizationService', () => {
       // Assert
       expect(result).toEqual([]);
     });
+
+    it('Given: duplicate permissions When: getting user permissions Then: should return unique permissions', () => {
+      // Arrange
+      const userRoles = [
+        Role.create({ name: 'ADMIN', description: 'Administrator', isActive: true }, 'org-1'),
+      ];
+      const rolePermissions = [
+        Permission.create({ name: 'users:read', module: 'users', action: 'read' }, 'org-1'),
+        Permission.create({ name: 'users:read', module: 'users', action: 'read' }, 'org-1'), // Duplicate
+        Permission.create({ name: 'users:write', module: 'users', action: 'write' }, 'org-1'),
+      ];
+
+      // Act
+      const result = AuthorizationService.getUserPermissionsFromRoles(userRoles, rolePermissions);
+
+      // Assert
+      expect(result).toEqual(['users:read', 'users:write']);
+      expect(result.length).toBe(2); // Should be unique
+    });
+
+    it('Given: null permissions in array When: getting user permissions Then: should filter out nulls', () => {
+      // Arrange
+      const userRoles = [
+        Role.create({ name: 'ADMIN', description: 'Administrator', isActive: true }, 'org-1'),
+      ];
+      const rolePermissions = [
+        Permission.create({ name: 'users:read', module: 'users', action: 'read' }, 'org-1'),
+        null as unknown as Permission,
+        Permission.create({ name: 'users:write', module: 'users', action: 'write' }, 'org-1'),
+      ];
+
+      // Act
+      const result = AuthorizationService.getUserPermissionsFromRoles(userRoles, rolePermissions);
+
+      // Assert
+      expect(result).toEqual(['users:read', 'users:write']);
+    });
+
+    it('Given: permissions without name When: getting user permissions Then: should filter out invalid permissions', () => {
+      // Arrange
+      const userRoles = [
+        Role.create({ name: 'ADMIN', description: 'Administrator', isActive: true }, 'org-1'),
+      ];
+      const rolePermissions = [
+        Permission.create({ name: 'users:read', module: 'users', action: 'read' }, 'org-1'),
+        { name: null, module: 'users', action: 'write' } as unknown as Permission,
+        Permission.create({ name: 'users:write', module: 'users', action: 'write' }, 'org-1'),
+      ];
+
+      // Act
+      const result = AuthorizationService.getUserPermissionsFromRoles(userRoles, rolePermissions);
+
+      // Assert
+      expect(result).toEqual(['users:read', 'users:write']);
+    });
   });
 
   describe('validatePermissionHierarchy', () => {
@@ -496,6 +551,81 @@ describe('AuthorizationService', () => {
     it('Given: user without required permission When: validating permission hierarchy Then: should return false', () => {
       // Arrange
       const userPermissions = ['PRODUCTS:READ'];
+      const requiredPermission = 'USERS:CREATE';
+
+      // Act
+      const result = AuthorizationService.validatePermissionHierarchy(
+        userPermissions,
+        requiredPermission
+      );
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('Given: user with multiple admin permissions When: validating permission hierarchy Then: should return true for matching module', () => {
+      // Arrange
+      const userPermissions = ['USERS:ADMIN', 'PRODUCTS:ADMIN', 'INVENTORY:ADMIN'];
+      const requiredPermission = 'USERS:READ';
+
+      // Act
+      const result = AuthorizationService.validatePermissionHierarchy(
+        userPermissions,
+        requiredPermission
+      );
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('Given: user with INVENTORY:ADMIN When: validating permission hierarchy Then: should return true for inventory permissions', () => {
+      // Arrange
+      const userPermissions = ['INVENTORY:ADMIN', 'PRODUCTS:READ'];
+      const requiredPermission = 'INVENTORY:VIEW';
+
+      // Act
+      const result = AuthorizationService.validatePermissionHierarchy(
+        userPermissions,
+        requiredPermission
+      );
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('Given: user with INVENTORY:ADMIN When: validating non-inventory permission Then: should return false', () => {
+      // Arrange
+      const userPermissions = ['INVENTORY:ADMIN'];
+      const requiredPermission = 'USERS:CREATE';
+
+      // Act
+      const result = AuthorizationService.validatePermissionHierarchy(
+        userPermissions,
+        requiredPermission
+      );
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('Given: user with PRODUCTS:ADMIN When: validating products permission Then: should return true', () => {
+      // Arrange
+      const userPermissions = ['PRODUCTS:ADMIN'];
+      const requiredPermission = 'PRODUCTS:DELETE';
+
+      // Act
+      const result = AuthorizationService.validatePermissionHierarchy(
+        userPermissions,
+        requiredPermission
+      );
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('Given: empty user permissions When: validating permission hierarchy Then: should return false', () => {
+      // Arrange
+      const userPermissions: string[] = [];
       const requiredPermission = 'USERS:CREATE';
 
       // Act

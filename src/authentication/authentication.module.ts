@@ -5,6 +5,15 @@ import { RegisterUserUseCase } from '@application/authUseCases/registerUserUseCa
 import { RequestPasswordResetUseCase } from '@application/authUseCases/requestPasswordResetUseCase';
 import { ResetPasswordUseCase } from '@application/authUseCases/resetPasswordUseCase';
 import { VerifyOtpUseCase } from '@application/authUseCases/verifyOtpUseCase';
+import {
+  AssignRoleToUserUseCase,
+  ChangeUserStatusUseCase,
+  CreateUserUseCase,
+  GetUserUseCase,
+  GetUsersUseCase,
+  RemoveRoleFromUserUseCase,
+  UpdateUserUseCase,
+} from '@application/userUseCases';
 import authConfig from '@auth/config/auth.config';
 import { AuthenticationService } from '@auth/domain/services/authenticationService';
 import { JwtService } from '@auth/domain/services/jwtService';
@@ -19,6 +28,7 @@ import { PrismaService } from '@infrastructure/database/prisma.service';
 import {
   OrganizationRepository,
   OtpRepository,
+  RoleRepository,
   SessionRepository,
   UserRepository,
 } from '@infrastructure/database/repositories';
@@ -26,6 +36,7 @@ import { EmailService } from '@infrastructure/externalServices';
 import { AuthController } from '@interface/http/routes/auth.controller';
 import { PasswordResetController } from '@interface/http/routes/passwordReset.controller';
 import { RegisterController } from '@interface/http/routes/register.controller';
+import { UsersController } from '@interface/http/routes/users.controller';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -63,7 +74,7 @@ import { PassportModule } from '@nestjs/passport';
     }),
     ConfigModule.forFeature(authConfig),
   ],
-  controllers: [AuthController, RegisterController, PasswordResetController],
+  controllers: [AuthController, RegisterController, PasswordResetController, UsersController],
   providers: [
     // Domain services
     AuthenticationService,
@@ -88,6 +99,14 @@ import { PassportModule } from '@nestjs/passport';
     RequestPasswordResetUseCase,
     VerifyOtpUseCase,
     ResetPasswordUseCase,
+    // User management use cases
+    CreateUserUseCase,
+    GetUserUseCase,
+    GetUsersUseCase,
+    UpdateUserUseCase,
+    ChangeUserStatusUseCase,
+    AssignRoleToUserUseCase,
+    RemoveRoleFromUserUseCase,
 
     // Infrastructure services
     PrismaService,
@@ -97,6 +116,10 @@ import { PassportModule } from '@nestjs/passport';
     {
       provide: 'UserRepository',
       useClass: UserRepository,
+    },
+    {
+      provide: 'RoleRepository',
+      useClass: RoleRepository,
     },
     {
       provide: 'SessionRepository',

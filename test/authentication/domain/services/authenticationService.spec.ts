@@ -57,6 +57,33 @@ describe('AuthenticationService', () => {
       expect(result).toBe(true);
     });
 
+    it('Given: active user with invalid hash format When: validating credentials Then: should return false', async () => {
+      // Arrange
+      const user = User.create(
+        {
+          email: Email.create(mockEmail),
+          password: mockPassword,
+          username: 'testuser',
+          firstName: 'Test',
+          lastName: 'User',
+          status: UserStatus.create('ACTIVE'),
+          failedLoginAttempts: 0,
+        },
+        mockOrgId
+      );
+      const invalidHash = 'invalid-hash-format';
+
+      // Act
+      const result = await AuthenticationService.validateLoginCredentials(
+        user,
+        mockPassword,
+        invalidHash
+      );
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
     it('Given: inactive user with correct password When: validating credentials Then: should return false', async () => {
       // Arrange
       const user = User.create(
@@ -166,6 +193,12 @@ describe('AuthenticationService', () => {
       // Assert
       expect(user.failedLoginAttempts).toBe(0);
       expect(user.lastLoginAt).toBeInstanceOf(Date);
+      const domainEvents = user.domainEvents;
+      expect(domainEvents.length).toBeGreaterThan(0);
+      expect(domainEvents[domainEvents.length - 1]).toBeInstanceOf(
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('@auth/domain/events/userLoggedIn.event').UserLoggedInEvent
+      );
     });
 
     it('Given: user without ipAddress and userAgent When: processing successful login Then: should process login without optional data', () => {
@@ -311,6 +344,29 @@ describe('AuthenticationService', () => {
       expect(decodedRefreshPayload.sub).toBe(userId);
     });
 
+    it('Given: multiple token generations When: creating auth tokens Then: should generate tokens with same structure', () => {
+      // Arrange
+      const userId = mockUserId;
+
+      // Act
+      const result1 = AuthenticationService.createAuthTokens(userId);
+      const result2 = AuthenticationService.createAuthTokens(userId);
+
+      // Assert
+      // Tokens may have same iat if generated quickly, but structure should be valid
+      expect(result1.accessToken).toBeInstanceOf(JwtToken);
+      expect(result2.accessToken).toBeInstanceOf(JwtToken);
+      expect(result1.refreshToken).toBeInstanceOf(JwtToken);
+      expect(result2.refreshToken).toBeInstanceOf(JwtToken);
+      // Verify tokens have correct format
+      expect(result1.accessToken.getValue()).toMatch(
+        /^[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+$/
+      );
+      expect(result2.accessToken.getValue()).toMatch(
+        /^[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+$/
+      );
+    });
+
     it('Given: userId with custom expiry When: creating auth tokens Then: should return tokens with custom expiry', () => {
       // Arrange
       const userId = mockUserId;
@@ -372,6 +428,18 @@ describe('AuthenticationService', () => {
       // Assert
       expect(hash1).not.toBe(hash2);
     });
+
+    it('Given: empty password When: hashing password Then: should still hash successfully', async () => {
+      // Arrange
+      const password = '';
+
+      // Act
+      const hashedPassword = await AuthenticationService.hashPassword(password);
+
+      // Assert
+      expect(hashedPassword).toBeDefined();
+      expect(hashedPassword).toMatch(/^\$2[aby]\$\d{1,2}\$/);
+    });
   });
 
   describe('verifyPassword', () => {
@@ -395,6 +463,18 @@ describe('AuthenticationService', () => {
 
       // Act
       const result = await AuthenticationService.verifyPassword(wrongPassword, hashedPassword);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('Given: invalid hash format When: verifying password Then: should return false', async () => {
+      // Arrange
+      const password = mockPassword;
+      const invalidHash = 'invalid-hash-format';
+
+      // Act
+      const result = await AuthenticationService.verifyPassword(password, invalidHash);
 
       // Assert
       expect(result).toBe(false);
@@ -484,6 +564,43 @@ describe('AuthenticationService', () => {
       // Assert
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('Password too long');
+    });
+
+    it('Given: password exactly 8 characters When: validating password strength Then: should return valid result', () => {
+      // Arrange
+      const password = 'Pass123!';
+
+      // Act
+      const result = AuthenticationService.validatePasswordStrength(password);
+
+      // Assert
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('Given: password exactly 128 characters When: validating password strength Then: should return valid result', () => {
+      // Arrange
+      const password = 'A'.repeat(125) + 'b1!';
+
+      // Act
+      const result = AuthenticationService.validatePasswordStrength(password);
+
+      // Assert
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('Given: password with multiple validation errors When: validating password strength Then: should return all errors', () => {
+      // Arrange
+      const password = 'weak'; // Too short, no uppercase, no number, no special char
+
+      // Act
+      const result = AuthenticationService.validatePasswordStrength(password);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(1);
+      expect(result.errors).toContain('Password must be at least 8 characters long');
     });
   });
 

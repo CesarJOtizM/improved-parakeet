@@ -99,6 +99,56 @@ describe('TokenBlacklistService', () => {
         tokenBlacklistService.blacklistToken(mockTokenId, mockUserId, mockOrgId, mockExpiresAt)
       ).rejects.toThrow('Failed to blacklist token: Cache error');
     });
+
+    it('Given: expired token When: blacklisting token Then: should use zero TTL', async () => {
+      // Arrange
+      const expiredDate = new Date(Date.now() - 1000); // 1 second ago
+      mockCacheManager.get.mockResolvedValue(null);
+      mockCacheManager.set.mockResolvedValue(undefined);
+
+      // Act
+      await tokenBlacklistService.blacklistToken(
+        mockTokenId,
+        mockUserId,
+        mockOrgId,
+        expiredDate,
+        'LOGOUT'
+      );
+
+      // Assert
+      expect(mockCacheManager.set).toHaveBeenCalledWith(
+        `blacklisted_token:${mockTokenId}`,
+        expect.any(String),
+        0 // TTL should be 0 for expired tokens
+      );
+    });
+
+    it('Given: token with very large TTL When: blacklisting token Then: should handle large TTL', async () => {
+      // Arrange
+      const farFutureDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year from now
+      mockCacheManager.get.mockResolvedValue(null);
+      mockCacheManager.set.mockResolvedValue(undefined);
+
+      // Act
+      await tokenBlacklistService.blacklistToken(
+        mockTokenId,
+        mockUserId,
+        mockOrgId,
+        farFutureDate,
+        'LOGOUT'
+      );
+
+      // Assert
+      expect(mockCacheManager.set).toHaveBeenCalledWith(
+        `blacklisted_token:${mockTokenId}`,
+        expect.any(String),
+        expect.any(Number)
+      );
+      const ttlCall = (mockCacheManager.set as jest.Mock).mock.calls.find(
+        call => call[0] === `blacklisted_token:${mockTokenId}`
+      );
+      expect(ttlCall?.[2]).toBeGreaterThan(0);
+    });
   });
 
   describe('isTokenBlacklisted', () => {
@@ -223,6 +273,35 @@ describe('TokenBlacklistService', () => {
       expect(mockCacheManager.get).toHaveBeenCalledWith(`user_tokens:${mockUserId}`);
     });
 
+    it('Given: concurrent blacklist operations When: blacklisting same token Then: should handle gracefully', async () => {
+      // Arrange
+      mockCacheManager.get.mockResolvedValue(null);
+      mockCacheManager.set.mockResolvedValue(undefined);
+
+      // Act - Simulate concurrent operations
+      const promises = [
+        tokenBlacklistService.blacklistToken(
+          mockTokenId,
+          mockUserId,
+          mockOrgId,
+          mockExpiresAt,
+          'LOGOUT'
+        ),
+        tokenBlacklistService.blacklistToken(
+          mockTokenId,
+          mockUserId,
+          mockOrgId,
+          mockExpiresAt,
+          'SECURITY'
+        ),
+      ];
+
+      await Promise.all(promises);
+
+      // Assert - Both should complete without errors
+      expect(mockCacheManager.set).toHaveBeenCalledTimes(4); // 2 tokens + 2 user lists
+    });
+
     it('Given: user without tokens When: blacklisting all user tokens Then: should return 0', async () => {
       // Arrange
       mockCacheManager.get.mockResolvedValue(JSON.stringify([]));
@@ -244,6 +323,33 @@ describe('TokenBlacklistService', () => {
 
       // Assert
       expect(result).toBe(0);
+    });
+
+    it('Given: user with expired tokens When: blacklisting all user tokens Then: should handle expired tokens', async () => {
+      // Arrange
+      const userTokens = [mockTokenId];
+      const expiredToken: IBlacklistedToken = {
+        tokenId: mockTokenId,
+        userId: mockUserId,
+        orgId: mockOrgId,
+        blacklistedAt: new Date(Date.now() - 2000),
+        expiresAt: new Date(Date.now() - 1000), // Expired
+        reason: 'LOGOUT',
+      };
+
+      mockCacheManager.get
+        .mockResolvedValueOnce(JSON.stringify(userTokens))
+        .mockResolvedValueOnce(JSON.stringify(expiredToken))
+        .mockResolvedValue(JSON.stringify([]));
+
+      mockCacheManager.set.mockResolvedValue(undefined);
+
+      // Act
+      const result = await tokenBlacklistService.blacklistAllUserTokens(mockUserId, mockOrgId);
+
+      // Assert
+      expect(result).toBe(1);
+      expect(mockCacheManager.set).toHaveBeenCalled();
     });
   });
 

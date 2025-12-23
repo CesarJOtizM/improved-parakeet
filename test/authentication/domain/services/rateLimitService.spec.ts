@@ -144,6 +144,61 @@ describe('RateLimitService', () => {
       expect(result.remaining).toBeGreaterThan(0);
       expect(result.blocked).toBe(false);
     });
+
+    it('Given: custom config override When: checking rate limit Then: should use custom config', async () => {
+      // Arrange
+      const identifier = '192.168.1.1';
+      const type = 'IP';
+      const customConfig = {
+        maxRequests: 50,
+        windowMs: 30 * 1000, // 30 seconds
+        blockDurationMs: 60 * 1000, // 1 minute
+      };
+      mockCacheManager.get.mockResolvedValue(null);
+
+      // Act
+      const result = await rateLimitService.checkRateLimit(identifier, type, customConfig);
+
+      // Assert
+      expect(result.allowed).toBe(true);
+      expect(result.remaining).toBe(49); // 50 - 1
+      expect(result.blocked).toBe(false);
+    });
+
+    it('Given: USER type rate limit When: checking rate limit Then: should use user config', async () => {
+      // Arrange
+      const identifier = 'user-123';
+      const type = 'USER';
+      mockCacheManager.get.mockResolvedValue(null);
+
+      // Act
+      const result = await rateLimitService.checkRateLimit(identifier, type);
+
+      // Assert
+      expect(result.allowed).toBe(true);
+      expect(result.remaining).toBe(999); // 1000 - 1 (user config)
+      expect(result.blocked).toBe(false);
+    });
+
+    it('Given: expired window When: checking rate limit Then: should reset count', async () => {
+      // Arrange
+      const identifier = '192.168.1.1';
+      const type = 'IP';
+      const expiredEntry = {
+        count: 50,
+        resetTime: Date.now() - 1000, // Expired 1 second ago
+        blocked: false,
+      };
+      mockCacheManager.get.mockResolvedValue(JSON.stringify(expiredEntry));
+
+      // Act
+      const result = await rateLimitService.checkRateLimit(identifier, type);
+
+      // Assert
+      expect(result.allowed).toBe(true);
+      expect(result.remaining).toBe(99); // Should reset to 100 - 1
+      expect(result.blocked).toBe(false);
+    });
   });
 
   describe('checkLoginRateLimit', () => {
@@ -193,6 +248,21 @@ describe('RateLimitService', () => {
       expect(result.remaining).toBe(9); // 10 - 1 (refresh config)
       expect(result.blocked).toBe(false);
     });
+
+    it('Given: refresh token request by user When: checking refresh rate limit Then: should use user type with refresh config', async () => {
+      // Arrange
+      const identifier = 'user-123';
+      const isIp = false;
+      mockCacheManager.get.mockResolvedValue(null);
+
+      // Act
+      const result = await rateLimitService.checkRefreshTokenRateLimit(identifier, isIp);
+
+      // Assert
+      expect(result.allowed).toBe(true);
+      expect(result.remaining).toBe(9); // 10 - 1 (refresh config)
+      expect(result.blocked).toBe(false);
+    });
   });
 
   describe('checkPasswordResetRateLimit', () => {
@@ -200,6 +270,21 @@ describe('RateLimitService', () => {
       // Arrange
       const identifier = '192.168.1.1';
       const isIp = true;
+      mockCacheManager.get.mockResolvedValue(null);
+
+      // Act
+      const result = await rateLimitService.checkPasswordResetRateLimit(identifier, isIp);
+
+      // Assert
+      expect(result.allowed).toBe(true);
+      expect(result.remaining).toBe(2); // 3 - 1 (password reset config)
+      expect(result.blocked).toBe(false);
+    });
+
+    it('Given: password reset request by user When: checking password reset rate limit Then: should use user type with password reset config', async () => {
+      // Arrange
+      const identifier = 'user-123';
+      const isIp = false;
       mockCacheManager.get.mockResolvedValue(null);
 
       // Act
