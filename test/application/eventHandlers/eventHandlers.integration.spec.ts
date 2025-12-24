@@ -15,8 +15,12 @@ describe('Event Handlers Integration', () => {
 
   beforeEach(() => {
     eventBus = new DomainEventBus();
-    roleAssignedHandler = new RoleAssignedEventHandler();
-    userStatusChangedHandler = new UserStatusChangedEventHandler();
+    const mockAuditRepository = {
+      save: jest.fn(),
+    } as any;
+    mockAuditRepository.save.mockResolvedValue(undefined);
+    roleAssignedHandler = new RoleAssignedEventHandler(mockAuditRepository);
+    userStatusChangedHandler = new UserStatusChangedEventHandler(mockAuditRepository);
 
     // Register handlers
     eventBus.registerHandler('RoleAssigned', roleAssignedHandler);
@@ -137,7 +141,11 @@ describe('Event Handlers Integration', () => {
   describe('Handler Registration', () => {
     it('Given: multiple handlers for same event When: publishing event Then: should call all handlers', async () => {
       // Arrange
-      const handler2 = new RoleAssignedEventHandler();
+      const mockAuditRepository2 = {
+        save: jest.fn(),
+      } as any;
+      mockAuditRepository2.save.mockResolvedValue(undefined);
+      const handler2 = new RoleAssignedEventHandler(mockAuditRepository2);
       const handler2Spy = jest.spyOn(handler2, 'handle');
       eventBus.registerHandler('RoleAssigned', handler2);
 

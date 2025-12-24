@@ -415,8 +415,14 @@ describe('AuthorizationService', () => {
     it('Given: user roles and role permissions When: getting user permissions Then: should return unique permissions', () => {
       // Arrange
       const userRoles = [
-        Role.create({ name: 'ADMIN', description: 'Administrator', isActive: true }, 'org-1'),
-        Role.create({ name: 'USER', description: 'Regular User', isActive: true }, 'org-1'),
+        Role.create(
+          { name: 'ADMIN', description: 'Administrator', isActive: true, isSystem: false },
+          'org-1'
+        ),
+        Role.create(
+          { name: 'USER', description: 'Regular User', isActive: true, isSystem: false },
+          'org-1'
+        ),
       ];
       const rolePermissions = [
         Permission.create({ name: 'users:read', module: 'users', action: 'read' }, 'org-1'),
@@ -449,7 +455,10 @@ describe('AuthorizationService', () => {
     it('Given: duplicate permissions When: getting user permissions Then: should return unique permissions', () => {
       // Arrange
       const userRoles = [
-        Role.create({ name: 'ADMIN', description: 'Administrator', isActive: true }, 'org-1'),
+        Role.create(
+          { name: 'ADMIN', description: 'Administrator', isActive: true, isSystem: false },
+          'org-1'
+        ),
       ];
       const rolePermissions = [
         Permission.create({ name: 'users:read', module: 'users', action: 'read' }, 'org-1'),
@@ -468,7 +477,10 @@ describe('AuthorizationService', () => {
     it('Given: null permissions in array When: getting user permissions Then: should filter out nulls', () => {
       // Arrange
       const userRoles = [
-        Role.create({ name: 'ADMIN', description: 'Administrator', isActive: true }, 'org-1'),
+        Role.create(
+          { name: 'ADMIN', description: 'Administrator', isActive: true, isSystem: false },
+          'org-1'
+        ),
       ];
       const rolePermissions = [
         Permission.create({ name: 'users:read', module: 'users', action: 'read' }, 'org-1'),
@@ -486,7 +498,10 @@ describe('AuthorizationService', () => {
     it('Given: permissions without name When: getting user permissions Then: should filter out invalid permissions', () => {
       // Arrange
       const userRoles = [
-        Role.create({ name: 'ADMIN', description: 'Administrator', isActive: true }, 'org-1'),
+        Role.create(
+          { name: 'ADMIN', description: 'Administrator', isActive: true, isSystem: false },
+          'org-1'
+        ),
       ];
       const rolePermissions = [
         Permission.create({ name: 'users:read', module: 'users', action: 'read' }, 'org-1'),

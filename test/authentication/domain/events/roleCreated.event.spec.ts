@@ -8,6 +8,7 @@ describe('RoleCreatedEvent', () => {
       name: 'ADMIN',
       description: 'Administrator role',
       isActive: true,
+      isSystem: false,
     },
     mockOrgId
   );
@@ -32,6 +33,7 @@ describe('RoleCreatedEvent', () => {
         {
           name: 'USER',
           isActive: true,
+          isSystem: false,
         },
         mockOrgId
       );
@@ -127,6 +129,7 @@ describe('RoleCreatedEvent', () => {
         {
           name: 'USER',
           isActive: true,
+          isSystem: false,
         },
         mockOrgId
       );

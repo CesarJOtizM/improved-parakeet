@@ -60,6 +60,9 @@ describe('RemoveRoleFromUserUseCase', () => {
       save: jest.fn(),
       delete: jest.fn(),
       exists: jest.fn(),
+      findSystemRoles: jest.fn(),
+      findCustomRoles: jest.fn(),
+      findAvailableRolesForOrganization: jest.fn(),
     } as jest.Mocked<IRoleRepository>;
 
     mockPrismaService = {
@@ -113,6 +116,7 @@ describe('RemoveRoleFromUserUseCase', () => {
           name,
           description: `Role ${name}`,
           isActive: true,
+          isSystem: false,
         },
         mockRoleId,
         mockOrgId

@@ -9,7 +9,11 @@ describe('PermissionChangedEventHandler', () => {
   let loggerSpy: ReturnType<typeof jest.spyOn>;
 
   beforeEach(() => {
-    handler = new PermissionChangedEventHandler();
+    const mockAuditRepository = {
+      save: jest.fn(),
+    } as any;
+    mockAuditRepository.save.mockResolvedValue(undefined);
+    handler = new PermissionChangedEventHandler(mockAuditRepository);
     // Spy on logger methods
     loggerSpy = jest.spyOn((handler as any).logger, 'log');
     jest.spyOn((handler as any).logger, 'error');
@@ -43,19 +47,9 @@ describe('PermissionChangedEventHandler', () => {
         occurredOn: expect.any(String),
       });
 
-      expect(loggerSpy).toHaveBeenCalledWith('[AUDIT] Permission changed', {
-        entityType: 'Permission',
-        entityId: 'perm-123',
-        action: 'PERMISSION_CREATED',
-        performedBy: 'admin-789',
-        orgId: 'org-123',
-        metadata: {
-          permissionName: 'USERS:CREATE',
-          module: 'USERS',
-          action: 'CREATE',
-          changeType: 'CREATED',
-          changedAt: expect.any(String),
-        },
+      expect(loggerSpy).toHaveBeenCalledWith('Permission change audit logged successfully', {
+        permissionId: 'perm-123',
+        changeType: 'CREATED',
       });
     });
 
@@ -77,19 +71,9 @@ describe('PermissionChangedEventHandler', () => {
       await handler.handle(event);
 
       // Assert
-      expect(loggerSpy).toHaveBeenCalledWith('[AUDIT] Permission changed', {
-        entityType: 'Permission',
-        entityId: 'perm-123',
-        action: 'PERMISSION_DELETED',
-        performedBy: 'admin-789',
-        orgId: 'org-123',
-        metadata: {
-          permissionName: 'USERS:DELETE',
-          module: 'USERS',
-          action: 'DELETE',
-          changeType: 'DELETED',
-          changedAt: expect.any(String),
-        },
+      expect(loggerSpy).toHaveBeenCalledWith('Permission change audit logged successfully', {
+        permissionId: 'perm-123',
+        changeType: 'DELETED',
       });
     });
 

@@ -11,7 +11,10 @@ export class AuditMetadata extends ValueObject<IAuditMetadataProps> {
   }
 
   public static create(value: Record<string, unknown>): AuditMetadata {
-    return new AuditMetadata({ value: value || {} });
+    if (value === null || value === undefined) {
+      throw new Error('Audit metadata must be an object');
+    }
+    return new AuditMetadata({ value });
   }
 
   public static empty(): AuditMetadata {

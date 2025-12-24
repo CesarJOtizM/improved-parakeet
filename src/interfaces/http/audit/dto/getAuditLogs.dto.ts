@@ -80,7 +80,11 @@ export class AuditLogItemDto {
   })
   performedBy!: string | null;
 
-  @ApiProperty({ description: 'Additional metadata', type: 'object' })
+  @ApiProperty({
+    description: 'Additional metadata',
+    type: Object,
+    additionalProperties: true,
+  })
   metadata!: Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'IP address', example: '192.168.1.1', nullable: true })

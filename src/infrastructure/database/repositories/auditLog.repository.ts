@@ -90,7 +90,7 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
       const data = auditLogs.map(log => this.toPersistence(log));
 
       await this.prisma.auditLog.createMany({
-        data: data as Parameters<typeof this.prisma.auditLog.createMany>[0]['data'],
+        data: data as NonNullable<Parameters<typeof this.prisma.auditLog.createMany>[0]>['data'],
         skipDuplicates: true,
       });
 
@@ -373,7 +373,7 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
       entityId: auditLog.entityId || null,
       action: auditLog.action.getValue(),
       performedBy: auditLog.performedBy || null,
-      metadata: auditLog.metadata.toJSON(),
+      metadata: auditLog.metadata.toJSON() as unknown,
       ipAddress: auditLog.ipAddress || null,
       userAgent: auditLog.userAgent || null,
       httpMethod: auditLog.httpMethod || null,

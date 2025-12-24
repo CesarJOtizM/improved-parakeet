@@ -8,7 +8,11 @@ describe('RoleAssignedEventHandler', () => {
   let loggerSpy: ReturnType<typeof jest.spyOn>;
 
   beforeEach(() => {
-    handler = new RoleAssignedEventHandler();
+    const mockAuditRepository = {
+      save: jest.fn(),
+    } as any;
+    mockAuditRepository.save.mockResolvedValue(undefined);
+    handler = new RoleAssignedEventHandler(mockAuditRepository);
     // Spy on logger methods
     loggerSpy = jest.spyOn((handler as any).logger, 'log');
     jest.spyOn((handler as any).logger, 'error');
@@ -38,17 +42,9 @@ describe('RoleAssignedEventHandler', () => {
         occurredOn: expect.any(String),
       });
 
-      expect(loggerSpy).toHaveBeenCalledWith('[AUDIT] Role assigned', {
-        entityType: 'User',
-        entityId: 'user-123',
-        action: 'ROLE_ASSIGNED',
-        performedBy: 'admin-789',
-        orgId: 'org-123',
-        metadata: {
-          roleId: 'role-456',
-          roleName: 'SUPERVISOR',
-          assignedAt: expect.any(String),
-        },
+      expect(loggerSpy).toHaveBeenCalledWith('Role assignment audit logged successfully', {
+        userId: 'user-123',
+        roleName: 'SUPERVISOR',
       });
     });
 

@@ -8,7 +8,11 @@ describe('UserStatusChangedEventHandler', () => {
   let loggerSpy: ReturnType<typeof jest.spyOn>;
 
   beforeEach(() => {
-    handler = new UserStatusChangedEventHandler();
+    const mockAuditRepository = {
+      save: jest.fn(),
+    } as any;
+    mockAuditRepository.save.mockResolvedValue(undefined);
+    handler = new UserStatusChangedEventHandler(mockAuditRepository);
     // Spy on logger methods
     loggerSpy = jest.spyOn((handler as any).logger, 'log');
     jest.spyOn((handler as any).logger, 'error');
@@ -40,18 +44,10 @@ describe('UserStatusChangedEventHandler', () => {
         occurredOn: expect.any(String),
       });
 
-      expect(loggerSpy).toHaveBeenCalledWith('[AUDIT] User status changed', {
-        entityType: 'User',
-        entityId: 'user-123',
-        action: 'STATUS_CHANGED',
-        performedBy: 'admin-789',
-        orgId: 'org-123',
-        metadata: {
-          oldStatus: 'ACTIVE',
-          newStatus: 'INACTIVE',
-          reason: 'User requested deactivation',
-          changedAt: expect.any(String),
-        },
+      expect(loggerSpy).toHaveBeenCalledWith('User status change audit logged successfully', {
+        userId: 'user-123',
+        oldStatus: 'ACTIVE',
+        newStatus: 'INACTIVE',
       });
     });
 

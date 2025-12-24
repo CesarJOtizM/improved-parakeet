@@ -8,6 +8,7 @@ describe('RoleUpdatedEvent', () => {
       name: 'ADMIN',
       description: 'Administrator role',
       isActive: true,
+      isSystem: false,
     },
     mockOrgId
   );
@@ -34,6 +35,7 @@ describe('RoleUpdatedEvent', () => {
           name: 'USER',
           description: 'Regular user role',
           isActive: false,
+          isSystem: false,
         },
         mockOrgId
       );
@@ -51,6 +53,7 @@ describe('RoleUpdatedEvent', () => {
         {
           name: 'MODERATOR',
           isActive: true,
+          isSystem: false,
         },
         mockOrgId
       );
@@ -146,6 +149,7 @@ describe('RoleUpdatedEvent', () => {
         {
           name: 'USER',
           isActive: true,
+          isSystem: false,
         },
         mockOrgId
       );
@@ -178,6 +182,7 @@ describe('RoleUpdatedEvent', () => {
           name: 'USER',
           description: 'Regular user role',
           isActive: false,
+          isSystem: false,
         },
         mockOrgId
       );

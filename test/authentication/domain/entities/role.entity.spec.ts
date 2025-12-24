@@ -6,6 +6,7 @@ describe('Role Entity', () => {
     name: 'Admin',
     description: 'Administrator role with full access',
     isActive: true,
+    isSystem: false,
   };
 
   describe('create', () => {
@@ -34,6 +35,7 @@ describe('Role Entity', () => {
       const props = {
         name: 'User',
         isActive: true,
+        isSystem: false,
       };
 
       // Act
@@ -52,6 +54,7 @@ describe('Role Entity', () => {
         name: 'Guest',
         description: 'Guest role with limited access',
         isActive: false,
+        isSystem: false,
       };
 
       // Act
@@ -151,6 +154,7 @@ describe('Role Entity', () => {
         name: 'Guest',
         description: 'Guest role',
         isActive: false,
+        isSystem: false,
       };
       const role = Role.create(props, mockOrgId);
 
@@ -203,6 +207,7 @@ describe('Role Entity', () => {
         name: 'Guest',
         description: 'Guest role',
         isActive: false,
+        isSystem: false,
       };
       const role = Role.create(props, mockOrgId);
 
@@ -234,6 +239,7 @@ describe('Role Entity', () => {
       const props = {
         name: 'User',
         isActive: true,
+        isSystem: false,
       };
       const role = Role.create(props, mockOrgId);
 
@@ -268,6 +274,7 @@ describe('Role Entity', () => {
         name: 'Guest',
         description: 'Guest role',
         isActive: false,
+        isSystem: false,
       };
       const role = Role.create(props, mockOrgId);
 

@@ -51,9 +51,11 @@ describe('ChangeUserStatusUseCase', () => {
     } as jest.Mocked<PrismaService>;
 
     mockEventDispatcher = {
-      dispatchEvents: jest.fn().mockResolvedValue(undefined),
-      markAndDispatch: jest.fn().mockResolvedValue(undefined),
+      dispatchEvents: jest.fn(),
+      markAndDispatch: jest.fn(),
     } as any;
+    mockEventDispatcher.dispatchEvents.mockResolvedValue(undefined);
+    mockEventDispatcher.markAndDispatch.mockResolvedValue(undefined);
 
     useCase = new ChangeUserStatusUseCase(
       mockUserRepository,

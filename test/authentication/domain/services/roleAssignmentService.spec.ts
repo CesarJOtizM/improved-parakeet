@@ -35,6 +35,7 @@ describe('RoleAssignmentService', () => {
         name,
         description: `Role ${name}`,
         isActive,
+        isSystem: false,
       },
       mockOrgId
     );

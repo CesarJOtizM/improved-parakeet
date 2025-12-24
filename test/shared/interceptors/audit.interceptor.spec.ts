@@ -2,8 +2,11 @@
 // Tests unitarios para el interceptor de auditoría siguiendo AAA y Given-When-Then
 
 import { CallHandler, ExecutionContext, Logger } from '@nestjs/common';
+import { AuditLog } from '@shared/audit/domain/entities/auditLog.entity';
 import { AuditInterceptor } from '@shared/interceptors/audit.interceptor';
-import { of, throwError } from 'rxjs';
+import { firstValueFrom, of, throwError } from 'rxjs';
+
+import type { IAuditLogRepository } from '@shared/audit/domain/repositories/auditLogRepository.interface';
 
 describe('Audit Interceptor', () => {
   let interceptor: AuditInterceptor;
@@ -11,9 +14,15 @@ describe('Audit Interceptor', () => {
   let mockCallHandler: jest.Mocked<CallHandler>;
   let mockRequest: Partial<Request>;
   let mockLogger: jest.Mocked<Logger>;
+  let mockAuditRepository: jest.Mocked<IAuditLogRepository>;
 
   beforeEach(() => {
-    interceptor = new AuditInterceptor();
+    // Mock del AuditLogRepository
+    mockAuditRepository = {
+      save: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<IAuditLogRepository>;
+
+    interceptor = new AuditInterceptor(mockAuditRepository);
 
     // Mock del logger
     mockLogger = {
@@ -29,7 +38,16 @@ describe('Audit Interceptor', () => {
       method: 'POST',
       url: '/api/test',
       body: { name: 'test', value: 42 },
+      query: {},
       params: { id: '123' },
+      headers: {
+        'user-agent': 'test-agent',
+        'x-forwarded-for': '127.0.0.1',
+      },
+      socket: {
+        remoteAddress: '127.0.0.1',
+      },
+      ip: undefined,
       user: {
         id: 'user-123',
         email: 'test@example.com',
@@ -53,73 +71,104 @@ describe('Audit Interceptor', () => {
     } as jest.Mocked<CallHandler>;
   });
 
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('intercept', () => {
-    it('Given: successful request When: intercepting Then: should log start and success', () => {
+    it('Given: successful request When: intercepting Then: should log start and success', async () => {
       // Arrange
       const response = { data: 'success' };
       mockCallHandler.handle.mockReturnValue(of(response));
 
       // Act
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      await firstValueFrom(result$);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert
-      result$.subscribe(() => {
-        expect(mockLogger.log).toHaveBeenCalledWith(
-          '[AUDIT] POST /api/test - User: user-123 - Org: org-123'
-        );
-        expect(mockLogger.log).toHaveBeenCalledWith(
-          expect.stringContaining('[AUDIT] POST /api/test - SUCCESS')
-        );
-      });
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        '[AUDIT] POST /api/test - User: user-123 - Org: org-123'
+      );
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        expect.stringContaining('[AUDIT] POST /api/test - SUCCESS')
+      );
+      expect(mockAuditRepository.save).toHaveBeenCalled();
     });
 
-    it('Given: request with body When: intercepting Then: should log request body', () => {
+    it('Given: request with body When: intercepting Then: should save request body in audit', async () => {
       // Arrange
       const response = { data: 'success' };
       mockCallHandler.handle.mockReturnValue(of(response));
 
       // Act
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      await firstValueFrom(result$);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert
-      result$.subscribe(() => {
-        expect(mockLogger.debug).toHaveBeenCalledWith(
-          '[AUDIT] Request Body: {"name":"test","value":42}'
-        );
+      expect(mockAuditRepository.save).toHaveBeenCalled();
+      const savedCall = mockAuditRepository.save.mock.calls[0][0] as AuditLog;
+      expect(savedCall.metadata.getValue().requestBody).toEqual({
+        body: { name: 'test', value: 42 },
+        query: {},
+        params: { id: '123' },
       });
     });
 
-    it('Given: request with query params When: intercepting Then: should log query params', () => {
+    it('Given: request with query params When: intercepting Then: should save query params in audit', async () => {
+      // Arrange
+      const requestWithQuery = { ...mockRequest, query: { page: '1', limit: '10' } };
+      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(
+        requestWithQuery
+      );
+      const response = { data: 'success' };
+      mockCallHandler.handle.mockReturnValue(of(response));
+
+      // Act
+      const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      await firstValueFrom(result$);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Assert
+      expect(mockAuditRepository.save).toHaveBeenCalled();
+      const savedCall = mockAuditRepository.save.mock.calls[0][0] as AuditLog;
+      expect(savedCall.metadata.getValue().requestBody).toEqual({
+        body: { name: 'test', value: 42 },
+        query: { page: '1', limit: '10' },
+        params: { id: '123' },
+      });
+    });
+
+    it('Given: request with path params When: intercepting Then: should save path params in audit', async () => {
       // Arrange
       const response = { data: 'success' };
       mockCallHandler.handle.mockReturnValue(of(response));
 
       // Act
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      await firstValueFrom(result$);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert
-      result$.subscribe(() => {
-        expect(mockLogger.debug).toHaveBeenCalledWith(
-          '[AUDIT] Query Params: {"page":"1","limit":"10"}'
-        );
+      expect(mockAuditRepository.save).toHaveBeenCalled();
+      const savedCall = mockAuditRepository.save.mock.calls[0][0] as AuditLog;
+      expect(savedCall.metadata.getValue().requestBody).toEqual({
+        body: { name: 'test', value: 42 },
+        query: {},
+        params: { id: '123' },
       });
     });
 
-    it('Given: request with path params When: intercepting Then: should log path params', () => {
-      // Arrange
-      const response = { data: 'success' };
-      mockCallHandler.handle.mockReturnValue(of(response));
-
-      // Act
-      const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
-
-      // Assert
-      result$.subscribe(() => {
-        expect(mockLogger.debug).toHaveBeenCalledWith('[AUDIT] Path Params: {"id":"123"}');
-      });
-    });
-
-    it('Given: request without user When: intercepting Then: should log anonymous user', () => {
+    it('Given: request without user When: intercepting Then: should log anonymous user', async () => {
       // Arrange
       const requestWithoutUser = { ...mockRequest, user: undefined };
       (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(
@@ -130,16 +179,18 @@ describe('Audit Interceptor', () => {
 
       // Act
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      await firstValueFrom(result$);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert
-      result$.subscribe(() => {
-        expect(mockLogger.log).toHaveBeenCalledWith(
-          '[AUDIT] POST /api/test - User: anonymous - Org: org-123'
-        );
-      });
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        '[AUDIT] POST /api/test - User: anonymous - Org: org-123'
+      );
     });
 
-    it('Given: request without organization When: intercepting Then: should log unknown organization', () => {
+    it('Given: request without organization When: intercepting Then: should log unknown organization', async () => {
       // Arrange
       const requestWithoutOrg = { ...mockRequest, organization: undefined };
       (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(
@@ -150,16 +201,18 @@ describe('Audit Interceptor', () => {
 
       // Act
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      await firstValueFrom(result$);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert
-      result$.subscribe(() => {
-        expect(mockLogger.log).toHaveBeenCalledWith(
-          '[AUDIT] POST /api/test - User: user-123 - Org: unknown'
-        );
-      });
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        '[AUDIT] POST /api/test - User: user-123 - Org: unknown'
+      );
     });
 
-    it('Given: request with empty body When: intercepting Then: should not log body', () => {
+    it('Given: request with empty body When: intercepting Then: should save empty body in audit', async () => {
       // Arrange
       const requestWithEmptyBody = { ...mockRequest, body: {} };
       (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(
@@ -170,16 +223,19 @@ describe('Audit Interceptor', () => {
 
       // Act
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      await firstValueFrom(result$);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert
-      result$.subscribe(() => {
-        expect(mockLogger.debug).not.toHaveBeenCalledWith(
-          expect.stringContaining('[AUDIT] Request Body:')
-        );
-      });
+      expect(mockAuditRepository.save).toHaveBeenCalled();
+      const savedCall = mockAuditRepository.save.mock.calls[0][0] as AuditLog;
+      const metadata = savedCall.metadata.getValue() as { requestBody: { body: unknown } };
+      expect(metadata.requestBody.body).toEqual({});
     });
 
-    it('Given: request with empty query When: intercepting Then: should not log query', () => {
+    it('Given: request with empty query When: intercepting Then: should save empty query in audit', async () => {
       // Arrange
       const requestWithEmptyQuery = { ...mockRequest, query: {} };
       (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(
@@ -190,16 +246,19 @@ describe('Audit Interceptor', () => {
 
       // Act
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      await firstValueFrom(result$);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert
-      result$.subscribe(() => {
-        expect(mockLogger.debug).not.toHaveBeenCalledWith(
-          expect.stringContaining('[AUDIT] Query Params:')
-        );
-      });
+      expect(mockAuditRepository.save).toHaveBeenCalled();
+      const savedCall = mockAuditRepository.save.mock.calls[0][0] as AuditLog;
+      const metadata = savedCall.metadata.getValue() as { requestBody: { query: unknown } };
+      expect(metadata.requestBody.query).toEqual({});
     });
 
-    it('Given: request with empty params When: intercepting Then: should not log params', () => {
+    it('Given: request with empty params When: intercepting Then: should save empty params in audit', async () => {
       // Arrange
       const requestWithEmptyParams = { ...mockRequest, params: {} };
       (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(
@@ -210,32 +269,37 @@ describe('Audit Interceptor', () => {
 
       // Act
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      await firstValueFrom(result$);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert
-      result$.subscribe(() => {
-        expect(mockLogger.debug).not.toHaveBeenCalledWith(
-          expect.stringContaining('[AUDIT] Path Params:')
-        );
-      });
+      expect(mockAuditRepository.save).toHaveBeenCalled();
+      const savedCall = mockAuditRepository.save.mock.calls[0][0] as AuditLog;
+      const metadata = savedCall.metadata.getValue() as { requestBody: { params: unknown } };
+      expect(metadata.requestBody.params).toEqual({});
     });
 
-    it('Given: successful response When: intercepting Then: should log response in debug', () => {
+    it('Given: successful response When: intercepting Then: should save response in audit', async () => {
       // Arrange
       const response = { data: 'success', message: 'Operation completed' };
       mockCallHandler.handle.mockReturnValue(of(response));
 
       // Act
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      await firstValueFrom(result$);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert
-      result$.subscribe(() => {
-        expect(mockLogger.debug).toHaveBeenCalledWith(
-          '[AUDIT] Response: {"data":"success","message":"Operation completed"}'
-        );
-      });
+      expect(mockAuditRepository.save).toHaveBeenCalled();
+      const savedCall = mockAuditRepository.save.mock.calls[0][0] as AuditLog;
+      expect(savedCall.metadata.getValue().responseBody).toEqual(response);
     });
 
-    it('Given: error response When: intercepting Then: should log error', () => {
+    it('Given: error response When: intercepting Then: should log error', async () => {
       // Arrange
       const error = new Error('Database connection failed');
       mockCallHandler.handle.mockReturnValue(throwError(() => error));
@@ -244,18 +308,20 @@ describe('Audit Interceptor', () => {
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
 
       // Assert
-      result$.subscribe({
-        error: () => {
-          expect(mockLogger.error).toHaveBeenCalledWith(
-            expect.stringMatching(
-              /\[AUDIT\] POST \/api\/test - ERROR - Duration: \d+ms - User: user-123 - Org: org-123 - Error: Database connection failed/
-            )
-          );
-        },
-      });
+      await expect(firstValueFrom(result$)).rejects.toThrow('Database connection failed');
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /\[AUDIT\] POST \/api\/test - ERROR - Duration: \d+ms - User: user-123 - Org: org-123 - Error: Database connection failed/
+        )
+      );
+      expect(mockAuditRepository.save).toHaveBeenCalled();
     });
 
-    it('Given: error with stack trace When: intercepting Then: should log stack trace in debug', () => {
+    it('Given: error with stack trace When: intercepting Then: should save error in audit', async () => {
       // Arrange
       const error = new Error('Database connection failed');
       error.stack = 'Error: Database connection failed\n    at test.js:1:1';
@@ -265,16 +331,20 @@ describe('Audit Interceptor', () => {
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
 
       // Assert
-      result$.subscribe({
-        error: () => {
-          expect(mockLogger.debug).toHaveBeenCalledWith(
-            '[AUDIT] Error Stack: Error: Database connection failed\n    at test.js:1:1'
-          );
-        },
+      await expect(firstValueFrom(result$)).rejects.toThrow('Database connection failed');
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(mockLogger.error).toHaveBeenCalled();
+      expect(mockAuditRepository.save).toHaveBeenCalled();
+      const savedCall = mockAuditRepository.save.mock.calls[0][0] as AuditLog;
+      expect(savedCall.metadata.getValue().responseBody).toEqual({
+        error: 'Database connection failed',
       });
     });
 
-    it('Given: error without stack trace When: intercepting Then: should not log stack trace', () => {
+    it('Given: error without stack trace When: intercepting Then: should save error in audit', async () => {
       // Arrange
       const error = new Error('Database connection failed');
       error.stack = undefined;
@@ -284,34 +354,43 @@ describe('Audit Interceptor', () => {
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
 
       // Assert
-      result$.subscribe({
-        error: () => {
-          expect(mockLogger.debug).not.toHaveBeenCalledWith(
-            expect.stringContaining('[AUDIT] Error Stack:')
-          );
-        },
+      await expect(firstValueFrom(result$)).rejects.toThrow('Database connection failed');
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(mockLogger.error).toHaveBeenCalled();
+      expect(mockAuditRepository.save).toHaveBeenCalled();
+      const savedCall = mockAuditRepository.save.mock.calls[0][0] as AuditLog;
+      expect(savedCall.metadata.getValue().responseBody).toEqual({
+        error: 'Database connection failed',
       });
     });
 
-    it('Given: request When: intercepting Then: should measure duration', () => {
+    it('Given: request When: intercepting Then: should measure duration', async () => {
       // Arrange
       const response = { data: 'success' };
       mockCallHandler.handle.mockReturnValue(of(response));
 
       // Act
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      await firstValueFrom(result$);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert
-      result$.subscribe(() => {
-        expect(mockLogger.log).toHaveBeenCalledWith(
-          expect.stringMatching(
-            /\[AUDIT\] POST \/api\/test - SUCCESS - Duration: \d+ms - User: user-123 - Org: org-123/
-          )
-        );
-      });
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /\[AUDIT\] POST \/api\/test - SUCCESS - Duration: \d+ms - User: user-123 - Org: org-123/
+        )
+      );
+      expect(mockAuditRepository.save).toHaveBeenCalled();
+      const savedCall = mockAuditRepository.save.mock.calls[0][0] as AuditLog;
+      expect(savedCall.duration).toBeGreaterThanOrEqual(0);
     });
 
-    it('Given: error request When: intercepting Then: should measure duration for error', () => {
+    it('Given: error request When: intercepting Then: should measure duration for error', async () => {
       // Arrange
       const error = new Error('Database connection failed');
       mockCallHandler.handle.mockReturnValue(throwError(() => error));
@@ -320,66 +399,76 @@ describe('Audit Interceptor', () => {
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
 
       // Assert
-      result$.subscribe({
-        error: () => {
-          expect(mockLogger.error).toHaveBeenCalledWith(
-            expect.stringMatching(
-              /\[AUDIT\] POST \/api\/test - ERROR - Duration: \d+ms - User: user-123 - Org: org-123 - Error: Database connection failed/
-            )
-          );
-        },
-      });
+      await expect(firstValueFrom(result$)).rejects.toThrow('Database connection failed');
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /\[AUDIT\] POST \/api\/test - ERROR - Duration: \d+ms - User: user-123 - Org: org-123 - Error: Database connection failed/
+        )
+      );
+      expect(mockAuditRepository.save).toHaveBeenCalled();
+      const savedCall = mockAuditRepository.save.mock.calls[0][0] as AuditLog;
+      expect(savedCall.duration).toBeGreaterThanOrEqual(0);
     });
 
-    it('Given: non-object response When: intercepting Then: should not log response', () => {
+    it('Given: non-object response When: intercepting Then: should save response in audit', async () => {
       // Arrange
       const response = 'simple string response';
       mockCallHandler.handle.mockReturnValue(of(response));
 
       // Act
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      await firstValueFrom(result$);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert
-      result$.subscribe(() => {
-        expect(mockLogger.debug).not.toHaveBeenCalledWith(
-          expect.stringContaining('[AUDIT] Response:')
-        );
-      });
+      expect(mockAuditRepository.save).toHaveBeenCalled();
+      const savedCall = mockAuditRepository.save.mock.calls[0][0] as AuditLog;
+      expect(savedCall.metadata.getValue().responseBody).toBe(response);
     });
 
-    it('Given: null response When: intercepting Then: should not log response', () => {
+    it('Given: null response When: intercepting Then: should save null response in audit', async () => {
       // Arrange
       const response = null;
       mockCallHandler.handle.mockReturnValue(of(response));
 
       // Act
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      await firstValueFrom(result$);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert
-      result$.subscribe(() => {
-        expect(mockLogger.debug).not.toHaveBeenCalledWith(
-          expect.stringContaining('[AUDIT] Response:')
-        );
-      });
+      expect(mockAuditRepository.save).toHaveBeenCalled();
+      const savedCall = mockAuditRepository.save.mock.calls[0][0] as AuditLog;
+      expect(savedCall.metadata.getValue().responseBody).toBeNull();
     });
 
-    it('Given: undefined response When: intercepting Then: should not log response', () => {
+    it('Given: undefined response When: intercepting Then: should save undefined response in audit', async () => {
       // Arrange
       const response = undefined;
       mockCallHandler.handle.mockReturnValue(of(response));
 
       // Act
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
+      await firstValueFrom(result$);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert
-      result$.subscribe(() => {
-        expect(mockLogger.debug).not.toHaveBeenCalledWith(
-          expect.stringContaining('[AUDIT] Response:')
-        );
-      });
+      expect(mockAuditRepository.save).toHaveBeenCalled();
+      const savedCall = mockAuditRepository.save.mock.calls[0][0] as AuditLog;
+      expect(savedCall.metadata.getValue().responseBody).toBeUndefined();
     });
 
-    it('Given: error without stack trace When: intercepting Then: should not log stack trace', () => {
+    it('Given: error without stack trace When: intercepting Then: should save error without stack in audit', async () => {
       // Arrange
       const error = new Error('Database connection failed');
       delete (error as { stack?: string }).stack; // Remove stack trace
@@ -390,17 +479,20 @@ describe('Audit Interceptor', () => {
       const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler);
 
       // Assert
-      result$.subscribe({
-        error: () => {
-          expect(mockLogger.error).toHaveBeenCalledWith(
-            expect.stringMatching(
-              /\[AUDIT\] POST \/api\/test - ERROR - Duration: \d+ms - User: user-123 - Org: org-123 - Error: Database connection failed/
-            )
-          );
-          expect(mockLogger.debug).not.toHaveBeenCalledWith(
-            expect.stringContaining('[AUDIT] Error Stack:')
-          );
-        },
+      await expect(firstValueFrom(result$)).rejects.toThrow('Database connection failed');
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /\[AUDIT\] POST \/api\/test - ERROR - Duration: \d+ms - User: user-123 - Org: org-123 - Error: Database connection failed/
+        )
+      );
+      expect(mockAuditRepository.save).toHaveBeenCalled();
+      const savedCall = mockAuditRepository.save.mock.calls[0][0] as AuditLog;
+      expect(savedCall.metadata.getValue().responseBody).toEqual({
+        error: 'Database connection failed',
       });
     });
   });
