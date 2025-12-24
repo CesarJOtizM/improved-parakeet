@@ -1,20 +1,33 @@
 import { LocationAddedEventHandler } from '@application/eventHandlers/locationAddedEventHandler';
+import { LowStockAlertEventHandler } from '@application/eventHandlers/lowStockAlertEventHandler';
 import { MovementPostedAuditHandler } from '@application/eventHandlers/movementPostedAuditHandler';
 import { MovementPostedEventHandler } from '@application/eventHandlers/movementPostedEventHandler';
 import { MovementVoidedAuditHandler } from '@application/eventHandlers/movementVoidedAuditHandler';
 import { ProductCreatedEventHandler } from '@application/eventHandlers/productCreatedEventHandler';
 import { ProductUpdatedEventHandler } from '@application/eventHandlers/productUpdatedEventHandler';
+import { StockThresholdExceededEventHandler } from '@application/eventHandlers/stockThresholdExceededEventHandler';
 import { TransferInitiatedAuditHandler } from '@application/eventHandlers/transferInitiatedAuditHandler';
 import { TransferReceivedAuditHandler } from '@application/eventHandlers/transferReceivedAuditHandler';
 import { TransferRejectedAuditHandler } from '@application/eventHandlers/transferRejectedAuditHandler';
 import { WarehouseCreatedEventHandler } from '@application/eventHandlers/warehouseCreatedEventHandler';
+import { CreateProductUseCase } from '@application/productUseCases/createProductUseCase';
+import { InitiateTransferUseCase } from '@application/transferUseCases/initiateTransferUseCase';
 import { AuthenticationModule } from '@auth/authentication.module';
+import { NotificationService } from '@infrastructure/externalServices/notificationService';
+import { StockValidationJob } from '@infrastructure/jobs/stockValidationJob';
 import { Module, OnModuleInit } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
 
 @Module({
-  imports: [AuthenticationModule], // Import to get access to DomainEventBus
+  imports: [
+    AuthenticationModule, // Import to get access to DomainEventBus and EmailService
+    ScheduleModule.forRoot(), // Import for scheduled jobs
+  ],
   providers: [
+    // Use Cases
+    CreateProductUseCase,
+    InitiateTransferUseCase,
     // Event Handlers
     ProductCreatedEventHandler,
     ProductUpdatedEventHandler,
@@ -28,6 +41,18 @@ import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
     TransferInitiatedAuditHandler,
     TransferReceivedAuditHandler,
     TransferRejectedAuditHandler,
+    // Alert event handlers
+    LowStockAlertEventHandler,
+    StockThresholdExceededEventHandler,
+    // Infrastructure services
+    NotificationService,
+    // Scheduled jobs
+    StockValidationJob,
+  ],
+  exports: [
+    // Export use cases for controllers
+    CreateProductUseCase,
+    InitiateTransferUseCase,
   ],
 })
 export class InventoryModule implements OnModuleInit {
@@ -42,7 +67,9 @@ export class InventoryModule implements OnModuleInit {
     private readonly movementVoidedAuditHandler: MovementVoidedAuditHandler,
     private readonly transferInitiatedAuditHandler: TransferInitiatedAuditHandler,
     private readonly transferReceivedAuditHandler: TransferReceivedAuditHandler,
-    private readonly transferRejectedAuditHandler: TransferRejectedAuditHandler
+    private readonly transferRejectedAuditHandler: TransferRejectedAuditHandler,
+    private readonly lowStockAlertHandler: LowStockAlertEventHandler,
+    private readonly stockThresholdExceededHandler: StockThresholdExceededEventHandler
   ) {}
 
   onModuleInit() {
@@ -59,5 +86,8 @@ export class InventoryModule implements OnModuleInit {
     this.eventBus.registerHandler('TransferInitiated', this.transferInitiatedAuditHandler);
     this.eventBus.registerHandler('TransferReceived', this.transferReceivedAuditHandler);
     this.eventBus.registerHandler('TransferRejected', this.transferRejectedAuditHandler);
+    // Register alert event handlers
+    this.eventBus.registerHandler('LowStockAlert', this.lowStockAlertHandler);
+    this.eventBus.registerHandler('StockThresholdExceeded', this.stockThresholdExceededHandler);
   }
 }

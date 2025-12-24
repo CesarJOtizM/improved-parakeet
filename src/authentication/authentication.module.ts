@@ -202,6 +202,7 @@ import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatch
     JwtStrategy,
     DomainEventBus,
     DomainEventDispatcher,
+    EmailService,
   ],
 })
 export class AuthenticationModule implements OnModuleInit {

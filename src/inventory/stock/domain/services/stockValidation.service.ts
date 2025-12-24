@@ -2,6 +2,8 @@ import { Movement } from '@inventory/movements/domain/entities/movement.entity';
 import { Product } from '@inventory/products/domain/entities/product.entity';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
+import { NoNegativeStockRule } from './noNegativeStockRule.service';
+
 export interface IStockValidationResult {
   isValid: boolean;
   availableQuantity: Quantity;
@@ -39,11 +41,14 @@ export class StockValidationService {
       }
     }
 
-    // Validar que haya stock suficiente
-    if (availableStock.getNumericValue() < requestedQuantity.getNumericValue()) {
-      errors.push(
-        `Insufficient stock. Available: ${availableStock.getNumericValue()}, Requested: ${requestedQuantity.getNumericValue()}`
-      );
+    // Validar que haya stock suficiente usando NoNegativeStockRule
+    const negativeStockValidation = NoNegativeStockRule.validateNoNegativeStock(
+      availableStock,
+      requestedQuantity
+    );
+
+    if (!negativeStockValidation.isValid) {
+      errors.push(...negativeStockValidation.errors);
     }
 
     // Validar que la cantidad sea positiva
