@@ -237,13 +237,13 @@
   - [x] Domain Events: TransferInitiated, TransferReceived, TransferRejected
   - [x] Crear interfaces de Repository para transferencias
 
-- [x] **Estructura Base de Reglas de Negocio** ✅ **PARCIALMENTE IMPLEMENTADO**
+- [x] **Estructura Base de Reglas de Negocio** ✅ **COMPLETADO**
   - [x] Domain Services: StockValidationService (implementado con validaciones)
-  - [ ] Validación de stock disponible antes de salidas
-  - [ ] Cálculo automático de PPM (Promedio Ponderado Móvil)
+  - [x] Validación de stock disponible antes de salidas
+  - [x] Cálculo automático de PPM (Promedio Ponderado Móvil)
   - [x] Implementar workflow de estados para transferencias
-  - [ ] Crear servicios de auditoría automática
-  - [ ] Tests de integración para flujos completos
+  - [x] Crear servicios de auditoría automática
+  - [x] Tests de integración para flujos completos
 
 ### **Semana 9: Reglas de Negocio y Casos de Uso**
 

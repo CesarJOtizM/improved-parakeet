@@ -5,3 +5,6 @@ export * from './valueObjects/quantity.valueObject';
 // Services
 export * from './services/inventoryCalculation.service';
 export * from './services/stockValidation.service';
+
+// Repositories
+export * from './repositories/stockRepository.interface';

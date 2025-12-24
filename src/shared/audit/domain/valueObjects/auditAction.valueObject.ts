@@ -12,7 +12,12 @@ export type AuditActionValue =
   | 'LOGOUT'
   | 'PASSWORD_RESET'
   | 'HTTP_REQUEST'
-  | 'SYSTEM_ACTION';
+  | 'SYSTEM_ACTION'
+  | 'POST'
+  | 'VOID'
+  | 'INITIATE'
+  | 'RECEIVE'
+  | 'REJECT';
 
 export interface IAuditActionProps {
   value: AuditActionValue;
@@ -42,6 +47,11 @@ export class AuditAction extends ValueObject<IAuditActionProps> {
       'PASSWORD_RESET',
       'HTTP_REQUEST',
       'SYSTEM_ACTION',
+      'POST',
+      'VOID',
+      'INITIATE',
+      'RECEIVE',
+      'REJECT',
     ];
 
     if (!validActions.includes(props.value)) {
