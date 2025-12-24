@@ -11,10 +11,18 @@ export interface ITransferLineProps {
 export class TransferLine extends Entity<ITransferLineProps> {
   private constructor(props: ITransferLineProps, id?: string, orgId?: string) {
     super(props, id, orgId);
+    this.validate(props);
   }
 
   public static create(props: ITransferLineProps, orgId: string): TransferLine {
     return new TransferLine(props, undefined, orgId);
+  }
+
+  private validate(props: ITransferLineProps): void {
+    // Quantity must be positive
+    if (!props.quantity.isPositive()) {
+      throw new Error('Quantity must be positive');
+    }
   }
 
   public static reconstitute(props: ITransferLineProps, id: string, orgId: string): TransferLine {
@@ -22,6 +30,15 @@ export class TransferLine extends Entity<ITransferLineProps> {
   }
 
   public update(props: Partial<ITransferLineProps>): void {
+    // Create a temporary props object to validate
+    const updatedProps: ITransferLineProps = {
+      ...this.props,
+      ...props,
+    };
+
+    // Validate before updating
+    this.validate(updatedProps);
+
     if (props.quantity !== undefined) this.props.quantity = props.quantity;
     if (props.fromLocationId !== undefined) this.props.fromLocationId = props.fromLocationId;
     if (props.toLocationId !== undefined) this.props.toLocationId = props.toLocationId;

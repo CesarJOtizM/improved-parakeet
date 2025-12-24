@@ -230,18 +230,18 @@
   - [x] Domain Events: MovementPosted, StockUpdated, PPMRecalculated, MovementVoided
   - [x] Crear interfaces de Repository para movimientos
 
-- [ ] **Implementación del Dominio de Transferencias**
-  - [ ] Aggregates: TransferAggregate, TransferLineAggregate con reglas de consistencia
-  - [ ] Value Objects: TransferStatus, TransferDirection (inmutables)
-  - [ ] Domain Services: TransferValidationService, TransferWorkflowService
-  - [ ] Domain Events: TransferInitiated, TransferReceived, TransferRejected
-  - [ ] Crear interfaces de Repository para transferencias
+- [x] **Implementación del Dominio de Transferencias** ✅ **COMPLETADO**
+  - [x] Aggregates: TransferAggregate, TransferLineAggregate con reglas de consistencia
+  - [x] Value Objects: TransferStatus, TransferDirection (inmutables)
+  - [x] Domain Services: TransferValidationService, TransferWorkflowService
+  - [x] Domain Events: TransferInitiated, TransferReceived, TransferRejected
+  - [x] Crear interfaces de Repository para transferencias
 
 - [x] **Estructura Base de Reglas de Negocio** ✅ **PARCIALMENTE IMPLEMENTADO**
   - [x] Domain Services: StockValidationService (implementado con validaciones)
   - [ ] Validación de stock disponible antes de salidas
   - [ ] Cálculo automático de PPM (Promedio Ponderado Móvil)
-  - [ ] Implementar workflow de estados para transferencias
+  - [x] Implementar workflow de estados para transferencias
   - [ ] Crear servicios de auditoría automática
   - [ ] Tests de integración para flujos completos
 
@@ -1341,7 +1341,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Semana 5**: Dominio de usuarios y RBAC ✅ **COMPLETADA**
 - [x] **Semana 6**: Adaptadores y API de autenticación ✅ **COMPLETADA**
 - [x] **Semana 7**: Dominio de productos y bodegas ✅ **COMPLETADA** (~95%)
-- [ ] **Semana 8**: Dominio de movimientos y transferencias
+- [x] **Semana 8**: Dominio de movimientos y transferencias ✅ **COMPLETADA** (~80%)
 - [ ] **Semana 9**: Reglas de negocio y casos de uso
 - [ ] **Semana 10**: Adaptadores y API de inventarios
 - [ ] **Semana 11**: Dominio de reportes e importaciones
@@ -1419,20 +1419,26 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
   - ✅ Product (AggregateRoot con value objects y eventos)
   - ✅ Warehouse (AggregateRoot con value objects y eventos)
   - ✅ Location (AggregateRoot con value objects y eventos)
-  - ⏳ Movement, Transfer (estructura base creada)
+  - ✅ Movement (AggregateRoot con value objects y eventos)
+  - ✅ Transfer (AggregateRoot con value objects y eventos, reglas de consistencia)
 - **Value Objects**: 
   - ✅ Productos: SKU, ProductName, ProductStatus, CostMethod, UnitValueObject, Price
   - ✅ Bodegas: WarehouseCode, LocationCode, Address
   - ✅ Movimientos: Quantity, MovementType, MovementStatus
+  - ✅ Transferencias: TransferStatus, TransferDirection
 - **Domain Services**: 
   - ✅ ProductValidationService, PricingService
   - ✅ ProductBusinessRulesService (reglas de negocio: SKU único, eliminación, transiciones de estado, cambio de método de costo)
   - ✅ WarehouseAssignmentService
   - ✅ WarehouseBusinessRulesService (reglas de negocio: código único, eliminación, desactivación, ubicación por defecto)
   - ✅ InventoryCalculationService, StockValidationService
+  - ✅ TransferValidationService (validación de bodegas, líneas, stock, ubicaciones)
+  - ✅ TransferWorkflowService (gestión de workflow y transiciones de estado)
 - **Domain Events**: 
   - ✅ ProductCreated, ProductUpdated
   - ✅ WarehouseCreated, LocationAdded
+  - ✅ MovementPosted, StockUpdated, PPMRecalculated, MovementVoided
+  - ✅ TransferInitiated, TransferReceived, TransferRejected
 - **Event Handlers**: 
   - ✅ ProductCreatedEventHandler, ProductUpdatedEventHandler (auditoría automática)
   - ✅ WarehouseCreatedEventHandler, LocationAddedEventHandler (auditoría automática)
@@ -1440,6 +1446,8 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - **Repository Interfaces**: 
   - ✅ IProductRepository, ICategoryRepository
   - ✅ IWarehouseRepository, ILocationRepository
+  - ✅ IMovementRepository
+  - ✅ ITransferRepository
 - **Test Factories**: 
   - ✅ ProductFactory, WarehouseFactory, LocationFactory (con métodos create, createWith, createMany)
   - ✅ BaseFactory (utilidades base para factories)
