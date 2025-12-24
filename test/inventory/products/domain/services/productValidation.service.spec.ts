@@ -1,4 +1,5 @@
 import { describe, expect, it, jest } from '@jest/globals';
+import { ConflictException } from '@nestjs/common';
 import { Product } from '@product/domain/entities/product.entity';
 import { IProductRepository } from '@product/domain/repositories/productRepository.interface';
 import { ProductValidationService } from '@product/domain/services/productValidation.service';
@@ -216,6 +217,76 @@ describe('ProductValidationService', () => {
 
       // Assert
       expect(result).toBe(false);
+    });
+  });
+
+  describe('validateSkuUniquenessOrThrow', () => {
+    it('Given: unique SKU When: validating uniqueness Then: should not throw', async () => {
+      // Arrange
+      const sku = SKU.create('PROD-001');
+      const mockRepository: IProductRepository = {
+        findBySku: jest.fn<() => Promise<Product | null>>().mockResolvedValue(null),
+      } as unknown as IProductRepository;
+
+      // Act & Assert
+      await expect(
+        ProductValidationService.validateSkuUniquenessOrThrow(sku, mockOrgId, mockRepository)
+      ).resolves.not.toThrow();
+      expect(mockRepository.findBySku).toHaveBeenCalledWith('PROD-001', mockOrgId);
+    });
+
+    it('Given: existing SKU When: validating uniqueness Then: should throw ConflictException', async () => {
+      // Arrange
+      const sku = SKU.create('PROD-001');
+      const existingProduct = Product.create(
+        {
+          sku: SKU.create('PROD-001'),
+          name: ProductName.create('Existing Product'),
+          unit: UnitValueObject.create('KG', 'Kilogram', 2),
+          status: ProductStatus.create('ACTIVE'),
+          costMethod: CostMethod.create('AVG'),
+        },
+        mockOrgId
+      );
+      const mockRepository: IProductRepository = {
+        findBySku: jest.fn<() => Promise<Product | null>>().mockResolvedValue(existingProduct),
+      } as unknown as IProductRepository;
+
+      // Act & Assert
+      await expect(
+        ProductValidationService.validateSkuUniquenessOrThrow(sku, mockOrgId, mockRepository)
+      ).rejects.toThrow(ConflictException);
+      await expect(
+        ProductValidationService.validateSkuUniquenessOrThrow(sku, mockOrgId, mockRepository)
+      ).rejects.toThrow("SKU 'PROD-001' already exists in this organization");
+    });
+
+    it('Given: existing SKU with excludeProductId matching When: validating uniqueness Then: should not throw', async () => {
+      // Arrange
+      const sku = SKU.create('PROD-001');
+      const existingProduct = Product.create(
+        {
+          sku: SKU.create('PROD-001'),
+          name: ProductName.create('Existing Product'),
+          unit: UnitValueObject.create('KG', 'Kilogram', 2),
+          status: ProductStatus.create('ACTIVE'),
+          costMethod: CostMethod.create('AVG'),
+        },
+        mockOrgId
+      );
+      const mockRepository: IProductRepository = {
+        findBySku: jest.fn<() => Promise<Product | null>>().mockResolvedValue(existingProduct),
+      } as unknown as IProductRepository;
+
+      // Act & Assert
+      await expect(
+        ProductValidationService.validateSkuUniquenessOrThrow(
+          sku,
+          mockOrgId,
+          mockRepository,
+          existingProduct.id
+        )
+      ).resolves.not.toThrow();
     });
   });
 

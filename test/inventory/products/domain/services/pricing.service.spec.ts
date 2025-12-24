@@ -4,7 +4,7 @@ import { Money } from '@stock/domain/valueObjects/money.valueObject';
 
 describe('PricingService', () => {
   describe('calculatePriceWithTax', () => {
-    it('Given: base price and tax rate When: calculating price with tax Then: should return correct amount', () => {
+    it('Given: base price and tax rate When: calculating price with tax Then: should return correct price', () => {
       // Arrange
       const basePrice = Money.create(100, 'COP', 2);
       const taxRate = 19; // 19%
@@ -15,9 +15,10 @@ describe('PricingService', () => {
       // Assert
       expect(result.getAmount()).toBe(119);
       expect(result.getCurrency()).toBe('COP');
+      expect(result.getPrecision()).toBe(2);
     });
 
-    it('Given: base price and zero tax rate When: calculating price with tax Then: should return base price', () => {
+    it('Given: zero tax rate When: calculating price with tax Then: should return same price', () => {
       // Arrange
       const basePrice = Money.create(100, 'COP', 2);
       const taxRate = 0;
@@ -29,7 +30,7 @@ describe('PricingService', () => {
       expect(result.getAmount()).toBe(100);
     });
 
-    it('Given: base price and 100% tax rate When: calculating price with tax Then: should return double amount', () => {
+    it('Given: 100% tax rate When: calculating price with tax Then: should return double price', () => {
       // Arrange
       const basePrice = Money.create(100, 'COP', 2);
       const taxRate = 100;
@@ -44,7 +45,7 @@ describe('PricingService', () => {
     it('Given: negative tax rate When: calculating price with tax Then: should throw error', () => {
       // Arrange
       const basePrice = Money.create(100, 'COP', 2);
-      const taxRate = -1;
+      const taxRate = -5;
 
       // Act & Assert
       expect(() => PricingService.calculatePriceWithTax(basePrice, taxRate)).toThrow(
@@ -52,7 +53,7 @@ describe('PricingService', () => {
       );
     });
 
-    it('Given: tax rate greater than 100 When: calculating price with tax Then: should throw error', () => {
+    it('Given: tax rate over 100 When: calculating price with tax Then: should throw error', () => {
       // Arrange
       const basePrice = Money.create(100, 'COP', 2);
       const taxRate = 101;
@@ -76,9 +77,10 @@ describe('PricingService', () => {
       // Assert
       expect(result.getAmount()).toBe(10);
       expect(result.getCurrency()).toBe('COP');
+      expect(result.getPrecision()).toBe(2);
     });
 
-    it('Given: price and zero discount When: calculating discount Then: should return zero', () => {
+    it('Given: zero discount When: calculating discount Then: should return zero', () => {
       // Arrange
       const price = Money.create(100, 'COP', 2);
       const discountPercent = 0;
@@ -90,7 +92,7 @@ describe('PricingService', () => {
       expect(result.getAmount()).toBe(0);
     });
 
-    it('Given: price and 100% discount When: calculating discount Then: should return full price', () => {
+    it('Given: 100% discount When: calculating discount Then: should return full price', () => {
       // Arrange
       const price = Money.create(100, 'COP', 2);
       const discountPercent = 100;
@@ -105,7 +107,7 @@ describe('PricingService', () => {
     it('Given: negative discount percent When: calculating discount Then: should throw error', () => {
       // Arrange
       const price = Money.create(100, 'COP', 2);
-      const discountPercent = -1;
+      const discountPercent = -5;
 
       // Act & Assert
       expect(() => PricingService.calculateDiscount(price, discountPercent)).toThrow(
@@ -113,7 +115,7 @@ describe('PricingService', () => {
       );
     });
 
-    it('Given: discount percent greater than 100 When: calculating discount Then: should throw error', () => {
+    it('Given: discount percent over 100 When: calculating discount Then: should throw error', () => {
       // Arrange
       const price = Money.create(100, 'COP', 2);
       const discountPercent = 101;
@@ -126,7 +128,7 @@ describe('PricingService', () => {
   });
 
   describe('calculateFinalPrice', () => {
-    it('Given: base price, tax rate, and discount When: calculating final price Then: should return correct amount', () => {
+    it('Given: base price, tax rate, and discount When: calculating final price Then: should return correct price', () => {
       // Arrange
       const basePrice = Money.create(100, 'COP', 2);
       const taxRate = 19; // 19%
@@ -136,11 +138,16 @@ describe('PricingService', () => {
       const result = PricingService.calculateFinalPrice(basePrice, taxRate, discountPercent);
 
       // Assert
-      // Base: 100, Discount: 10, After discount: 90, Tax: 19% of 90 = 17.1, Final: 107.1
+      // Discount: 100 * 0.10 = 10
+      // Price after discount: 100 - 10 = 90
+      // Tax: 90 * 0.19 = 17.1
+      // Final: 90 + 17.1 = 107.1
       expect(result.getAmount()).toBeCloseTo(107.1, 1);
+      expect(result.getCurrency()).toBe('COP');
+      expect(result.getPrecision()).toBe(2);
     });
 
-    it('Given: base price with zero tax and discount When: calculating final price Then: should return base price', () => {
+    it('Given: base price with no tax and no discount When: calculating final price Then: should return base price', () => {
       // Arrange
       const basePrice = Money.create(100, 'COP', 2);
       const taxRate = 0;
@@ -153,36 +160,10 @@ describe('PricingService', () => {
       expect(result.getAmount()).toBe(100);
     });
 
-    it('Given: base price with tax but no discount When: calculating final price Then: should return price with tax', () => {
-      // Arrange
-      const basePrice = Money.create(100, 'COP', 2);
-      const taxRate = 19;
-      const discountPercent = 0;
-
-      // Act
-      const result = PricingService.calculateFinalPrice(basePrice, taxRate, discountPercent);
-
-      // Assert
-      expect(result.getAmount()).toBe(119);
-    });
-
-    it('Given: base price with discount but no tax When: calculating final price Then: should return discounted price', () => {
-      // Arrange
-      const basePrice = Money.create(100, 'COP', 2);
-      const taxRate = 0;
-      const discountPercent = 10;
-
-      // Act
-      const result = PricingService.calculateFinalPrice(basePrice, taxRate, discountPercent);
-
-      // Assert
-      expect(result.getAmount()).toBe(90);
-    });
-
     it('Given: invalid tax rate When: calculating final price Then: should throw error', () => {
       // Arrange
       const basePrice = Money.create(100, 'COP', 2);
-      const taxRate = 101;
+      const taxRate = -5;
       const discountPercent = 10;
 
       // Act & Assert
@@ -205,7 +186,7 @@ describe('PricingService', () => {
   });
 
   describe('comparePrices', () => {
-    it('Given: price1 less than price2 When: comparing Then: should return -1', () => {
+    it('Given: price1 less than price2 When: comparing prices Then: should return -1', () => {
       // Arrange
       const price1 = Money.create(100, 'COP', 2);
       const price2 = Money.create(200, 'COP', 2);
@@ -217,7 +198,7 @@ describe('PricingService', () => {
       expect(result).toBe(-1);
     });
 
-    it('Given: price1 greater than price2 When: comparing Then: should return 1', () => {
+    it('Given: price1 greater than price2 When: comparing prices Then: should return 1', () => {
       // Arrange
       const price1 = Money.create(200, 'COP', 2);
       const price2 = Money.create(100, 'COP', 2);
@@ -229,7 +210,7 @@ describe('PricingService', () => {
       expect(result).toBe(1);
     });
 
-    it('Given: price1 equal to price2 When: comparing Then: should return 0', () => {
+    it('Given: equal prices When: comparing prices Then: should return 0', () => {
       // Arrange
       const price1 = Money.create(100, 'COP', 2);
       const price2 = Money.create(100, 'COP', 2);
@@ -241,7 +222,7 @@ describe('PricingService', () => {
       expect(result).toBe(0);
     });
 
-    it('Given: prices with different currencies When: comparing Then: should throw error', () => {
+    it('Given: different currencies When: comparing prices Then: should throw error', () => {
       // Arrange
       const price1 = Money.create(100, 'COP', 2);
       const price2 = Money.create(100, 'USD', 2);

@@ -1,3 +1,4 @@
+import { ConflictException } from '@nestjs/common';
 import { Product } from '@product/domain/entities/product.entity';
 import { IProductRepository } from '@product/domain/repositories/productRepository.interface';
 import { ProductName } from '@product/domain/valueObjects/productName.valueObject';
@@ -169,6 +170,26 @@ export class ProductValidationService {
   ): Promise<boolean> {
     const existingProduct = await repository.findBySku(sku.getValue(), orgId);
     return existingProduct === null;
+  }
+
+  /**
+   * Validates SKU uniqueness and throws ConflictException if not unique
+   * This method integrates with ProductBusinessRulesService for consistency
+   */
+  public static async validateSkuUniquenessOrThrow(
+    sku: SKU,
+    orgId: string,
+    repository: IProductRepository,
+    excludeProductId?: string
+  ): Promise<void> {
+    const existingProduct = await repository.findBySku(sku.getValue(), orgId);
+
+    if (existingProduct !== null) {
+      if (excludeProductId && existingProduct.id === excludeProductId) {
+        return; // Same product, SKU is valid
+      }
+      throw new ConflictException(`SKU '${sku.getValue()}' already exists in this organization`);
+    }
   }
 
   /**
