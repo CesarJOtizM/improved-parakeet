@@ -211,24 +211,24 @@
   - [x] Domain Events: WarehouseCreated, LocationAdded
   - [x] Crear interfaces de Repository para bodegas y ubicaciones
 
-- [ ] **Setup de Validaciones de Dominio**
-  - [ ] Implementar validaciones de SKU único por organización
-  - [ ] Crear reglas de negocio para productos y bodegas
-  - [ ] Setup de Domain Events para auditoría automática
-  - [ ] Tests unitarios para todos los servicios de dominio
-  - [ ] Crear factories para entidades de prueba
+- [x] **Setup de Validaciones de Dominio** ✅ **COMPLETADO**
+  - [x] Implementar validaciones de SKU único por organización
+  - [x] Crear reglas de negocio para productos y bodegas
+  - [x] Setup de Domain Events para auditoría automática
+  - [x] Tests unitarios para todos los servicios de dominio
+  - [x] Crear factories para entidades de prueba
 
 ### **Semana 8: Dominio de Movimientos y Transferencias**
 
-- [x] **Estructura Base del Dominio de Movimientos** ✅ **PARCIALMENTE IMPLEMENTADO**
+- [x] **Estructura Base del Dominio de Movimientos** ✅ **COMPLETADO**
   - [x] Value Objects: MovementType, MovementStatus (inmutables)
   - [x] Value Objects: Quantity (con métodos add, subtract, multiply, divide)
   - [x] Domain Services: InventoryCalculationService (estructura base)
-  - [ ] Aggregates: MovementAggregate, MovementLineAggregate con reglas de consistencia
-  - [ ] Value Objects adicionales: UnitCost
-  - [ ] Domain Services: PPMService
-  - [ ] Domain Events: MovementPosted, StockUpdated, PPMRecalculated
-  - [ ] Crear interfaces de Repository para movimientos
+  - [x] Aggregates: MovementAggregate, MovementLineAggregate con reglas de consistencia
+  - [x] Value Objects adicionales: UnitCost
+  - [x] Domain Services: PPMService
+  - [x] Domain Events: MovementPosted, StockUpdated, PPMRecalculated, MovementVoided
+  - [x] Crear interfaces de Repository para movimientos
 
 - [ ] **Implementación del Dominio de Transferencias**
   - [ ] Aggregates: TransferAggregate, TransferLineAggregate con reglas de consistencia
@@ -1340,7 +1340,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Semana 4**: Dominio de autenticación ✅ **COMPLETADA**
 - [x] **Semana 5**: Dominio de usuarios y RBAC ✅ **COMPLETADA**
 - [x] **Semana 6**: Adaptadores y API de autenticación ✅ **COMPLETADA**
-- [x] **Semana 7**: Dominio de productos y bodegas ✅ **PARCIALMENTE COMPLETADA** (~70%)
+- [x] **Semana 7**: Dominio de productos y bodegas ✅ **COMPLETADA** (~95%)
 - [ ] **Semana 8**: Dominio de movimientos y transferencias
 - [ ] **Semana 9**: Reglas de negocio y casos de uso
 - [ ] **Semana 10**: Adaptadores y API de inventarios
@@ -1355,7 +1355,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 
 - [x] **Fase 1**: Arquitectura base, dominios core, infraestructura ✅ **COMPLETADA (100%)**
 - [x] **Fase 2**: Sistema de autenticación completo con RBAC ✅ **COMPLETADA (~95%)** (falta solo setup automático de auditoría)
-- [ ] **Fase 3**: Sistema de inventarios completo ⏳ **EN PROGRESO** (~25%)
+- [ ] **Fase 3**: Sistema de inventarios completo ⏳ **EN PROGRESO** (~35%)
 - [ ] **Fase 4**: Sistema de reportes e importaciones
 - [ ] **Fase 5**: Testing, optimización y despliegue
 
@@ -1426,14 +1426,29 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
   - ✅ Movimientos: Quantity, MovementType, MovementStatus
 - **Domain Services**: 
   - ✅ ProductValidationService, PricingService
+  - ✅ ProductBusinessRulesService (reglas de negocio: SKU único, eliminación, transiciones de estado, cambio de método de costo)
   - ✅ WarehouseAssignmentService
+  - ✅ WarehouseBusinessRulesService (reglas de negocio: código único, eliminación, desactivación, ubicación por defecto)
   - ✅ InventoryCalculationService, StockValidationService
 - **Domain Events**: 
   - ✅ ProductCreated, ProductUpdated
   - ✅ WarehouseCreated, LocationAdded
+- **Event Handlers**: 
+  - ✅ ProductCreatedEventHandler, ProductUpdatedEventHandler (auditoría automática)
+  - ✅ WarehouseCreatedEventHandler, LocationAddedEventHandler (auditoría automática)
+  - ✅ InventoryModule con registro de handlers en DomainEventBus
 - **Repository Interfaces**: 
   - ✅ IProductRepository, ICategoryRepository
   - ✅ IWarehouseRepository, ILocationRepository
+- **Test Factories**: 
+  - ✅ ProductFactory, WarehouseFactory, LocationFactory (con métodos create, createWith, createMany)
+  - ✅ BaseFactory (utilidades base para factories)
+- **Tests Unitarios**: 
+  - ✅ ProductValidationService (actualizado con validateSkuUniquenessOrThrow)
+  - ✅ ProductBusinessRulesService (tests completos)
+  - ✅ PricingService (tests completos)
+  - ✅ WarehouseAssignmentService (tests completos)
+  - ✅ WarehouseBusinessRulesService (tests completos)
 - **Faltan**: Controllers, Use Cases, APIs REST, Repositorios implementados (Prisma)
 
 #### **⏳ Pendiente**
