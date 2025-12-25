@@ -182,7 +182,11 @@ model Product {
   description String?
   category    String?
   unit        String
-  price       Decimal  @db.Decimal(10, 2)
+  barcode     String?
+  brand       String?
+  model       String?
+  price       Decimal? @db.Decimal(10, 2)
+  costMethod  String   @default("AVG") // AVG, FIFO
   isActive    Boolean  @default(true)
   orgId       String
   createdAt   DateTime @default(now())
@@ -191,6 +195,7 @@ model Product {
   // Relations
   organization Organization @relation(fields: [orgId], references: [id])
   movements    MovementLine[]
+  transfers    TransferLine[]
   stock       Stock[]
   
   @@unique([sku, orgId])
@@ -212,6 +217,9 @@ model Warehouse {
   // Relations
   organization Organization @relation(fields: [orgId], references: [id])
   stock        Stock[]
+  movements    Movement[]
+  fromTransfers Transfer[] @relation("FromTransfers")
+  toTransfers   Transfer[] @relation("ToTransfers")
   
   @@unique([code, orgId])
   @@map("warehouses")
@@ -239,14 +247,19 @@ model Movement {
   id          String   @id @default(cuid())
   type        String   // IN, OUT, ADJUSTMENT
   status      String   @default("DRAFT") // DRAFT, POSTED, VOIDED
+  warehouseId String
   reference   String?
+  reason      String?
   notes       String?
+  postedAt    DateTime?
+  createdBy   String
   orgId       String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
   // Relations
-  lines MovementLine[]
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  lines     MovementLine[]
   
   @@map("movements")
 }
@@ -256,8 +269,10 @@ model MovementLine {
   id         String  @id @default(cuid())
   movementId String
   productId  String
+  locationId String?
   quantity   Int
-  unitCost   Decimal @db.Decimal(10, 2)
+  unitCost   Decimal? @db.Decimal(10, 2)
+  currency   String
   orgId      String
   
   // Relations
@@ -265,6 +280,45 @@ model MovementLine {
   product  Product  @relation(fields: [productId], references: [id])
   
   @@map("movement_lines")
+}
+
+// Transfers
+model Transfer {
+  id            String   @id @default(cuid())
+  fromWarehouseId String
+  toWarehouseId   String
+  status         String   @default("DRAFT") // DRAFT, IN_TRANSIT, RECEIVED, REJECTED, CANCELED, PARTIAL
+  note           String?
+  initiatedAt    DateTime?
+  receivedAt     DateTime?
+  createdBy      String
+  orgId          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  // Relations
+  fromWarehouse Warehouse @relation("FromTransfers", fields: [fromWarehouseId], references: [id])
+  toWarehouse   Warehouse @relation("ToTransfers", fields: [toWarehouseId], references: [id])
+  lines         TransferLine[]
+  
+  @@map("transfers")
+}
+
+// Transfer Lines
+model TransferLine {
+  id             String  @id @default(cuid())
+  transferId     String
+  productId      String
+  quantity       Int
+  fromLocationId String?
+  toLocationId   String?
+  orgId          String
+  
+  // Relations
+  transfer Transfer @relation(fields: [transferId], references: [id])
+  product  Product  @relation(fields: [productId], references: [id])
+  
+  @@map("transfer_lines")
 }
 
 // Audit Logs

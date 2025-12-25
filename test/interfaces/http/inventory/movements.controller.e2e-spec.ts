@@ -271,6 +271,8 @@ describeIf(!!process.env.DATABASE_URL)('Movements Controller E2E Tests', () => {
       data: {
         type: 'IN',
         status: 'DRAFT',
+        warehouseId: testWarehouseId,
+        createdBy: adminUserId,
         orgId: testOrgId,
       },
     });
@@ -283,6 +285,7 @@ describeIf(!!process.env.DATABASE_URL)('Movements Controller E2E Tests', () => {
         productId: testProductId,
         quantity: 10,
         unitCost: 100.0,
+        currency: 'COP',
         orgId: testOrgId,
       },
     });

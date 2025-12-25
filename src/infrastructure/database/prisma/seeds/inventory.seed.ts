@@ -165,7 +165,16 @@ export class InventorySeed {
         update: {},
         create: productData,
       });
-      products.push(product);
+      // Convert Decimal price to number for IProduct interface
+      const productWithNumberPrice = {
+        ...product,
+        price: product.price
+          ? typeof product.price === 'object'
+            ? product.price.toNumber()
+            : product.price
+          : 0,
+      };
+      products.push(productWithNumberPrice);
     }
 
     return products;
@@ -265,8 +274,28 @@ export class InventorySeed {
   private async createSampleMovements(
     organizationId: string,
     products: IProduct[],
-    _warehouses: IWarehouse[]
+    warehouses: IWarehouse[]
   ): Promise<void> {
+    // Find admin user for createdBy field
+    const adminUser = await this.prisma.user.findFirst({
+      where: {
+        orgId: organizationId,
+        userRoles: {
+          some: {
+            role: {
+              name: 'ADMIN',
+            },
+          },
+        },
+      },
+    });
+
+    if (!adminUser) {
+      throw new Error('Admin user not found. Please ensure auth seed is run first.');
+    }
+
+    const firstWarehouseId = warehouses[0].id;
+
     // Movimiento de entrada inicial
     const initialMovement = await this.prisma.movement.create({
       data: {
@@ -274,6 +303,8 @@ export class InventorySeed {
         status: 'POSTED',
         reference: 'INITIAL-STOCK-001',
         notes: 'Stock inicial del sistema',
+        warehouseId: firstWarehouseId,
+        createdBy: adminUser.id,
         orgId: organizationId,
       },
     });
@@ -286,6 +317,7 @@ export class InventorySeed {
           productId: products[0].id, // Laptop
           quantity: 15,
           unitCost: 1100.0,
+          currency: 'COP',
           orgId: organizationId,
         },
         {
@@ -293,6 +325,7 @@ export class InventorySeed {
           productId: products[1].id, // Mouse
           quantity: 50,
           unitCost: 25.0,
+          currency: 'COP',
           orgId: organizationId,
         },
         {
@@ -300,6 +333,7 @@ export class InventorySeed {
           productId: products[2].id, // Teclado
           quantity: 25,
           unitCost: 120.0,
+          currency: 'COP',
           orgId: organizationId,
         },
       ],
@@ -312,6 +346,8 @@ export class InventorySeed {
         status: 'POSTED',
         reference: 'SALE-001',
         notes: 'Venta a cliente corporativo',
+        warehouseId: firstWarehouseId,
+        createdBy: adminUser.id,
         orgId: organizationId,
       },
     });
@@ -324,6 +360,7 @@ export class InventorySeed {
           productId: products[0].id, // Laptop
           quantity: 2,
           unitCost: 1100.0,
+          currency: 'COP',
           orgId: organizationId,
         },
         {
@@ -331,6 +368,7 @@ export class InventorySeed {
           productId: products[1].id, // Mouse
           quantity: 5,
           unitCost: 25.0,
+          currency: 'COP',
           orgId: organizationId,
         },
       ],
@@ -343,6 +381,8 @@ export class InventorySeed {
         status: 'POSTED',
         reference: 'ADJUSTMENT-001',
         notes: 'Ajuste por inventario físico',
+        warehouseId: firstWarehouseId,
+        createdBy: adminUser.id,
         orgId: organizationId,
       },
     });
@@ -355,6 +395,7 @@ export class InventorySeed {
           productId: products[5].id, // Cable HDMI
           quantity: -5, // Ajuste negativo
           unitCost: 8.0,
+          currency: 'COP',
           orgId: organizationId,
         },
       ],

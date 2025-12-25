@@ -22,6 +22,12 @@ import { InitiateTransferUseCase } from '@application/transferUseCases/initiateT
 import { CreateWarehouseUseCase } from '@application/warehouseUseCases/createWarehouseUseCase';
 import { GetWarehousesUseCase } from '@application/warehouseUseCases/getWarehousesUseCase';
 import { AuthenticationModule } from '@auth/authentication.module';
+import {
+  PrismaMovementRepository,
+  PrismaProductRepository,
+  PrismaTransferRepository,
+  PrismaWarehouseRepository,
+} from '@infrastructure/database/repositories';
 import { NotificationService } from '@infrastructure/externalServices/notificationService';
 import { StockValidationJob } from '@infrastructure/jobs/stockValidationJob';
 import { Module, OnModuleInit } from '@nestjs/common';
@@ -34,6 +40,23 @@ import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
     ScheduleModule.forRoot(), // Import for scheduled jobs
   ],
   providers: [
+    // Repositories
+    {
+      provide: 'ProductRepository',
+      useClass: PrismaProductRepository,
+    },
+    {
+      provide: 'WarehouseRepository',
+      useClass: PrismaWarehouseRepository,
+    },
+    {
+      provide: 'MovementRepository',
+      useClass: PrismaMovementRepository,
+    },
+    {
+      provide: 'TransferRepository',
+      useClass: PrismaTransferRepository,
+    },
     // Product Use Cases
     CreateProductUseCase,
     GetProductsUseCase,
