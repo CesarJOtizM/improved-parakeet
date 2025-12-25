@@ -1442,16 +1442,51 @@
     },
     {
       "name": "Inventory Management",
-      "description": "Endpoints para gestión de inventario (pendientes de implementación)",
+      "description": "Endpoints para gestión de inventario - Productos, Bodegas, Movimientos y Transferencias",
       "item": [
         {
           "name": "Products - Get All",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has success property', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success');",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Response has data array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Response has pagination', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('pagination');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
               }
             ],
             "url": {
@@ -1553,7 +1588,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Producto Ejemplo\",\n  \"description\": \"Descripción del producto\",\n  \"sku\": \"SKU001\",\n  \"category\": \"Electrónicos\",\n  \"price\": 99.99,\n  \"cost\": 50.00\n}"
+              "raw": "{\n  \"sku\": \"PROD-001\",\n  \"name\": \"Test Product\",\n  \"description\": \"Test product description\",\n  \"unit\": {\n    \"code\": \"UNIT\",\n    \"name\": \"Unit\",\n    \"precision\": 0\n  },\n  \"barcode\": \"1234567890123\",\n  \"brand\": \"Test Brand\",\n  \"model\": \"Test Model\",\n  \"status\": \"ACTIVE\",\n  \"costMethod\": \"AVG\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/inventory/products",
@@ -1893,11 +1928,16 @@
               {
                 "key": "Authorization",
                 "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"IN\",\n  \"reference\": \"PO-002\",\n  \"warehouseId\": \"warehouse-1\",\n  \"items\": [\n    {\n      \"productId\": \"product-1\",\n      \"quantity\": 10,\n      \"unitCost\": 800.00\n    }\n  ]\n}"
+              "raw": "{\n  \"type\": \"IN\",\n  \"warehouseId\": \"{{warehouseId}}\",\n  \"reference\": \"REF-001\",\n  \"reason\": \"PURCHASE\",\n  \"note\": \"Initial stock entry\",\n  \"lines\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"locationId\": \"location-123\",\n      \"quantity\": 10,\n      \"unitCost\": 100.5,\n      \"currency\": \"COP\"\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/inventory/movements",

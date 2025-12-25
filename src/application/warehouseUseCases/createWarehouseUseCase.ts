@@ -61,11 +61,15 @@ export class CreateWarehouseUseCase {
       const code = WarehouseCode.create(request.code);
       const address = request.address
         ? Address.create(
-            request.address.street,
-            request.address.city,
-            request.address.state,
-            request.address.zipCode,
-            request.address.country
+            [
+              request.address.street,
+              request.address.city,
+              request.address.state,
+              request.address.zipCode,
+              request.address.country,
+            ]
+              .filter(Boolean)
+              .join(', ')
           )
         : undefined;
 
@@ -108,13 +112,13 @@ export class CreateWarehouseUseCase {
           code: savedWarehouse.code.getValue(),
           name: savedWarehouse.name,
           description: request.description,
-          address: savedWarehouse.address
+          address: request.address
             ? {
-                street: savedWarehouse.address.getValue().street,
-                city: savedWarehouse.address.getValue().city,
-                state: savedWarehouse.address.getValue().state,
-                zipCode: savedWarehouse.address.getValue().zipCode,
-                country: savedWarehouse.address.getValue().country,
+                street: request.address.street,
+                city: request.address.city,
+                state: request.address.state,
+                zipCode: request.address.zipCode,
+                country: request.address.country,
               }
             : undefined,
           isActive: savedWarehouse.isActive,

@@ -290,7 +290,7 @@ describe('AuthenticationService', () => {
       expect(result).toBe(true);
     });
 
-    it('Given: invalid JWT token When: validating token Then: should return false', () => {
+    it('Given: invalid JWT token When: validating token Then: should return false', async () => {
       // Arrange
       // Create a token that will expire very soon and then wait for it to expire
       const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
@@ -300,17 +300,17 @@ describe('AuthenticationService', () => {
       const signature = Buffer.from('signature').toString('base64');
       const tokenValue = `${header}.${payload}.${signature}`;
 
-      // Create token with very short expiration (1 millisecond)
-      const token = JwtToken.create(tokenValue, 'ACCESS', new Date(Date.now() + 1));
+      // Create token with very short expiration (50 milliseconds)
+      const expirationTime = Date.now() + 50;
+      const token = JwtToken.create(tokenValue, 'ACCESS', new Date(expirationTime));
 
       // Act - Wait for token to expire
-      return new Promise<void>(resolve => {
-        setTimeout(() => {
-          const result = AuthenticationService.validateJwtToken(token);
-          expect(result).toBe(false);
-          resolve();
-        }, 10); // Wait 10ms for token to expire
-      });
+      await new Promise<void>(resolve => setTimeout(resolve, 60)); // Wait 60ms for token to expire
+
+      const result = AuthenticationService.validateJwtToken(token);
+
+      // Assert
+      expect(result).toBe(false);
     });
   });
 

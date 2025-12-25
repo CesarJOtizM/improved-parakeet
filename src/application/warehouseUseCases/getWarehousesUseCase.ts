@@ -105,11 +105,11 @@ export class GetWarehousesUseCase {
         name: warehouse.name,
         address: warehouse.address
           ? {
-              street: warehouse.address.getValue().street,
-              city: warehouse.address.getValue().city,
-              state: warehouse.address.getValue().state,
-              zipCode: warehouse.address.getValue().zipCode,
-              country: warehouse.address.getValue().country,
+              street: undefined,
+              city: undefined,
+              state: undefined,
+              zipCode: undefined,
+              country: undefined,
             }
           : undefined,
         isActive: warehouse.isActive,

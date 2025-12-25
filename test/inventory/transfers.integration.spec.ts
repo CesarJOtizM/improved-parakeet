@@ -67,6 +67,9 @@ describe('Transfer Integration Tests', () => {
       // Act
       await transferInitiatedAuditHandler.handle(event);
 
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
+
       // Assert
       expect(mockAuditRepository.save).toHaveBeenCalled();
     });
@@ -77,7 +80,7 @@ describe('Transfer Integration Tests', () => {
         {
           fromWarehouseId: testFromWarehouseId,
           toWarehouseId: testToWarehouseId,
-          status: TransferStatus.create('IN_TRANSIT'),
+          status: TransferStatus.create('DRAFT'),
           createdBy: testUserId,
         },
         testOrgId
@@ -94,12 +97,16 @@ describe('Transfer Integration Tests', () => {
       );
 
       transfer.addLine(line);
-      transfer.receive();
+      transfer.confirm(); // Change to IN_TRANSIT
+      transfer.receive(); // Change to RECEIVED
 
       const event = new TransferReceivedEvent(transfer);
 
       // Act
       await transferReceivedAuditHandler.handle(event);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert
       expect(mockAuditRepository.save).toHaveBeenCalled();
@@ -122,6 +129,9 @@ describe('Transfer Integration Tests', () => {
 
       // Act
       await transferRejectedAuditHandler.handle(event);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert
       expect(mockAuditRepository.save).toHaveBeenCalled();
@@ -162,6 +172,9 @@ describe('Transfer Integration Tests', () => {
 
       // Act
       await transferInitiatedAuditHandler.handle(event);
+
+      // Wait for setImmediate to complete
+      await new Promise(resolve => setImmediate(resolve));
 
       // Assert - Verify audit was logged
       expect(mockAuditRepository.save).toHaveBeenCalled();
