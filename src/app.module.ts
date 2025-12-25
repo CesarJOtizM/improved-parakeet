@@ -2,6 +2,7 @@ import { AuthenticationModule } from '@auth/authentication.module';
 import authConfig from '@auth/config/auth.config';
 import { PrismaModule } from '@infrastructure/database/prisma.module';
 import { HealthCheckModule } from '@interface/http/healthCheck/healthCheck.module';
+import { InventoryHttpModule } from '@interface/http/inventory/inventoryHttp.module';
 import { ClientIpMiddleware } from '@interface/http/middlewares/clientIpMiddleware';
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -20,6 +21,7 @@ import { SecurityMiddleware } from '@shared/middleware';
     HealthCheckModule,
     AuthenticationModule,
     OrganizationModule,
+    InventoryHttpModule,
   ],
   controllers: [],
   providers: [],

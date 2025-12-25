@@ -10,8 +10,17 @@ import { TransferInitiatedAuditHandler } from '@application/eventHandlers/transf
 import { TransferReceivedAuditHandler } from '@application/eventHandlers/transferReceivedAuditHandler';
 import { TransferRejectedAuditHandler } from '@application/eventHandlers/transferRejectedAuditHandler';
 import { WarehouseCreatedEventHandler } from '@application/eventHandlers/warehouseCreatedEventHandler';
+import { CreateMovementUseCase } from '@application/movementUseCases/createMovementUseCase';
+import { GetMovementsUseCase } from '@application/movementUseCases/getMovementsUseCase';
+import { PostMovementUseCase } from '@application/movementUseCases/postMovementUseCase';
 import { CreateProductUseCase } from '@application/productUseCases/createProductUseCase';
+import { GetProductByIdUseCase } from '@application/productUseCases/getProductByIdUseCase';
+import { GetProductsUseCase } from '@application/productUseCases/getProductsUseCase';
+import { UpdateProductUseCase } from '@application/productUseCases/updateProductUseCase';
+import { GetTransfersUseCase } from '@application/transferUseCases/getTransfersUseCase';
 import { InitiateTransferUseCase } from '@application/transferUseCases/initiateTransferUseCase';
+import { CreateWarehouseUseCase } from '@application/warehouseUseCases/createWarehouseUseCase';
+import { GetWarehousesUseCase } from '@application/warehouseUseCases/getWarehousesUseCase';
 import { AuthenticationModule } from '@auth/authentication.module';
 import { NotificationService } from '@infrastructure/externalServices/notificationService';
 import { StockValidationJob } from '@infrastructure/jobs/stockValidationJob';
@@ -25,9 +34,21 @@ import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
     ScheduleModule.forRoot(), // Import for scheduled jobs
   ],
   providers: [
-    // Use Cases
+    // Product Use Cases
     CreateProductUseCase,
+    GetProductsUseCase,
+    GetProductByIdUseCase,
+    UpdateProductUseCase,
+    // Warehouse Use Cases
+    CreateWarehouseUseCase,
+    GetWarehousesUseCase,
+    // Movement Use Cases
+    CreateMovementUseCase,
+    GetMovementsUseCase,
+    PostMovementUseCase,
+    // Transfer Use Cases
     InitiateTransferUseCase,
+    GetTransfersUseCase,
     // Event Handlers
     ProductCreatedEventHandler,
     ProductUpdatedEventHandler,
@@ -52,7 +73,16 @@ import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
   exports: [
     // Export use cases for controllers
     CreateProductUseCase,
+    GetProductsUseCase,
+    GetProductByIdUseCase,
+    UpdateProductUseCase,
+    CreateWarehouseUseCase,
+    GetWarehousesUseCase,
+    CreateMovementUseCase,
+    GetMovementsUseCase,
+    PostMovementUseCase,
     InitiateTransferUseCase,
+    GetTransfersUseCase,
   ],
 })
 export class InventoryModule implements OnModuleInit {

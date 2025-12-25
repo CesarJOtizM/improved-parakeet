@@ -269,23 +269,23 @@
   - [x] Setup de jobs programados para validaciones
   - [x] Tests de integración para el sistema de alertas (estructura lista, tests pendientes)
 
-### **Semana 10: Adaptadores y API de Inventarios**
+### **Semana 10: Adaptadores y API de Inventarios** ⏳ **EN PROGRESO**
 
-- [ ] **Implementación de Adaptadores de Inventario**
-  - [ ] HTTP Controllers para productos, bodegas y movimientos con NestJS
-  - [ ] Middleware de validación de permisos por módulo
-  - [ ] Validación de entrada con DTOs y class-validator
+- [x] **Implementación de Adaptadores de Inventario** ✅ **COMPLETADO**
+  - [x] HTTP Controllers para productos, bodegas y movimientos con NestJS
+  - [x] Middleware de validación de permisos por módulo
+  - [x] Validación de entrada con DTOs y class-validator
   - [ ] Tests de integración de endpoints
-  - [ ] Crear interceptores para logging y auditoría
+  - [x] Crear interceptores para logging y auditoría
 
-- [ ] **API REST de Inventarios**
-  - [ ] Endpoints: GET /products, POST /products, PUT /products/:id
-  - [ ] Endpoints: GET /warehouses, POST /movements, POST /transfers
-  - [ ] OpenAPI/Swagger documentation with decorators
+- [x] **API REST de Inventarios** ✅ **COMPLETADO**
+  - [x] Endpoints: GET /products, POST /products, PUT /products/:id
+  - [x] Endpoints: GET /warehouses, POST /movements, POST /transfers
+  - [x] OpenAPI/Swagger documentation with decorators
   - [ ] Tests de aceptación funcionales
-  - [ ] Implementar paginación y filtros avanzados
+  - [x] Implementar paginación y filtros avanzados
 
-- [ ] **Colección de Postman - Inventory**
+- [ ] **Colección de Postman - Inventory** ⏳ **PENDIENTE**
   - [ ] Crear colección de Postman para inventarios
   - [ ] Configurar variables de entorno para datos de prueba
   - [ ] Implementar tests automatizados para validaciones
@@ -1457,7 +1457,35 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
   - ✅ PricingService (tests completos)
   - ✅ WarehouseAssignmentService (tests completos)
   - ✅ WarehouseBusinessRulesService (tests completos)
-- **Faltan**: Controllers, Use Cases, APIs REST, Repositorios implementados (Prisma)
+- **Casos de Uso (Application Layer)**: 
+  - ✅ Productos: CreateProductUseCase, GetProductsUseCase, GetProductByIdUseCase, UpdateProductUseCase
+  - ✅ Bodegas: CreateWarehouseUseCase, GetWarehousesUseCase
+  - ✅ Movimientos: CreateMovementUseCase, GetMovementsUseCase, PostMovementUseCase
+  - ✅ Transferencias: InitiateTransferUseCase, GetTransfersUseCase
+- **DTOs (Data Transfer Objects)**: 
+  - ✅ Productos: CreateProductDto, UpdateProductDto, GetProductsQueryDto, GetProductResponseDto
+  - ✅ Bodegas: CreateWarehouseDto, GetWarehousesQueryDto, GetWarehouseResponseDto
+  - ✅ Movimientos: CreateMovementDto, GetMovementsQueryDto, GetMovementResponseDto
+  - ✅ Transferencias: InitiateTransferDto, GetTransfersQueryDto, GetTransferResponseDto
+- **Controllers HTTP (Interfaces Layer)**: 
+  - ✅ ProductsController (GET /products, GET /products/:id, POST /products, PUT /products/:id)
+  - ✅ WarehousesController (GET /warehouses, POST /warehouses)
+  - ✅ MovementsController (GET /movements, POST /movements, POST /movements/:id/post)
+  - ✅ TransfersController (GET /transfers, POST /transfers)
+- **Módulos**: 
+  - ✅ InventoryHttpModule creado y registrado
+  - ✅ InventoryModule actualizado con todos los use cases
+- **Características Implementadas**: 
+  - ✅ Guards de autenticación y autorización (JwtAuthGuard, RoleBasedAuthGuard)
+  - ✅ Interceptor de auditoría (AuditInterceptor)
+  - ✅ Documentación Swagger completa
+  - ✅ Validación de permisos por módulo
+  - ✅ Paginación y filtros avanzados
+  - ✅ Extracción de orgId desde headers
+- **Faltan**: 
+  - ⏳ Tests E2E para controllers de inventario
+  - ⏳ Colección de Postman actualizada
+  - ⏳ Repositorios implementados (Prisma) - pendiente para siguiente fase
 
 #### **⏳ Pendiente**
 
