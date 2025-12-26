@@ -19,9 +19,11 @@
 
 ### **FASE 3: Dominio de Inventarios (Semanas 7-9)**
 
-### **FASE 4: Dominio de Reportes e Importaciones (Semanas 10-11)**
+### **FASE 4: Dominio de Ventas y Devoluciones (Semanas 10-11)**
 
-### **FASE 5: Testing, Optimización y Despliegue (Semana 12)**
+### **FASE 5: Dominio de Reportes e Importaciones (Semanas 12-13)**
+
+### **FASE 6: Testing, Optimización y Despliegue (Semana 14)**
 
 ---
 
@@ -53,7 +55,7 @@
 ### **Semana 2: Dominios y Entidades del Core** ✅ **COMPLETADA**
 
 - [x] **Definición de Dominios DDD con Screaming Architecture**
-  - [x] Identificación de Bounded Contexts (Auth, Inventory, Reports, Organization)
+  - [x] Identificación de Bounded Contexts (Auth, Inventory, Sales, Returns, Reports, Organization)
   - [x] Definición de Entidades, Value Objects y Aggregates por dominio
   - [x] Implementación de Repositories interfaces (ports)
   - [x] Setup de Domain Events y Domain Services
@@ -303,16 +305,154 @@
 
 ---
 
-## 📊 FASE 4: Dominio de Reportes e Importaciones
+## 💰 FASE 4: Dominio de Ventas y Devoluciones
 
-### **Semana 11: Dominio de Reportes e Importaciones**
+### **Semana 10: Dominio de Ventas**
+
+- [ ] **Implementación del Dominio de Ventas**
+  - [ ] Aggregates: SaleAggregate, SaleLineAggregate con reglas de consistencia
+  - [ ] Value Objects: SaleStatus, SaleNumber, SalePrice (inmutables)
+  - [ ] Domain Services: SaleValidationService, SaleCalculationService, InventoryIntegrationService
+  - [ ] Domain Events: SaleCreated, SaleConfirmed, SaleCancelled, InventoryOutGenerated
+  - [ ] Crear interfaces de Repository para ventas
+  - [ ] **Características Clave**:
+    - [ ] **Sin módulo de clientes**: No se registran clientes como entidades
+    - [ ] **Precio de venta**: Cada línea de venta incluye precio de venta para referencia histórica
+    - [ ] **Integración con movimientos**: Al confirmar venta, genera automáticamente Movement (type=OUT, reason=SALE)
+    - [ ] **Número de venta único**: Generación automática de números de venta (SALE-YYYY-NNN)
+    - [ ] **Referencia externa opcional**: Campo para referenciar facturas, órdenes, etc.
+    - [ ] **Referencia de cliente opcional**: Texto libre para identificar cliente (no es entidad)
+
+- [ ] **Casos de Uso de Ventas**
+  - [ ] CreateSaleUseCase - Crear venta en borrador
+  - [ ] GetSalesUseCase - Listar ventas con filtros
+  - [ ] GetSaleByIdUseCase - Obtener venta por ID
+  - [ ] UpdateSaleUseCase - Actualizar venta en borrador
+  - [ ] ConfirmSaleUseCase - Confirmar venta (genera salida de inventario automáticamente)
+  - [ ] CancelSaleUseCase - Cancelar venta
+  - [ ] AddSaleLineUseCase - Agregar línea a venta
+  - [ ] RemoveSaleLineUseCase - Remover línea de venta
+  - [ ] GetSaleMovementUseCase - Obtener movimiento de inventario asociado
+
+- [ ] **Reglas de Negocio de Ventas**
+  - [ ] No se puede confirmar venta sin stock disponible
+  - [ ] No se puede modificar venta confirmada
+  - [ ] Cálculo automático de totales (subtotal, total) basado en precios de venta
+  - [ ] Validación de precios de venta (deben ser positivos)
+  - [ ] Precio de venta se guarda para referencia histórica (no afecta costos)
+  - [ ] Al confirmar venta, se crea Movement con reference=saleNumber
+
+- [ ] **Estructura de Datos de Ventas**
+  - [ ] Sale: id, saleNumber, status, warehouseId, saleDate, reference, customerReference (texto libre), note, totalAmount, movementId, createdBy, orgId
+  - [ ] SaleLine: id, saleId, productId, locationId, quantity, unitPrice (precio de venta), unitCost (costo de referencia), orgId
+  - [ ] Relación: Sale.movementId → Movement.id (opcional, se crea al confirmar)
+
+### **Semana 11: Dominio de Devoluciones y Adaptadores**
+
+- [ ] **Implementación del Dominio de Devoluciones**
+  - [ ] Aggregates: ReturnAggregate, ReturnLineAggregate con reglas de consistencia
+  - [ ] Value Objects: ReturnStatus, ReturnType (CUSTOMER, SUPPLIER), ReturnReason (inmutables)
+  - [ ] Domain Services: ReturnValidationService, ReturnCalculationService, InventoryIntegrationService
+  - [ ] Domain Events: ReturnCreated, ReturnConfirmed, ReturnCancelled, InventoryInGenerated, InventoryOutGenerated
+  - [ ] Crear interfaces de Repository para devoluciones
+  - [ ] **Tipos de Devoluciones**:
+    - [ ] **Devolución de Cliente (RETURN_CUSTOMER)**: Productos vendidos que se devuelven
+      - [ ] Relacionada con una venta (saleId) o movimiento OUT con reason=SALE
+      - [ ] Genera entrada de inventario (Movement type IN con reason=RETURN_CUSTOMER)
+      - [ ] Validación: solo se puede devolver lo que se vendió
+      - [ ] Incluye precio de venta original para referencia
+    - [ ] **Devolución a Proveedor (RETURN_SUPPLIER)**: Productos comprados que se devuelven
+      - [ ] Relacionada con un movimiento IN con reason=PURCHASE
+      - [ ] Genera salida de inventario (Movement type OUT con reason=RETURN_SUPPLIER)
+      - [ ] Validación: solo se puede devolver lo que se compró
+
+- [ ] **Casos de Uso de Devoluciones**
+  - [ ] CreateReturnUseCase - Crear devolución en borrador
+  - [ ] GetReturnsUseCase - Listar devoluciones con filtros
+  - [ ] GetReturnByIdUseCase - Obtener devolución por ID
+  - [ ] UpdateReturnUseCase - Actualizar devolución en borrador
+  - [ ] ConfirmReturnUseCase - Confirmar devolución (genera movimiento de inventario)
+  - [ ] CancelReturnUseCase - Cancelar devolución
+  - [ ] AddReturnLineUseCase - Agregar línea a devolución
+  - [ ] RemoveReturnLineUseCase - Remover línea de devolución
+  - [ ] GetReturnsBySaleUseCase - Obtener devoluciones de una venta
+  - [ ] GetReturnsByMovementUseCase - Obtener devoluciones de un movimiento
+
+- [ ] **Reglas de Negocio de Devoluciones**
+  - [ ] Devolución de cliente: validar que la cantidad no exceda lo vendido
+  - [ ] Devolución a proveedor: validar que la cantidad no exceda lo comprado
+  - [ ] No se puede modificar devolución confirmada
+  - [ ] Tracking de devoluciones parciales (múltiples devoluciones de la misma venta)
+  - [ ] Precio de venta original se mantiene en devoluciones de cliente para referencia
+
+- [ ] **Implementación de Adaptadores de Ventas**
+  - [ ] HTTP Controllers para ventas con NestJS
+  - [ ] Middleware de permisos para ventas
+  - [ ] Validación de entrada con DTOs y class-validator
+  - [ ] Tests de integración de endpoints
+  - [ ] Crear interceptores para logging y auditoría
+
+- [ ] **API REST de Ventas**
+  - [ ] Endpoints: GET /sales, POST /sales, GET /sales/:id, PUT /sales/:id
+  - [ ] Endpoints: POST /sales/:id/confirm - Confirmar venta (genera salida de inventario)
+  - [ ] Endpoints: POST /sales/:id/cancel - Cancelar venta
+  - [ ] Endpoints: POST /sales/:id/lines - Agregar línea a venta
+  - [ ] Endpoints: DELETE /sales/:id/lines/:lineId - Remover línea de venta
+  - [ ] Endpoints: GET /sales/:id/movement - Obtener movimiento de inventario asociado
+  - [ ] OpenAPI/Swagger documentation with decorators
+  - [ ] Tests de aceptación funcionales (E2E tests)
+  - [ ] Implementar paginación y filtros avanzados
+
+- [ ] **API REST de Devoluciones**
+  - [ ] Endpoints: GET /returns - Listar devoluciones con filtros
+  - [ ] Endpoints: POST /returns - Crear devolución
+  - [ ] Endpoints: GET /returns/:id - Obtener devolución por ID
+  - [ ] Endpoints: PUT /returns/:id - Actualizar devolución en borrador
+  - [ ] Endpoints: POST /returns/:id/confirm - Confirmar devolución (genera movimiento de inventario)
+  - [ ] Endpoints: POST /returns/:id/cancel - Cancelar devolución
+  - [ ] Endpoints: POST /returns/:id/lines - Agregar línea a devolución
+  - [ ] Endpoints: DELETE /returns/:id/lines/:lineId - Remover línea de devolución
+  - [ ] Endpoints: GET /sales/:id/returns - Obtener devoluciones de una venta
+  - [ ] Endpoints: GET /returns?type=CUSTOMER - Filtrar devoluciones de clientes
+  - [ ] Endpoints: GET /returns?type=SUPPLIER - Filtrar devoluciones a proveedores
+  - [ ] OpenAPI/Swagger documentation with decorators
+  - [ ] Tests de aceptación funcionales (E2E tests)
+  - [ ] Implementar paginación y filtros avanzados
+
+- [ ] **Colección de Postman - Sales & Returns**
+  - [ ] Crear colección de Postman para ventas
+  - [ ] Crear colección de Postman para devoluciones
+  - [ ] Configurar variables de entorno para datos de prueba
+  - [ ] Implementar tests automatizados para validaciones
+  - [ ] Crear pre-request scripts para setup de datos
+  - [ ] Documentar todos los endpoints de ventas y devoluciones
+
+---
+
+## 📊 FASE 5: Dominio de Reportes e Importaciones
+
+### **Semana 12: Dominio de Reportes e Importaciones**
 
 - [ ] **Implementación del Dominio de Reportes**
   - [ ] Aggregates: ReportAggregate, ReportTemplateAggregate con reglas de consistencia
   - [ ] Value Objects: ReportType, ReportFormat, ReportParameters (inmutables)
-  - [ ] Domain Services: ReportGenerationService, ExportService
-  - [ ] Domain Events: ReportGenerated, ExportCompleted
+  - [ ] Domain Services: ReportGenerationService, ReportViewService, ExportService
+  - [ ] Domain Events: ReportGenerated, ReportViewed, ExportCompleted
   - [ ] Crear interfaces de Repository para reportes
+  - [ ] Flujo de reportes: Primero generar/vista, luego exportación
+  - [ ] **Tipos de Reportes de Inventario Contemplados**:
+    - [ ] **1. Reporte de Inventario Disponible**: Stock actual por producto, bodega y ubicación
+    - [ ] **2. Reporte de Histórico de Movimientos**: Registro de entradas, salidas y ajustes con filtros por fecha, producto, bodega
+    - [ ] **3. Reporte de Valorización**: Valor del inventario por producto, bodega, categoría (usando PPM)
+    - [ ] **4. Reporte de Stock Bajo**: Productos por debajo del mínimo definido con alertas
+    - [ ] **5. Reporte de Movimientos**: Resumen de movimientos por tipo, bodega, período
+    - [ ] **6. Reporte Financiero**: Valorización total, costos, márgenes por período
+    - [ ] **7. Reporte de Rotación de Inventario**: Análisis de rotación de productos (veces vendido/consumido en período)
+      - [ ] Cálculo: Rotación = Costo de productos vendidos / Inventario promedio
+      - [ ] Métricas: Rotación por producto, categoría, bodega
+      - [ ] Comparación entre períodos (mensual, trimestral, anual)
+      - [ ] Identificación de productos de lenta rotación (slow-moving)
+      - [ ] Identificación de productos de alta rotación (fast-moving)
 
 - [ ] **Implementación del Dominio de Importaciones**
   - [ ] Aggregates: ImportBatchAggregate, ImportRowAggregate con reglas de consistencia
@@ -328,19 +468,46 @@
   - [ ] Implementar sistema de reportes de errores
   - [ ] Tests de integración para importaciones y reportes
 
-### **Semana 12: Adaptadores y API de Reportes**
+### **Semana 13: Adaptadores y API de Reportes**
 
 - [ ] **Implementación de Adaptadores de Reportes**
-  - [ ] HTTP Controllers para generación y exportación con NestJS
+  - [ ] HTTP Controllers para vistas (preview) y exportación con NestJS
+  - [ ] Flujo de trabajo: 
+    - [ ] Paso 1: Generar/Vista de reporte (retorna datos JSON para preview)
+    - [ ] Paso 2: Exportación del reporte generado (PDF/Excel/CSV)
   - [ ] Middleware de permisos para reportes sensibles
   - [ ] Validación de parámetros de reporte con DTOs
+  - [ ] Cache de reportes generados para exportación posterior
   - [ ] Tests de integración
   - [ ] Crear interceptores para logging de reportes
 
 - [ ] **API REST de Reportes e Importaciones**
-  - [ ] Endpoints: GET /reports/inventory, GET /reports/movements
-  - [ ] Endpoints: POST /imports/products, GET /imports/:id/status
-  - [ ] Exportación: GET /reports/:id/export?format=pdf
+  - [ ] **Vistas de Reportes (Preview)**: 
+    - [ ] GET /reports/inventory - Vista de reporte de inventario disponible (JSON)
+      - [ ] Filtros: warehouseId, category, includeInactive, locationId
+    - [ ] GET /reports/inventory/history - Vista de histórico de movimientos (JSON)
+      - [ ] Filtros: dateRange, productId, warehouseId, movementType
+    - [ ] GET /reports/inventory/valuation - Vista de valorización del inventario (JSON)
+      - [ ] Filtros: warehouseId, category, dateRange
+    - [ ] GET /reports/inventory/low-stock - Vista de stock bajo (JSON)
+      - [ ] Filtros: warehouseId, severity (CRITICAL, WARNING)
+    - [ ] GET /reports/inventory/turnover - Vista de rotación de inventario (JSON)
+      - [ ] Filtros: dateRange, warehouseId, category, productId, period (MONTHLY, QUARTERLY, YEARLY)
+      - [ ] Métricas: rotación, días de inventario, comparación con período anterior
+      - [ ] Clasificación: slow-moving, normal, fast-moving
+    - [ ] GET /reports/movements - Vista de reporte de movimientos (JSON)
+      - [ ] Filtros: dateRange, type, warehouseId, status
+    - [ ] GET /reports/financial - Vista de reporte financiero (JSON)
+      - [ ] Filtros: dateRange, warehouseId, category
+    - [ ] GET /reports/:id - Vista de reporte generado por ID (JSON)
+  - [ ] **Exportación de Reportes**:
+    - [ ] GET /reports/:id/export?format=pdf - Exportar reporte a PDF
+    - [ ] GET /reports/:id/export?format=excel - Exportar reporte a Excel
+    - [ ] GET /reports/:id/export?format=csv - Exportar reporte a CSV
+    - [ ] POST /reports/generate - Generar reporte y retornar ID para exportación
+  - [ ] **Importaciones**:
+    - [ ] POST /imports/products - Importar productos masivamente
+    - [ ] GET /imports/:id/status - Estado de importación
   - [ ] Documentación y tests de aceptación
   - [ ] Implementar streaming para reportes grandes
 
@@ -351,7 +518,7 @@
   - [ ] Crear scripts para testing de importaciones masivas
   - [ ] Documentar todos los endpoints de reportes e importaciones
 
-### **Semana 13: Dominio de Personalización y Configuración**
+### **Semana 14: Dominio de Personalización y Configuración**
 
 - [ ] **Implementación del Dominio de Personalización**
   - [ ] Aggregates: OrganizationBrandingAggregate, UserPreferencesAggregate
@@ -376,9 +543,9 @@
 
 ---
 
-## 🎨 FASE 5: Testing, Optimización y Despliegue
+## 🎨 FASE 6: Testing, Optimización y Despliegue
 
-### **Semana 14: Testing y Optimización**
+### **Semana 15: Testing y Optimización**
 
 - [ ] **Testing Completo del Sistema**
   - [ ] Tests unitarios con Jest (mínimo 90% coverage)
@@ -401,7 +568,7 @@
   - [ ] Documentar casos de prueba exitosos
   - [ ] Setup de CI/CD para testing automático de Postman
 
-### **Semana 15: Despliegue y Documentación**
+### **Semana 16: Despliegue y Documentación**
 
 - [ ] **Despliegue del Sistema**
   - [ ] Configuración de producción con Docker y Docker Compose
@@ -424,7 +591,7 @@
   - [ ] Implementar tests de smoke para validación rápida
   - [ ] Crear guía de usuario para testing con Postman
 
-### **Semana 16: Finalización y Entrega**
+### **Semana 17: Finalización y Entrega**
 
 - [ ] **Finalización del MVP**
   - [ ] Revisión completa del sistema
@@ -587,9 +754,31 @@ inventory-system/
 │   │       ├── interceptors/            # NestJS Interceptors
 │   │       ├── decorators/              # Custom Decorators
 │   │       └── strategies/              # Passport Strategies
+│   ├── sales/                           # 💰 VENTAS
+│   │   ├── entities/                    # Entidades de ventas
+│   │   │   ├── value-objects/
+│   │   │   ├── aggregates/
+│   │   │   ├── domain-services/
+│   │   │   ├── domain-events/
+│   │   │   ├── repositories/
+│   │   │   ├── controllers/
+│   │   │   ├── services/
+│   │   │   └── dto/
+│   ├── returns/                         # 🔄 DEVOLUCIONES
+│   │   ├── entities/                    # Entidades de devoluciones
+│   │   │   ├── value-objects/
+│   │   │   ├── aggregates/
+│   │   │   ├── domain-services/
+│   │   │   ├── domain-events/
+│   │   │   ├── repositories/
+│   │   │   ├── controllers/
+│   │   │   ├── services/
+│   │   │   └── dto/
 │   ├── reporting/                       # 📊 REPORTES
 │   │   ├── inventory-reports/           # Reportes de inventario
 │   │   ├── movement-reports/            # Reportes de movimientos
+│   │   ├── sales-reports/               # Reportes de ventas
+│   │   ├── returns-reports/             # Reportes de devoluciones
 │   │   ├── financial-reports/           # Reportes financieros
 │   │   └── export/                      # Exportación de datos
 │   ├── imports/                         # 📥 IMPORTACIONES
@@ -603,6 +792,8 @@ inventory-system/
 │   ├── application/                     # 🚀 Casos de Uso
 │   │   ├── inventory-use-cases/         # Casos de uso de inventario
 │   │   ├── auth-use-cases/              # Casos de uso de autenticación
+│   │   ├── sales-use-cases/             # Casos de uso de ventas
+│   │   ├── returns-use-cases/           # Casos de uso de devoluciones
 │   │   ├── reporting-use-cases/         # Casos de uso de reportes
 │   │   └── import-use-cases/            # Casos de uso de importaciones
 │   ├── infrastructure/                  # 🔌 Adaptadores de Salida
@@ -691,6 +882,8 @@ inventory-system/
 - ✅ Autenticación JWT implementada
 - ✅ RBAC con permisos granulares
 - ✅ Gestión completa de inventarios
+- ⏳ Módulo de ventas con integración a inventario (pendiente)
+- ⏳ Módulo de devoluciones con validaciones (pendiente)
 - ✅ Importaciones masivas funcionando
 - ✅ Personalización de marca por organización
 
@@ -737,13 +930,14 @@ inventory-system/
 | 7      | Dominio de Inventarios | Dominio de productos y bodegas             | Backend          |
 | 8      | Dominio de Inventarios | Dominio de movimientos y transferencias    | Backend          |
 | 9      | Dominio de Inventarios | Reglas de negocio y casos de uso           | Backend          |
-| 10     | Dominio de Inventarios | Adaptadores y API de inventarios           | Backend          |
-| 11     | Dominio de Reportes    | Dominio de reportes e importaciones        | Backend          |
-| 12     | Dominio de Reportes    | Adaptadores y API de reportes              | Backend          |
-| 13     | Personalización        | Dominio de personalización y configuración | Backend          |
-| 14     | Testing y Optimización | Testing completo y optimización            | Backend          |
-| 15     | Despliegue             | Despliegue y documentación técnica         | DevOps + Backend |
-| 16     | Finalización           | Finalización del MVP y entrega             | Equipo completo  |
+| 10     | Dominio de Ventas      | Dominio de ventas                          | Backend          |
+| 11     | Dominio de Ventas      | Dominio de devoluciones y adaptadores       | Backend          |
+| 12     | Dominio de Reportes    | Dominio de reportes e importaciones        | Backend          |
+| 13     | Dominio de Reportes    | Adaptadores y API de reportes              | Backend          |
+| 14     | Personalización        | Dominio de personalización y configuración | Backend          |
+| 15     | Testing y Optimización | Testing completo y optimización            | Backend          |
+| 16     | Despliegue             | Despliegue y documentación técnica         | DevOps + Backend |
+| 17     | Finalización           | Finalización del MVP y entrega             | Equipo completo  |
 
 ---
 
@@ -759,7 +953,7 @@ inventory-system/
 
 ### **Domain-Driven Design (DDD)**
 
-- **Bounded Contexts**: Separación clara entre dominios (Auth, Inventory, Reports)
+- **Bounded Contexts**: Separación clara entre dominios (Auth, Inventory, Sales, Returns, Reports)
 - **Aggregates**: Agregados con raíces bien definidas y reglas de consistencia
 - **Value Objects**: Objetos inmutables que representan conceptos del dominio
 - **Domain Services**: Servicios que encapsulan lógica de negocio compleja
@@ -808,7 +1002,9 @@ inventory-system/
 
 - **Auth Collection**: Login, logout, refresh, gestión de usuarios
 - **Inventory Collection**: Productos, bodegas, movimientos, transferencias
-- **Reports Collection**: Reportes de inventario, exportaciones
+- **Sales Collection**: Ventas y gestión de ventas
+- **Returns Collection**: Devoluciones de clientes y a proveedores
+- **Reports Collection**: Reportes de inventario, ventas, devoluciones, exportaciones
 - **Imports Collection**: Importaciones masivas, validaciones
 - **Organization Collection**: Configuración, branding, multi-tenancy
 
@@ -894,7 +1090,36 @@ inventory-system/
 - **MOVEMENTS:VIEW_HISTORY** - Ver historial de movimientos
 - **MOVEMENTS:APPROVE** - Aprobar movimientos que requieren autorización
 
-#### **6. Módulo de Transferencias (TRANSFERS)**
+#### **6. Módulo de Ventas (SALES)**
+
+- **SALES:CREATE** - Crear ventas
+- **SALES:CREATE_OWN_WAREHOUSE** - Crear ventas en bodegas asignadas
+- **SALES:READ** - Ver ventas
+- **SALES:READ_OWN_WAREHOUSE** - Ver ventas de bodegas asignadas
+- **SALES:UPDATE_DRAFT** - Modificar ventas en borrador
+- **SALES:CONFIRM** - Confirmar venta (genera salida de inventario)
+- **SALES:CANCEL** - Cancelar venta
+- **SALES:VIEW_HISTORY** - Ver historial de ventas
+- **SALES:MANAGE_LINES** - Gestionar líneas de venta
+- **SALES:VIEW_MOVEMENT** - Ver movimiento de inventario asociado
+
+#### **6.1. Módulo de Devoluciones (RETURNS)**
+
+- **RETURNS:CREATE** - Crear devoluciones
+- **RETURNS:CREATE_OWN_WAREHOUSE** - Crear devoluciones en bodegas asignadas
+- **RETURNS:READ** - Ver devoluciones
+- **RETURNS:READ_OWN_WAREHOUSE** - Ver devoluciones de bodegas asignadas
+- **RETURNS:UPDATE_DRAFT** - Modificar devoluciones en borrador
+- **RETURNS:CONFIRM** - Confirmar devolución (genera movimiento de inventario)
+- **RETURNS:CANCEL** - Cancelar devolución
+- **RETURNS:VIEW_HISTORY** - Ver historial de devoluciones
+- **RETURNS:MANAGE_LINES** - Gestionar líneas de devolución
+- **RETURNS:CREATE_CUSTOMER** - Crear devoluciones de clientes
+- **RETURNS:CREATE_SUPPLIER** - Crear devoluciones a proveedores
+- **RETURNS:VIEW_BY_SALE** - Ver devoluciones de una venta
+- **RETURNS:VIEW_BY_MOVEMENT** - Ver devoluciones de un movimiento
+
+#### **7. Módulo de Transferencias (TRANSFERS)**
 
 - **TRANSFERS:CREATE** - Crear transferencias entre bodegas
 - **TRANSFERS:CREATE_FROM_OWN** - Crear transferencias desde bodegas asignadas
@@ -907,7 +1132,7 @@ inventory-system/
 - **TRANSFERS:CANCEL** - Cancelar transferencias
 - **TRANSFERS:VIEW_HISTORY** - Ver historial de transferencias
 
-#### **7. Módulo de Stock (STOCK)**
+#### **8. Módulo de Stock (STOCK)**
 
 - **STOCK:VIEW_BALANCE** - Ver saldos de inventario
 - **STOCK:VIEW_BALANCE_OWN_WAREHOUSE** - Ver saldos de bodegas asignadas
@@ -919,12 +1144,16 @@ inventory-system/
 - **STOCK:ADJUST_STOCK** - Realizar ajustes de inventario
 - **STOCK:ADJUST_STOCK_OWN_WAREHOUSE** - Ajustar stock de bodegas asignadas
 
-#### **8. Módulo de Reportes (REPORTS)**
+#### **9. Módulo de Reportes (REPORTS)**
 
 - **REPORTS:VIEW_INVENTORY** - Ver reportes de inventario
 - **REPORTS:VIEW_INVENTORY_OWN_WAREHOUSE** - Ver reportes de bodegas asignadas
 - **REPORTS:VIEW_MOVEMENTS** - Ver reportes de movimientos
 - **REPORTS:VIEW_MOVEMENTS_OWN_WAREHOUSE** - Ver reportes de bodegas asignadas
+- **REPORTS:VIEW_SALES** - Ver reportes de ventas
+- **REPORTS:VIEW_SALES_OWN_WAREHOUSE** - Ver reportes de ventas de bodegas asignadas
+- **REPORTS:VIEW_RETURNS** - Ver reportes de devoluciones
+- **REPORTS:VIEW_RETURNS_OWN_WAREHOUSE** - Ver reportes de devoluciones de bodegas asignadas
 - **REPORTS:VIEW_FINANCIAL** - Ver reportes financieros
 - **REPORTS:VIEW_FINANCIAL_OWN_WAREHOUSE** - Ver reportes financieros de bodegas asignadas
 - **REPORTS:EXPORT_PDF** - Exportar reportes a PDF
@@ -933,7 +1162,7 @@ inventory-system/
 - **REPORTS:CREATE_CUSTOM** - Crear reportes personalizados
 - **REPORTS:SHARE** - Compartir reportes con otros usuarios
 
-#### **9. Módulo de Importaciones (IMPORTS)**
+#### **10. Módulo de Importaciones (IMPORTS)**
 
 - **IMPORTS:CREATE_PRODUCTS** - Crear importaciones de productos
 - **IMPORTS:CREATE_STOCK** - Crear importaciones de stock
@@ -946,7 +1175,7 @@ inventory-system/
 - **IMPORTS:VIEW_HISTORY** - Ver historial de importaciones
 - **IMPORTS:DOWNLOAD_TEMPLATES** - Descargar plantillas de importación
 
-#### **10. Módulo de Organización (ORGANIZATION)**
+#### **11. Módulo de Organización (ORGANIZATION)**
 
 - **ORGANIZATION:VIEW_SETTINGS** - Ver configuración de la organización
 - **ORGANIZATION:UPDATE_SETTINGS** - Modificar configuración de la organización
@@ -957,7 +1186,7 @@ inventory-system/
 - **ORGANIZATION:VIEW_ANALYTICS** - Ver analytics y métricas
 - **ORGANIZATION:MANAGE_NOTIFICATIONS** - Gestionar configuraciones de notificaciones
 
-#### **11. Módulo de Auditoría (AUDIT)**
+#### **12. Módulo de Auditoría (AUDIT)**
 
 - **AUDIT:VIEW_LOGS** - Ver logs de auditoría
 - **AUDIT:VIEW_LOGS_OWN_WAREHOUSE** - Ver logs de bodegas asignadas
@@ -966,7 +1195,7 @@ inventory-system/
 - **AUDIT:VIEW_SYSTEM_EVENTS** - Ver eventos del sistema
 - **AUDIT:VIEW_SECURITY_EVENTS** - Ver eventos de seguridad
 
-#### **12. Módulo de Configuración (SETTINGS)**
+#### **13. Módulo de Configuración (SETTINGS)**
 
 - **SETTINGS:VIEW_GLOBAL** - Ver configuración global del sistema
 - **SETTINGS:UPDATE_GLOBAL** - Modificar configuración global
@@ -1012,6 +1241,8 @@ El sistema implementa una arquitectura de roles en dos niveles:
 - **PRODUCTS**: CREATE, READ, UPDATE, DELETE, IMPORT_MASSIVE
 - **WAREHOUSES**: READ, UPDATE_OWN, MANAGE_LOCATIONS
 - **MOVEMENTS**: CREATE, READ, POST, VOID, APPROVE
+- **SALES**: CREATE, READ, CONFIRM, CANCEL, MANAGE_LINES
+- **RETURNS**: CREATE, READ, CONFIRM, CANCEL, MANAGE_LINES, CREATE_CUSTOMER, CREATE_SUPPLIER
 - **TRANSFERS**: CREATE, READ, CONFIRM_DISPATCH, CONFIRM_RECEIPT, REJECT
 - **STOCK**: Todos los permisos
 - **REPORTS**: Todos los permisos
@@ -1026,9 +1257,11 @@ El sistema implementa una arquitectura de roles en dos niveles:
 - **PRODUCTS**: READ_OWN_WAREHOUSE, UPDATE_OWN_WAREHOUSE
 - **WAREHOUSES**: READ_OWN, UPDATE_OWN, MANAGE_LOCATIONS
 - **MOVEMENTS**: CREATE_OWN_WAREHOUSE, READ_OWN_WAREHOUSE, UPDATE_DRAFT, POST
+- **SALES**: CREATE_OWN_WAREHOUSE, READ_OWN_WAREHOUSE, CONFIRM, MANAGE_LINES
+- **RETURNS**: CREATE_OWN_WAREHOUSE, READ_OWN_WAREHOUSE, CONFIRM, MANAGE_LINES, CREATE_CUSTOMER
 - **TRANSFERS**: CREATE_FROM_OWN, READ_OWN_WAREHOUSE, CONFIRM_RECEIPT
 - **STOCK**: VIEW_BALANCE_OWN_WAREHOUSE, VIEW_LOW_STOCK_OWN_WAREHOUSE, ADJUST_STOCK_OWN_WAREHOUSE
-- **REPORTS**: VIEW_INVENTORY_OWN_WAREHOUSE, VIEW_MOVEMENTS_OWN_WAREHOUSE, EXPORT_PDF, EXPORT_EXCEL
+- **REPORTS**: VIEW_INVENTORY_OWN_WAREHOUSE, VIEW_MOVEMENTS_OWN_WAREHOUSE, VIEW_SALES_OWN_WAREHOUSE, EXPORT_PDF, EXPORT_EXCEL
 - **IMPORTS**: CREATE_PRODUCTS, CREATE_STOCK, READ_OWN_WAREHOUSE, VALIDATE, APPLY
 - **ORGANIZATION**: VIEW_SETTINGS
 - **AUDIT**: VIEW_LOGS_OWN_WAREHOUSE
@@ -1039,6 +1272,8 @@ El sistema implementa una arquitectura de roles en dos niveles:
 - **PRODUCTS**: READ
 - **WAREHOUSES**: READ
 - **MOVEMENTS**: READ
+- **SALES**: READ, VIEW_HISTORY
+- **RETURNS**: READ, VIEW_BY_SALE, VIEW_BY_MOVEMENT
 - **TRANSFERS**: READ
 - **STOCK**: VIEW_BALANCE, VIEW_LOW_STOCK, VIEW_VALUATION
 - **REPORTS**: Todos los permisos de lectura y exportación
@@ -1353,26 +1588,31 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Semana 8**: Dominio de movimientos y transferencias ✅ **COMPLETADA** (~80%)
 - [x] **Semana 9**: Reglas de negocio y casos de uso ✅ **COMPLETADA** (~90%)
 - [x] **Semana 10**: Adaptadores y API de inventarios ✅ **COMPLETADA**
-- [ ] **Semana 11**: Dominio de reportes e importaciones
-- [ ] **Semana 12**: Adaptadores y API de reportes
-- [ ] **Semana 13**: Dominio de personalización y configuración
-- [ ] **Semana 14**: Testing y optimización
-- [ ] **Semana 15**: Despliegue y documentación
-- [ ] **Semana 16**: Finalización y entrega
+- [ ] **Semana 10**: Dominio de ventas
+- [ ] **Semana 11**: Dominio de devoluciones y adaptadores
+- [ ] **Semana 12**: Dominio de reportes e importaciones
+- [ ] **Semana 13**: Adaptadores y API de reportes
+- [ ] **Semana 14**: Dominio de personalización y configuración
+- [ ] **Semana 15**: Testing y optimización
+- [ ] **Semana 16**: Despliegue y documentación
+- [ ] **Semana 17**: Finalización y entrega
 
 ### **Entregables por Fase**
 
 - [x] **Fase 1**: Arquitectura base, dominios core, infraestructura ✅ **COMPLETADA (100%)**
 - [x] **Fase 2**: Sistema de autenticación completo con RBAC ✅ **COMPLETADA (~95%)** (falta solo setup automático de auditoría)
 - [x] **Fase 3**: Sistema de inventarios completo ✅ **COMPLETADA (100%)**
-- [ ] **Fase 4**: Sistema de reportes e importaciones
-- [ ] **Fase 5**: Testing, optimización y despliegue
+- [ ] **Fase 4**: Sistema de ventas y devoluciones
+- [ ] **Fase 5**: Sistema de reportes e importaciones
+- [ ] **Fase 6**: Testing, optimización y despliegue
 
 ### **Colecciones de Postman Completadas**
 
 - [x] **Auth Collection**: Autenticación y gestión de usuarios ✅ **COMPLETADA** (documentación y colección implementadas)
 - [x] **Roles Collection**: Gestión de roles predefinidos y personalizados ✅ **COMPLETADA** (endpoints CRUD y asignación de permisos)
 - [x] **Inventory Collection**: Productos, bodegas, movimientos ✅ **COMPLETADA**
+- [ ] **Sales Collection**: Ventas y gestión de ventas
+- [ ] **Returns Collection**: Devoluciones de clientes y a proveedores
 - [ ] **Reports Collection**: Reportes y exportaciones
 - [ ] **Imports Collection**: Importaciones masivas
 - [ ] **Organization Collection**: Configuración y personalización
