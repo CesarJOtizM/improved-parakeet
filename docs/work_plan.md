@@ -349,22 +349,22 @@
 
 ### **Semana 11: Dominio de Devoluciones y Adaptadores**
 
-- [ ] **Implementación del Dominio de Devoluciones**
-  - [ ] Aggregates: ReturnAggregate, ReturnLineAggregate con reglas de consistencia
-  - [ ] Value Objects: ReturnStatus, ReturnType (CUSTOMER, SUPPLIER), ReturnReason (inmutables)
-  - [ ] Domain Services: ReturnValidationService, ReturnCalculationService, InventoryIntegrationService
-  - [ ] Domain Events: ReturnCreated, ReturnConfirmed, ReturnCancelled, InventoryInGenerated, InventoryOutGenerated
-  - [ ] Crear interfaces de Repository para devoluciones
-  - [ ] **Tipos de Devoluciones**:
-    - [ ] **Devolución de Cliente (RETURN_CUSTOMER)**: Productos vendidos que se devuelven
-      - [ ] Relacionada con una venta (saleId) o movimiento OUT con reason=SALE
-      - [ ] Genera entrada de inventario (Movement type IN con reason=RETURN_CUSTOMER)
-      - [ ] Validación: solo se puede devolver lo que se vendió
-      - [ ] Incluye precio de venta original para referencia
-    - [ ] **Devolución a Proveedor (RETURN_SUPPLIER)**: Productos comprados que se devuelven
-      - [ ] Relacionada con un movimiento IN con reason=PURCHASE
-      - [ ] Genera salida de inventario (Movement type OUT con reason=RETURN_SUPPLIER)
-      - [ ] Validación: solo se puede devolver lo que se compró
+- [x] **Implementación del Dominio de Devoluciones** ✅ **COMPLETADO**
+  - [x] Aggregates: ReturnAggregate, ReturnLineAggregate con reglas de consistencia
+  - [x] Value Objects: ReturnStatus, ReturnType (CUSTOMER, SUPPLIER), ReturnReason (inmutables)
+  - [x] Domain Services: ReturnValidationService, ReturnCalculationService, InventoryIntegrationService, ReturnNumberGenerationService
+  - [x] Domain Events: ReturnCreated, ReturnConfirmed, ReturnCancelled, InventoryInGenerated, InventoryOutGenerated
+  - [x] Crear interfaces de Repository para devoluciones
+  - [x] **Tipos de Devoluciones**:
+    - [x] **Devolución de Cliente (RETURN_CUSTOMER)**: Productos vendidos que se devuelven
+      - [x] Relacionada con una venta (saleId) o movimiento OUT con reason=SALE
+      - [x] Genera entrada de inventario (Movement type IN con reason=RETURN_CUSTOMER)
+      - [x] Validación: solo se puede devolver lo que se vendió
+      - [x] Incluye precio de venta original para referencia
+    - [x] **Devolución a Proveedor (RETURN_SUPPLIER)**: Productos comprados que se devuelven
+      - [x] Relacionada con un movimiento IN con reason=PURCHASE
+      - [x] Genera salida de inventario (Movement type OUT con reason=RETURN_SUPPLIER)
+      - [x] Validación: solo se puede devolver lo que se compró
 
 - [ ] **Casos de Uso de Devoluciones**
   - [ ] CreateReturnUseCase - Crear devolución en borrador
@@ -378,12 +378,12 @@
   - [ ] GetReturnsBySaleUseCase - Obtener devoluciones de una venta
   - [ ] GetReturnsByMovementUseCase - Obtener devoluciones de un movimiento
 
-- [ ] **Reglas de Negocio de Devoluciones**
-  - [ ] Devolución de cliente: validar que la cantidad no exceda lo vendido
-  - [ ] Devolución a proveedor: validar que la cantidad no exceda lo comprado
-  - [ ] No se puede modificar devolución confirmada
-  - [ ] Tracking de devoluciones parciales (múltiples devoluciones de la misma venta)
-  - [ ] Precio de venta original se mantiene en devoluciones de cliente para referencia
+- [x] **Reglas de Negocio de Devoluciones** ✅ **COMPLETADO**
+  - [x] Devolución de cliente: validar que la cantidad no exceda lo vendido
+  - [x] Devolución a proveedor: validar que la cantidad no exceda lo comprado
+  - [x] No se puede modificar devolución confirmada
+  - [x] Tracking de devoluciones parciales (múltiples devoluciones de la misma venta) - Implementado en repository interface (findBySaleId)
+  - [x] Precio de venta original se mantiene en devoluciones de cliente para referencia
 
 - [x] **Implementación de Adaptadores de Ventas** ✅ **COMPLETADO**
   - [x] HTTP Controllers para ventas con NestJS

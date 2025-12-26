@@ -201,6 +201,7 @@ model Product {
   stock        Stock[]
   reorderRules ReorderRule[]
   saleLines    SaleLine[]
+  returnLines  ReturnLine[]
   
   @@unique([sku, orgId])
   @@map("products")
@@ -226,6 +227,7 @@ model Warehouse {
   fromTransfers Transfer[] @relation("FromTransfers")
   toTransfers   Transfer[] @relation("ToTransfers")
   sales        Sale[]
+  returns      Return[]
   
   @@unique([code, orgId])
   @@map("warehouses")
@@ -289,6 +291,8 @@ model Movement {
   warehouse Warehouse @relation(fields: [warehouseId], references: [id])
   lines     MovementLine[]
   sale      Sale?
+  sourceReturns Return[] @relation("SourceReturns")
+  returnMovements Return[] @relation("ReturnMovements")
   
   @@map("movements")
 }
@@ -371,6 +375,7 @@ model Sale {
   warehouse Warehouse @relation(fields: [warehouseId], references: [id])
   movement Movement? @relation(fields: [movementId], references: [id])
   lines    SaleLine[]
+  returns  Return[]
   
   @@unique([saleNumber, orgId])
   @@index([status, orgId])
@@ -400,6 +405,66 @@ model SaleLine {
   @@index([saleId])
   @@index([productId, orgId])
   @@map("sale_lines")
+}
+
+// Returns
+model Return {
+  id              String   @id @default(cuid())
+  returnNumber    String
+  status          String   @default("DRAFT") // DRAFT, CONFIRMED, CANCELLED
+  type            String   // RETURN_CUSTOMER, RETURN_SUPPLIER
+  reason          String?
+  warehouseId     String
+  saleId          String?  // For customer returns
+  sourceMovementId String? // For supplier returns (purchase movement)
+  returnMovementId String? @unique // Generated movement (IN for customer, OUT for supplier)
+  note            String?
+  confirmedAt     DateTime?
+  cancelledAt     DateTime?
+  createdBy       String
+  orgId           String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  warehouse       Warehouse @relation(fields: [warehouseId], references: [id])
+  sale           Sale? @relation(fields: [saleId], references: [id])
+  sourceMovement Movement? @relation("SourceReturns", fields: [sourceMovementId], references: [id])
+  returnMovement Movement? @relation("ReturnMovements", fields: [returnMovementId], references: [id])
+  lines          ReturnLine[]
+  
+  @@unique([returnNumber, orgId])
+  @@index([status, orgId])
+  @@index([type, orgId])
+  @@index([saleId, orgId])
+  @@index([sourceMovementId, orgId])
+  @@index([warehouseId, orgId])
+  @@index([orgId, createdAt])
+  @@map("returns")
+}
+
+// Return Lines
+model ReturnLine {
+  id               String  @id @default(cuid())
+  returnId         String
+  productId        String
+  locationId       String
+  quantity         Decimal @db.Decimal(10, 6)
+  originalSalePrice Decimal? @db.Decimal(10, 2) // For customer returns
+  originalUnitCost  Decimal? @db.Decimal(10, 2) // For supplier returns
+  currency         String
+  extra            Json?
+  orgId            String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  // Relations
+  return Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+  
+  @@index([returnId])
+  @@index([productId, orgId])
+  @@map("return_lines")
 }
 
 // Audit Logs
