@@ -5,6 +5,7 @@ export * from './otp.repository';
 export * from './product.repository';
 export * from './reorderRule.repository';
 export * from './role.repository';
+export * from './sale.repository';
 export * from './session.repository';
 export * from './transfer.repository';
 export * from './user.repository';

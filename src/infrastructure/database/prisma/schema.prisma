@@ -200,6 +200,7 @@ model Product {
   transfers    TransferLine[]
   stock        Stock[]
   reorderRules ReorderRule[]
+  saleLines    SaleLine[]
   
   @@unique([sku, orgId])
   @@map("products")
@@ -224,6 +225,7 @@ model Warehouse {
   movements    Movement[]
   fromTransfers Transfer[] @relation("FromTransfers")
   toTransfers   Transfer[] @relation("ToTransfers")
+  sales        Sale[]
   
   @@unique([code, orgId])
   @@map("warehouses")
@@ -286,6 +288,7 @@ model Movement {
   // Relations
   warehouse Warehouse @relation(fields: [warehouseId], references: [id])
   lines     MovementLine[]
+  sale      Sale?
   
   @@map("movements")
 }
@@ -345,6 +348,58 @@ model TransferLine {
   product  Product  @relation(fields: [productId], references: [id])
   
   @@map("transfer_lines")
+}
+
+// Sales
+model Sale {
+  id              String   @id @default(cuid())
+  saleNumber      String
+  status          String   @default("DRAFT") // DRAFT, CONFIRMED, CANCELLED
+  warehouseId     String
+  customerReference String?
+  externalReference String?
+  note            String?
+  confirmedAt     DateTime?
+  cancelledAt     DateTime?
+  movementId      String? @unique
+  createdBy       String
+  orgId           String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  movement Movement? @relation(fields: [movementId], references: [id])
+  lines    SaleLine[]
+  
+  @@unique([saleNumber, orgId])
+  @@index([status, orgId])
+  @@index([warehouseId, orgId])
+  @@index([orgId, createdAt])
+  @@map("sales")
+}
+
+// Sale Lines
+model SaleLine {
+  id         String  @id @default(cuid())
+  saleId     String
+  productId  String
+  locationId String
+  quantity   Decimal @db.Decimal(10, 6)
+  salePrice  Decimal @db.Decimal(10, 2)
+  currency   String
+  extra      Json?
+  orgId      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Relations
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+  
+  @@index([saleId])
+  @@index([productId, orgId])
+  @@map("sale_lines")
 }
 
 // Audit Logs

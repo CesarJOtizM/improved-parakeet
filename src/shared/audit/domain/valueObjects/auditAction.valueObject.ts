@@ -17,7 +17,9 @@ export type AuditActionValue =
   | 'VOID'
   | 'INITIATE'
   | 'RECEIVE'
-  | 'REJECT';
+  | 'REJECT'
+  | 'CONFIRM'
+  | 'CANCEL';
 
 export interface IAuditActionProps {
   value: AuditActionValue;
@@ -52,6 +54,8 @@ export class AuditAction extends ValueObject<IAuditActionProps> {
       'INITIATE',
       'RECEIVE',
       'REJECT',
+      'CONFIRM',
+      'CANCEL',
     ];
 
     if (!validActions.includes(props.value)) {

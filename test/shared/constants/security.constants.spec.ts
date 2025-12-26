@@ -279,12 +279,7 @@ describe('Security Constants', () => {
 
       // Assert
       permissions.forEach(permission => {
-        // INVENTORY_EXIT is an exception that uses underscore instead of colon
-        if (permission === 'INVENTORY_EXIT') {
-          expect(permission).toMatch(/^[A-Z_]+$/);
-        } else {
-          expect(permission).toMatch(/^[A-Z]+:[A-Z_]+$/);
-        }
+        expect(permission).toMatch(/^[A-Z]+:[A-Z_]+$/);
       });
     });
 
@@ -294,14 +289,8 @@ describe('Security Constants', () => {
 
       // Assert
       permissions.forEach(permission => {
-        // INVENTORY_EXIT is an exception that uses underscore instead of colon
-        if (permission === 'INVENTORY_EXIT') {
-          const colonCount = (permission.match(/:/g) || []).length;
-          expect(colonCount).toBe(0);
-        } else {
-          const colonCount = (permission.match(/:/g) || []).length;
-          expect(colonCount).toBe(1);
-        }
+        const colonCount = (permission.match(/:/g) || []).length;
+        expect(colonCount).toBe(1);
       });
     });
   });

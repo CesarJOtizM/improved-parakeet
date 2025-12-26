@@ -111,6 +111,10 @@ import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
     PostMovementUseCase,
     InitiateTransferUseCase,
     GetTransfersUseCase,
+    // Export repositories for cross-module access (e.g., SalesModule)
+    'ProductRepository',
+    'WarehouseRepository',
+    'MovementRepository',
   ],
 })
 export class InventoryModule implements OnModuleInit {

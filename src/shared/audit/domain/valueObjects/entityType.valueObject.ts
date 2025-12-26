@@ -11,6 +11,7 @@ export type EntityTypeValue =
   | 'Movement'
   | 'Transfer'
   | 'Stock'
+  | 'Sale'
   | 'Session'
   | 'Otp'
   | 'System';
@@ -41,6 +42,7 @@ export class EntityType extends ValueObject<IEntityTypeProps> {
       'Movement',
       'Transfer',
       'Stock',
+      'Sale',
       'Session',
       'Otp',
       'System',
