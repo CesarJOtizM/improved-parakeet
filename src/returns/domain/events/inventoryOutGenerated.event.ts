@@ -1,14 +1,16 @@
 import { DomainEvent } from '@shared/domain/events/domainEvent.base';
 
 export class InventoryOutGeneratedEvent extends DomainEvent {
+  private readonly _returnId: string;
+  private readonly _movementId: string;
+  private readonly _orgId: string;
   private readonly _occurredOn: Date;
 
-  constructor(
-    private readonly returnId: string,
-    private readonly movementId: string,
-    private readonly orgId: string
-  ) {
+  constructor(returnId: string, movementId: string, orgId: string) {
     super();
+    this._returnId = returnId;
+    this._movementId = movementId;
+    this._orgId = orgId;
     this._occurredOn = new Date();
   }
 
@@ -21,14 +23,14 @@ export class InventoryOutGeneratedEvent extends DomainEvent {
   }
 
   get returnId(): string {
-    return this.returnId;
+    return this._returnId;
   }
 
   get movementId(): string {
-    return this.movementId;
+    return this._movementId;
   }
 
   get orgId(): string {
-    return this.orgId;
+    return this._orgId;
   }
 }
