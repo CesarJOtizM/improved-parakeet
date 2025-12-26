@@ -196,7 +196,8 @@ model Product {
   organization Organization @relation(fields: [orgId], references: [id])
   movements    MovementLine[]
   transfers    TransferLine[]
-  stock       Stock[]
+  stock        Stock[]
+  reorderRules ReorderRule[]
   
   @@unique([sku, orgId])
   @@map("products")
@@ -217,6 +218,7 @@ model Warehouse {
   // Relations
   organization Organization @relation(fields: [orgId], references: [id])
   stock        Stock[]
+  reorderRules ReorderRule[]
   movements    Movement[]
   fromTransfers Transfer[] @relation("FromTransfers")
   toTransfers   Transfer[] @relation("ToTransfers")
@@ -240,6 +242,28 @@ model Stock {
   
   @@unique([productId, warehouseId, orgId])
   @@map("stock")
+}
+
+// Reorder Rules
+model ReorderRule {
+  id         String   @id @default(cuid())
+  productId  String
+  warehouseId String
+  minQty     Decimal  @db.Decimal(10, 6)
+  maxQty     Decimal  @db.Decimal(10, 6)
+  safetyQty  Decimal  @db.Decimal(10, 6)
+  orgId      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Relations
+  product   Product   @relation(fields: [productId], references: [id])
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  
+  @@unique([productId, warehouseId, orgId])
+  @@index([productId, orgId])
+  @@index([warehouseId, orgId])
+  @@map("reorder_rules")
 }
 
 // Movements

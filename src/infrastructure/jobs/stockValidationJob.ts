@@ -9,7 +9,9 @@ import { MaxQuantity } from '@stock/domain/valueObjects/maxQuantity.valueObject'
 import { MinQuantity } from '@stock/domain/valueObjects/minQuantity.valueObject';
 import { SafetyStock } from '@stock/domain/valueObjects/safetyStock.valueObject';
 
+import type { IOrganizationRepository } from '@organization/domain/repositories/organizationRepository.interface';
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
+import type { IReorderRuleRepository } from '@stock/domain/repositories/reorderRuleRepository.interface';
 import type { IStockRepository } from '@stock/domain/repositories/stockRepository.interface';
 import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
 
@@ -34,6 +36,10 @@ export class StockValidationJob {
     private readonly stockRepository: IStockRepository,
     @Inject('WarehouseRepository')
     private readonly warehouseRepository: IWarehouseRepository,
+    @Inject('ReorderRuleRepository')
+    private readonly reorderRuleRepository: IReorderRuleRepository,
+    @Inject('OrganizationRepository')
+    private readonly organizationRepository: IOrganizationRepository,
     private readonly eventBus: DomainEventBus
   ) {}
 
@@ -174,7 +180,6 @@ export class StockValidationJob {
 
   /**
    * Gets product stock information including thresholds
-   * TODO: This should be enhanced to get min/max/safety stock from a reorder rules table
    */
   private async getProductStockInfo(
     productId: string,
@@ -189,21 +194,24 @@ export class StockValidationJob {
         orgId
       );
 
-      // TODO: Get min/max/safety stock from reorder_rules table
-      // For now, we'll return null for thresholds (no alerts will be generated)
-      // In a real implementation, you would query:
-      // const reorderRule = await reorderRuleRepository.findByProductAndWarehouse(productId, warehouseId, orgId);
-      // const minQuantity = reorderRule ? MinQuantity.create(reorderRule.minQty) : undefined;
-      // const maxQuantity = reorderRule ? MaxQuantity.create(reorderRule.maxQty) : undefined;
-      // const safetyStock = reorderRule ? SafetyStock.create(reorderRule.safetyQty) : undefined;
+      // Get min/max/safety stock from reorder_rules table
+      const reorderRule = await this.reorderRuleRepository.findByProductAndWarehouse(
+        productId,
+        warehouseId,
+        orgId
+      );
+
+      const minQuantity = reorderRule ? reorderRule.minQty : undefined;
+      const maxQuantity = reorderRule ? reorderRule.maxQty : undefined;
+      const safetyStock = reorderRule ? reorderRule.safetyQty : undefined;
 
       return {
         productId,
         warehouseId,
         currentStock,
-        minQuantity: undefined, // TODO: Get from reorder rules
-        maxQuantity: undefined, // TODO: Get from reorder rules
-        safetyStock: undefined, // TODO: Get from reorder rules
+        minQuantity,
+        maxQuantity,
+        safetyStock,
         orgId,
       };
     } catch (error) {
@@ -222,11 +230,17 @@ export class StockValidationJob {
 
   /**
    * Gets all organization IDs
-   * TODO: This should come from an organization service
    */
   private async getAllOrganizationIds(): Promise<string[]> {
-    // For now, return a default organization ID
-    // In a real implementation, this would query the organization repository
-    return ['default'];
+    try {
+      const organizations = await this.organizationRepository.findActiveOrganizations();
+      return organizations.map(org => org.id);
+    } catch (error) {
+      this.logger.error('Error getting organization IDs', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      // Fallback to empty array if there's an error
+      return [];
+    }
   }
 }

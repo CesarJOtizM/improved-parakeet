@@ -16,5 +16,9 @@ export * from './services/alertService';
 export * from './events/lowStockAlert.event';
 export * from './events/stockThresholdExceeded.event';
 
+// Entities
+export * from './entities/reorderRule.entity';
+
 // Repositories
 export * from './repositories/stockRepository.interface';
+export * from './repositories/reorderRuleRepository.interface';

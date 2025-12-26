@@ -25,6 +25,7 @@ import { AuthenticationModule } from '@auth/authentication.module';
 import {
   PrismaMovementRepository,
   PrismaProductRepository,
+  PrismaReorderRuleRepository,
   PrismaTransferRepository,
   PrismaWarehouseRepository,
 } from '@infrastructure/database/repositories';
@@ -56,6 +57,10 @@ import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
     {
       provide: 'TransferRepository',
       useClass: PrismaTransferRepository,
+    },
+    {
+      provide: 'ReorderRuleRepository',
+      useClass: PrismaReorderRuleRepository,
     },
     // Product Use Cases
     CreateProductUseCase,

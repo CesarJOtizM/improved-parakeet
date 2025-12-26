@@ -3,6 +3,7 @@ export * from './movement.repository';
 export * from './organization.repository';
 export * from './otp.repository';
 export * from './product.repository';
+export * from './reorderRule.repository';
 export * from './role.repository';
 export * from './session.repository';
 export * from './transfer.repository';
