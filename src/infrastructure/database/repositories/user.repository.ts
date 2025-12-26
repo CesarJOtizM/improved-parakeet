@@ -45,8 +45,8 @@ export class UserRepository implements UserRepositoryInterface {
           lastName: userData.lastName,
           status: UserStatus.create(userData.isActive ? 'ACTIVE' : 'INACTIVE'),
           lastLoginAt: userData.lastLoginAt || undefined,
-          failedLoginAttempts: 0, // TODO: Agregar campo a la base de datos
-          lockedUntil: undefined, // TODO: Agregar campo a la base de datos
+          failedLoginAttempts: userData.failedLoginAttempts ?? 0,
+          lockedUntil: userData.lockedUntil || undefined,
           roles: userData.userRoles.map(ur => ur.role.name),
           permissions: userData.userRoles.flatMap(ur =>
             ur.role.permissions.map(rp => rp.permission.name)
@@ -97,8 +97,8 @@ export class UserRepository implements UserRepositoryInterface {
           lastName: userData.lastName,
           status: UserStatus.create(userData.isActive ? 'ACTIVE' : 'INACTIVE'),
           lastLoginAt: userData.lastLoginAt || undefined,
-          failedLoginAttempts: 0, // TODO: Agregar campo a la base de datos
-          lockedUntil: undefined, // TODO: Agregar campo a la base de datos
+          failedLoginAttempts: userData.failedLoginAttempts ?? 0,
+          lockedUntil: userData.lockedUntil || undefined,
           roles: userData.userRoles.map(ur => ur.role.name),
           permissions: userData.userRoles.flatMap(ur =>
             ur.role.permissions.map(rp => rp.permission.name)
@@ -149,8 +149,8 @@ export class UserRepository implements UserRepositoryInterface {
           lastName: userData.lastName,
           status: UserStatus.create(userData.isActive ? 'ACTIVE' : 'INACTIVE'),
           lastLoginAt: userData.lastLoginAt || undefined,
-          failedLoginAttempts: 0, // TODO: Agregar campo a la base de datos
-          lockedUntil: undefined, // TODO: Agregar campo a la base de datos
+          failedLoginAttempts: userData.failedLoginAttempts ?? 0,
+          lockedUntil: userData.lockedUntil || undefined,
           roles: userData.userRoles.map(ur => ur.role.name),
           permissions: userData.userRoles.flatMap(ur =>
             ur.role.permissions.map(rp => rp.permission.name)
@@ -201,8 +201,8 @@ export class UserRepository implements UserRepositoryInterface {
             lastName: userData.lastName,
             status: UserStatus.create(userData.isActive ? 'ACTIVE' : 'INACTIVE'),
             lastLoginAt: userData.lastLoginAt || undefined,
-            failedLoginAttempts: 0, // TODO: Agregar campo a la base de datos
-            lockedUntil: undefined, // TODO: Agregar campo a la base de datos
+            failedLoginAttempts: userData.failedLoginAttempts ?? 0,
+            lockedUntil: userData.lockedUntil || undefined,
             roles: userData.userRoles.map(ur => ur.role.name),
             permissions: userData.userRoles.flatMap(ur =>
               ur.role.permissions.map(rp => rp.permission.name)
@@ -261,8 +261,8 @@ export class UserRepository implements UserRepositoryInterface {
             lastName: userData.lastName,
             status: UserStatus.create(userData.isActive ? 'ACTIVE' : 'INACTIVE'),
             lastLoginAt: userData.lastLoginAt || undefined,
-            failedLoginAttempts: 0, // TODO: Agregar campo a la base de datos
-            lockedUntil: undefined, // TODO: Agregar campo a la base de datos
+            failedLoginAttempts: userData.failedLoginAttempts ?? 0,
+            lockedUntil: userData.lockedUntil || undefined,
             roles: userData.userRoles.map(ur => ur.role.name),
             permissions: userData.userRoles.flatMap(ur =>
               ur.role.permissions.map(rp => rp.permission.name)
@@ -375,8 +375,8 @@ export class UserRepository implements UserRepositoryInterface {
             lastName: userData.lastName,
             status: UserStatus.create(userData.isActive ? 'ACTIVE' : 'INACTIVE'),
             lastLoginAt: userData.lastLoginAt || undefined,
-            failedLoginAttempts: 0, // TODO: Agregar campo a la base de datos
-            lockedUntil: undefined, // TODO: Agregar campo a la base de datos
+            failedLoginAttempts: userData.failedLoginAttempts ?? 0,
+            lockedUntil: userData.lockedUntil || undefined,
             roles: userData.userRoles.map(ur => ur.role.name),
             permissions: userData.userRoles.flatMap(ur =>
               ur.role.permissions.map(rp => rp.permission.name)
@@ -416,6 +416,8 @@ export class UserRepository implements UserRepositoryInterface {
         passwordHash: user.passwordHash,
         isActive: user.status.getValue() === 'ACTIVE',
         lastLoginAt: user.lastLoginAt,
+        failedLoginAttempts: user.failedLoginAttempts,
+        lockedUntil: user.lockedUntil,
         orgId: user.orgId,
       };
 
@@ -446,8 +448,8 @@ export class UserRepository implements UserRepositoryInterface {
               lastName: updatedUser.lastName,
               status: UserStatus.create(updatedUser.isActive ? 'ACTIVE' : 'INACTIVE'),
               lastLoginAt: updatedUser.lastLoginAt || undefined,
-              failedLoginAttempts: user.failedLoginAttempts,
-              lockedUntil: user.lockedUntil,
+              failedLoginAttempts: updatedUser.failedLoginAttempts ?? 0,
+              lockedUntil: updatedUser.lockedUntil || undefined,
               roles: user.roles,
               permissions: user.permissions,
             },
@@ -479,8 +481,8 @@ export class UserRepository implements UserRepositoryInterface {
           lastName: newUser.lastName,
           status: UserStatus.create(newUser.isActive ? 'ACTIVE' : 'INACTIVE'),
           lastLoginAt: newUser.lastLoginAt || undefined,
-          failedLoginAttempts: user.failedLoginAttempts,
-          lockedUntil: user.lockedUntil,
+          failedLoginAttempts: newUser.failedLoginAttempts ?? 0,
+          lockedUntil: newUser.lockedUntil || undefined,
           roles: user.roles,
           permissions: user.permissions,
         },

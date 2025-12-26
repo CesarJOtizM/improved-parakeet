@@ -202,7 +202,7 @@ export class SessionRepository implements SessionRepositoryInterface {
             isActive: sessionData.isActive,
           },
           sessionData.id,
-          'unknown' // TODO: Obtener orgId real
+          sessionData.user.orgId
         )
       );
     } catch (error) {
