@@ -70,6 +70,26 @@
       "key": "roleId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "saleId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "returnId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "returnLineId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sourceMovementId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -3439,6 +3459,523 @@
               "body": "Binary file content (Excel file with import results)"
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "Sales",
+      "description": "Endpoints for sales management",
+      "item": [
+        {
+          "name": "Create Sale",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"warehouseId\": \"warehouse-123\",\n  \"customerReference\": \"John Doe\",\n  \"externalReference\": \"INV-2024-001\",\n  \"note\": \"Sale note\",\n  \"lines\": [\n    {\n      \"productId\": \"product-123\",\n      \"locationId\": \"location-123\",\n      \"quantity\": 10,\n      \"salePrice\": 150.5,\n      \"currency\": \"COP\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/sales",
+              "host": ["{{baseUrl}}"],
+              "path": ["sales"]
+            },
+            "description": "Create a new sale in DRAFT status"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.data && responseJson.data.id) {",
+                  "        pm.collectionVariables.set('saleId', responseJson.data.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Sales",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sales?page=1&limit=10&status=DRAFT",
+              "host": ["{{baseUrl}}"],
+              "path": ["sales"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "DRAFT"
+                }
+              ]
+            },
+            "description": "Get a list of sales with optional filters"
+          }
+        },
+        {
+          "name": "Get Sale by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sales/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["sales", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{saleId}}"
+                }
+              ]
+            },
+            "description": "Get a sale by its ID"
+          }
+        },
+        {
+          "name": "Get Returns by Sale",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sales/:id/returns",
+              "host": ["{{baseUrl}}"],
+              "path": ["sales", ":id", "returns"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{saleId}}"
+                }
+              ]
+            },
+            "description": "Get all returns associated with a sale"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has returns array', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Returns",
+      "description": "Endpoints for returns management",
+      "item": [
+        {
+          "name": "Create Return",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"RETURN_CUSTOMER\",\n  \"warehouseId\": \"warehouse-123\",\n  \"saleId\": \"{{saleId}}\",\n  \"reason\": \"Defective product\",\n  \"note\": \"Return note\",\n  \"lines\": [\n    {\n      \"productId\": \"product-123\",\n      \"locationId\": \"location-123\",\n      \"quantity\": 2,\n      \"originalSalePrice\": 150.5,\n      \"currency\": \"COP\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/returns",
+              "host": ["{{baseUrl}}"],
+              "path": ["returns"]
+            },
+            "description": "Create a new return in DRAFT status"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.data && responseJson.data.id) {",
+                  "        pm.collectionVariables.set('returnId', responseJson.data.id);",
+                  "    }",
+                  "    if (responseJson.data && responseJson.data.lines && responseJson.data.lines[0]) {",
+                  "        pm.collectionVariables.set('returnLineId', responseJson.data.lines[0].id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Returns",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/returns?page=1&limit=10&type=RETURN_CUSTOMER",
+              "host": ["{{baseUrl}}"],
+              "path": ["returns"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "type",
+                  "value": "RETURN_CUSTOMER"
+                }
+              ]
+            },
+            "description": "Get a list of returns with optional filters"
+          }
+        },
+        {
+          "name": "Get Return by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/returns/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["returns", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{returnId}}"
+                }
+              ]
+            },
+            "description": "Get a return by its ID"
+          }
+        },
+        {
+          "name": "Update Return",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Updated reason\",\n  \"note\": \"Updated note\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/returns/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["returns", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{returnId}}"
+                }
+              ]
+            },
+            "description": "Update a return (only DRAFT status)"
+          }
+        },
+        {
+          "name": "Confirm Return",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/returns/:id/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["returns", ":id", "confirm"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{returnId}}"
+                }
+              ]
+            },
+            "description": "Confirm a return and generate inventory movement"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Return is confirmed', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.data.status).to.equal('CONFIRMED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel Return",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/returns/:id/cancel?reason=Cancellation reason",
+              "host": ["{{baseUrl}}"],
+              "path": ["returns", ":id", "cancel"],
+              "query": [
+                {
+                  "key": "reason",
+                  "value": "Cancellation reason"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{returnId}}"
+                }
+              ]
+            },
+            "description": "Cancel a return"
+          }
+        },
+        {
+          "name": "Add Line to Return",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"product-123\",\n  \"locationId\": \"location-123\",\n  \"quantity\": 1,\n  \"currency\": \"COP\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/returns/:id/lines",
+              "host": ["{{baseUrl}}"],
+              "path": ["returns", ":id", "lines"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{returnId}}"
+                }
+              ]
+            },
+            "description": "Add a line to a return (only DRAFT status)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.data && responseJson.data.id) {",
+                  "        pm.collectionVariables.set('returnLineId', responseJson.data.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Remove Line from Return",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/returns/:id/lines/:lineId",
+              "host": ["{{baseUrl}}"],
+              "path": ["returns", ":id", "lines", ":lineId"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{returnId}}"
+                },
+                {
+                  "key": "lineId",
+                  "value": "{{returnLineId}}"
+                }
+              ]
+            },
+            "description": "Remove a line from a return (only DRAFT status)"
+          }
         }
       ]
     }

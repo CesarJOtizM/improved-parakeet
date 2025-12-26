@@ -3,13 +3,14 @@ import { SaleConfirmedEventHandler } from '@application/eventHandlers/saleConfir
 import { SaleCreatedEventHandler } from '@application/eventHandlers/saleCreatedEventHandler';
 import { AuthenticationModule } from '@auth/authentication.module';
 import { Module, OnModuleInit } from '@nestjs/common';
+import { ReturnsModule } from '@returns/returns.module';
 import { SalesModule } from '@sales/sales.module';
 import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
 
 import { SalesController } from './sales.controller';
 
 @Module({
-  imports: [AuthenticationModule, SalesModule],
+  imports: [AuthenticationModule, SalesModule, ReturnsModule],
   controllers: [SalesController],
   providers: [SaleCreatedEventHandler, SaleConfirmedEventHandler, SaleCancelledEventHandler],
 })

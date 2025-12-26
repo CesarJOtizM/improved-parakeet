@@ -1,3 +1,4 @@
+import { GetReturnsBySaleUseCase } from '@application/returnUseCases/getReturnsBySaleUseCase';
 import { AddSaleLineUseCase } from '@application/saleUseCases/addSaleLineUseCase';
 import { CancelSaleUseCase } from '@application/saleUseCases/cancelSaleUseCase';
 import { ConfirmSaleUseCase } from '@application/saleUseCases/confirmSaleUseCase';
@@ -59,7 +60,8 @@ export class SalesController {
     private readonly cancelSaleUseCase: CancelSaleUseCase,
     private readonly addSaleLineUseCase: AddSaleLineUseCase,
     private readonly removeSaleLineUseCase: RemoveSaleLineUseCase,
-    private readonly getSaleMovementUseCase: GetSaleMovementUseCase
+    private readonly getSaleMovementUseCase: GetSaleMovementUseCase,
+    private readonly getReturnsBySaleUseCase: GetReturnsBySaleUseCase
   ) {}
 
   @Post()
@@ -333,5 +335,27 @@ export class SalesController {
     this.logger.log('Getting movement for sale', { saleId: id, orgId });
 
     return await this.getSaleMovementUseCase.execute({ saleId: id, orgId });
+  }
+
+  @Get(':id/returns')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.SALES_READ)
+  @ApiOperation({
+    summary: 'Get returns for sale',
+    description: 'Get all returns associated with a sale. Requires SALES:READ permission.',
+  })
+  @ApiParam({ name: 'id', description: 'Sale ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Returns retrieved successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Sale not found',
+  })
+  async getReturnsBySale(@Param('id') id: string, @OrgId() orgId: string) {
+    this.logger.log('Getting returns for sale', { saleId: id, orgId });
+
+    return await this.getReturnsBySaleUseCase.execute({ saleId: id, orgId });
   }
 }

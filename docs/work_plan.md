@@ -366,17 +366,17 @@
       - [x] Genera salida de inventario (Movement type OUT con reason=RETURN_SUPPLIER)
       - [x] Validación: solo se puede devolver lo que se compró
 
-- [ ] **Casos de Uso de Devoluciones**
-  - [ ] CreateReturnUseCase - Crear devolución en borrador
-  - [ ] GetReturnsUseCase - Listar devoluciones con filtros
-  - [ ] GetReturnByIdUseCase - Obtener devolución por ID
-  - [ ] UpdateReturnUseCase - Actualizar devolución en borrador
-  - [ ] ConfirmReturnUseCase - Confirmar devolución (genera movimiento de inventario)
-  - [ ] CancelReturnUseCase - Cancelar devolución
-  - [ ] AddReturnLineUseCase - Agregar línea a devolución
-  - [ ] RemoveReturnLineUseCase - Remover línea de devolución
-  - [ ] GetReturnsBySaleUseCase - Obtener devoluciones de una venta
-  - [ ] GetReturnsByMovementUseCase - Obtener devoluciones de un movimiento
+- [x] **Casos de Uso de Devoluciones** ✅ **COMPLETADO**
+  - [x] CreateReturnUseCase - Crear devolución en borrador
+  - [x] GetReturnsUseCase - Listar devoluciones con filtros
+  - [x] GetReturnByIdUseCase - Obtener devolución por ID
+  - [x] UpdateReturnUseCase - Actualizar devolución en borrador
+  - [x] ConfirmReturnUseCase - Confirmar devolución (genera movimiento de inventario)
+  - [x] CancelReturnUseCase - Cancelar devolución
+  - [x] AddReturnLineUseCase - Agregar línea a devolución
+  - [x] RemoveReturnLineUseCase - Remover línea de devolución
+  - [x] GetReturnsBySaleUseCase - Obtener devoluciones de una venta
+  - [x] GetReturnsByMovementUseCase - Obtener devoluciones de un movimiento
 
 - [x] **Reglas de Negocio de Devoluciones** ✅ **COMPLETADO**
   - [x] Devolución de cliente: validar que la cantidad no exceda lo vendido
@@ -403,29 +403,29 @@
   - [x] Tests de aceptación funcionales (estructura lista, tests E2E pendientes)
   - [x] Implementar paginación y filtros avanzados
 
-- [ ] **API REST de Devoluciones**
-  - [ ] Endpoints: GET /returns - Listar devoluciones con filtros
-  - [ ] Endpoints: POST /returns - Crear devolución
-  - [ ] Endpoints: GET /returns/:id - Obtener devolución por ID
-  - [ ] Endpoints: PUT /returns/:id - Actualizar devolución en borrador
-  - [ ] Endpoints: POST /returns/:id/confirm - Confirmar devolución (genera movimiento de inventario)
-  - [ ] Endpoints: POST /returns/:id/cancel - Cancelar devolución
-  - [ ] Endpoints: POST /returns/:id/lines - Agregar línea a devolución
-  - [ ] Endpoints: DELETE /returns/:id/lines/:lineId - Remover línea de devolución
-  - [ ] Endpoints: GET /sales/:id/returns - Obtener devoluciones de una venta
-  - [ ] Endpoints: GET /returns?type=CUSTOMER - Filtrar devoluciones de clientes
-  - [ ] Endpoints: GET /returns?type=SUPPLIER - Filtrar devoluciones a proveedores
-  - [ ] OpenAPI/Swagger documentation with decorators
-  - [ ] Tests de aceptación funcionales (E2E tests)
-  - [ ] Implementar paginación y filtros avanzados
+- [x] **API REST de Devoluciones** ✅ **COMPLETADO**
+  - [x] Endpoints: GET /returns - Listar devoluciones con filtros
+  - [x] Endpoints: POST /returns - Crear devolución
+  - [x] Endpoints: GET /returns/:id - Obtener devolución por ID
+  - [x] Endpoints: PUT /returns/:id - Actualizar devolución en borrador
+  - [x] Endpoints: POST /returns/:id/confirm - Confirmar devolución (genera movimiento de inventario)
+  - [x] Endpoints: POST /returns/:id/cancel - Cancelar devolución
+  - [x] Endpoints: POST /returns/:id/lines - Agregar línea a devolución
+  - [x] Endpoints: DELETE /returns/:id/lines/:lineId - Remover línea de devolución
+  - [x] Endpoints: GET /sales/:id/returns - Obtener devoluciones de una venta
+  - [x] Endpoints: GET /returns?type=CUSTOMER - Filtrar devoluciones de clientes
+  - [x] Endpoints: GET /returns?type=SUPPLIER - Filtrar devoluciones a proveedores
+  - [x] OpenAPI/Swagger documentation with decorators
+  - [x] Tests de aceptación funcionales (E2E tests)
+  - [x] Implementar paginación y filtros avanzados
 
-- [ ] **Colección de Postman - Sales & Returns**
-  - [ ] Crear colección de Postman para ventas
-  - [ ] Crear colección de Postman para devoluciones
-  - [ ] Configurar variables de entorno para datos de prueba
-  - [ ] Implementar tests automatizados para validaciones
-  - [ ] Crear pre-request scripts para setup de datos
-  - [ ] Documentar todos los endpoints de ventas y devoluciones
+- [x] **Colección de Postman - Sales & Returns** ✅ **COMPLETADO**
+  - [x] Crear colección de Postman para ventas
+  - [x] Crear colección de Postman para devoluciones
+  - [x] Configurar variables de entorno para datos de prueba
+  - [x] Implementar tests automatizados para validaciones
+  - [x] Crear pre-request scripts para setup de datos
+  - [x] Documentar todos los endpoints de ventas y devoluciones
 
 ---
 
@@ -1589,7 +1589,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Semana 9**: Reglas de negocio y casos de uso ✅ **COMPLETADA** (~90%)
 - [x] **Semana 10**: Adaptadores y API de inventarios ✅ **COMPLETADA**
 - [x] **Semana 10**: Dominio de ventas ✅ **COMPLETADA**
-- [ ] **Semana 11**: Dominio de devoluciones y adaptadores
+- [x] **Semana 11**: Dominio de devoluciones y adaptadores ✅ **COMPLETADA (100%)**
 - [ ] **Semana 12**: Dominio de reportes e importaciones
 - [ ] **Semana 13**: Adaptadores y API de reportes
 - [ ] **Semana 14**: Dominio de personalización y configuración
@@ -1602,7 +1602,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Fase 1**: Arquitectura base, dominios core, infraestructura ✅ **COMPLETADA (100%)**
 - [x] **Fase 2**: Sistema de autenticación completo con RBAC ✅ **COMPLETADA (~95%)** (falta solo setup automático de auditoría)
 - [x] **Fase 3**: Sistema de inventarios completo ✅ **COMPLETADA (100%)**
-- [x] **Fase 4**: Sistema de ventas ✅ **COMPLETADA (~50%)** (ventas completado, devoluciones pendiente)
+- [x] **Fase 4**: Sistema de ventas y devoluciones ✅ **COMPLETADA (100%)**
 - [ ] **Fase 5**: Sistema de reportes e importaciones
 - [ ] **Fase 6**: Testing, optimización y despliegue
 
@@ -1611,8 +1611,8 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Auth Collection**: Autenticación y gestión de usuarios ✅ **COMPLETADA** (documentación y colección implementadas)
 - [x] **Roles Collection**: Gestión de roles predefinidos y personalizados ✅ **COMPLETADA** (endpoints CRUD y asignación de permisos)
 - [x] **Inventory Collection**: Productos, bodegas, movimientos ✅ **COMPLETADA**
-- [x] **Sales Collection**: Ventas y gestión de ventas ✅ **COMPLETADA** (endpoints implementados, colección Postman pendiente)
-- [ ] **Returns Collection**: Devoluciones de clientes y a proveedores
+- [x] **Sales Collection**: Ventas y gestión de ventas ✅ **COMPLETADA**
+- [x] **Returns Collection**: Devoluciones de clientes y a proveedores ✅ **COMPLETADA**
 - [ ] **Reports Collection**: Reportes y exportaciones
 - [ ] **Imports Collection**: Importaciones masivas
 - [ ] **Organization Collection**: Configuración y personalización
@@ -1766,9 +1766,36 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
   - ✅ Cálculo automático de totales
 - **Pendiente**: Migración de base de datos (requiere ejecutar `npm run db:migrate`)
 
+#### **✅ Completado - Semana 11 (Casos de Uso de Devoluciones)**
+
+- **Casos de Uso de Devoluciones**: 10 casos de uso implementados
+  - ✅ CreateReturnUseCase - Crear devolución en borrador
+  - ✅ GetReturnsUseCase - Listar devoluciones con filtros, paginación y ordenamiento
+  - ✅ GetReturnByIdUseCase - Obtener devolución por ID
+  - ✅ UpdateReturnUseCase - Actualizar devolución en borrador
+  - ✅ ConfirmReturnUseCase - Confirmar devolución (genera movimiento de inventario)
+  - ✅ CancelReturnUseCase - Cancelar devolución
+  - ✅ AddReturnLineUseCase - Agregar línea a devolución
+  - ✅ RemoveReturnLineUseCase - Remover línea de devolución
+  - ✅ GetReturnsBySaleUseCase - Obtener devoluciones de una venta
+  - ✅ GetReturnsByMovementUseCase - Obtener devoluciones de un movimiento
+- **Módulos**: ReturnsModule actualizado con todos los use cases registrados
+- **Eventos de Dominio**: InventoryInGeneratedEvent e InventoryOutGeneratedEvent corregidos (errores de build resueltos)
+- **Características Implementadas**:
+  - ✅ Generación automática de números de devolución (RETURN-YYYY-NNN)
+  - ✅ Validación de warehouse antes de crear devolución
+  - ✅ Validación de cantidades (no exceder lo vendido/comrado)
+  - ✅ Generación automática de Movement (IN para cliente, OUT para proveedor) al confirmar
+  - ✅ Precio de venta original en devoluciones de cliente
+  - ✅ Costo unitario original en devoluciones a proveedor
+  - ✅ Soporte para devoluciones de cliente y a proveedor
+  - ✅ Integración con Sales y Movements para validación
+  - ✅ API REST de devoluciones (controllers, DTOs, endpoints HTTP)
+  - ✅ Tests E2E para endpoints de devoluciones
+  - ✅ Colección de Postman para devoluciones
+
 #### **⏳ Pendiente**
 
-- **Fase 4**: Devoluciones (pendiente)
 - **Fase 5**: Reportes e importaciones
 - **Fase 6**: Testing completo y despliegue
 

@@ -23,6 +23,7 @@ describe('Security Constants', () => {
       expect(roles).toContain('WAREHOUSE_OPERATOR');
       expect(roles).toContain('CONSULTANT');
       expect(roles).toContain('IMPORT_OPERATOR');
+      expect(roles).toContain('SALES_PERSON');
     });
 
     it('Given: system roles When: checking count Then: should have exactly 7 roles', () => {
@@ -30,7 +31,7 @@ describe('Security Constants', () => {
       const roles = Object.values(SYSTEM_ROLES);
 
       // Assert
-      expect(roles).toHaveLength(6);
+      expect(roles).toHaveLength(7);
     });
 
     it('Given: system roles When: checking uniqueness Then: should have unique role names', () => {
@@ -97,7 +98,7 @@ describe('Security Constants', () => {
       // Assert
       expect(permissions).toContain('INVENTORY:READ');
       expect(permissions).toContain('INVENTORY:ENTRY');
-      expect(permissions).toContain('INVENTORY_EXIT');
+      expect(permissions).toContain('INVENTORY:EXIT');
       expect(permissions).toContain('INVENTORY:TRANSFER');
       expect(permissions).toContain('INVENTORY:ADJUST');
     });
@@ -120,12 +121,12 @@ describe('Security Constants', () => {
       expect(permissions).toContain('AUDIT:EXPORT');
     });
 
-    it('Given: system permissions When: checking count Then: should have exactly 31 permissions', () => {
+    it('Given: system permissions When: checking count Then: should have exactly 43 permissions', () => {
       // Arrange & Act
       const permissions = Object.values(SYSTEM_PERMISSIONS);
 
       // Assert
-      expect(permissions).toHaveLength(31);
+      expect(permissions).toHaveLength(43);
     });
 
     it('Given: system permissions When: checking uniqueness Then: should have unique permission names', () => {
@@ -246,10 +247,11 @@ describe('Security Constants', () => {
         'WAREHOUSE_OPERATOR',
         'CONSULTANT',
         'IMPORT_OPERATOR',
+        'SALES_PERSON',
       ];
 
       // Assert
-      expect(roles).toHaveLength(6);
+      expect(roles).toHaveLength(7);
       roles.forEach(role => {
         expect(Object.values(SYSTEM_ROLES)).toContain(role);
       });

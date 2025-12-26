@@ -4,6 +4,7 @@ import { PrismaModule } from '@infrastructure/database/prisma.module';
 import { HealthCheckModule } from '@interface/http/healthCheck/healthCheck.module';
 import { InventoryHttpModule } from '@interface/http/inventory/inventoryHttp.module';
 import { ClientIpMiddleware } from '@interface/http/middlewares/clientIpMiddleware';
+import { ReturnsHttpModule } from '@interface/http/returns/returnsHttp.module';
 import { SalesHttpModule } from '@interface/http/sales/salesHttp.module';
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -24,6 +25,7 @@ import { SecurityMiddleware } from '@shared/middleware';
     OrganizationModule,
     InventoryHttpModule,
     SalesHttpModule,
+    ReturnsHttpModule,
   ],
   controllers: [],
   providers: [],

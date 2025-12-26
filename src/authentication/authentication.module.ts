@@ -1,8 +1,8 @@
 import {
-  GetAuditLogsUseCase,
   GetAuditLogUseCase,
-  GetUserActivityUseCase,
+  GetAuditLogsUseCase,
   GetEntityHistoryUseCase,
+  GetUserActivityUseCase,
 } from '@application/auditUseCases';
 import { LoginUseCase } from '@application/authUseCases/loginUseCase';
 import { LogoutUseCase } from '@application/authUseCases/logoutUseCase';

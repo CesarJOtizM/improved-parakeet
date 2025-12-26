@@ -71,6 +71,13 @@ export class AuthSeed {
         isSystem: true,
         orgId: null,
       },
+      {
+        name: 'SALES_PERSON',
+        description: 'Vendedor con acceso solo a ventas',
+        isActive: true,
+        isSystem: true,
+        orgId: null,
+      },
     ];
 
     const roles = [];
@@ -287,6 +294,82 @@ export class AuthSeed {
         module: 'ORGANIZATION',
         action: 'MANAGE_BRANDING',
       },
+
+      // Ventas
+      {
+        name: 'SALES:CREATE',
+        description: 'Create sales',
+        module: 'SALES',
+        action: 'CREATE',
+      },
+      {
+        name: 'SALES:READ',
+        description: 'View sales',
+        module: 'SALES',
+        action: 'READ',
+      },
+      {
+        name: 'SALES:UPDATE',
+        description: 'Update sales',
+        module: 'SALES',
+        action: 'UPDATE',
+      },
+      {
+        name: 'SALES:DELETE',
+        description: 'Delete sales',
+        module: 'SALES',
+        action: 'DELETE',
+      },
+      {
+        name: 'SALES:CONFIRM',
+        description: 'Confirm sales',
+        module: 'SALES',
+        action: 'CONFIRM',
+      },
+      {
+        name: 'SALES:CANCEL',
+        description: 'Cancel sales',
+        module: 'SALES',
+        action: 'CANCEL',
+      },
+
+      // Devoluciones
+      {
+        name: 'RETURNS:CREATE',
+        description: 'Create returns',
+        module: 'RETURNS',
+        action: 'CREATE',
+      },
+      {
+        name: 'RETURNS:READ',
+        description: 'View returns',
+        module: 'RETURNS',
+        action: 'READ',
+      },
+      {
+        name: 'RETURNS:UPDATE',
+        description: 'Update returns',
+        module: 'RETURNS',
+        action: 'UPDATE',
+      },
+      {
+        name: 'RETURNS:DELETE',
+        description: 'Delete returns',
+        module: 'RETURNS',
+        action: 'DELETE',
+      },
+      {
+        name: 'RETURNS:CONFIRM',
+        description: 'Confirm returns',
+        module: 'RETURNS',
+        action: 'CONFIRM',
+      },
+      {
+        name: 'RETURNS:CANCEL',
+        description: 'Cancel returns',
+        module: 'RETURNS',
+        action: 'CANCEL',
+      },
     ];
 
     const permissions = [];
@@ -334,7 +417,9 @@ export class AuthSeed {
                 p.name.includes('MOVEMENTS:') ||
                 p.name.includes('STOCK:') ||
                 p.name.includes('REPORTS:') ||
-                p.name.includes('IMPORTS:')
+                p.name.includes('IMPORTS:') ||
+                p.name.includes('SALES:') ||
+                p.name.includes('RETURNS:')
             )
             .map(p => ({ roleId: roles[2].id, permissionId: p.id }))
         : []),
@@ -356,6 +441,13 @@ export class AuthSeed {
                 p.name.includes('REPORTS:VIEW_INVENTORY')
             )
             .map(p => ({ roleId: roles[4].id, permissionId: p.id }))
+        : []),
+
+      // SALES_PERSON - Solo permisos de ventas
+      ...(roles[5].name === 'SALES_PERSON'
+        ? permissions
+            .filter(p => p.name.includes('SALES:'))
+            .map(p => ({ roleId: roles[5].id, permissionId: p.id }))
         : []),
     ];
 
