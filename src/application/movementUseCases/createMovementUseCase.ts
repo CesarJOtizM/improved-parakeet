@@ -1,8 +1,5 @@
-import { Money, Quantity } from '@inventory/stock';
 import { Movement } from '@movement/domain/entities/movement.entity';
-import { MovementLine } from '@movement/domain/entities/movementLine.entity';
-import { MovementStatus } from '@movement/domain/valueObjects/movementStatus.valueObject';
-import { MovementType } from '@movement/domain/valueObjects/movementType.valueObject';
+import { MovementMapper } from '@movement/mappers';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   DomainError,
@@ -118,43 +115,14 @@ export class CreateMovementUseCase {
         productPrecisions.set(line.productId, product.unit.getValue().precision);
       }
 
-      // Create movement entity
-      const movement = Movement.create(
-        {
-          type: MovementType.create(request.type),
-          status: MovementStatus.create('DRAFT'),
-          warehouseId: request.warehouseId,
-          reference: request.reference,
-          reason: request.reason,
-          note: request.note,
-          createdBy: request.createdBy,
-        },
-        request.orgId
-      );
+      // Create movement entity using mapper
+      const movementProps = MovementMapper.toDomainProps(request);
+      const movement = Movement.create(movementProps, request.orgId);
 
-      // Add lines to movement
+      // Add lines to movement using mapper
       for (const lineRequest of request.lines) {
         const precision = productPrecisions.get(lineRequest.productId) || 0;
-        const quantity = Quantity.create(lineRequest.quantity, precision);
-
-        const unitCost = lineRequest.unitCost
-          ? Money.create(lineRequest.unitCost, lineRequest.currency || 'COP', 2)
-          : undefined;
-
-        const currency = lineRequest.currency || 'COP';
-
-        const line = MovementLine.create(
-          {
-            productId: lineRequest.productId,
-            locationId: lineRequest.locationId,
-            quantity,
-            unitCost,
-            currency,
-            extra: lineRequest.extra,
-          },
-          request.orgId
-        );
-
+        const line = MovementMapper.createLineEntity(lineRequest, precision, request.orgId);
         movement.addLine(line);
       }
 
@@ -171,31 +139,11 @@ export class CreateMovementUseCase {
         type: savedMovement.type.getValue(),
       });
 
+      // Use mapper to convert entity to response DTO
       const response: ICreateMovementResponse = {
         success: true,
         message: 'Movement created successfully',
-        data: {
-          id: savedMovement.id,
-          type: savedMovement.type.getValue(),
-          status: savedMovement.status.getValue(),
-          warehouseId: savedMovement.warehouseId,
-          reference: savedMovement.reference,
-          reason: savedMovement.reason,
-          note: savedMovement.note,
-          lines: savedMovement.getLines().map(line => ({
-            id: line.id,
-            productId: line.productId,
-            locationId: line.locationId,
-            quantity: line.quantity.getNumericValue(),
-            unitCost: line.unitCost?.getAmount(),
-            currency: line.currency,
-            extra: line.extra,
-          })),
-          createdBy: savedMovement.createdBy,
-          orgId: savedMovement.orgId!,
-          createdAt: savedMovement.createdAt,
-          updatedAt: savedMovement.updatedAt,
-        } as IMovementData,
+        data: MovementMapper.toResponseData(savedMovement),
         timestamp: new Date().toISOString(),
       };
 

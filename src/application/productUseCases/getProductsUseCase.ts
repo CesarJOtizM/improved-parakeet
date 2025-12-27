@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ProductMapper } from '@product/mappers';
 import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
@@ -97,28 +98,11 @@ export class GetProductsUseCase {
     const paginatedProducts = products.slice(skip, skip + limit);
     const totalPages = Math.ceil(total / limit);
 
+    // Use mapper to convert entities to response DTOs
     return ok({
       success: true,
       message: 'Products retrieved successfully',
-      data: paginatedProducts.map(product => ({
-        id: product.id,
-        sku: product.sku.getValue(),
-        name: product.name.getValue(),
-        description: product.description,
-        unit: {
-          code: product.unit.getValue().code,
-          name: product.unit.getValue().name,
-          precision: product.unit.getValue().precision,
-        },
-        barcode: product.barcode,
-        brand: product.brand,
-        model: product.model,
-        status: product.status.getValue(),
-        costMethod: product.costMethod.getValue(),
-        orgId: product.orgId!,
-        createdAt: product.createdAt,
-        updatedAt: product.updatedAt,
-      })),
+      data: ProductMapper.toResponseDataList(paginatedProducts),
       pagination: {
         page,
         limit,

@@ -1,3 +1,4 @@
+import { MovementMapper } from '@movement/mappers';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
@@ -124,31 +125,11 @@ export class GetMovementsUseCase {
     const paginatedMovements = movements.slice(skip, skip + limit);
     const totalPages = Math.ceil(total / limit);
 
+    // Use mapper to convert entities to response DTOs
     return ok({
       success: true,
       message: 'Movements retrieved successfully',
-      data: paginatedMovements.map(movement => ({
-        id: movement.id,
-        type: movement.type.getValue(),
-        status: movement.status.getValue(),
-        warehouseId: movement.warehouseId,
-        reference: movement.reference,
-        reason: movement.reason,
-        note: movement.note,
-        lines: movement.getLines().map(line => ({
-          id: line.id,
-          productId: line.productId,
-          locationId: line.locationId,
-          quantity: line.quantity.getNumericValue(),
-          unitCost: line.unitCost?.getAmount(),
-          currency: line.currency,
-          extra: line.extra,
-        })),
-        createdBy: movement.createdBy,
-        orgId: movement.orgId!,
-        createdAt: movement.createdAt,
-        updatedAt: movement.updatedAt,
-      })),
+      data: MovementMapper.toResponseDataList(paginatedMovements),
       pagination: {
         page,
         limit,

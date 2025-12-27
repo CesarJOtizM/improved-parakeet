@@ -1,11 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Product } from '@product/domain/entities/product.entity';
 import { ProductBusinessRulesService } from '@product/domain/services/productBusinessRules.service';
-import { CostMethod } from '@product/domain/valueObjects/costMethod.valueObject';
-import { ProductName } from '@product/domain/valueObjects/productName.valueObject';
-import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
-import { SKU } from '@product/domain/valueObjects/sku.valueObject';
-import { UnitValueObject } from '@product/domain/valueObjects/unit.valueObject';
+import { ProductMapper } from '@product/mappers';
 import {
   ConflictError,
   DomainError,
@@ -75,20 +71,12 @@ export class CreateProductUseCase {
     this.logger.log('Creating product', { sku: request.sku, orgId: request.orgId });
 
     try {
-      // Create value objects
-      const sku = SKU.create(request.sku);
-      const name = ProductName.create(request.name);
-      const unit = UnitValueObject.create(
-        request.unit.code,
-        request.unit.name,
-        request.unit.precision
-      );
-      const status = ProductStatus.create(request.status || 'ACTIVE');
-      const costMethod = CostMethod.create(request.costMethod || 'AVG');
+      // Convert DTO to domain props using mapper
+      const props = ProductMapper.toDomainProps(request);
 
       // Validate SKU uniqueness using business rules
       const validationResult = await ProductBusinessRulesService.validateProductCreationRules(
-        sku,
+        props.sku,
         request.orgId,
         this.productRepository
       );
@@ -103,20 +91,7 @@ export class CreateProductUseCase {
       }
 
       // Create product entity
-      const product = Product.create(
-        {
-          sku,
-          name,
-          description: request.description,
-          unit,
-          barcode: request.barcode,
-          brand: request.brand,
-          model: request.model,
-          status,
-          costMethod,
-        },
-        request.orgId
-      );
+      const product = Product.create(props, request.orgId);
 
       // Save product
       const savedProduct = await this.productRepository.save(product);
@@ -131,28 +106,11 @@ export class CreateProductUseCase {
         sku: savedProduct.sku.getValue(),
       });
 
+      // Use mapper to convert entity to response DTO
       const response: ICreateProductResponse = {
         success: true,
         message: 'Product created successfully',
-        data: {
-          id: savedProduct.id,
-          sku: savedProduct.sku.getValue(),
-          name: savedProduct.name.getValue(),
-          description: savedProduct.description,
-          unit: {
-            code: savedProduct.unit.getValue().code,
-            name: savedProduct.unit.getValue().name,
-            precision: savedProduct.unit.getValue().precision,
-          },
-          barcode: savedProduct.barcode,
-          brand: savedProduct.brand,
-          model: savedProduct.model,
-          status: savedProduct.status.getValue(),
-          costMethod: savedProduct.costMethod.getValue(),
-          orgId: savedProduct.orgId!,
-          createdAt: savedProduct.createdAt,
-          updatedAt: savedProduct.updatedAt,
-        } as IProductData,
+        data: ProductMapper.toResponseData(savedProduct),
         timestamp: new Date().toISOString(),
       };
 

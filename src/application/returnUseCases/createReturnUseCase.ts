@@ -1,22 +1,16 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Return } from '@returns/domain/entities/return.entity';
-import { ReturnLine } from '@returns/domain/entities/returnLine.entity';
 import { ReturnNumberGenerationService } from '@returns/domain/services/returnNumberGeneration.service';
-import { ReturnReason } from '@returns/domain/valueObjects/returnReason.valueObject';
-import { ReturnStatus } from '@returns/domain/valueObjects/returnStatus.valueObject';
-import { ReturnType } from '@returns/domain/valueObjects/returnType.valueObject';
-import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
+import { ReturnMapper } from '@returns/mappers';
 import {
   DomainError,
-  err,
   NotFoundError,
-  ok,
   Result,
   ValidationError,
+  err,
+  ok,
 } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
-import { Money } from '@stock/domain/valueObjects/money.valueObject';
-import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 import type { IReturnRepository } from '@returns/domain/repositories/returnRepository.interface';
 import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
@@ -118,61 +112,26 @@ export class CreateReturnUseCase {
       this.returnRepository
     );
 
-    // Create return entity
-    const returnEntity = Return.create(
-      {
-        returnNumber,
-        status: ReturnStatus.create('DRAFT'),
-        type: ReturnType.create(request.type),
-        reason: ReturnReason.create(request.reason),
-        warehouseId: request.warehouseId,
-        saleId: request.type === 'RETURN_CUSTOMER' ? request.saleId : undefined,
-        sourceMovementId: request.type === 'RETURN_SUPPLIER' ? request.sourceMovementId : undefined,
-        note: request.note,
-        createdBy: request.createdBy,
-      },
-      request.orgId
-    );
+    // Create return entity using mapper
+    const returnProps = ReturnMapper.toDomainProps(request, returnNumber);
+    const returnEntity = Return.create(returnProps, request.orgId);
 
-    // Add lines if provided
+    // Add lines if provided using mapper
     if (request.lines && request.lines.length > 0) {
-      const returnType = ReturnType.create(request.type);
       for (const lineRequest of request.lines) {
-        const quantity = Quantity.create(lineRequest.quantity, 6);
-        const currency = lineRequest.currency || 'COP';
-
-        let originalSalePrice: SalePrice | undefined;
-        let originalUnitCost: Money | undefined;
-
-        if (request.type === 'RETURN_CUSTOMER') {
-          if (!lineRequest.originalSalePrice) {
-            return err(
-              new ValidationError('Original sale price is required for customer return lines')
-            );
-          }
-          originalSalePrice = SalePrice.create(lineRequest.originalSalePrice, currency, 2);
-        } else {
-          if (!lineRequest.originalUnitCost) {
-            return err(
-              new ValidationError('Original unit cost is required for supplier return lines')
-            );
-          }
-          originalUnitCost = Money.create(lineRequest.originalUnitCost, currency, 2);
+        // Validate required fields based on return type
+        if (request.type === 'RETURN_CUSTOMER' && !lineRequest.originalSalePrice) {
+          return err(
+            new ValidationError('Original sale price is required for customer return lines')
+          );
+        }
+        if (request.type === 'RETURN_SUPPLIER' && !lineRequest.originalUnitCost) {
+          return err(
+            new ValidationError('Original unit cost is required for supplier return lines')
+          );
         }
 
-        const line = ReturnLine.create(
-          {
-            productId: lineRequest.productId,
-            locationId: lineRequest.locationId,
-            quantity,
-            originalSalePrice,
-            originalUnitCost,
-            currency,
-          },
-          request.orgId,
-          returnType
-        );
-
+        const line = ReturnMapper.createLineEntity(lineRequest, request.type, request.orgId);
         returnEntity.addLine(line);
       }
     }
@@ -190,45 +149,11 @@ export class CreateReturnUseCase {
       returnNumber: savedReturn.returnNumber.getValue(),
     });
 
-    const totalAmount = savedReturn.getTotalAmount();
-    const lines = savedReturn.getLines().map(line => {
-      const lineTotal = line.getTotalPrice();
-      return {
-        id: line.id,
-        productId: line.productId,
-        locationId: line.locationId,
-        quantity: line.quantity.getNumericValue(),
-        originalSalePrice: line.originalSalePrice?.getAmount(),
-        originalUnitCost: line.originalUnitCost?.getAmount(),
-        currency: line.currency,
-        totalPrice: lineTotal?.getAmount() || 0,
-      };
-    });
-
+    // Use mapper to convert entity to response DTO
     return ok({
       success: true,
       message: 'Return created successfully',
-      data: {
-        id: savedReturn.id,
-        returnNumber: savedReturn.returnNumber.getValue(),
-        status: savedReturn.status.getValue(),
-        type: savedReturn.type.getValue(),
-        reason: savedReturn.reason.getValue(),
-        warehouseId: savedReturn.warehouseId,
-        saleId: savedReturn.saleId,
-        sourceMovementId: savedReturn.sourceMovementId,
-        returnMovementId: savedReturn.returnMovementId,
-        note: savedReturn.note,
-        confirmedAt: savedReturn.confirmedAt,
-        cancelledAt: savedReturn.cancelledAt,
-        createdBy: savedReturn.createdBy,
-        orgId: savedReturn.orgId,
-        createdAt: savedReturn.createdAt,
-        updatedAt: savedReturn.updatedAt,
-        totalAmount: totalAmount?.getAmount(),
-        currency: totalAmount?.getCurrency(),
-        lines,
-      },
+      data: ReturnMapper.toResponseData(savedReturn),
       timestamp: new Date().toISOString(),
     });
   }

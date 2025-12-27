@@ -480,18 +480,19 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
   - [x] Actualizar imports en código existente (re-exports para compatibilidad hacia atrás)
   - [x] **Resultado**: Estructura ports creada, 17 repository interfaces + 3 base interfaces + 2 external services + 2 event interfaces movidos a ports/, build exitoso, 1435 tests pasando
 
-- [ ] **Mappers DTO ↔ Domain**
-  - [ ] Crear carpeta `src/shared/mappers/` o `src/{domain}/mappers/`
-  - [ ] Implementar mappers básicos para Product, Movement, Sale, Return
-  - [ ] Reducir acoplamiento entre controllers y casos de uso
-  - [ ] Tests unitarios para mappers
+- [x] **Mappers DTO ↔ Domain**
+  - [x] Crear carpeta `src/{domain}/mappers/` para cada dominio (Product, Movement, Sale, Return)
+  - [x] Implementar mappers básicos para Product, Movement, Sale, Return con métodos `toDomainProps()` y `toResponseData()`
+  - [x] Reducir acoplamiento entre controllers y casos de uso (refactorizados create/get use cases)
+  - [x] Tests unitarios para mappers (48 tests en `test/{domain}/mappers/`)
+  - [x] **Resultado**: 4 mappers creados (ProductMapper, MovementMapper, SaleMapper, ReturnMapper), 8 use cases refactorizados, 48 nuevos tests, 1483 tests pasando
 
 #### **Criterios de Éxito**
 - ✅ Result monad implementado y usado en **TODOS los 55 casos de uso** (100% migrado)
 - ✅ DomainEventDispatcher abstraído sin romper funcionalidad existente
 - ✅ **Estructura de ports documentada y aplicada** (COMPLETADO: 24 interfaces en `ports/` con re-exports para compatibilidad)
-- ⏳ Mappers reducen código duplicado en controllers (pendiente)
-- ✅ Todos los tests existentes pasan sin modificaciones (1435 tests pasando)
+- ✅ Mappers reducen código duplicado en controllers (COMPLETADO: 4 mappers implementados)
+- ✅ Todos los tests existentes pasan sin modificaciones (1483 tests pasando)
 - ✅ No se retrasa el inicio de Fase 5
 
 #### **Tiempo Estimado**
@@ -1773,7 +1774,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Semana 10**: Adaptadores y API de inventarios ✅ **COMPLETADA**
 - [x] **Semana 10**: Dominio de ventas ✅ **COMPLETADA**
 - [x] **Semana 11**: Dominio de devoluciones y adaptadores ✅ **COMPLETADA (100%)**
-- [x] **Semana 11.5**: Mejoras de arquitectura (Result monad ✅, ports, abstracciones) - **Result monad COMPLETADO**
+- [x] **Semana 11.5**: Mejoras de arquitectura ✅ **COMPLETADA** - Result monad (55/55), ports (24 interfaces), mappers (4 mappers, 48 tests)
 - [ ] **Semana 12**: Dominio de reportes e importaciones
 - [ ] **Semana 13**: Adaptadores y API de reportes
 - [ ] **Semana 14**: Dominio de personalización y configuración
@@ -1787,7 +1788,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Fase 2**: Sistema de autenticación completo con RBAC ✅ **COMPLETADA (~95%)** (falta solo setup automático de auditoría)
 - [x] **Fase 3**: Sistema de inventarios completo ✅ **COMPLETADA (100%)**
 - [x] **Fase 4**: Sistema de ventas y devoluciones ✅ **COMPLETADA (100%)**
-- [x] **Fase 4.5**: Mejoras de arquitectura (Result monad ✅ **COMPLETADO**, ports, abstracciones) - **Result monad: 100% migrado (55/55 casos de uso)**
+- [x] **Fase 4.5**: Mejoras de arquitectura ✅ **COMPLETADA (100%)** - Result monad (55/55 casos de uso), ports (24 interfaces), mappers (4 mappers, 48 tests)
 - [ ] **Fase 5**: Sistema de reportes e importaciones
 - [ ] **Fase 6**: Testing, optimización y despliegue (incluye refactoring funcional)
 
@@ -1981,7 +1982,6 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 
 #### **⏳ Pendiente**
 
-- **Fase 4.5**: Mejoras de arquitectura (Result monad ✅ **COMPLETADO - 55/55 casos de uso migrados**, ports, abstracciones) - **Result monad: 100% completado**
 - **Fase 5**: Reportes e importaciones
 - **Fase 6**: Testing completo, optimización, refactoring funcional y despliegue
 

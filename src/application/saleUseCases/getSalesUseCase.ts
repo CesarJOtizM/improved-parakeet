@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { SaleMapper } from '@sale/mappers';
 import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
@@ -106,30 +107,11 @@ export class GetSalesUseCase {
     const paginatedSales = sales.slice(skip, skip + limit);
     const totalPages = Math.ceil(total / limit);
 
+    // Use mapper to convert entities to response DTOs
     return ok({
       success: true,
       message: 'Sales retrieved successfully',
-      data: paginatedSales.map(sale => {
-        const totalAmount = sale.getTotalAmount();
-        return {
-          id: sale.id,
-          saleNumber: sale.saleNumber.getValue(),
-          status: sale.status.getValue(),
-          warehouseId: sale.warehouseId,
-          customerReference: sale.customerReference,
-          externalReference: sale.externalReference,
-          note: sale.note,
-          confirmedAt: sale.confirmedAt,
-          cancelledAt: sale.cancelledAt,
-          movementId: sale.movementId,
-          createdBy: sale.createdBy,
-          orgId: sale.orgId,
-          createdAt: sale.createdAt,
-          updatedAt: sale.updatedAt,
-          totalAmount: totalAmount.getAmount(),
-          currency: totalAmount.getCurrency(),
-        };
-      }),
+      data: SaleMapper.toResponseDataList(paginatedSales),
       pagination: {
         page,
         limit,

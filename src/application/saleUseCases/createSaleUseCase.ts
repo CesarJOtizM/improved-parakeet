@@ -1,9 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Sale } from '@sale/domain/entities/sale.entity';
-import { SaleLine } from '@sale/domain/entities/saleLine.entity';
 import { SaleNumberGenerationService } from '@sale/domain/services/saleNumberGeneration.service';
-import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
-import { SaleStatus } from '@sale/domain/valueObjects/saleStatus.valueObject';
+import { SaleMapper } from '@sale/mappers';
 import {
   DomainError,
   NotFoundError,
@@ -13,7 +11,6 @@ import {
   ok,
 } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
-import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
 import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
@@ -94,40 +91,14 @@ export class CreateSaleUseCase {
         this.saleRepository
       );
 
-      // Create sale entity
-      const sale = Sale.create(
-        {
-          saleNumber,
-          status: SaleStatus.create('DRAFT'),
-          warehouseId: request.warehouseId,
-          customerReference: request.customerReference,
-          externalReference: request.externalReference,
-          note: request.note,
-          createdBy: request.createdBy,
-        },
-        request.orgId
-      );
+      // Create sale entity using mapper
+      const saleProps = SaleMapper.toDomainProps(request, saleNumber);
+      const sale = Sale.create(saleProps, request.orgId);
 
-      // Add lines if provided
+      // Add lines if provided using mapper
       if (request.lines && request.lines.length > 0) {
         for (const lineRequest of request.lines) {
-          const quantity = Quantity.create(lineRequest.quantity, 6);
-          const salePrice = SalePrice.create(
-            lineRequest.salePrice,
-            lineRequest.currency || 'COP',
-            2
-          );
-
-          const line = SaleLine.create(
-            {
-              productId: lineRequest.productId,
-              locationId: lineRequest.locationId,
-              quantity,
-              salePrice,
-            },
-            request.orgId
-          );
-
+          const line = SaleMapper.createLineEntity(lineRequest, request.orgId);
           sale.addLine(line);
         }
       }
@@ -145,29 +116,11 @@ export class CreateSaleUseCase {
         saleNumber: savedSale.saleNumber.getValue(),
       });
 
-      const totalAmount = savedSale.getTotalAmount();
-
+      // Use mapper to convert entity to response DTO
       const response: ICreateSaleResponse = {
         success: true,
         message: 'Sale created successfully',
-        data: {
-          id: savedSale.id,
-          saleNumber: savedSale.saleNumber.getValue(),
-          status: savedSale.status.getValue(),
-          warehouseId: savedSale.warehouseId,
-          customerReference: savedSale.customerReference,
-          externalReference: savedSale.externalReference,
-          note: savedSale.note,
-          confirmedAt: savedSale.confirmedAt,
-          cancelledAt: savedSale.cancelledAt,
-          movementId: savedSale.movementId,
-          createdBy: savedSale.createdBy,
-          orgId: savedSale.orgId,
-          createdAt: savedSale.createdAt,
-          updatedAt: savedSale.updatedAt,
-          totalAmount: totalAmount.getAmount(),
-          currency: totalAmount.getCurrency(),
-        },
+        data: SaleMapper.toResponseData(savedSale),
         timestamp: new Date().toISOString(),
       };
 

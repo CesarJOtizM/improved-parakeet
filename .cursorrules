@@ -10,10 +10,22 @@ This project follows **Hexagonal Architecture + DDD + Screaming Architecture** w
 src/
 ├── inventory/          # 🎯 Main domain (Screaming Architecture)
 │   ├── products/       # Products
+│   │   ├── domain/     # Entities, Value Objects, Ports
+│   │   ├── dto/        # DTOs for HTTP layer
+│   │   └── mappers/    # DTO ↔ Domain mappers
 │   ├── warehouses/     # Warehouses
 │   ├── movements/      # Inventory movements
+│   │   └── mappers/    # DTO ↔ Domain mappers
 │   ├── transfers/      # Transfers between warehouses
 │   └── stock/          # Stock control
+├── sales/              # 💰 Sales domain
+│   ├── domain/         # Entities, Value Objects
+│   ├── dto/            # DTOs
+│   └── mappers/        # DTO ↔ Domain mappers
+├── returns/            # 🔄 Returns domain
+│   ├── domain/         # Entities, Value Objects
+│   ├── dto/            # DTOs
+│   └── mappers/        # DTO ↔ Domain mappers
 ├── authentication/     # 🔐 Authentication and authorization
 ├── infrastructure/     # 🔌 Output adapters
 │   ├── database/       # Prisma + PostgreSQL
@@ -21,6 +33,8 @@ src/
 ├── interfaces/         # 🌐 Input adapters (HTTP)
 ├── application/        # 🚀 Use cases
 ├── shared/             # 🛠️ Shared utilities
+│   ├── domain/         # Base classes, Result monad, Events
+│   └── ports/          # Shared interfaces (repositories, services)
 └── organization/       # 🏢 Multi-tenancy
 ```
 
@@ -97,8 +111,17 @@ import { Organization } from '../../../organization/domain/entities/organization
 Available aliases:
 - `@src/*`, `@auth/*`, `@user/*`, `@role/*`, `@session/*`, `@security/*`
 - `@inventory/*`, `@product/*`, `@warehouse/*`, `@movement/*`, `@transfer/*`, `@stock/*`
+- `@sales/*`, `@sale/*`, `@returns/*` - Sales and Returns domains
 - `@report/*`, `@import/*`, `@organization/*`, `@application/*`
 - `@infrastructure/*`, `@interface/*`, `@shared/*`, `@healthCheck/*`
+
+Import examples for mappers:
+```typescript
+import { ProductMapper } from '@inventory/products/mappers';
+import { MovementMapper } from '@inventory/movements/mappers';
+import { SaleMapper } from '@sales/mappers';
+import { ReturnMapper } from '@returns/mappers';
+```
 
 ### TypeScript
 
@@ -238,6 +261,44 @@ export interface IProductRepository
 #### Migration Note
 
 For backward compatibility, the old `domain/repositories/` folders now re-export from the new `domain/ports/repositories/` location. New code should import directly from `@{domain}/domain/ports/repositories`.
+
+### Domain Events
+
+Domain events are dispatched after entity creation/update using the `IDomainEventDispatcher` interface.
+
+#### Injection Pattern
+
+```typescript
+import { IDomainEventDispatcher } from '@shared/domain/events';
+
+@Injectable()
+export class CreateProductUseCase {
+  constructor(
+    @Inject('ProductRepository')
+    private readonly productRepository: IProductRepository,
+    @Inject('DomainEventDispatcher')  // Token-based injection
+    private readonly eventDispatcher: IDomainEventDispatcher
+  ) {}
+
+  async execute(request: IRequest): Promise<Result<IResponse, DomainError>> {
+    const product = Product.create(props, request.orgId);
+    const savedProduct = await this.productRepository.save(product);
+
+    // Dispatch domain events
+    savedProduct.markEventsForDispatch();
+    await this.eventDispatcher.dispatchEvents(savedProduct.domainEvents);
+    savedProduct.clearEvents();
+
+    return ok({ ... });
+  }
+}
+```
+
+#### Interface Location
+
+- Interface: `src/shared/domain/events/domainEventDispatcher.interface.ts`
+- Implementation: `src/shared/domain/events/domainEventDispatcher.service.ts`
+- Export: `@shared/domain/events` or `@shared/ports/events`
 
 ### Repositories
 
@@ -512,6 +573,250 @@ export class CreateOrganizationDto {
 }
 ```
 
+## 🔄 Mappers (DTO ↔ Domain)
+
+Mappers provide a clean separation between DTOs (interface layer) and domain entities (domain layer), reducing coupling between controllers and use cases.
+
+### Location and Structure
+
+- Location: `src/{domain}/mappers/`
+- Name: `{entity}.mapper.ts` (e.g., `product.mapper.ts`)
+- Class: `{Entity}Mapper` (e.g., `ProductMapper`)
+- Export from `mappers/index.ts`
+- Tests: `test/{domain}/mappers/{entity}.mapper.spec.ts`
+
+```
+src/
+├── inventory/products/mappers/
+│   ├── product.mapper.ts
+│   └── index.ts
+├── inventory/movements/mappers/
+│   ├── movement.mapper.ts
+│   └── index.ts
+├── sales/mappers/
+│   ├── sale.mapper.ts
+│   └── index.ts
+└── returns/mappers/
+    ├── return.mapper.ts
+    └── index.ts
+```
+
+### Mapper Methods
+
+Each mapper should implement these static methods:
+
+1. **`toDomainProps(input)`**: Converts DTO/request to domain entity props (creates Value Objects)
+2. **`toResponseData(entity)`**: Converts domain entity to response data (extracts primitive values)
+3. **`toResponseDataList(entities)`**: Converts array of entities to response data array
+4. **`createLineEntity(lineProps, orgId)`**: For aggregates with lines (Movement, Sale, Return)
+
+### Example: ProductMapper
+
+```typescript
+import { Product } from '@product/domain/entities/product.entity';
+import { SKU } from '@product/domain/valueObjects/sku.valueObject';
+import { ProductName } from '@product/domain/valueObjects/productName.valueObject';
+import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
+import { CostMethod } from '@product/domain/valueObjects/costMethod.valueObject';
+import { UnitValueObject } from '@product/domain/valueObjects/unit.valueObject';
+
+export interface IProductCreateInput {
+  sku: string;
+  name: string;
+  description?: string;
+  unit: { code: string; name: string; precision: number };
+  barcode?: string;
+  brand?: string;
+  model?: string;
+  status?: 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED';
+  costMethod?: 'AVG' | 'FIFO';
+}
+
+export class ProductMapper {
+  // DTO → Domain Props (creates Value Objects)
+  public static toDomainProps(input: IProductCreateInput): IProductProps {
+    return {
+      sku: SKU.create(input.sku),
+      name: ProductName.create(input.name),
+      description: input.description,
+      unit: UnitValueObject.create(input.unit.code, input.unit.name, input.unit.precision),
+      barcode: input.barcode,
+      brand: input.brand,
+      model: input.model,
+      status: ProductStatus.create(input.status || 'ACTIVE'),
+      costMethod: CostMethod.create(input.costMethod || 'AVG'),
+    };
+  }
+
+  // Domain → Response Data (extracts primitives from Value Objects)
+  public static toResponseData(product: Product): IProductData {
+    return {
+      id: product.id,
+      sku: product.sku.getValue(),
+      name: product.name.getValue(),
+      description: product.description,
+      unit: {
+        code: product.unit.getValue().code,
+        name: product.unit.getValue().name,
+        precision: product.unit.getValue().precision,
+      },
+      barcode: product.barcode,
+      brand: product.brand,
+      model: product.model,
+      status: product.status.getValue(),
+      costMethod: product.costMethod.getValue(),
+      orgId: product.orgId!,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+    };
+  }
+
+  // List conversion
+  public static toResponseDataList(products: Product[]): IProductData[] {
+    return products.map(product => ProductMapper.toResponseData(product));
+  }
+}
+```
+
+### Example: Aggregate with Lines (MovementMapper)
+
+```typescript
+export class MovementMapper {
+  public static toDomainProps(input: IMovementCreateInput): IMovementProps {
+    return {
+      type: MovementType.create(input.type),
+      status: MovementStatus.create('DRAFT'), // Always DRAFT on creation
+      warehouseId: input.warehouseId,
+      reference: input.reference,
+      reason: input.reason,
+      note: input.note,
+      createdBy: input.createdBy,
+    };
+  }
+
+  public static toLineDomainProps(input: IMovementLineCreateInput, precision: number) {
+    const currency = input.currency || 'COP';
+    return {
+      productId: input.productId,
+      locationId: input.locationId,
+      quantity: Quantity.create(input.quantity, precision),
+      unitCost: input.unitCost ? Money.create(input.unitCost, currency, 2) : undefined,
+      currency: currency,
+      extra: input.extra,
+    };
+  }
+
+  public static createLineEntity(input: IMovementLineCreateInput, precision: number, orgId: string): MovementLine {
+    const props = MovementMapper.toLineDomainProps(input, precision);
+    return MovementLine.create(props, orgId);
+  }
+
+  public static toResponseData(movement: Movement): IMovementData {
+    return {
+      id: movement.id,
+      type: movement.type.getValue(),
+      status: movement.status.getValue(),
+      warehouseId: movement.warehouseId,
+      reference: movement.reference,
+      reason: movement.reason,
+      note: movement.note,
+      lines: movement.getLines().map(line => MovementMapper.lineToResponseData(line)),
+      createdBy: movement.createdBy,
+      orgId: movement.orgId!,
+      createdAt: movement.createdAt,
+      updatedAt: movement.updatedAt,
+    };
+  }
+
+  public static lineToResponseData(line: MovementLine): IMovementLineData {
+    return {
+      id: line.id,
+      productId: line.productId,
+      locationId: line.locationId,
+      quantity: line.quantity.getNumericValue(),
+      unitCost: line.unitCost?.getAmount(),
+      currency: line.currency,
+      extra: line.extra,
+    };
+  }
+}
+```
+
+### Using Mappers in Use Cases
+
+```typescript
+@Injectable()
+export class CreateProductUseCase {
+  async execute(request: ICreateProductRequest): Promise<Result<ICreateProductResponse, DomainError>> {
+    // Use mapper to create domain props from request
+    const productProps = ProductMapper.toDomainProps(request);
+    
+    // Create entity
+    const product = Product.create(productProps, request.orgId);
+    
+    // Save
+    const savedProduct = await this.productRepository.save(product);
+    
+    // Use mapper to convert to response
+    return ok({
+      success: true,
+      message: 'Product created successfully',
+      data: ProductMapper.toResponseData(savedProduct),
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+```
+
+### Benefits of Mappers
+
+1. **Decoupling**: Controllers don't need to know about Value Objects
+2. **Single Responsibility**: Conversion logic in one place
+3. **Testability**: Easy to unit test mappers independently
+4. **Consistency**: Same conversion logic used everywhere
+5. **Maintainability**: Changes to DTO or domain only require mapper updates
+
+### Mapper Testing
+
+Tests for mappers are located in `test/{domain}/mappers/`:
+
+```typescript
+describe('ProductMapper', () => {
+  describe('toDomainProps', () => {
+    it('Given: valid input When: converting to domain props Then: should create Value Objects', () => {
+      // Arrange
+      const input: IProductCreateInput = {
+        sku: 'PROD-001',
+        name: 'Test Product',
+        unit: { code: 'UNIT', name: 'Unit', precision: 0 },
+      };
+
+      // Act
+      const props = ProductMapper.toDomainProps(input);
+
+      // Assert
+      expect(props.sku).toBeInstanceOf(SKU);
+      expect(props.sku.getValue()).toBe('PROD-001');
+      expect(props.status.getValue()).toBe('ACTIVE'); // Default
+    });
+  });
+
+  describe('toResponseData', () => {
+    it('Given: Product entity When: converting to response Then: should extract values', () => {
+      // Arrange
+      const product = Product.create(productProps, 'org-123');
+
+      // Act
+      const data = ProductMapper.toResponseData(product);
+
+      // Assert
+      expect(data.sku).toBe('PROD-001');
+      expect(data.orgId).toBe('org-123');
+    });
+  });
+});
+```
+
 ## 🗄️ Database (Prisma)
 
 - Schema in `prisma/schema.prisma`
@@ -618,6 +923,10 @@ describe('CreateOrganizationUseCase', () => {
 12. ❌ DO NOT throw exceptions in use cases - return `Result<T, DomainError>` instead
 13. ❌ DO NOT use `try-catch` to return errors in use cases - use `err(new DomainError(...))`
 14. ❌ DO NOT access `.success` or `.data` directly on Result - use `isOk()`, `isErr()`, or `match()`
+15. ❌ DO NOT create Value Objects in controllers - use mappers (`Mapper.toDomainProps()`)
+16. ❌ DO NOT extract Value Object values in controllers - use mappers (`Mapper.toResponseData()`)
+17. ❌ DO NOT inject `DomainEventDispatcher` class directly - use `@Inject('DomainEventDispatcher')` with `IDomainEventDispatcher` interface
+18. ❌ DO NOT put tests in `src/` folder - tests go in `test/` following the same structure
 
 ## ✅ Checklist for New Features
 
@@ -629,28 +938,39 @@ When creating a new feature, follow this order:
    - [ ] Create repository port interface in `domain/ports/repositories/`
    - [ ] Create Domain Services if necessary
 
-2. **Infrastructure**:
+2. **Mappers**:
+   - [ ] Create mapper in `src/{domain}/mappers/{entity}.mapper.ts`
+   - [ ] Implement `toDomainProps()` method (DTO → Domain props with Value Objects)
+   - [ ] Implement `toResponseData()` method (Domain → Response data)
+   - [ ] Implement `toResponseDataList()` for list endpoints
+   - [ ] For aggregates with lines: implement `toLineDomainProps()` and `createLineEntity()`
+   - [ ] Export from `mappers/index.ts`
+
+3. **Infrastructure**:
    - [ ] Implement Prisma repository
    - [ ] Update Prisma schema if necessary
    - [ ] Create migration
 
-3. **Application**:
+4. **Application**:
    - [ ] Create use case
-   - [ ] Inject repository
+   - [ ] Inject repository and DomainEventDispatcher
+   - [ ] Use mapper for DTO → Domain conversion (`Mapper.toDomainProps()`)
+   - [ ] Use mapper for Domain → Response conversion (`Mapper.toResponseData()`)
    - [ ] Return `Result<T, DomainError>` (never throw exceptions)
    - [ ] Use appropriate domain error types (`ValidationError`, `NotFoundError`, etc.)
 
-4. **Interfaces**:
+5. **Interfaces**:
    - [ ] Create DTOs with validation
    - [ ] Create controller with Swagger
    - [ ] Inject use case
    - [ ] Use `resultToHttpResponse()` to convert Result to HTTP response
 
-5. **Module**:
+6. **Module**:
    - [ ] Register providers (repository, use case)
    - [ ] Export controller
 
-6. **Testing**:
+7. **Testing**:
+   - [ ] Unit tests for mapper in `test/{domain}/mappers/`
    - [ ] Unit tests for use case (test both `Ok` and `Err` results)
    - [ ] Use `result.isOk()`, `result.isErr()`, and `result.match()` for assertions
    - [ ] Mock use cases to return `ok(...)` or `err(...)` in controller tests
@@ -666,10 +986,27 @@ When creating a new feature, follow this order:
 
 ## 🎯 Priorities
 
-1. **Domain First**: Always start with the domain
+1. **Domain First**: Always start with the domain (entities, value objects, ports)
 2. **Type Safety**: TypeScript strict mode always
 3. **English First**: All texts in code must be in English
 4. **Multi-Tenancy**: Never forget `orgId`
 5. **Result Monad**: Always use `Result<T, DomainError>` in use cases (never throw exceptions)
-6. **Testing**: Write tests along with code
-7. **Documentation**: Swagger for all endpoints
+6. **Mappers**: Use mappers for DTO ↔ Domain conversion (never create Value Objects in controllers)
+7. **Ports**: Use interfaces from `domain/ports/` for dependencies
+8. **Testing**: Write tests along with code (tests in `test/` folder)
+9. **Documentation**: Swagger for all endpoints
+
+## 📊 Architecture Summary
+
+The project implements these architectural patterns:
+
+| Pattern | Implementation | Location |
+|---------|---------------|----------|
+| **Result Monad** | `Result<T, DomainError>` | `@shared/domain/result` |
+| **Ports** | Repository + Service interfaces | `{domain}/domain/ports/` |
+| **Mappers** | DTO ↔ Domain conversion | `{domain}/mappers/` |
+| **Domain Events** | `IDomainEventDispatcher` | `@shared/domain/events` |
+| **Aggregate Root** | Base entity class | `@shared/domain/base` |
+| **Value Objects** | Immutable domain concepts | `{domain}/domain/valueObjects/` |
+
+**Test counts**: 1483+ tests passing (55 use cases, 4 mappers, comprehensive coverage)

@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ReturnMapper } from '@returns/mappers';
 import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
@@ -112,47 +113,11 @@ export class GetReturnsUseCase {
     const paginatedReturns = returns.slice(skip, skip + limit);
     const totalPages = Math.ceil(total / limit);
 
+    // Use mapper to convert entities to response DTOs
     return ok({
       success: true,
       message: 'Returns retrieved successfully',
-      data: paginatedReturns.map(returnEntity => {
-        const totalAmount = returnEntity.getTotalAmount();
-        const lines = returnEntity.getLines().map(line => {
-          const lineTotal = line.getTotalPrice();
-          return {
-            id: line.id,
-            productId: line.productId,
-            locationId: line.locationId,
-            quantity: line.quantity.getNumericValue(),
-            originalSalePrice: line.originalSalePrice?.getAmount(),
-            originalUnitCost: line.originalUnitCost?.getAmount(),
-            currency: line.currency,
-            totalPrice: lineTotal?.getAmount() || 0,
-          };
-        });
-
-        return {
-          id: returnEntity.id,
-          returnNumber: returnEntity.returnNumber.getValue(),
-          status: returnEntity.status.getValue(),
-          type: returnEntity.type.getValue(),
-          reason: returnEntity.reason.getValue(),
-          warehouseId: returnEntity.warehouseId,
-          saleId: returnEntity.saleId,
-          sourceMovementId: returnEntity.sourceMovementId,
-          returnMovementId: returnEntity.returnMovementId,
-          note: returnEntity.note,
-          confirmedAt: returnEntity.confirmedAt,
-          cancelledAt: returnEntity.cancelledAt,
-          createdBy: returnEntity.createdBy,
-          orgId: returnEntity.orgId,
-          createdAt: returnEntity.createdAt,
-          updatedAt: returnEntity.updatedAt,
-          totalAmount: totalAmount?.getAmount(),
-          currency: totalAmount?.getCurrency(),
-          lines,
-        };
-      }),
+      data: ReturnMapper.toResponseDataList(paginatedReturns),
       pagination: {
         page,
         limit,
