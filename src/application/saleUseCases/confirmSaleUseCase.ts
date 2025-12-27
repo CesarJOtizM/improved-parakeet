@@ -2,7 +2,6 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InventoryOutGeneratedEvent } from '@sale/domain/events/inventoryOutGenerated.event';
 import { InventoryIntegrationService } from '@sale/domain/services/inventoryIntegration.service';
 import { SaleValidationService } from '@sale/domain/services/saleValidation.service';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   BusinessRuleError,
   DomainError,
@@ -16,6 +15,7 @@ import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 import type { ISaleData } from './createSaleUseCase';
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 import type { IStockRepository } from '@stock/domain/repositories/stockRepository.interface';
 
 export interface IConfirmSaleRequest {
@@ -36,7 +36,8 @@ export class ConfirmSaleUseCase {
     private readonly movementRepository: IMovementRepository,
     @Inject('StockRepository')
     private readonly stockRepository: IStockRepository,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(request: IConfirmSaleRequest): Promise<Result<IConfirmSaleResponse, DomainError>> {

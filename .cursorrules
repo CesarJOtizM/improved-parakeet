@@ -200,7 +200,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
 - Name: `{action}{Entity}UseCase.ts` (e.g., `createOrganizationUseCase.ts`)
 - Class: `{Action}{Entity}UseCase` (e.g., `CreateOrganizationUseCase`)
 - Inject necessary repositories and services
-- Return `IApiResponseSuccess<T>` or `IApiResponseError`
+- **MUST return `Result<T, DomainError>`** - Use Result monad for explicit error handling
 - Logging with NestJS `Logger`
 
 ```typescript
@@ -213,12 +213,185 @@ export class CreateOrganizationUseCase {
     private readonly organizationRepository: IOrganizationRepository
   ) {}
 
-  async execute(request: ICreateOrganizationRequest): Promise<ICreateOrganizationResponse> {
+  async execute(request: ICreateOrganizationRequest): Promise<Result<ICreateOrganizationResponse, DomainError>> {
     this.logger.log('Creating organization', { name: request.name });
-    // Use case logic
+    
+    // Validate input
+    if (!request.name) {
+      return err(new ValidationError('Organization name is required'));
+    }
+    
+    // Business logic
+    const organization = Organization.create({ name: request.name }, request.orgId);
+    await this.organizationRepository.save(organization);
+    
+    return ok({
+      success: true,
+      message: 'Organization created successfully',
+      data: { id: organization.id, name: organization.name },
+      timestamp: new Date().toISOString(),
+    });
   }
 }
 ```
+
+### Result<T, E> Monad Pattern
+
+**ALL use cases MUST use the Result monad for error handling**. This provides explicit, type-safe error handling following functional programming principles.
+
+#### Core Principles
+
+1. **Never throw exceptions in use cases** - Return `Result<T, DomainError>` instead
+2. **Use domain-specific error types** - `ValidationError`, `NotFoundError`, `ConflictError`, `BusinessRuleError`, `AuthenticationError`, `TokenError`, `RateLimitError`
+3. **Controllers convert Result to HTTP** - Use `resultToHttpResponse()` helper
+
+#### Result Methods
+
+```typescript
+import { ok, err, Result } from '@shared/domain/result';
+import { ValidationError, NotFoundError } from '@shared/domain/result/domainError';
+
+// Create results
+const success = ok(value);
+const failure = err(new ValidationError('Invalid input'));
+
+// Check result type
+if (result.isOk()) { /* handle success */ }
+if (result.isErr()) { /* handle error */ }
+
+// Extract values safely
+const value = result.unwrap(); // Throws if Err
+const value = result.unwrapOr(defaultValue); // Returns default if Err
+const value = result.unwrapOrElse(() => defaultValue); // Computes default if Err
+
+// Transform values
+const mapped = result.map(value => value * 2); // Only maps if Ok
+const flatMapped = result.flatMap(value => ok(value * 2)); // Chains Results
+
+// Pattern matching (preferred)
+result.match(
+  value => { /* handle success */ },
+  error => { /* handle error */ }
+);
+```
+
+#### Domain Error Types
+
+```typescript
+// Validation errors - Bad Request (400)
+new ValidationError('Invalid email format')
+
+// Not found errors - Not Found (404)
+new NotFoundError('User not found')
+
+// Conflict errors - Conflict (409)
+new ConflictError('Email already exists')
+
+// Business rule violations - Bad Request (400)
+new BusinessRuleError('Cannot delete active product')
+
+// Authentication errors - Unauthorized (401) - Generic message for security
+new AuthenticationError('internal_reason') // Message: "Authentication failed"
+
+// Token errors - Unauthorized (401) - Generic message for security
+new TokenError('internal_reason') // Message: "Invalid or expired token"
+
+// Rate limit errors - Too Many Requests (429)
+new RateLimitError('Too many requests. Please try again later.')
+```
+
+#### Use Case Pattern
+
+```typescript
+async execute(request: IRequest): Promise<Result<IResponse, DomainError>> {
+  try {
+    // Validation
+    if (!request.field) {
+      return err(new ValidationError('Field is required'));
+    }
+    
+    // Business logic
+    const entity = await this.repository.findById(request.id);
+    if (!entity) {
+      return err(new NotFoundError('Entity not found'));
+    }
+    
+    // Success
+    return ok({
+      success: true,
+      message: 'Operation successful',
+      data: { /* ... */ },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    this.logger.error('Use case failed:', error);
+    return err(new BusinessRuleError('Operation failed'));
+  }
+}
+```
+
+#### Controller Pattern
+
+```typescript
+@Post()
+async create(@Body() dto: CreateDto, @OrgId() orgId: string) {
+  const result = await this.createUseCase.execute({ ...dto, orgId });
+  return resultToHttpResponse(result); // Converts Result to HTTP response or throws appropriate exception
+}
+```
+
+#### Testing Pattern
+
+```typescript
+it('Given: valid input When: executing use case Then: should return Ok result', async () => {
+  // Arrange
+  mockRepository.save.mockResolvedValue(mockEntity);
+  
+  // Act
+  const result = await useCase.execute(validRequest);
+  
+  // Assert
+  expect(result.isOk()).toBe(true);
+  result.match(
+    value => {
+      expect(value.success).toBe(true);
+      expect(value.data).toBeDefined();
+    },
+    () => {
+      throw new Error('Expected Ok result');
+    }
+  );
+});
+
+it('Given: invalid input When: executing use case Then: should return Err result', async () => {
+  // Arrange
+  const invalidRequest = { /* ... */ };
+  
+  // Act
+  const result = await useCase.execute(invalidRequest);
+  
+  // Assert
+  expect(result.isErr()).toBe(true);
+  result.match(
+    () => {
+      throw new Error('Expected Err result');
+    },
+    error => {
+      expect(error).toBeInstanceOf(ValidationError);
+      expect(error.message).toBe('Field is required');
+    }
+  );
+});
+```
+
+#### Security Considerations for Auth Use Cases
+
+- **Authentication errors** must use generic messages: "Authentication failed" (never reveal if user exists)
+- **Token errors** must use generic messages: "Invalid or expired token" (never reveal specific token issues)
+- **Log detailed errors internally** but return generic messages to clients
+- **Rate limit errors** are safe to expose as they don't reveal sensitive information
+
+See `docs/result-monad-guide.md` for complete documentation.
 
 ## 🌐 Controllers (HTTP)
 
@@ -304,18 +477,52 @@ it('Given: precondition When: action Then: expected result', () => {
 ### Example
 
 ```typescript
+import { ok, err } from '@shared/domain/result';
+import { ValidationError, ConflictError } from '@shared/domain/result/domainError';
+
 describe('CreateOrganizationUseCase', () => {
-  it('Given: valid organization data When: creating organization Then: should return created organization', async () => {
+  it('Given: valid organization data When: creating organization Then: should return Ok result', async () => {
     // Arrange
-    const request = { name: 'Test Org', slug: 'test-org' };
+    const request = { name: 'Test Org', slug: 'test-org', orgId: 'org-123' };
     mockRepository.save.mockResolvedValue(mockOrganization);
+    mockRepository.existsBySlug.mockResolvedValue(false);
 
     // Act
     const result = await useCase.execute(request);
 
     // Assert
-    expect(result.success).toBe(true);
+    expect(result.isOk()).toBe(true);
+    result.match(
+      value => {
+        expect(value.success).toBe(true);
+        expect(value.data).toBeDefined();
+      },
+      () => {
+        throw new Error('Expected Ok result');
+      }
+    );
     expect(mockRepository.save).toHaveBeenCalled();
+  });
+
+  it('Given: duplicate slug When: creating organization Then: should return ConflictError', async () => {
+    // Arrange
+    const request = { name: 'Test Org', slug: 'existing-slug', orgId: 'org-123' };
+    mockRepository.existsBySlug.mockResolvedValue(true);
+
+    // Act
+    const result = await useCase.execute(request);
+
+    // Assert
+    expect(result.isErr()).toBe(true);
+    result.match(
+      () => {
+        throw new Error('Expected Err result');
+      },
+      error => {
+        expect(error).toBeInstanceOf(ConflictError);
+        expect(error.message).toContain('already exists');
+      }
+    );
   });
 });
 ```
@@ -343,6 +550,9 @@ describe('CreateOrganizationUseCase', () => {
 9. ❌ DO NOT create endpoints without Swagger documentation
 10. ❌ DO NOT create functions without explicit return types when necessary
 11. ❌ DO NOT use Spanish in code - ALL texts must be in English
+12. ❌ DO NOT throw exceptions in use cases - return `Result<T, DomainError>` instead
+13. ❌ DO NOT use `try-catch` to return errors in use cases - use `err(new DomainError(...))`
+14. ❌ DO NOT access `.success` or `.data` directly on Result - use `isOk()`, `isErr()`, or `match()`
 
 ## ✅ Checklist for New Features
 
@@ -362,18 +572,23 @@ When creating a new feature, follow this order:
 3. **Application**:
    - [ ] Create use case
    - [ ] Inject repository
+   - [ ] Return `Result<T, DomainError>` (never throw exceptions)
+   - [ ] Use appropriate domain error types (`ValidationError`, `NotFoundError`, etc.)
 
 4. **Interfaces**:
    - [ ] Create DTOs with validation
    - [ ] Create controller with Swagger
    - [ ] Inject use case
+   - [ ] Use `resultToHttpResponse()` to convert Result to HTTP response
 
 5. **Module**:
    - [ ] Register providers (repository, use case)
    - [ ] Export controller
 
 6. **Testing**:
-   - [ ] Unit tests for use case
+   - [ ] Unit tests for use case (test both `Ok` and `Err` results)
+   - [ ] Use `result.isOk()`, `result.isErr()`, and `result.match()` for assertions
+   - [ ] Mock use cases to return `ok(...)` or `err(...)` in controller tests
    - [ ] E2E tests for endpoint
 
 ## 📚 References
@@ -382,6 +597,7 @@ When creating a new feature, follow this order:
 - Project status: `docs/REPOSITORY_STATUS.md`
 - Work plan: `docs/work_plan.md`
 - Test structure: `docs/testing-structure.md`
+- **Result Monad Guide**: `docs/result-monad-guide.md` - Complete guide on using Result<T, E> pattern
 
 ## 🎯 Priorities
 
@@ -389,5 +605,6 @@ When creating a new feature, follow this order:
 2. **Type Safety**: TypeScript strict mode always
 3. **English First**: All texts in code must be in English
 4. **Multi-Tenancy**: Never forget `orgId`
-5. **Testing**: Write tests along with code
-6. **Documentation**: Swagger for all endpoints
+5. **Result Monad**: Always use `Result<T, DomainError>` in use cases (never throw exceptions)
+6. **Testing**: Write tests along with code
+7. **Documentation**: Swagger for all endpoints

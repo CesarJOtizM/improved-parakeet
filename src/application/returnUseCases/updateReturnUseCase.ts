@@ -1,6 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ReturnReason } from '@returns/domain/valueObjects/returnReason.valueObject';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   BusinessRuleError,
   DomainError,
@@ -13,6 +12,7 @@ import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IReturnData } from './createReturnUseCase';
 import type { IReturnRepository } from '@returns/domain/repositories/returnRepository.interface';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 
 export interface IUpdateReturnRequest {
   id: string;
@@ -30,7 +30,8 @@ export class UpdateReturnUseCase {
   constructor(
     @Inject('ReturnRepository')
     private readonly returnRepository: IReturnRepository,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(

@@ -1,5 +1,4 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   BusinessRuleError,
   DomainError,
@@ -11,6 +10,7 @@ import {
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 
 export interface IRemoveSaleLineRequest {
   saleId: string;
@@ -27,7 +27,8 @@ export class RemoveSaleLineUseCase {
   constructor(
     @Inject('SaleRepository')
     private readonly saleRepository: ISaleRepository,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(

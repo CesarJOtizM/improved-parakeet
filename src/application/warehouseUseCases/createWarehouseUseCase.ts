@@ -1,5 +1,4 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   ConflictError,
   DomainError,
@@ -14,6 +13,7 @@ import { Warehouse } from '@warehouse/domain/entities/warehouse.entity';
 import { Address } from '@warehouse/domain/valueObjects/address.valueObject';
 import { WarehouseCode } from '@warehouse/domain/valueObjects/warehouseCode.valueObject';
 
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
 
 export interface ICreateWarehouseRequest {
@@ -58,7 +58,8 @@ export class CreateWarehouseUseCase {
   constructor(
     @Inject('WarehouseRepository')
     private readonly warehouseRepository: IWarehouseRepository,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(

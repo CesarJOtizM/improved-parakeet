@@ -2,9 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { DomainEvent } from './domainEvent.base';
 import { DomainEventBus } from './domainEventBus.service';
+import { IDomainEventDispatcher } from './domainEventDispatcher.interface';
 
 @Injectable()
-export class DomainEventDispatcher {
+export class DomainEventDispatcher implements IDomainEventDispatcher {
   private readonly logger = new Logger(DomainEventDispatcher.name);
 
   constructor(private readonly eventBus: DomainEventBus) {}

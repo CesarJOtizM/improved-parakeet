@@ -109,7 +109,10 @@ import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatch
   providers: [
     // Event Bus and Dispatcher
     DomainEventBus,
-    DomainEventDispatcher,
+    {
+      provide: 'DomainEventDispatcher',
+      useClass: DomainEventDispatcher,
+    },
 
     // Event Handlers
     RoleAssignedEventHandler,
@@ -201,7 +204,7 @@ import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatch
     RoleBasedAuthGuard,
     JwtStrategy,
     DomainEventBus,
-    DomainEventDispatcher,
+    'DomainEventDispatcher',
     EmailService,
   ],
 })

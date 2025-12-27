@@ -4,7 +4,6 @@ import { SaleLine } from '@sale/domain/entities/saleLine.entity';
 import { SaleNumberGenerationService } from '@sale/domain/services/saleNumberGeneration.service';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
 import { SaleStatus } from '@sale/domain/valueObjects/saleStatus.valueObject';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   DomainError,
   NotFoundError,
@@ -17,6 +16,7 @@ import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
 
 export interface ICreateSaleRequest {
@@ -65,7 +65,8 @@ export class CreateSaleUseCase {
     private readonly saleRepository: ISaleRepository,
     @Inject('WarehouseRepository')
     private readonly warehouseRepository: IWarehouseRepository,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(request: ICreateSaleRequest): Promise<Result<ICreateSaleResponse, DomainError>> {

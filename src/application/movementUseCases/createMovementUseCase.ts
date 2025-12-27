@@ -4,7 +4,6 @@ import { MovementLine } from '@movement/domain/entities/movementLine.entity';
 import { MovementStatus } from '@movement/domain/valueObjects/movementStatus.valueObject';
 import { MovementType } from '@movement/domain/valueObjects/movementType.valueObject';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   DomainError,
   NotFoundError,
@@ -17,6 +16,7 @@ import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
 
 export interface ICreateMovementLineRequest {
@@ -77,7 +77,8 @@ export class CreateMovementUseCase {
     private readonly productRepository: IProductRepository,
     @Inject('WarehouseRepository')
     private readonly warehouseRepository: IWarehouseRepository,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(

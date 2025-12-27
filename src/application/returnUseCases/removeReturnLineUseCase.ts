@@ -1,5 +1,4 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   BusinessRuleError,
   DomainError,
@@ -11,6 +10,7 @@ import {
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IReturnRepository } from '@returns/domain/repositories/returnRepository.interface';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 
 export interface IRemoveReturnLineRequest {
   returnId: string;
@@ -27,7 +27,8 @@ export class RemoveReturnLineUseCase {
   constructor(
     @Inject('ReturnRepository')
     private readonly returnRepository: IReturnRepository,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(

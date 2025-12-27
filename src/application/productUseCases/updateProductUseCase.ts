@@ -4,7 +4,6 @@ import { CostMethod } from '@product/domain/valueObjects/costMethod.valueObject'
 import { ProductName } from '@product/domain/valueObjects/productName.valueObject';
 import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
 import { UnitValueObject } from '@product/domain/valueObjects/unit.valueObject';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   BusinessRuleError,
   DomainError,
@@ -20,6 +19,7 @@ import type { IProductData } from './createProductUseCase';
 import type { IProductProps } from '@product/domain/entities/product.entity';
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
 import type { IMovementRepository as IProductMovementRepository } from '@product/domain/services/productBusinessRules.service';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 
 export interface IUpdateProductRequest {
   productId: string;
@@ -49,7 +49,8 @@ export class UpdateProductUseCase {
     private readonly productRepository: IProductRepository,
     @Inject('MovementRepository')
     private readonly movementRepository: IProductMovementRepository,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(

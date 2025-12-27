@@ -1,6 +1,5 @@
 import { Quantity } from '@inventory/stock';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   BusinessRuleError,
   DomainError,
@@ -16,6 +15,7 @@ import { TransferValidationService } from '@transfer/domain/services/transferVal
 import { TransferStatus } from '@transfer/domain/valueObjects/transferStatus.valueObject';
 
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 import type { IStockRepository } from '@stock/domain/repositories/stockRepository.interface';
 import type { ITransferRepository } from '@transfer/domain/repositories/transferRepository.interface';
 import type { ILocationRepository } from '@warehouse/domain/repositories/locationRepository.interface';
@@ -67,7 +67,8 @@ export class InitiateTransferUseCase {
     private readonly stockRepository: IStockRepository,
     @Inject('LocationRepository')
     private readonly locationRepository: ILocationRepository,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(

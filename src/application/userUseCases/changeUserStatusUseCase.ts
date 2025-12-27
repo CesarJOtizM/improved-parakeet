@@ -1,7 +1,6 @@
 import { UserManagementService } from '@auth/domain/services/userManagementService';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   BusinessRuleError,
   DomainError,
@@ -15,6 +14,7 @@ import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IUserRepository } from '@auth/domain/repositories';
 import type { UserStatusValue } from '@auth/domain/valueObjects/userStatus.valueObject';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 
 export interface IChangeUserStatusRequest {
   userId: string;
@@ -43,7 +43,8 @@ export class ChangeUserStatusUseCase {
   constructor(
     @Inject('UserRepository') private readonly userRepository: IUserRepository,
     private readonly prisma: PrismaService,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(

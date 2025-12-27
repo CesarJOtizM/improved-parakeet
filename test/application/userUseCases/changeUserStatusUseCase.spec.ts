@@ -6,7 +6,7 @@ import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 import {
   BusinessRuleError,
   NotFoundError,
@@ -21,7 +21,7 @@ describe('ChangeUserStatusUseCase', () => {
   let useCase: ChangeUserStatusUseCase;
   let mockUserRepository: jest.Mocked<IUserRepository>;
   let mockPrismaService: jest.Mocked<PrismaService>;
-  let mockEventDispatcher: jest.Mocked<DomainEventDispatcher>;
+  let mockEventDispatcher: jest.Mocked<IDomainEventDispatcher>;
 
   beforeEach(() => {
     jest.clearAllMocks();

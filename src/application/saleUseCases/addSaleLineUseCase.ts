@@ -1,7 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { SaleLine } from '@sale/domain/entities/saleLine.entity';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   DomainError,
   NotFoundError,
@@ -15,6 +14,7 @@ import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 
 export interface IAddSaleLineRequest {
   saleId: string;
@@ -47,7 +47,8 @@ export class AddSaleLineUseCase {
     private readonly saleRepository: ISaleRepository,
     @Inject('ProductRepository')
     private readonly productRepository: IProductRepository,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(request: IAddSaleLineRequest): Promise<Result<IAddSaleLineResponse, DomainError>> {

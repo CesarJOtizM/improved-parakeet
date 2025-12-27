@@ -6,7 +6,6 @@ import { ReturnReason } from '@returns/domain/valueObjects/returnReason.valueObj
 import { ReturnStatus } from '@returns/domain/valueObjects/returnStatus.valueObject';
 import { ReturnType } from '@returns/domain/valueObjects/returnType.valueObject';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   DomainError,
   err,
@@ -20,6 +19,7 @@ import { Money } from '@stock/domain/valueObjects/money.valueObject';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 import type { IReturnRepository } from '@returns/domain/repositories/returnRepository.interface';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
 
 export interface ICreateReturnRequest {
@@ -85,7 +85,8 @@ export class CreateReturnUseCase {
     private readonly returnRepository: IReturnRepository,
     @Inject('WarehouseRepository')
     private readonly warehouseRepository: IWarehouseRepository,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(

@@ -3,7 +3,6 @@ import { InventoryInGeneratedEvent } from '@returns/domain/events/inventoryInGen
 import { InventoryOutGeneratedEvent } from '@returns/domain/events/inventoryOutGenerated.event';
 import { InventoryIntegrationService } from '@returns/domain/services/inventoryIntegration.service';
 import { ReturnValidationService } from '@returns/domain/services/returnValidation.service';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   BusinessRuleError,
   DomainError,
@@ -18,6 +17,7 @@ import type { IReturnData } from './createReturnUseCase';
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
 import type { IReturnRepository } from '@returns/domain/repositories/returnRepository.interface';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 
 export interface IConfirmReturnRequest {
   id: string;
@@ -39,7 +39,8 @@ export class ConfirmReturnUseCase {
     private readonly movementRepository: IMovementRepository,
     @Inject('SaleRepository')
     private readonly saleRepository: ISaleRepository,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(

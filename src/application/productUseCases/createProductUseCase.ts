@@ -6,7 +6,6 @@ import { ProductName } from '@product/domain/valueObjects/productName.valueObjec
 import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
 import { SKU } from '@product/domain/valueObjects/sku.valueObject';
 import { UnitValueObject } from '@product/domain/valueObjects/unit.valueObject';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   ConflictError,
   DomainError,
@@ -18,6 +17,7 @@ import {
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 
 export interface ICreateProductRequest {
   sku: string;
@@ -65,7 +65,8 @@ export class CreateProductUseCase {
   constructor(
     @Inject('ProductRepository')
     private readonly productRepository: IProductRepository,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(

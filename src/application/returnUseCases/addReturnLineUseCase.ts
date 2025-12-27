@@ -1,7 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ReturnLine } from '@returns/domain/entities/returnLine.entity';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   BusinessRuleError,
   DomainError,
@@ -20,6 +19,7 @@ import type { IMovementRepository } from '@movement/domain/repositories/movement
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
 import type { IReturnRepository } from '@returns/domain/repositories/returnRepository.interface';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 
 export interface IAddReturnLineRequest {
   returnId: string;
@@ -45,7 +45,8 @@ export class AddReturnLineUseCase {
     private readonly saleRepository: ISaleRepository,
     @Inject('MovementRepository')
     private readonly movementRepository: IMovementRepository,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(

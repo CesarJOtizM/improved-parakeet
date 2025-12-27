@@ -2,7 +2,6 @@ import { RoleAssignedEvent } from '@auth/domain/events/roleAssigned.event';
 import { RoleAssignmentService } from '@auth/domain/services/roleAssignmentService';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import {
   BusinessRuleError,
   ConflictError,
@@ -15,6 +14,7 @@ import {
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IRoleRepository, IUserRepository } from '@auth/domain/repositories';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 
 export interface IAssignRoleToUserRequest {
   userId: string;
@@ -40,7 +40,8 @@ export class AssignRoleToUserUseCase {
     @Inject('UserRepository') private readonly userRepository: IUserRepository,
     @Inject('RoleRepository') private readonly roleRepository: IRoleRepository,
     private readonly prisma: PrismaService,
-    private readonly eventDispatcher: DomainEventDispatcher
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(
