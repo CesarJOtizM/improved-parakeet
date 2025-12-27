@@ -8,7 +8,7 @@ import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BusinessRuleError, NotFoundError } from '@shared/domain/result/domainError';
 
 describe('AssignRoleToUserUseCase', () => {
   const mockOrgId = 'test-org-id';
@@ -127,7 +127,7 @@ describe('AssignRoleToUserUseCase', () => {
       );
     };
 
-    it('Given: valid user and role When: assigning role Then: should assign successfully', async () => {
+    it('Given: valid user and role When: assigning role Then: should return success result', async () => {
       // Arrange
       // Note: The use case currently uses user.roles as currentUserRoles (which is a bug)
       // So we need the user to have ADMIN role for the test to pass
@@ -149,15 +149,21 @@ describe('AssignRoleToUserUseCase', () => {
       const result = await useCase.execute(request);
 
       // Assert
-      expect(result.success).toBe(true);
-      expect(result.message).toBe('Role assigned successfully');
-      expect(result.data.roleName).toBe('SUPERVISOR');
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.message).toBe('Role assigned successfully');
+          expect(value.data.roleName).toBe('SUPERVISOR');
+        },
+        () => fail('Should not return error')
+      );
       expect(mockUserRepository.findById).toHaveBeenCalledWith(mockUserId, mockOrgId);
       expect(mockRoleRepository.findById).toHaveBeenCalledWith(mockRoleId);
       expect(mockPrismaService.userRole.create).toHaveBeenCalled();
     });
 
-    it('Given: non-existent user When: assigning role Then: should throw NotFoundException', async () => {
+    it('Given: non-existent user When: assigning role Then: should return NotFoundError result', async () => {
       // Arrange
       mockUserRepository.findById.mockResolvedValue(null);
 
@@ -168,12 +174,22 @@ describe('AssignRoleToUserUseCase', () => {
         assignedBy: mockAssignedBy,
       };
 
-      // Act & Assert
-      await expect(useCase.execute(request)).rejects.toThrow(NotFoundException);
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(NotFoundError);
+          expect(error.message).toContain('User not found');
+        }
+      );
       expect(mockPrismaService.userRole.create).not.toHaveBeenCalled();
     });
 
-    it('Given: non-existent role When: assigning role Then: should throw NotFoundException', async () => {
+    it('Given: non-existent role When: assigning role Then: should return NotFoundError result', async () => {
       // Arrange
       const user = createMockUser([]);
       mockUserRepository.findById.mockResolvedValue(user);
@@ -186,14 +202,24 @@ describe('AssignRoleToUserUseCase', () => {
         assignedBy: mockAssignedBy,
       };
 
-      // Act & Assert
-      await expect(useCase.execute(request)).rejects.toThrow(NotFoundException);
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(NotFoundError);
+          expect(error.message).toContain('Role not found');
+        }
+      );
     });
 
-    it('Given: user already has role When: assigning role Then: should throw BadRequestException', async () => {
+    it('Given: user already has role When: assigning role Then: should return error result', async () => {
       // Arrange
       // User needs ADMIN role for validation to pass (due to use case bug)
-      // Service validation happens before DB check, so it throws BadRequestException
+      // Service validation happens before DB check, so it returns BusinessRuleError
       const user = createMockUser(['ADMIN', 'SUPERVISOR']);
       const role = createMockRole('SUPERVISOR');
       mockUserRepository.findById.mockResolvedValue(user);
@@ -206,12 +232,21 @@ describe('AssignRoleToUserUseCase', () => {
         assignedBy: mockAssignedBy,
       };
 
-      // Act & Assert
-      await expect(useCase.execute(request)).rejects.toThrow(BadRequestException);
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(BusinessRuleError);
+        }
+      );
       expect(mockPrismaService.userRole.create).not.toHaveBeenCalled();
     });
 
-    it('Given: inactive role When: assigning role Then: should throw BadRequestException', async () => {
+    it('Given: inactive role When: assigning role Then: should return error result', async () => {
       // Arrange
       const user = createMockUser([]);
       const role = createMockRole('SUPERVISOR', false);
@@ -225,8 +260,17 @@ describe('AssignRoleToUserUseCase', () => {
         assignedBy: mockAssignedBy,
       };
 
-      // Act & Assert
-      await expect(useCase.execute(request)).rejects.toThrow(BadRequestException);
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(BusinessRuleError);
+        }
+      );
     });
   });
 });

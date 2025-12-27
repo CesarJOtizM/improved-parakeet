@@ -1,4 +1,5 @@
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, err, ok, Result, ValidationError } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IRoleRepository } from '@auth/domain/repositories';
@@ -26,11 +27,11 @@ export class GetRolesUseCase {
 
   constructor(@Inject('RoleRepository') private readonly roleRepository: IRoleRepository) {}
 
-  async execute(request: IGetRolesRequest): Promise<IGetRolesResponse> {
+  async execute(request: IGetRolesRequest): Promise<Result<IGetRolesResponse, DomainError>> {
     this.logger.log('Getting available roles for organization', { orgId: request.orgId });
 
     if (!request.orgId) {
-      throw new BadRequestException('Organization ID is required');
+      return err(new ValidationError('Organization ID is required'));
     }
 
     // Get available roles (system + custom for this org)
@@ -41,7 +42,7 @@ export class GetRolesUseCase {
       count: roles.length,
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Roles retrieved successfully',
       data: roles.map(role => ({
@@ -55,6 +56,6 @@ export class GetRolesUseCase {
         updatedAt: role.updatedAt,
       })) as IGetRolesData[],
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

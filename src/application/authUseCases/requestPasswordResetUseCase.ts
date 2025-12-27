@@ -1,7 +1,8 @@
 import { Otp } from '@auth/domain/entities/otp.entity';
 import { RateLimitService } from '@auth/domain/services/rateLimitService';
 import { EmailService } from '@infrastructure/externalServices';
-import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, err, ok, RateLimitError, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IOtpRepository, IUserRepository } from '@auth/domain/repositories';
@@ -31,7 +32,9 @@ export class RequestPasswordResetUseCase {
     private readonly rateLimitService: RateLimitService
   ) {}
 
-  async execute(request: IRequestPasswordResetRequest): Promise<IRequestPasswordResetResponse> {
+  async execute(
+    request: IRequestPasswordResetRequest
+  ): Promise<Result<IRequestPasswordResetResponse, DomainError>> {
     try {
       // Verificar rate limiting para solicitudes de recuperación
       const rateLimitResult = await this.rateLimitService.checkPasswordResetRateLimit(
@@ -40,18 +43,16 @@ export class RequestPasswordResetUseCase {
 
       if (!rateLimitResult.allowed) {
         this.logger.warn(`Password reset rate limit exceeded for IP: ${request.ipAddress}`);
-        throw new HttpException(
-          'Too many password reset requests. Please try again later.',
-          HttpStatus.TOO_MANY_REQUESTS
-        );
+        return err(new RateLimitError('Too many password reset requests. Please try again later.'));
       }
 
       // Buscar usuario por email
       const user = await this.userRepository.findByEmail(request.email, request.orgId);
       if (!user) {
-        // Por seguridad, no revelamos si el email existe o no
+        // SECURITY: Por seguridad, no revelamos si el email existe o no
+        // Retornamos éxito de todas formas
         this.logger.warn(`Password reset attempt with non-existent email: ${request.email}`);
-        return {
+        return ok({
           success: true,
           message: 'If the email exists in our system, you will receive a verification code.',
           data: {
@@ -59,13 +60,14 @@ export class RequestPasswordResetUseCase {
             expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
           },
           timestamp: new Date().toISOString(),
-        };
+        });
       }
 
       // Verificar que el usuario esté activo
       if (!user.canLogin()) {
+        // SECURITY: Por seguridad, no revelamos que la cuenta está bloqueada
         this.logger.warn(`Password reset attempt for locked/inactive user: ${user.id}`);
-        return {
+        return ok({
           success: true,
           message: 'If the email exists in our system, you will receive a verification code.',
           data: {
@@ -73,7 +75,7 @@ export class RequestPasswordResetUseCase {
             expiresAt: new Date(Date.now() + 15 * 60 * 1000),
           },
           timestamp: new Date().toISOString(),
-        };
+        });
       }
 
       // Verificar si ya existe un OTP válido reciente
@@ -86,7 +88,7 @@ export class RequestPasswordResetUseCase {
       const validRecentOtp = recentOtp.find(otp => otp.type === 'PASSWORD_RESET' && otp.isValid());
       if (validRecentOtp) {
         this.logger.warn(`Password reset attempt with existing valid OTP for user: ${user.id}`);
-        return {
+        return ok({
           success: true,
           message:
             'A verification code has already been sent. Check your email or wait before requesting a new one.',
@@ -95,7 +97,7 @@ export class RequestPasswordResetUseCase {
             expiresAt: validRecentOtp.expiresAt,
           },
           timestamp: new Date().toISOString(),
-        };
+        });
       }
 
       // Crear nuevo OTP
@@ -124,12 +126,21 @@ export class RequestPasswordResetUseCase {
         this.logger.error(`Failed to send password reset email to user: ${user.id}`, {
           error: emailResult.error,
         });
-        throw new Error('Error sending recovery email');
+        // Still return success to not reveal if email exists
+        return ok({
+          success: true,
+          message: 'If the email exists in our system, you will receive a verification code.',
+          data: {
+            email: request.email,
+            expiresAt: otp.expiresAt,
+          },
+          timestamp: new Date().toISOString(),
+        });
       }
 
       this.logger.log(`Password reset OTP sent successfully to user: ${user.id}`);
 
-      return {
+      return ok({
         success: true,
         message: 'A verification code has been sent to your email.',
         data: {
@@ -137,14 +148,19 @@ export class RequestPasswordResetUseCase {
           expiresAt: otp.expiresAt,
         },
         timestamp: new Date().toISOString(),
-      };
+      });
     } catch (error) {
-      if (error instanceof HttpException && error.getStatus() === HttpStatus.TOO_MANY_REQUESTS) {
-        throw error;
-      }
-
+      // SECURITY: Log full error but return success to not reveal information
       this.logger.error('Request password reset use case failed:', error);
-      throw new Error('Error processing password reset request');
+      return ok({
+        success: true,
+        message: 'If the email exists in our system, you will receive a verification code.',
+        data: {
+          email: request.email,
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+        },
+        timestamp: new Date().toISOString(),
+      });
     }
   }
 }

@@ -4,7 +4,16 @@ import { AuthenticationService } from '@auth/domain/services/authenticationServi
 import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
 import { EmailService } from '@infrastructure/externalServices/emailService';
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  ConflictError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+  ValidationError,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IUserRepository } from '@auth/domain/repositories';
@@ -45,13 +54,15 @@ export class RegisterUserUseCase {
     private readonly emailService: EmailService
   ) {}
 
-  async execute(request: IRegisterUserRequest): Promise<IRegisterUserResponse> {
+  async execute(
+    request: IRegisterUserRequest
+  ): Promise<Result<IRegisterUserResponse, DomainError>> {
     try {
       this.logger.log('Starting user registration', { email: request.email });
 
       // Validate that organization is provided
       if (!request.organizationSlug && !request.organizationId) {
-        throw new BadRequestException('organizationSlug or organizationId must be provided');
+        return err(new ValidationError('organizationSlug or organizationId must be provided'));
       }
 
       // Buscar organización
@@ -63,11 +74,11 @@ export class RegisterUserUseCase {
       }
 
       if (!organization) {
-        throw new NotFoundException('Organization not found');
+        return err(new NotFoundError('Organization not found'));
       }
 
       if (!organization.isActive) {
-        throw new BadRequestException('Organization is not active');
+        return err(new ValidationError('Organization is not active'));
       }
 
       const orgId = organization.id;
@@ -75,7 +86,7 @@ export class RegisterUserUseCase {
       // Validate that email doesn't exist in the organization
       const existingUserByEmail = await this.userRepository.findByEmail(request.email, orgId);
       if (existingUserByEmail) {
-        throw new BadRequestException('A user with this email already exists in the organization');
+        return err(new ConflictError('A user with this email already exists in the organization'));
       }
 
       // Validate that username doesn't exist in the organization
@@ -84,15 +95,17 @@ export class RegisterUserUseCase {
         orgId
       );
       if (existingUserByUsername) {
-        throw new BadRequestException(
-          'A user with this username already exists in the organization'
+        return err(
+          new ConflictError('A user with this username already exists in the organization')
         );
       }
 
       // Validate password
       const passwordValidation = AuthenticationService.validatePasswordStrength(request.password);
       if (!passwordValidation.isValid) {
-        throw new BadRequestException(`Invalid password: ${passwordValidation.errors.join(', ')}`);
+        return err(
+          new ValidationError(`Invalid password: ${passwordValidation.errors.join(', ')}`)
+        );
       }
 
       // Create user with INACTIVE status by default
@@ -156,7 +169,7 @@ export class RegisterUserUseCase {
         // Don't fail registration due to email error
       }
 
-      return {
+      return ok({
         success: true,
         data: {
           id: user.id,
@@ -171,18 +184,16 @@ export class RegisterUserUseCase {
           'User registered successfully. Your account requires activation by the administrator.',
         timestamp: new Date().toISOString(),
         requiresAdminActivation: true,
-      };
+      });
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof NotFoundException) {
-        throw error;
-      }
-
       this.logger.error('Error in user registration', {
         error: error instanceof Error ? error.message : 'Unknown error',
         email: request.email,
       });
 
-      throw new BadRequestException(error instanceof Error ? error.message : 'Unknown error');
+      return err(
+        new ValidationError(error instanceof Error ? error.message : 'Registration failed')
+      );
     }
   }
 }

@@ -25,6 +25,7 @@ import {
 import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
 import { OrgId } from '@shared/decorators/orgId.decorator';
 import { RequirePermissions } from '@shared/decorators/requirePermissions.decorator';
+import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
 import { AuditLogResponseDto } from './dto/auditLogResponse.dto';
 import { GetAuditLogsQueryDto, GetAuditLogsResponseDto } from './dto/getAuditLogs.dto';
@@ -58,7 +59,7 @@ export class AuditController {
   ): Promise<GetAuditLogsResponseDto> {
     this.logger.log('Getting audit logs', { orgId, query });
 
-    return await this.getAuditLogsUseCase.execute({
+    const result = await this.getAuditLogsUseCase.execute({
       orgId,
       page: query.page,
       limit: query.limit,
@@ -69,6 +70,7 @@ export class AuditController {
       startDate: query.startDate ? new Date(query.startDate) : undefined,
       endDate: query.endDate ? new Date(query.endDate) : undefined,
     });
+    return resultToHttpResponse(result);
   }
 
   @Get('logs/:id')
@@ -85,7 +87,8 @@ export class AuditController {
   async getAuditLog(@Param('id') id: string, @OrgId() orgId: string): Promise<AuditLogResponseDto> {
     this.logger.log('Getting audit log', { id, orgId });
 
-    return await this.getAuditLogUseCase.execute({ id, orgId });
+    const result = await this.getAuditLogUseCase.execute({ id, orgId });
+    return resultToHttpResponse(result);
   }
 
   @Get('users/:userId/activity')
@@ -108,12 +111,13 @@ export class AuditController {
   ) {
     this.logger.log('Getting user activity', { userId, orgId, page, limit });
 
-    return await this.getUserActivityUseCase.execute({
+    const result = await this.getUserActivityUseCase.execute({
       userId,
       orgId: orgId || '',
       page: page ? parseInt(page.toString()) : undefined,
       limit: limit ? parseInt(limit.toString()) : undefined,
     });
+    return resultToHttpResponse(result);
   }
 
   @Get('entities/:entityType/:entityId/history')
@@ -139,12 +143,13 @@ export class AuditController {
   ) {
     this.logger.log('Getting entity history', { entityType, entityId, orgId, page, limit });
 
-    return await this.getEntityHistoryUseCase.execute({
+    const result = await this.getEntityHistoryUseCase.execute({
       entityType,
       entityId,
       orgId: orgId || '',
       page: page ? parseInt(page.toString()) : undefined,
       limit: limit ? parseInt(limit.toString()) : undefined,
     });
+    return resultToHttpResponse(result);
   }
 }

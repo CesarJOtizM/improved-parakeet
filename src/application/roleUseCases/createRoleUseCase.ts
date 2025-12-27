@@ -1,5 +1,13 @@
 import { Role } from '@auth/domain/entities/role.entity';
-import { BadRequestException, ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  ConflictError,
+  DomainError,
+  err,
+  ok,
+  Result,
+  ValidationError,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IRoleRepository } from '@auth/domain/repositories';
@@ -30,27 +38,27 @@ export class CreateRoleUseCase {
 
   constructor(@Inject('RoleRepository') private readonly roleRepository: IRoleRepository) {}
 
-  async execute(request: ICreateRoleRequest): Promise<ICreateRoleResponse> {
+  async execute(request: ICreateRoleRequest): Promise<Result<ICreateRoleResponse, DomainError>> {
     this.logger.log('Creating custom role', { name: request.name, orgId: request.orgId });
 
     // Validate role name format
     if (!request.name || request.name.trim().length < 3) {
-      throw new BadRequestException('Role name must be at least 3 characters long');
+      return err(new ValidationError('Role name must be at least 3 characters long'));
     }
 
     if (request.name.length > 50) {
-      throw new BadRequestException('Role name must not exceed 50 characters');
+      return err(new ValidationError('Role name must not exceed 50 characters'));
     }
 
     // Check if role name already exists (system or custom in this org)
     const existingSystemRole = await this.roleRepository.findByName(request.name);
     if (existingSystemRole) {
-      throw new ConflictException('Role name already exists as a system role');
+      return err(new ConflictError('Role name already exists as a system role'));
     }
 
     const existingCustomRole = await this.roleRepository.findByName(request.name, request.orgId);
     if (existingCustomRole) {
-      throw new ConflictException('Role name already exists in this organization');
+      return err(new ConflictError('Role name already exists in this organization'));
     }
 
     // Create custom role (isSystem = false, requires orgId)
@@ -73,7 +81,7 @@ export class CreateRoleUseCase {
       orgId: savedRole.orgId,
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Role created successfully',
       data: {
@@ -87,6 +95,6 @@ export class CreateRoleUseCase {
         updatedAt: savedRole.updatedAt,
       } as ICreateRoleData,
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

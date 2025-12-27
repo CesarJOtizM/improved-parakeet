@@ -20,6 +20,7 @@ import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
 import { OrgId } from '@shared/decorators/orgId.decorator';
 import { RequirePermissions } from '@shared/decorators/requirePermissions.decorator';
 import { AuditInterceptor } from '@shared/interceptors/audit.interceptor';
+import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 import {
   CreateWarehouseDto,
   GetWarehousesQueryDto,
@@ -85,7 +86,8 @@ export class WarehousesController {
       orgId,
     };
 
-    return await this.createWarehouseUseCase.execute(request);
+    const result = await this.createWarehouseUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Get()
@@ -127,6 +129,7 @@ export class WarehousesController {
       sortOrder: query.sortOrder,
     };
 
-    return await this.getWarehousesUseCase.execute(request);
+    const result = await this.getWarehousesUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 }

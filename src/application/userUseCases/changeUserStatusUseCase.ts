@@ -1,7 +1,16 @@
 import { UserManagementService } from '@auth/domain/services/userManagementService';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  BusinessRuleError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+  ValidationError,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IUserRepository } from '@auth/domain/repositories';
@@ -37,7 +46,9 @@ export class ChangeUserStatusUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: IChangeUserStatusRequest): Promise<IChangeUserStatusResponse> {
+  async execute(
+    request: IChangeUserStatusRequest
+  ): Promise<Result<IChangeUserStatusResponse, DomainError>> {
     this.logger.log('Changing user status', {
       userId: request.userId,
       orgId: request.orgId,
@@ -48,7 +59,7 @@ export class ChangeUserStatusUseCase {
     // Get existing user
     const user = await this.userRepository.findById(request.userId, request.orgId);
     if (!user) {
-      throw new NotFoundException('User not found');
+      return err(new NotFoundError('User not found'));
     }
 
     // Validate status change based on target status
@@ -60,11 +71,11 @@ export class ChangeUserStatusUseCase {
     } else if (request.status === 'LOCKED') {
       validation = UserManagementService.canUserBeLocked(user, request.changedBy);
     } else {
-      throw new BadRequestException(`Invalid status: ${request.status}`);
+      return err(new ValidationError(`Invalid status: ${request.status}`));
     }
 
     if (!validation.isValid) {
-      throw new BadRequestException(`Cannot change status: ${validation.errors.join(', ')}`);
+      return err(new BusinessRuleError(`Cannot change status: ${validation.errors.join(', ')}`));
     }
 
     // Change status
@@ -95,7 +106,7 @@ export class ChangeUserStatusUseCase {
       newStatus: request.status,
     });
 
-    return {
+    return ok({
       success: true,
       message: `User status changed to ${request.status} successfully`,
       data: {
@@ -107,6 +118,6 @@ export class ChangeUserStatusUseCase {
         updatedAt: updatedUser.updatedAt,
       } as IChangeUserStatusData,
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

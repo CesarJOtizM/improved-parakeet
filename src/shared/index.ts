@@ -3,6 +3,10 @@ export * from './types/apiResponse.types';
 
 // Response utilities
 export * from './utils/responseUtils';
+export * from './utils/resultToHttp';
+
+// Result monad
+export * from './domain/result';
 
 // Interceptors
 export * from './interceptors/responseInterceptor';

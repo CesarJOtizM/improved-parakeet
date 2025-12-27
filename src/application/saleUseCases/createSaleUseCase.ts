@@ -1,10 +1,18 @@
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Sale } from '@sale/domain/entities/sale.entity';
 import { SaleLine } from '@sale/domain/entities/saleLine.entity';
 import { SaleNumberGenerationService } from '@sale/domain/services/saleNumberGeneration.service';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
 import { SaleStatus } from '@sale/domain/valueObjects/saleStatus.valueObject';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  DomainError,
+  NotFoundError,
+  Result,
+  ValidationError,
+  err,
+  ok,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
@@ -60,14 +68,23 @@ export class CreateSaleUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: ICreateSaleRequest): Promise<ICreateSaleResponse> {
+  async execute(request: ICreateSaleRequest): Promise<Result<ICreateSaleResponse, DomainError>> {
     this.logger.log('Creating sale', { warehouseId: request.warehouseId, orgId: request.orgId });
 
     try {
       // Validate warehouse exists
       const warehouse = await this.warehouseRepository.findById(request.warehouseId, request.orgId);
       if (!warehouse) {
-        throw new BadRequestException(`Warehouse with ID ${request.warehouseId} not found`);
+        return err(
+          new NotFoundError(
+            `Warehouse with ID ${request.warehouseId} not found`,
+            'WAREHOUSE_NOT_FOUND',
+            {
+              warehouseId: request.warehouseId,
+              orgId: request.orgId,
+            }
+          )
+        );
       }
 
       // Generate sale number
@@ -129,7 +146,7 @@ export class CreateSaleUseCase {
 
       const totalAmount = savedSale.getTotalAmount();
 
-      return {
+      const response: ICreateSaleResponse = {
         success: true,
         message: 'Sale created successfully',
         data: {
@@ -152,18 +169,20 @@ export class CreateSaleUseCase {
         },
         timestamp: new Date().toISOString(),
       };
+
+      return ok(response);
     } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
       this.logger.error('Error creating sale', {
         error: error instanceof Error ? error.message : 'Unknown error',
         warehouseId: request.warehouseId,
         orgId: request.orgId,
       });
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Failed to create sale'
-      );
+
+      if (error instanceof Error) {
+        return err(new ValidationError(error.message, 'SALE_CREATION_ERROR'));
+      }
+
+      return err(new ValidationError('Failed to create sale', 'SALE_CREATION_ERROR'));
     }
   }
 }

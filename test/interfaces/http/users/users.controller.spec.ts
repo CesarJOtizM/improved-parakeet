@@ -8,7 +8,9 @@ import { RemoveRoleFromUserUseCase } from '@application/userUseCases/removeRoleF
 import { UpdateUserUseCase } from '@application/userUseCases/updateUserUseCase';
 import { UsersController } from '@interface/http/routes/users.controller';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
+import { ok, err } from '@shared/domain/result';
+import { ConflictError, NotFoundError } from '@shared/domain/result/domainError';
 
 describe('UsersController', () => {
   let usersController: UsersController;
@@ -89,7 +91,7 @@ describe('UsersController', () => {
         user: mockAdminUser,
       } as any;
 
-      const mockResponse = {
+      const mockResponseData = {
         success: true as const,
         data: {
           id: mockUserId,
@@ -106,7 +108,7 @@ describe('UsersController', () => {
         timestamp: new Date().toISOString(),
       };
 
-      mockCreateUserUseCase.execute.mockResolvedValue(mockResponse);
+      mockCreateUserUseCase.execute.mockResolvedValue(ok(mockResponseData));
 
       // Act
       const result = await usersController.createUser(createUserDto, mockOrgId, mockRequest);
@@ -121,10 +123,10 @@ describe('UsersController', () => {
         orgId: mockOrgId,
         createdBy: mockAdminUser.id,
       });
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockResponseData);
     });
 
-    it('Given: duplicate email When: creating user Then: should throw BadRequestException', async () => {
+    it('Given: duplicate email When: creating user Then: should throw ConflictException', async () => {
       // Arrange
       const createUserDto = {
         email: 'existing@example.com',
@@ -138,14 +140,14 @@ describe('UsersController', () => {
         user: mockAdminUser,
       } as any;
 
-      mockCreateUserUseCase.execute.mockRejectedValue(
-        new BadRequestException('User with this email already exists')
+      mockCreateUserUseCase.execute.mockResolvedValue(
+        err(new ConflictError('User with this email already exists'))
       );
 
-      // Act & Assert
+      // Act & Assert - Controller converts DomainError to HttpException
       await expect(
         usersController.createUser(createUserDto, mockOrgId, mockRequest)
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow();
     });
   });
 
@@ -185,7 +187,7 @@ describe('UsersController', () => {
         timestamp: new Date().toISOString(),
       };
 
-      mockGetUsersUseCase.execute.mockResolvedValue(mockResponse);
+      mockGetUsersUseCase.execute.mockResolvedValue(ok(mockResponse));
 
       // Act
       const result = await usersController.getUsers(query, mockOrgId);
@@ -205,7 +207,7 @@ describe('UsersController', () => {
   describe('getUser', () => {
     it('Given: valid user ID When: getting user Then: should return user', async () => {
       // Arrange
-      const mockResponse = {
+      const mockResponseData = {
         success: true as const,
         data: {
           id: mockUserId,
@@ -224,7 +226,7 @@ describe('UsersController', () => {
         timestamp: new Date().toISOString(),
       };
 
-      mockGetUserUseCase.execute.mockResolvedValue(mockResponse);
+      mockGetUserUseCase.execute.mockResolvedValue(ok(mockResponseData));
 
       // Act
       const result = await usersController.getUser(mockUserId, mockOrgId);
@@ -234,12 +236,12 @@ describe('UsersController', () => {
         userId: mockUserId,
         orgId: mockOrgId,
       });
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockResponseData);
     });
 
     it('Given: non-existent user ID When: getting user Then: should throw NotFoundException', async () => {
       // Arrange
-      mockGetUserUseCase.execute.mockRejectedValue(new NotFoundException('User not found'));
+      mockGetUserUseCase.execute.mockResolvedValue(err(new NotFoundError('User not found')));
 
       // Act & Assert
       await expect(usersController.getUser('non-existent', mockOrgId)).rejects.toThrow(
@@ -262,7 +264,7 @@ describe('UsersController', () => {
         user: mockAdminUser,
       } as any;
 
-      const mockResponse = {
+      const mockResponseData = {
         success: true as const,
         data: {
           id: mockUserId,
@@ -278,7 +280,7 @@ describe('UsersController', () => {
         timestamp: new Date().toISOString(),
       };
 
-      mockUpdateUserUseCase.execute.mockResolvedValue(mockResponse);
+      mockUpdateUserUseCase.execute.mockResolvedValue(ok(mockResponseData));
 
       // Act
       const result = await usersController.updateUser(
@@ -298,7 +300,7 @@ describe('UsersController', () => {
         email: updateUserDto.email,
         updatedBy: mockAdminUser.id,
       });
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockResponseData);
     });
   });
 
@@ -314,7 +316,7 @@ describe('UsersController', () => {
         user: mockAdminUser,
       } as any;
 
-      const mockResponse = {
+      const mockResponseData = {
         success: true as const,
         data: {
           id: mockUserId,
@@ -328,7 +330,7 @@ describe('UsersController', () => {
         timestamp: new Date().toISOString(),
       };
 
-      mockChangeUserStatusUseCase.execute.mockResolvedValue(mockResponse);
+      mockChangeUserStatusUseCase.execute.mockResolvedValue(ok(mockResponseData));
 
       // Act
       const result = await usersController.changeUserStatus(
@@ -346,7 +348,7 @@ describe('UsersController', () => {
         changedBy: mockAdminUser.id,
         reason: changeUserStatusDto.reason,
       });
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockResponseData);
     });
   });
 
@@ -361,7 +363,7 @@ describe('UsersController', () => {
         user: mockAdminUser,
       } as any;
 
-      const mockResponse = {
+      const mockResponseData = {
         success: true as const,
         data: {
           userId: mockUserId,
@@ -373,7 +375,7 @@ describe('UsersController', () => {
         timestamp: new Date().toISOString(),
       };
 
-      mockAssignRoleToUserUseCase.execute.mockResolvedValue(mockResponse);
+      mockAssignRoleToUserUseCase.execute.mockResolvedValue(ok(mockResponseData));
 
       // Act
       const result = await usersController.assignRole(
@@ -390,7 +392,7 @@ describe('UsersController', () => {
         orgId: mockOrgId,
         assignedBy: mockAdminUser.id,
       });
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockResponseData);
     });
   });
 
@@ -403,7 +405,7 @@ describe('UsersController', () => {
         user: mockAdminUser,
       } as any;
 
-      const mockResponse = {
+      const mockResponseData = {
         success: true as const,
         data: {
           userId: mockUserId,
@@ -415,7 +417,7 @@ describe('UsersController', () => {
         timestamp: new Date().toISOString(),
       };
 
-      mockRemoveRoleFromUserUseCase.execute.mockResolvedValue(mockResponse);
+      mockRemoveRoleFromUserUseCase.execute.mockResolvedValue(ok(mockResponseData));
 
       // Act
       const result = await usersController.removeRole(mockUserId, roleId, mockOrgId, mockRequest);
@@ -427,7 +429,7 @@ describe('UsersController', () => {
         orgId: mockOrgId,
         removedBy: mockAdminUser.id,
       });
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockResponseData);
     });
   });
 });

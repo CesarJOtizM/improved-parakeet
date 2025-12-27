@@ -1,4 +1,5 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, NotFoundError, Result, err, ok } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IReturnData } from './createReturnUseCase';
@@ -23,13 +24,15 @@ export class GetReturnsBySaleUseCase {
     private readonly saleRepository: ISaleRepository
   ) {}
 
-  async execute(request: IGetReturnsBySaleRequest): Promise<IGetReturnsBySaleResponse> {
+  async execute(
+    request: IGetReturnsBySaleRequest
+  ): Promise<Result<IGetReturnsBySaleResponse, DomainError>> {
     this.logger.log('Getting returns by sale', { saleId: request.saleId, orgId: request.orgId });
 
     // Validate sale exists
     const sale = await this.saleRepository.findById(request.saleId, request.orgId);
     if (!sale) {
-      throw new NotFoundException(`Sale with ID ${request.saleId} not found`);
+      return err(new NotFoundError(`Sale with ID ${request.saleId} not found`));
     }
 
     // Find returns by sale ID
@@ -74,11 +77,11 @@ export class GetReturnsBySaleUseCase {
       };
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Returns retrieved successfully',
       data: returnData,
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

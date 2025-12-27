@@ -3,7 +3,15 @@ import { AuthenticationService } from '@auth/domain/services/authenticationServi
 import { JwtService } from '@auth/domain/services/jwtService';
 import { RateLimitService } from '@auth/domain/services/rateLimitService';
 import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
-import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  AuthenticationError,
+  DomainError,
+  err,
+  ok,
+  RateLimitError,
+  Result,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISessionRepository, IUserRepository } from '@auth/domain/repositories';
@@ -47,7 +55,7 @@ export class LoginUseCase {
     private readonly rateLimitService: RateLimitService
   ) {}
 
-  async execute(request: ILoginRequest): Promise<ILoginResponse> {
+  async execute(request: ILoginRequest): Promise<Result<ILoginResponse, DomainError>> {
     try {
       // Verificar rate limiting para login
       const rateLimitResult = await this.rateLimitService.checkRateLimit(
@@ -57,20 +65,22 @@ export class LoginUseCase {
 
       if (!rateLimitResult.allowed) {
         this.logger.warn(`Login rate limit exceeded for IP: ${request.ipAddress}`);
-        throw new UnauthorizedException('Too many login attempts. Please try again later.');
+        return err(new RateLimitError('Too many login attempts. Please try again later.'));
       }
 
       // Buscar usuario por email
       const user = await this.userRepository.findByEmail(request.email, request.orgId);
       if (!user) {
+        // SECURITY: Log details but return generic error
         this.logger.warn(`Login attempt with non-existent email: ${request.email}`);
-        throw new UnauthorizedException('Invalid credentials');
+        return err(new AuthenticationError('user_not_found'));
       }
 
       // Verificar que el usuario pueda hacer login
       if (!user.canLogin()) {
+        // SECURITY: Log details but return generic error
         this.logger.warn(`Login attempt for locked/inactive user: ${user.id}`);
-        throw new UnauthorizedException('Account is locked or inactive');
+        return err(new AuthenticationError('account_locked_or_inactive'));
       }
 
       // Verificar contraseña
@@ -85,8 +95,9 @@ export class LoginUseCase {
         AuthenticationService.processFailedLogin(user);
         await this.userRepository.save(user);
 
+        // SECURITY: Log details but return generic error
         this.logger.warn(`Failed login attempt for user: ${user.id}`);
-        throw new UnauthorizedException('Invalid credentials');
+        return err(new AuthenticationError('invalid_password'));
       }
 
       // Procesar login exitoso
@@ -135,7 +146,7 @@ export class LoginUseCase {
 
       this.logger.log(`Successful login for user: ${user.id}`);
 
-      return {
+      return ok({
         success: true,
         message: 'Login successful',
         data: {
@@ -155,14 +166,11 @@ export class LoginUseCase {
           sessionId: session.id,
         },
         timestamp: new Date().toISOString(),
-      };
+      });
     } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-
+      // SECURITY: Log full error but return generic message
       this.logger.error('Login use case failed:', error);
-      throw new UnauthorizedException('Authentication failed');
+      return err(new AuthenticationError('internal_error'));
     }
   }
 }

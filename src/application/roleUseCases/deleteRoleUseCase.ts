@@ -1,6 +1,14 @@
 import { RoleAssignmentService } from '@auth/domain/services/roleAssignmentService';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  BusinessRuleError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IRoleRepository } from '@auth/domain/repositories';
@@ -22,25 +30,25 @@ export class DeleteRoleUseCase {
     private readonly prisma: PrismaService
   ) {}
 
-  async execute(request: IDeleteRoleRequest): Promise<IDeleteRoleResponse> {
+  async execute(request: IDeleteRoleRequest): Promise<Result<IDeleteRoleResponse, DomainError>> {
     this.logger.log('Deleting role', { roleId: request.roleId, orgId: request.orgId });
 
     // Find role
     const role = await this.roleRepository.findById(request.roleId);
 
     if (!role) {
-      throw new NotFoundException('Role not found');
+      return err(new NotFoundError('Role not found'));
     }
 
     // Validate deletion
     const validation = RoleAssignmentService.canDeleteRole(role);
     if (!validation.isValid) {
-      throw new BadRequestException(`Cannot delete role: ${validation.errors.join(', ')}`);
+      return err(new BusinessRuleError(`Cannot delete role: ${validation.errors.join(', ')}`));
     }
 
     // Verify role belongs to this organization
     if (role.orgId !== request.orgId) {
-      throw new NotFoundException('Role not found in this organization');
+      return err(new NotFoundError('Role not found in this organization'));
     }
 
     // Check if role is assigned to any users
@@ -52,8 +60,10 @@ export class DeleteRoleUseCase {
     });
 
     if (userRoleCount > 0) {
-      throw new BadRequestException(
-        `Cannot delete role: it is assigned to ${userRoleCount} user(s). Remove assignments first.`
+      return err(
+        new BusinessRuleError(
+          `Cannot delete role: it is assigned to ${userRoleCount} user(s). Remove assignments first.`
+        )
       );
     }
 
@@ -72,13 +82,13 @@ export class DeleteRoleUseCase {
       name: role.name,
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Role deleted successfully',
       data: {
         roleId: request.roleId,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

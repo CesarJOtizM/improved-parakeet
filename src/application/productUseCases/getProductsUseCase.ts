@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
 import type { IProductData } from './createProductUseCase';
@@ -24,7 +25,7 @@ export class GetProductsUseCase {
     @Inject('ProductRepository') private readonly productRepository: IProductRepository
   ) {}
 
-  async execute(request: IGetProductsRequest): Promise<IGetProductsResponse> {
+  async execute(request: IGetProductsRequest): Promise<Result<IGetProductsResponse, DomainError>> {
     this.logger.log('Getting products', {
       orgId: request.orgId,
       page: request.page,
@@ -96,7 +97,7 @@ export class GetProductsUseCase {
     const paginatedProducts = products.slice(skip, skip + limit);
     const totalPages = Math.ceil(total / limit);
 
-    return {
+    return ok({
       success: true,
       message: 'Products retrieved successfully',
       data: paginatedProducts.map(product => ({
@@ -127,6 +128,6 @@ export class GetProductsUseCase {
         hasPrev: page > 1,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

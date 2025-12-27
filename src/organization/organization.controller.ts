@@ -6,6 +6,7 @@ import { Body, Controller, HttpCode, HttpStatus, Logger, Post, UseGuards } from 
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateOrganizationDto, CreateOrganizationResponseDto } from '@organization/dto';
 import { SYSTEM_ROLES } from '@shared/constants/security.constants';
+import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
 @ApiTags('Organization')
 @Controller('organizations')
@@ -74,11 +75,13 @@ export class OrganizationController {
         : undefined,
     });
 
+    const response = resultToHttpResponse(result);
+
     this.logger.log('Organization created successfully', {
-      organizationId: result.data.id,
-      slug: result.data.slug,
+      organizationId: response.data.id,
+      slug: response.data.slug,
     });
 
-    return result;
+    return response;
   }
 }

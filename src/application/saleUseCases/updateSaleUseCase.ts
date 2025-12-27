@@ -1,5 +1,6 @@
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISaleData } from './createSaleUseCase';
@@ -25,13 +26,13 @@ export class UpdateSaleUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: IUpdateSaleRequest): Promise<IUpdateSaleResponse> {
+  async execute(request: IUpdateSaleRequest): Promise<Result<IUpdateSaleResponse, DomainError>> {
     this.logger.log('Updating sale', { saleId: request.id, orgId: request.orgId });
 
     const sale = await this.saleRepository.findById(request.id, request.orgId);
 
     if (!sale) {
-      throw new BadRequestException(`Sale with ID ${request.id} not found`);
+      return err(new NotFoundError(`Sale with ID ${request.id} not found`));
     }
 
     // Update sale
@@ -56,7 +57,7 @@ export class UpdateSaleUseCase {
 
     const totalAmount = updatedSale.getTotalAmount();
 
-    return {
+    return ok({
       success: true,
       message: 'Sale updated successfully',
       data: {
@@ -78,6 +79,6 @@ export class UpdateSaleUseCase {
         currency: totalAmount.getCurrency(),
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

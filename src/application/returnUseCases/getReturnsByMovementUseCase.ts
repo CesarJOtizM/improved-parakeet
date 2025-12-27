@@ -1,4 +1,5 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IReturnData } from './createReturnUseCase';
@@ -23,7 +24,9 @@ export class GetReturnsByMovementUseCase {
     private readonly movementRepository: IMovementRepository
   ) {}
 
-  async execute(request: IGetReturnsByMovementRequest): Promise<IGetReturnsByMovementResponse> {
+  async execute(
+    request: IGetReturnsByMovementRequest
+  ): Promise<Result<IGetReturnsByMovementResponse, DomainError>> {
     this.logger.log('Getting returns by movement', {
       movementId: request.movementId,
       orgId: request.orgId,
@@ -32,7 +35,7 @@ export class GetReturnsByMovementUseCase {
     // Validate movement exists
     const movement = await this.movementRepository.findById(request.movementId, request.orgId);
     if (!movement) {
-      throw new NotFoundException(`Movement with ID ${request.movementId} not found`);
+      return err(new NotFoundError(`Movement with ID ${request.movementId} not found`));
     }
 
     // Find returns by source movement ID
@@ -80,11 +83,11 @@ export class GetReturnsByMovementUseCase {
       };
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Returns retrieved successfully',
       data: returnData,
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

@@ -48,6 +48,7 @@ import {
 import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
 import { OrgId } from '@shared/decorators/orgId.decorator';
 import { RequirePermissions } from '@shared/decorators/requirePermissions.decorator';
+import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
 import type { IAuthenticatedUser } from '@shared/types/http.types';
 import type { Request } from 'express';
@@ -109,7 +110,8 @@ export class UsersController {
       createdBy: user.id,
     };
 
-    return await this.createUserUseCase.execute(request);
+    const result = await this.createUserUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Get()
@@ -149,7 +151,8 @@ export class UsersController {
       search: query.search,
     };
 
-    return await this.getUsersUseCase.execute(request);
+    const result = await this.getUsersUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Get(':id')
@@ -182,7 +185,8 @@ export class UsersController {
       orgId,
     };
 
-    return await this.getUserUseCase.execute(request);
+    const result = await this.getUserUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Put(':id')
@@ -231,7 +235,8 @@ export class UsersController {
       updatedBy: user.id,
     };
 
-    return await this.updateUserUseCase.execute(request);
+    const result = await this.updateUserUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Patch(':id/status')
@@ -284,7 +289,8 @@ export class UsersController {
       lockDurationMinutes: changeUserStatusDto.lockDurationMinutes,
     };
 
-    return await this.changeUserStatusUseCase.execute(request);
+    const result = await this.changeUserStatusUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Post(':id/roles')
@@ -339,7 +345,8 @@ export class UsersController {
       assignedBy: user.id,
     };
 
-    return await this.assignRoleToUserUseCase.execute(request);
+    const result = await this.assignRoleToUserUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Delete(':id/roles/:roleId')
@@ -390,6 +397,7 @@ export class UsersController {
       removedBy: user.id,
     };
 
-    return await this.removeRoleFromUserUseCase.execute(request);
+    const result = await this.removeRoleFromUserUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 }

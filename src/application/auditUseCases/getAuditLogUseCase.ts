@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IAuditLogRepository } from '@shared/audit/domain/repositories/auditLogRepository.interface';
@@ -36,7 +37,7 @@ export class GetAuditLogUseCase {
     private readonly auditRepository: IAuditLogRepository
   ) {}
 
-  async execute(request: IGetAuditLogRequest): Promise<IGetAuditLogResponse> {
+  async execute(request: IGetAuditLogRequest): Promise<Result<IGetAuditLogResponse, DomainError>> {
     this.logger.log('Getting audit log', {
       id: request.id,
       orgId: request.orgId,
@@ -45,10 +46,10 @@ export class GetAuditLogUseCase {
     const auditLog = await this.auditRepository.findById(request.id, request.orgId);
 
     if (!auditLog) {
-      throw new Error('Audit log not found');
+      return err(new NotFoundError('Audit log not found'));
     }
 
-    return {
+    return ok({
       success: true,
       message: 'Audit log retrieved successfully',
       data: {
@@ -68,6 +69,6 @@ export class GetAuditLogUseCase {
         createdAt: auditLog.createdAt,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

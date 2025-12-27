@@ -1,5 +1,13 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  BusinessRuleError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISaleData } from './createSaleUseCase';
@@ -23,22 +31,22 @@ export class CancelSaleUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: ICancelSaleRequest): Promise<ICancelSaleResponse> {
+  async execute(request: ICancelSaleRequest): Promise<Result<ICancelSaleResponse, DomainError>> {
     this.logger.log('Cancelling sale', { saleId: request.id, orgId: request.orgId });
 
     // Retrieve sale
     const sale = await this.saleRepository.findById(request.id, request.orgId);
 
     if (!sale) {
-      throw new NotFoundException(`Sale with ID ${request.id} not found`);
+      return err(new NotFoundError(`Sale with ID ${request.id} not found`));
     }
 
     // Cancel sale
     try {
       sale.cancel(request.reason);
     } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Failed to cancel sale'
+      return err(
+        new BusinessRuleError(error instanceof Error ? error.message : 'Failed to cancel sale')
       );
     }
 
@@ -57,7 +65,7 @@ export class CancelSaleUseCase {
 
     const totalAmount = cancelledSale.getTotalAmount();
 
-    return {
+    return ok({
       success: true,
       message: 'Sale cancelled successfully',
       data: {
@@ -79,6 +87,6 @@ export class CancelSaleUseCase {
         currency: totalAmount.getCurrency(),
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

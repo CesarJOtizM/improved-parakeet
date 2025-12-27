@@ -39,6 +39,7 @@ import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
 import { OrgId } from '@shared/decorators/orgId.decorator';
 import { RequirePermissions } from '@shared/decorators/requirePermissions.decorator';
 import { AuditInterceptor } from '@shared/interceptors/audit.interceptor';
+import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
 import type { IAuthenticatedUser } from '@shared/types/http.types';
 import type { Request } from 'express';
@@ -105,7 +106,8 @@ export class SalesController {
       orgId,
     };
 
-    return await this.createSaleUseCase.execute(request);
+    const result = await this.createSaleUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Get()
@@ -156,7 +158,8 @@ export class SalesController {
   async getSaleById(@Param('id') id: string, @OrgId() orgId: string) {
     this.logger.log('Getting sale by ID', { saleId: id, orgId });
 
-    return await this.getSaleByIdUseCase.execute({ id, orgId });
+    const result = await this.getSaleByIdUseCase.execute({ id, orgId });
+    return resultToHttpResponse(result);
   }
 
   @Patch(':id')
@@ -190,7 +193,8 @@ export class SalesController {
       orgId,
     };
 
-    return await this.updateSaleUseCase.execute(request);
+    const result = await this.updateSaleUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Post(':id/confirm')
@@ -213,7 +217,8 @@ export class SalesController {
   async confirmSale(@Param('id') id: string, @OrgId() orgId: string) {
     this.logger.log('Confirming sale', { saleId: id, orgId });
 
-    return await this.confirmSaleUseCase.execute({ id, orgId });
+    const result = await this.confirmSaleUseCase.execute({ id, orgId });
+    return resultToHttpResponse(result);
   }
 
   @Post(':id/cancel')
@@ -240,7 +245,8 @@ export class SalesController {
   ) {
     this.logger.log('Cancelling sale', { saleId: id, orgId, reason });
 
-    return await this.cancelSaleUseCase.execute({ id, reason, orgId });
+    const result = await this.cancelSaleUseCase.execute({ id, reason, orgId });
+    return resultToHttpResponse(result);
   }
 
   @Post(':id/lines')
@@ -283,7 +289,8 @@ export class SalesController {
       orgId,
     };
 
-    return await this.addSaleLineUseCase.execute(request);
+    const result = await this.addSaleLineUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Delete(':id/lines/:lineId')
@@ -311,7 +318,8 @@ export class SalesController {
   ) {
     this.logger.log('Removing line from sale', { saleId, lineId, orgId });
 
-    return await this.removeSaleLineUseCase.execute({ saleId, lineId, orgId });
+    const result = await this.removeSaleLineUseCase.execute({ saleId, lineId, orgId });
+    return resultToHttpResponse(result);
   }
 
   @Get(':id/movement')
@@ -334,7 +342,8 @@ export class SalesController {
   async getSaleMovement(@Param('id') id: string, @OrgId() orgId: string) {
     this.logger.log('Getting movement for sale', { saleId: id, orgId });
 
-    return await this.getSaleMovementUseCase.execute({ saleId: id, orgId });
+    const result = await this.getSaleMovementUseCase.execute({ saleId: id, orgId });
+    return resultToHttpResponse(result);
   }
 
   @Get(':id/returns')
@@ -356,6 +365,7 @@ export class SalesController {
   async getReturnsBySale(@Param('id') id: string, @OrgId() orgId: string) {
     this.logger.log('Getting returns for sale', { saleId: id, orgId });
 
-    return await this.getReturnsBySaleUseCase.execute({ saleId: id, orgId });
+    const result = await this.getReturnsBySaleUseCase.execute({ saleId: id, orgId });
+    return resultToHttpResponse(result);
   }
 }

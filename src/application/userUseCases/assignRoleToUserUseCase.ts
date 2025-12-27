@@ -1,15 +1,17 @@
 import { RoleAssignedEvent } from '@auth/domain/events/roleAssigned.event';
 import { RoleAssignmentService } from '@auth/domain/services/roleAssignmentService';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import {
-  BadRequestException,
-  ConflictException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  BusinessRuleError,
+  ConflictError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IRoleRepository, IUserRepository } from '@auth/domain/repositories';
@@ -41,7 +43,9 @@ export class AssignRoleToUserUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: IAssignRoleToUserRequest): Promise<IAssignRoleToUserResponse> {
+  async execute(
+    request: IAssignRoleToUserRequest
+  ): Promise<Result<IAssignRoleToUserResponse, DomainError>> {
     this.logger.log('Assigning role to user', {
       userId: request.userId,
       roleId: request.roleId,
@@ -52,19 +56,19 @@ export class AssignRoleToUserUseCase {
     // Get user
     const user = await this.userRepository.findById(request.userId, request.orgId);
     if (!user) {
-      throw new NotFoundException('User not found');
+      return err(new NotFoundError('User not found'));
     }
 
     // Get role (can be system or custom)
     const role = await this.roleRepository.findById(request.roleId);
     if (!role) {
-      throw new NotFoundException('Role not found');
+      return err(new NotFoundError('Role not found'));
     }
 
     // Verify role is available for this organization
     // System roles are available to all, custom roles only to their org
     if (!role.isSystem && role.orgId !== request.orgId) {
-      throw new NotFoundException('Role not available for this organization');
+      return err(new NotFoundError('Role not available for this organization'));
     }
 
     // Get current user roles for validation
@@ -78,7 +82,7 @@ export class AssignRoleToUserUseCase {
       currentUserRoles
     );
     if (!validation.isValid) {
-      throw new BadRequestException(`Cannot assign role: ${validation.errors.join(', ')}`);
+      return err(new BusinessRuleError(`Cannot assign role: ${validation.errors.join(', ')}`));
     }
 
     // Check if user already has this role
@@ -93,7 +97,7 @@ export class AssignRoleToUserUseCase {
     });
 
     if (existingAssignment) {
-      throw new ConflictException('User already has this role');
+      return err(new ConflictError('User already has this role'));
     }
 
     // Assign role
@@ -125,7 +129,7 @@ export class AssignRoleToUserUseCase {
       roleName: role.name,
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Role assigned successfully',
       data: {
@@ -135,6 +139,6 @@ export class AssignRoleToUserUseCase {
         assignedAt: new Date(),
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

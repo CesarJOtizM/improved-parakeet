@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Return } from '@returns/domain/entities/return.entity';
 import { ReturnLine } from '@returns/domain/entities/returnLine.entity';
 import { ReturnNumberGenerationService } from '@returns/domain/services/returnNumberGeneration.service';
@@ -7,6 +7,14 @@ import { ReturnStatus } from '@returns/domain/valueObjects/returnStatus.valueObj
 import { ReturnType } from '@returns/domain/valueObjects/returnType.valueObject';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+  ValidationError,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 import { Money } from '@stock/domain/valueObjects/money.valueObject';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
@@ -80,161 +88,147 @@ export class CreateReturnUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: ICreateReturnRequest): Promise<ICreateReturnResponse> {
+  async execute(
+    request: ICreateReturnRequest
+  ): Promise<Result<ICreateReturnResponse, DomainError>> {
     this.logger.log('Creating return', {
       type: request.type,
       warehouseId: request.warehouseId,
       orgId: request.orgId,
     });
 
-    try {
-      // Validate warehouse exists
-      const warehouse = await this.warehouseRepository.findById(request.warehouseId, request.orgId);
-      if (!warehouse) {
-        throw new BadRequestException(`Warehouse with ID ${request.warehouseId} not found`);
-      }
-
-      // Validate type-specific requirements
-      if (request.type === 'RETURN_CUSTOMER' && !request.saleId) {
-        throw new BadRequestException('Sale ID is required for customer returns');
-      }
-      if (request.type === 'RETURN_SUPPLIER' && !request.sourceMovementId) {
-        throw new BadRequestException('Source movement ID is required for supplier returns');
-      }
-
-      // Generate return number
-      const returnNumber = await ReturnNumberGenerationService.generateNextReturnNumber(
-        request.orgId,
-        this.returnRepository
-      );
-
-      // Create return entity
-      const returnEntity = Return.create(
-        {
-          returnNumber,
-          status: ReturnStatus.create('DRAFT'),
-          type: ReturnType.create(request.type),
-          reason: ReturnReason.create(request.reason),
-          warehouseId: request.warehouseId,
-          saleId: request.type === 'RETURN_CUSTOMER' ? request.saleId : undefined,
-          sourceMovementId:
-            request.type === 'RETURN_SUPPLIER' ? request.sourceMovementId : undefined,
-          note: request.note,
-          createdBy: request.createdBy,
-        },
-        request.orgId
-      );
-
-      // Add lines if provided
-      if (request.lines && request.lines.length > 0) {
-        const returnType = ReturnType.create(request.type);
-        for (const lineRequest of request.lines) {
-          const quantity = Quantity.create(lineRequest.quantity, 6);
-          const currency = lineRequest.currency || 'COP';
-
-          let originalSalePrice: SalePrice | undefined;
-          let originalUnitCost: Money | undefined;
-
-          if (request.type === 'RETURN_CUSTOMER') {
-            if (!lineRequest.originalSalePrice) {
-              throw new BadRequestException(
-                'Original sale price is required for customer return lines'
-              );
-            }
-            originalSalePrice = SalePrice.create(lineRequest.originalSalePrice, currency, 2);
-          } else {
-            if (!lineRequest.originalUnitCost) {
-              throw new BadRequestException(
-                'Original unit cost is required for supplier return lines'
-              );
-            }
-            originalUnitCost = Money.create(lineRequest.originalUnitCost, currency, 2);
-          }
-
-          const line = ReturnLine.create(
-            {
-              productId: lineRequest.productId,
-              locationId: lineRequest.locationId,
-              quantity,
-              originalSalePrice,
-              originalUnitCost,
-              currency,
-            },
-            request.orgId,
-            returnType
-          );
-
-          returnEntity.addLine(line);
-        }
-      }
-
-      // Save return
-      const savedReturn = await this.returnRepository.save(returnEntity);
-
-      // Dispatch domain events
-      savedReturn.markEventsForDispatch();
-      await this.eventDispatcher.dispatchEvents(savedReturn.domainEvents);
-      savedReturn.clearEvents();
-
-      this.logger.log('Return created successfully', {
-        returnId: savedReturn.id,
-        returnNumber: savedReturn.returnNumber.getValue(),
-      });
-
-      const totalAmount = savedReturn.getTotalAmount();
-      const lines = savedReturn.getLines().map(line => {
-        const lineTotal = line.getTotalPrice();
-        return {
-          id: line.id,
-          productId: line.productId,
-          locationId: line.locationId,
-          quantity: line.quantity.getNumericValue(),
-          originalSalePrice: line.originalSalePrice?.getAmount(),
-          originalUnitCost: line.originalUnitCost?.getAmount(),
-          currency: line.currency,
-          totalPrice: lineTotal?.getAmount() || 0,
-        };
-      });
-
-      return {
-        success: true,
-        message: 'Return created successfully',
-        data: {
-          id: savedReturn.id,
-          returnNumber: savedReturn.returnNumber.getValue(),
-          status: savedReturn.status.getValue(),
-          type: savedReturn.type.getValue(),
-          reason: savedReturn.reason.getValue(),
-          warehouseId: savedReturn.warehouseId,
-          saleId: savedReturn.saleId,
-          sourceMovementId: savedReturn.sourceMovementId,
-          returnMovementId: savedReturn.returnMovementId,
-          note: savedReturn.note,
-          confirmedAt: savedReturn.confirmedAt,
-          cancelledAt: savedReturn.cancelledAt,
-          createdBy: savedReturn.createdBy,
-          orgId: savedReturn.orgId,
-          createdAt: savedReturn.createdAt,
-          updatedAt: savedReturn.updatedAt,
-          totalAmount: totalAmount?.getAmount(),
-          currency: totalAmount?.getCurrency(),
-          lines,
-        },
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      this.logger.error('Error creating return', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        type: request.type,
-        warehouseId: request.warehouseId,
-        orgId: request.orgId,
-      });
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Failed to create return'
-      );
+    // Validate warehouse exists
+    const warehouse = await this.warehouseRepository.findById(request.warehouseId, request.orgId);
+    if (!warehouse) {
+      return err(new NotFoundError(`Warehouse with ID ${request.warehouseId} not found`));
     }
+
+    // Validate type-specific requirements
+    if (request.type === 'RETURN_CUSTOMER' && !request.saleId) {
+      return err(new ValidationError('Sale ID is required for customer returns'));
+    }
+    if (request.type === 'RETURN_SUPPLIER' && !request.sourceMovementId) {
+      return err(new ValidationError('Source movement ID is required for supplier returns'));
+    }
+
+    // Generate return number
+    const returnNumber = await ReturnNumberGenerationService.generateNextReturnNumber(
+      request.orgId,
+      this.returnRepository
+    );
+
+    // Create return entity
+    const returnEntity = Return.create(
+      {
+        returnNumber,
+        status: ReturnStatus.create('DRAFT'),
+        type: ReturnType.create(request.type),
+        reason: ReturnReason.create(request.reason),
+        warehouseId: request.warehouseId,
+        saleId: request.type === 'RETURN_CUSTOMER' ? request.saleId : undefined,
+        sourceMovementId: request.type === 'RETURN_SUPPLIER' ? request.sourceMovementId : undefined,
+        note: request.note,
+        createdBy: request.createdBy,
+      },
+      request.orgId
+    );
+
+    // Add lines if provided
+    if (request.lines && request.lines.length > 0) {
+      const returnType = ReturnType.create(request.type);
+      for (const lineRequest of request.lines) {
+        const quantity = Quantity.create(lineRequest.quantity, 6);
+        const currency = lineRequest.currency || 'COP';
+
+        let originalSalePrice: SalePrice | undefined;
+        let originalUnitCost: Money | undefined;
+
+        if (request.type === 'RETURN_CUSTOMER') {
+          if (!lineRequest.originalSalePrice) {
+            return err(
+              new ValidationError('Original sale price is required for customer return lines')
+            );
+          }
+          originalSalePrice = SalePrice.create(lineRequest.originalSalePrice, currency, 2);
+        } else {
+          if (!lineRequest.originalUnitCost) {
+            return err(
+              new ValidationError('Original unit cost is required for supplier return lines')
+            );
+          }
+          originalUnitCost = Money.create(lineRequest.originalUnitCost, currency, 2);
+        }
+
+        const line = ReturnLine.create(
+          {
+            productId: lineRequest.productId,
+            locationId: lineRequest.locationId,
+            quantity,
+            originalSalePrice,
+            originalUnitCost,
+            currency,
+          },
+          request.orgId,
+          returnType
+        );
+
+        returnEntity.addLine(line);
+      }
+    }
+
+    // Save return
+    const savedReturn = await this.returnRepository.save(returnEntity);
+
+    // Dispatch domain events
+    savedReturn.markEventsForDispatch();
+    await this.eventDispatcher.dispatchEvents(savedReturn.domainEvents);
+    savedReturn.clearEvents();
+
+    this.logger.log('Return created successfully', {
+      returnId: savedReturn.id,
+      returnNumber: savedReturn.returnNumber.getValue(),
+    });
+
+    const totalAmount = savedReturn.getTotalAmount();
+    const lines = savedReturn.getLines().map(line => {
+      const lineTotal = line.getTotalPrice();
+      return {
+        id: line.id,
+        productId: line.productId,
+        locationId: line.locationId,
+        quantity: line.quantity.getNumericValue(),
+        originalSalePrice: line.originalSalePrice?.getAmount(),
+        originalUnitCost: line.originalUnitCost?.getAmount(),
+        currency: line.currency,
+        totalPrice: lineTotal?.getAmount() || 0,
+      };
+    });
+
+    return ok({
+      success: true,
+      message: 'Return created successfully',
+      data: {
+        id: savedReturn.id,
+        returnNumber: savedReturn.returnNumber.getValue(),
+        status: savedReturn.status.getValue(),
+        type: savedReturn.type.getValue(),
+        reason: savedReturn.reason.getValue(),
+        warehouseId: savedReturn.warehouseId,
+        saleId: savedReturn.saleId,
+        sourceMovementId: savedReturn.sourceMovementId,
+        returnMovementId: savedReturn.returnMovementId,
+        note: savedReturn.note,
+        confirmedAt: savedReturn.confirmedAt,
+        cancelledAt: savedReturn.cancelledAt,
+        createdBy: savedReturn.createdBy,
+        orgId: savedReturn.orgId,
+        createdAt: savedReturn.createdAt,
+        updatedAt: savedReturn.updatedAt,
+        totalAmount: totalAmount?.getAmount(),
+        currency: totalAmount?.getCurrency(),
+        lines,
+      },
+      timestamp: new Date().toISOString(),
+    });
   }
 }

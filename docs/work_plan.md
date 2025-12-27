@@ -21,9 +21,11 @@
 
 ### **FASE 4: Dominio de Ventas y Devoluciones (Semanas 10-11)**
 
+### **FASE 4.5: Mejoras de Arquitectura (Semana 11.5 - 2-3 días)**
+
 ### **FASE 5: Dominio de Reportes e Importaciones (Semanas 12-13)**
 
-### **FASE 6: Testing, Optimización y Despliegue (Semana 14)**
+### **FASE 6: Testing, Optimización y Despliegue (Semanas 14-17)**
 
 ---
 
@@ -429,6 +431,59 @@
 
 ---
 
+## 🔧 FASE 4.5: Mejoras de Arquitectura y Adherencia a Mejores Prácticas
+
+### **Semana 11.5: Mejoras de Arquitectura Hexagonal y Programación Funcional** (2-3 días antes de Fase 5)
+
+Esta fase se ejecuta **antes de iniciar la Fase 5 (Reportes)** para mejorar la base arquitectónica y facilitar el desarrollo de funcionalidades futuras.
+
+#### **Objetivo**
+Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional identificadas en la evaluación de arquitectura, priorizando mejoras de alto impacto y bajo riesgo que no retrasen el MVP.
+
+#### **Mejoras a Implementar (Alta Prioridad - Antes de Reportes)**
+
+- [ ] **Implementación de Result<T, E> Monad**
+  - [ ] Crear tipo `Result<T, E>` en `src/shared/domain/result/`
+  - [ ] Implementar métodos: `ok()`, `err()`, `map()`, `flatMap()`, `unwrap()`, `unwrapOr()`
+  - [ ] Refactorizar casos de uso críticos para usar `Result` en lugar de excepciones
+  - [ ] Actualizar casos de uso de productos, movimientos y ventas
+  - [ ] Documentar patrón de uso en guía de desarrollo
+  - [ ] Tests unitarios para Result monad
+
+- [ ] **Abstracción de DomainEventDispatcher**
+  - [ ] Crear interfaz `IDomainEventDispatcher` en `src/shared/domain/events/`
+  - [ ] Refactorizar `DomainEventDispatcher` para implementar la interfaz
+  - [ ] Actualizar inyección de dependencias en casos de uso
+  - [ ] Mantener compatibilidad con implementación actual
+  - [ ] Tests de integración para verificar funcionamiento
+
+- [ ] **Creación de Carpeta `ports/` Explícita**
+  - [ ] Crear estructura `src/shared/ports/` y `src/{domain}/ports/`
+  - [ ] Mover interfaces de repositorios a `ports/` (opcional, puede mantenerse en `repositories/`)
+  - [ ] Crear `ports/` para servicios externos (notificaciones, eventos)
+  - [ ] Documentar convención de ports en arquitectura
+  - [ ] Actualizar imports en código existente
+
+- [ ] **Mappers DTO ↔ Domain**
+  - [ ] Crear carpeta `src/shared/mappers/` o `src/{domain}/mappers/`
+  - [ ] Implementar mappers básicos para Product, Movement, Sale, Return
+  - [ ] Reducir acoplamiento entre controllers y casos de uso
+  - [ ] Tests unitarios para mappers
+
+#### **Criterios de Éxito**
+- ✅ Result monad implementado y usado en al menos 3 casos de uso críticos
+- ✅ DomainEventDispatcher abstraído sin romper funcionalidad existente
+- ✅ Estructura de ports documentada y aplicada
+- ✅ Mappers reducen código duplicado en controllers
+- ✅ Todos los tests existentes pasan sin modificaciones
+- ✅ No se retrasa el inicio de Fase 5
+
+#### **Tiempo Estimado**
+- **Duración**: 2-3 días de desarrollo
+- **Ubicación**: Entre Semana 11 y Semana 12 (antes de iniciar Reportes)
+
+---
+
 ## 📊 FASE 5: Dominio de Reportes e Importaciones
 
 ### **Semana 12: Dominio de Reportes e Importaciones**
@@ -453,6 +508,42 @@
       - [ ] Comparación entre períodos (mensual, trimestral, anual)
       - [ ] Identificación de productos de lenta rotación (slow-moving)
       - [ ] Identificación de productos de alta rotación (fast-moving)
+  - [ ] **Tipos de Reportes de Ventas Contemplados**:
+    - [ ] **8. Reporte de Ventas**: Resumen de ventas por período, bodega, producto
+      - [ ] Métricas: Total de ventas, cantidad de ventas, promedio por venta
+      - [ ] Filtros: dateRange, warehouseId, productId, status, customerReference
+      - [ ] Agrupación: Por día, semana, mes, producto, bodega, cliente
+      - [ ] Análisis: Top productos vendidos, top clientes, tendencias
+    - [ ] **9. Reporte de Ventas por Producto**: Análisis de ventas desglosado por producto
+      - [ ] Métricas: Cantidad vendida, ingresos, precio promedio, margen
+      - [ ] Filtros: dateRange, warehouseId, productId, category
+      - [ ] Comparación: Período actual vs período anterior
+      - [ ] Ranking: Productos más vendidos, productos con mayor ingreso
+    - [ ] **10. Reporte de Ventas por Bodega**: Análisis de ventas por bodega
+      - [ ] Métricas: Total de ventas por bodega, cantidad de ventas, promedio
+      - [ ] Filtros: dateRange, warehouseId
+      - [ ] Comparación: Rendimiento entre bodegas
+      - [ ] Análisis: Bodegas con mayor volumen de ventas
+  - [ ] **Tipos de Reportes de Devoluciones Contemplados**:
+    - [ ] **11. Reporte de Devoluciones**: Resumen de devoluciones por período, tipo, bodega
+      - [ ] Métricas: Total de devoluciones, cantidad de productos devueltos, valor total
+      - [ ] Filtros: dateRange, warehouseId, returnType (CUSTOMER, SUPPLIER), status
+      - [ ] Agrupación: Por día, semana, mes, tipo, bodega, producto
+      - [ ] Análisis: Razones más comunes, productos más devueltos
+    - [ ] **12. Reporte de Devoluciones por Tipo**: Análisis separado de devoluciones de clientes y a proveedores
+      - [ ] **Devoluciones de Cliente**: Productos devueltos por clientes
+        - [ ] Métricas: Cantidad devuelta, valor devuelto, relación con ventas
+        - [ ] Filtros: dateRange, warehouseId, saleId
+        - [ ] Análisis: Tasa de devolución, productos más devueltos
+      - [ ] **Devoluciones a Proveedor**: Productos devueltos a proveedores
+        - [ ] Métricas: Cantidad devuelta, valor devuelto, relación con compras
+        - [ ] Filtros: dateRange, warehouseId, movementId
+        - [ ] Análisis: Tasa de devolución, proveedores más afectados
+    - [ ] **13. Reporte de Devoluciones por Producto**: Análisis de devoluciones desglosado por producto
+      - [ ] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
+      - [ ] Filtros: dateRange, warehouseId, productId, returnType
+      - [ ] Comparación: Período actual vs período anterior
+      - [ ] Ranking: Productos con mayor tasa de devolución
 
 - [ ] **Implementación del Dominio de Importaciones**
   - [ ] Aggregates: ImportBatchAggregate, ImportRowAggregate con reglas de consistencia
@@ -499,6 +590,45 @@
       - [ ] Filtros: dateRange, type, warehouseId, status
     - [ ] GET /reports/financial - Vista de reporte financiero (JSON)
       - [ ] Filtros: dateRange, warehouseId, category
+    - [ ] **Vistas de Reportes de Ventas (Preview)**:
+      - [ ] GET /reports/sales - Vista de reporte de ventas (JSON)
+        - [ ] Filtros: dateRange, warehouseId, productId, status, customerReference
+        - [ ] Agrupación: Por día, semana, mes, producto, bodega, cliente
+        - [ ] Métricas: Total de ventas, cantidad de ventas, promedio por venta
+      - [ ] GET /reports/sales/by-product - Vista de reporte de ventas por producto (JSON)
+        - [ ] Filtros: dateRange, warehouseId, productId, category
+        - [ ] Métricas: Cantidad vendida, ingresos, precio promedio, margen
+        - [ ] Comparación: Período actual vs período anterior
+        - [ ] Ranking: Productos más vendidos, productos con mayor ingreso
+      - [ ] GET /reports/sales/by-warehouse - Vista de reporte de ventas por bodega (JSON)
+        - [ ] Filtros: dateRange, warehouseId
+        - [ ] Métricas: Total de ventas por bodega, cantidad de ventas, promedio
+        - [ ] Comparación: Rendimiento entre bodegas
+        - [ ] Análisis: Bodegas con mayor volumen de ventas
+    - [ ] **Vistas de Reportes de Devoluciones (Preview)**:
+      - [ ] GET /reports/returns - Vista de reporte de devoluciones (JSON)
+        - [ ] Filtros: dateRange, warehouseId, returnType (CUSTOMER, SUPPLIER), status
+        - [ ] Agrupación: Por día, semana, mes, tipo, bodega, producto
+        - [ ] Métricas: Total de devoluciones, cantidad de productos devueltos, valor total
+        - [ ] Análisis: Razones más comunes, productos más devueltos
+      - [ ] GET /reports/returns/by-type - Vista de reporte de devoluciones por tipo (JSON)
+        - [ ] Filtros: dateRange, warehouseId, returnType
+        - [ ] **Devoluciones de Cliente**: Cantidad devuelta, valor devuelto, relación con ventas, tasa de devolución
+        - [ ] **Devoluciones a Proveedor**: Cantidad devuelta, valor devuelto, relación con compras, tasa de devolución
+      - [ ] GET /reports/returns/by-product - Vista de reporte de devoluciones por producto (JSON)
+        - [ ] Filtros: dateRange, warehouseId, productId, returnType
+        - [ ] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
+        - [ ] Comparación: Período actual vs período anterior
+        - [ ] Ranking: Productos con mayor tasa de devolución
+      - [ ] GET /reports/returns/by-sale/:saleId - Vista de devoluciones de una venta específica (JSON)
+        - [ ] Filtros: saleId (requerido)
+        - [ ] Métricas: Devoluciones totales de la venta, productos devueltos, valor devuelto
+      - [ ] GET /reports/returns/customer - Vista de devoluciones de clientes (JSON)
+        - [ ] Filtros: dateRange, warehouseId, saleId
+        - [ ] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
+      - [ ] GET /reports/returns/supplier - Vista de devoluciones a proveedores (JSON)
+        - [ ] Filtros: dateRange, warehouseId, movementId
+        - [ ] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
     - [ ] GET /reports/:id - Vista de reporte generado por ID (JSON)
   - [ ] **Exportación de Reportes**:
     - [ ] GET /reports/:id/export?format=pdf - Exportar reporte a PDF
@@ -560,6 +690,42 @@
   - [ ] Refactoring de código siguiendo principios FP
   - [ ] Optimización de memoria y CPU
   - [ ] Implementar lazy loading para entidades pesadas
+
+- [ ] **Mejoras de Arquitectura y Programación Funcional (Fase 6)**
+  - [ ] **Inmutabilidad Completa en Entidades**
+    - [ ] Refactorizar métodos `update()` en entidades para retornar nuevas instancias
+    - [ ] Implementar técnicas de inmutabilidad en Product, Movement, Sale, Return
+    - [ ] Actualizar casos de uso para trabajar con entidades inmutables
+    - [ ] Tests de regresión para validar comportamiento
+    - [ ] Documentar patrón de inmutabilidad en guía de desarrollo
+  
+  - [ ] **Specification Pattern para Queries Complejas**
+    - [ ] Crear base `ISpecification<T>` en `src/shared/domain/specifications/`
+    - [ ] Implementar especificaciones para queries de reportes
+    - [ ] Refactorizar repositorios para usar specifications
+    - [ ] Tests unitarios para specifications
+    - [ ] Documentar uso del patrón
+  
+  - [ ] **Funciones Puras en Domain Services**
+    - [ ] Convertir Domain Services estáticos a funciones puras exportadas
+    - [ ] Separar efectos secundarios (logging, eventos) de lógica pura
+    - [ ] Refactorizar: ProductBusinessRulesService, InventoryCalculationService, SaleCalculationService
+    - [ ] Tests unitarios mejorados (más fáciles de testear funciones puras)
+    - [ ] Documentar principios de funciones puras
+  
+  - [ ] **Utilidades de Composición Funcional**
+    - [ ] Crear `src/shared/utils/functional/` con `pipe()`, `compose()`, `curry()`
+    - [ ] Implementar helpers funcionales: `map`, `filter`, `reduce` con tipos
+    - [ ] Refactorizar código existente para usar composición
+    - [ ] Tests unitarios para utilidades funcionales
+    - [ ] Documentar patrones de composición
+  
+  - [ ] **Mover Invariantes a Agregados**
+    - [ ] Identificar invariantes críticos en servicios de dominio
+    - [ ] Mover validaciones a métodos de agregados
+    - [ ] Refactorizar Product, Movement, Transfer para encapsular invariantes
+    - [ ] Tests de regresión para validar comportamiento
+    - [ ] Documentar principios de encapsulación de invariantes
 
 - [ ] **Testing de Postman**
   - [ ] Ejecutar todos los tests de Postman automáticamente
@@ -932,6 +1098,7 @@ inventory-system/
 | 9      | Dominio de Inventarios | Reglas de negocio y casos de uso           | Backend          |
 | 10     | Dominio de Ventas      | Dominio de ventas                          | Backend          |
 | 11     | Dominio de Ventas      | Dominio de devoluciones y adaptadores       | Backend          |
+| 11.5   | Mejoras de Arquitectura | Result monad, ports, abstracciones        | Backend          |
 | 12     | Dominio de Reportes    | Dominio de reportes e importaciones        | Backend          |
 | 13     | Dominio de Reportes    | Adaptadores y API de reportes              | Backend          |
 | 14     | Personalización        | Dominio de personalización y configuración | Backend          |
@@ -1590,6 +1757,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Semana 10**: Adaptadores y API de inventarios ✅ **COMPLETADA**
 - [x] **Semana 10**: Dominio de ventas ✅ **COMPLETADA**
 - [x] **Semana 11**: Dominio de devoluciones y adaptadores ✅ **COMPLETADA (100%)**
+- [ ] **Semana 11.5**: Mejoras de arquitectura (Result monad, ports, abstracciones)
 - [ ] **Semana 12**: Dominio de reportes e importaciones
 - [ ] **Semana 13**: Adaptadores y API de reportes
 - [ ] **Semana 14**: Dominio de personalización y configuración
@@ -1603,8 +1771,9 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Fase 2**: Sistema de autenticación completo con RBAC ✅ **COMPLETADA (~95%)** (falta solo setup automático de auditoría)
 - [x] **Fase 3**: Sistema de inventarios completo ✅ **COMPLETADA (100%)**
 - [x] **Fase 4**: Sistema de ventas y devoluciones ✅ **COMPLETADA (100%)**
+- [ ] **Fase 4.5**: Mejoras de arquitectura (Result monad, ports, abstracciones)
 - [ ] **Fase 5**: Sistema de reportes e importaciones
-- [ ] **Fase 6**: Testing, optimización y despliegue
+- [ ] **Fase 6**: Testing, optimización y despliegue (incluye refactoring funcional)
 
 ### **Colecciones de Postman Completadas**
 
@@ -1796,8 +1965,9 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 
 #### **⏳ Pendiente**
 
+- **Fase 4.5**: Mejoras de arquitectura (Result monad, ports, abstracciones) - **2-3 días antes de Fase 5**
 - **Fase 5**: Reportes e importaciones
-- **Fase 6**: Testing completo y despliegue
+- **Fase 6**: Testing completo, optimización, refactoring funcional y despliegue
 
 ---
 

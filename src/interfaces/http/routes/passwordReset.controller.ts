@@ -6,6 +6,7 @@ import { Public, RateLimited } from '@auth/security/decorators/auth.decorators';
 import { Body, Controller, Headers, HttpCode, HttpStatus, Ip, Logger, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrgId } from '@shared/decorators/orgId.decorator';
+import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
 import type {
   IRequestPasswordResetRequest,
@@ -54,7 +55,7 @@ export class PasswordResetController {
   })
   @ApiResponse({
     status: HttpStatus.TOO_MANY_REQUESTS,
-    description: 'Demasiadas solicitudes',
+    description: 'Too many requests',
   })
   async requestPasswordReset(
     @Body() requestDto: RequestPasswordResetDto,
@@ -71,7 +72,8 @@ export class PasswordResetController {
       userAgent,
     };
 
-    return this.requestPasswordResetUseCase.execute(request);
+    const result = await this.requestPasswordResetUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Post('verify-otp')
@@ -99,7 +101,7 @@ export class PasswordResetController {
   })
   @ApiResponse({
     status: HttpStatus.TOO_MANY_REQUESTS,
-    description: 'Demasiadas solicitudes',
+    description: 'Too many requests',
   })
   async verifyOtp(
     @Body() verifyDto: VerifyOtpDto,
@@ -114,7 +116,8 @@ export class PasswordResetController {
       orgId,
     };
 
-    return this.verifyOtpUseCase.execute(request);
+    const result = await this.verifyOtpUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Post('reset')
@@ -143,7 +146,7 @@ export class PasswordResetController {
   })
   @ApiResponse({
     status: HttpStatus.TOO_MANY_REQUESTS,
-    description: 'Demasiadas solicitudes',
+    description: 'Too many requests',
   })
   async resetPassword(
     @Body() resetDto: ResetPasswordDto,
@@ -160,6 +163,7 @@ export class PasswordResetController {
       orgId,
     };
 
-    return this.resetPasswordUseCase.execute(request);
+    const result = await this.resetPasswordUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 }

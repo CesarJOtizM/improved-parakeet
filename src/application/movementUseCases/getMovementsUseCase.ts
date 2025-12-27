@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
 import type { IMovementData } from './createMovementUseCase';
@@ -28,7 +29,9 @@ export class GetMovementsUseCase {
     @Inject('MovementRepository') private readonly movementRepository: IMovementRepository
   ) {}
 
-  async execute(request: IGetMovementsRequest): Promise<IGetMovementsResponse> {
+  async execute(
+    request: IGetMovementsRequest
+  ): Promise<Result<IGetMovementsResponse, DomainError>> {
     this.logger.log('Getting movements', {
       orgId: request.orgId,
       page: request.page,
@@ -121,7 +124,7 @@ export class GetMovementsUseCase {
     const paginatedMovements = movements.slice(skip, skip + limit);
     const totalPages = Math.ceil(total / limit);
 
-    return {
+    return ok({
       success: true,
       message: 'Movements retrieved successfully',
       data: paginatedMovements.map(movement => ({
@@ -155,6 +158,6 @@ export class GetMovementsUseCase {
         hasPrev: page > 1,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

@@ -1,5 +1,13 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  BusinessRuleError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IReturnRepository } from '@returns/domain/repositories/returnRepository.interface';
@@ -22,7 +30,9 @@ export class RemoveReturnLineUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: IRemoveReturnLineRequest): Promise<IRemoveReturnLineResponse> {
+  async execute(
+    request: IRemoveReturnLineRequest
+  ): Promise<Result<IRemoveReturnLineResponse, DomainError>> {
     this.logger.log('Removing line from return', {
       returnId: request.returnId,
       lineId: request.lineId,
@@ -33,15 +43,17 @@ export class RemoveReturnLineUseCase {
     const returnEntity = await this.returnRepository.findById(request.returnId, request.orgId);
 
     if (!returnEntity) {
-      throw new NotFoundException(`Return with ID ${request.returnId} not found`);
+      return err(new NotFoundError(`Return with ID ${request.returnId} not found`));
     }
 
     // Remove line from return
     try {
       returnEntity.removeLine(request.lineId);
     } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Failed to remove line from return'
+      return err(
+        new BusinessRuleError(
+          error instanceof Error ? error.message : 'Failed to remove line from return'
+        )
       );
     }
 
@@ -58,11 +70,11 @@ export class RemoveReturnLineUseCase {
       lineId: request.lineId,
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Line removed from return successfully',
       data: { message: 'Line removed successfully' },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

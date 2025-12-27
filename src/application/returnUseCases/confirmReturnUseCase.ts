@@ -1,9 +1,17 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InventoryInGeneratedEvent } from '@returns/domain/events/inventoryInGenerated.event';
 import { InventoryOutGeneratedEvent } from '@returns/domain/events/inventoryOutGenerated.event';
 import { InventoryIntegrationService } from '@returns/domain/services/inventoryIntegration.service';
 import { ReturnValidationService } from '@returns/domain/services/returnValidation.service';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  BusinessRuleError,
+  DomainError,
+  NotFoundError,
+  Result,
+  err,
+  ok,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IReturnData } from './createReturnUseCase';
@@ -34,21 +42,23 @@ export class ConfirmReturnUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: IConfirmReturnRequest): Promise<IConfirmReturnResponse> {
+  async execute(
+    request: IConfirmReturnRequest
+  ): Promise<Result<IConfirmReturnResponse, DomainError>> {
     this.logger.log('Confirming return', { returnId: request.id, orgId: request.orgId });
 
     // Retrieve return
     const returnEntity = await this.returnRepository.findById(request.id, request.orgId);
 
     if (!returnEntity) {
-      throw new NotFoundException(`Return with ID ${request.id} not found`);
+      return err(new NotFoundError(`Return with ID ${request.id} not found`));
     }
 
     // Validate return can be confirmed
     const validationResult = ReturnValidationService.validateReturnCanBeConfirmed(returnEntity);
     if (!validationResult.isValid) {
-      throw new BadRequestException(
-        `Return cannot be confirmed: ${validationResult.errors.join(', ')}`
+      return err(
+        new BusinessRuleError(`Return cannot be confirmed: ${validationResult.errors.join(', ')}`)
       );
     }
 
@@ -59,8 +69,10 @@ export class ConfirmReturnUseCase {
         this.saleRepository
       );
       if (!quantityValidation.isValid) {
-        throw new BadRequestException(
-          `Invalid return quantities: ${quantityValidation.errors.join(', ')}`
+        return err(
+          new BusinessRuleError(
+            `Invalid return quantities: ${quantityValidation.errors.join(', ')}`
+          )
         );
       }
     } else {
@@ -70,8 +82,10 @@ export class ConfirmReturnUseCase {
         this.movementRepository
       );
       if (!quantityValidation.isValid) {
-        throw new BadRequestException(
-          `Invalid return quantities: ${quantityValidation.errors.join(', ')}`
+        return err(
+          new BusinessRuleError(
+            `Invalid return quantities: ${quantityValidation.errors.join(', ')}`
+          )
         );
       }
     }
@@ -141,7 +155,7 @@ export class ConfirmReturnUseCase {
       };
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Return confirmed successfully',
       data: {
@@ -166,6 +180,6 @@ export class ConfirmReturnUseCase {
         lines,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

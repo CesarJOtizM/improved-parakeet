@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { EntityType } from '@shared/audit/domain/valueObjects/entityType.valueObject';
+import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
 import type { IAuditLogRepository } from '@shared/audit/domain/repositories/auditLogRepository.interface';
@@ -33,7 +34,9 @@ export class GetEntityHistoryUseCase {
     private readonly auditRepository: IAuditLogRepository
   ) {}
 
-  async execute(request: IGetEntityHistoryRequest): Promise<IGetEntityHistoryResponse> {
+  async execute(
+    request: IGetEntityHistoryRequest
+  ): Promise<Result<IGetEntityHistoryResponse, DomainError>> {
     this.logger.log('Getting entity history', {
       entityType: request.entityType,
       entityId: request.entityId,
@@ -62,7 +65,7 @@ export class GetEntityHistoryUseCase {
       auditLogs.length === limit ? limit * page + 1 : auditLogs.length + (page - 1) * limit;
     const totalPages = Math.ceil(total / limit);
 
-    return {
+    return ok({
       success: true,
       message: 'Entity history retrieved successfully',
       data: auditLogs.map(log => ({
@@ -83,6 +86,6 @@ export class GetEntityHistoryUseCase {
         hasPrev: page > 1,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

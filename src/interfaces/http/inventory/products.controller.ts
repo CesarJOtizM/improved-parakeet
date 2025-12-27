@@ -40,6 +40,7 @@ import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
 import { OrgId } from '@shared/decorators/orgId.decorator';
 import { RequirePermissions } from '@shared/decorators/requirePermissions.decorator';
 import { AuditInterceptor } from '@shared/interceptors/audit.interceptor';
+import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
 import type { IAuthenticatedUser } from '@shared/types/http.types';
 import type { Request } from 'express';
@@ -100,7 +101,8 @@ export class ProductsController {
       orgId,
     };
 
-    return await this.createProductUseCase.execute(request);
+    const result = await this.createProductUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Get()
@@ -142,7 +144,8 @@ export class ProductsController {
       sortOrder: query.sortOrder,
     };
 
-    return await this.getProductsUseCase.execute(request);
+    const result = await this.getProductsUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Get(':id')
@@ -177,7 +180,8 @@ export class ProductsController {
       orgId,
     };
 
-    return await this.getProductByIdUseCase.execute(request);
+    const result = await this.getProductByIdUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Put(':id')
@@ -225,6 +229,7 @@ export class ProductsController {
       costMethod: updateProductDto.costMethod,
     };
 
-    return await this.updateProductUseCase.execute(request);
+    const result = await this.updateProductUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 }

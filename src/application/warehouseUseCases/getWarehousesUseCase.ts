@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
 import type { IWarehouseData } from './createWarehouseUseCase';
@@ -24,7 +25,9 @@ export class GetWarehousesUseCase {
     @Inject('WarehouseRepository') private readonly warehouseRepository: IWarehouseRepository
   ) {}
 
-  async execute(request: IGetWarehousesRequest): Promise<IGetWarehousesResponse> {
+  async execute(
+    request: IGetWarehousesRequest
+  ): Promise<Result<IGetWarehousesResponse, DomainError>> {
     this.logger.log('Getting warehouses', {
       orgId: request.orgId,
       page: request.page,
@@ -96,7 +99,7 @@ export class GetWarehousesUseCase {
     const paginatedWarehouses = warehouses.slice(skip, skip + limit);
     const totalPages = Math.ceil(total / limit);
 
-    return {
+    return ok({
       success: true,
       message: 'Warehouses retrieved successfully',
       data: paginatedWarehouses.map(warehouse => ({
@@ -126,6 +129,6 @@ export class GetWarehousesUseCase {
         hasPrev: page > 1,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

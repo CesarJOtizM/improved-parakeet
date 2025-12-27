@@ -1,5 +1,13 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  BusinessRuleError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
@@ -22,7 +30,9 @@ export class RemoveSaleLineUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: IRemoveSaleLineRequest): Promise<IRemoveSaleLineResponse> {
+  async execute(
+    request: IRemoveSaleLineRequest
+  ): Promise<Result<IRemoveSaleLineResponse, DomainError>> {
     this.logger.log('Removing line from sale', {
       saleId: request.saleId,
       lineId: request.lineId,
@@ -33,15 +43,17 @@ export class RemoveSaleLineUseCase {
     const sale = await this.saleRepository.findById(request.saleId, request.orgId);
 
     if (!sale) {
-      throw new NotFoundException(`Sale with ID ${request.saleId} not found`);
+      return err(new NotFoundError(`Sale with ID ${request.saleId} not found`));
     }
 
     // Remove line from sale
     try {
       sale.removeLine(request.lineId);
     } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Failed to remove line from sale'
+      return err(
+        new BusinessRuleError(
+          error instanceof Error ? error.message : 'Failed to remove line from sale'
+        )
       );
     }
 
@@ -58,11 +70,11 @@ export class RemoveSaleLineUseCase {
       lineId: request.lineId,
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Line removed from sale successfully',
       data: { message: 'Line removed successfully' },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

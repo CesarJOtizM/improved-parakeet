@@ -1,4 +1,5 @@
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IReturnData } from './createReturnUseCase';
@@ -20,13 +21,15 @@ export class GetReturnByIdUseCase {
     private readonly returnRepository: IReturnRepository
   ) {}
 
-  async execute(request: IGetReturnByIdRequest): Promise<IGetReturnByIdResponse> {
+  async execute(
+    request: IGetReturnByIdRequest
+  ): Promise<Result<IGetReturnByIdResponse, DomainError>> {
     this.logger.log('Getting return by ID', { returnId: request.id, orgId: request.orgId });
 
     const returnEntity = await this.returnRepository.findById(request.id, request.orgId);
 
     if (!returnEntity) {
-      throw new BadRequestException(`Return with ID ${request.id} not found`);
+      return err(new NotFoundError(`Return with ID ${request.id} not found`));
     }
 
     const totalAmount = returnEntity.getTotalAmount();
@@ -44,7 +47,7 @@ export class GetReturnByIdUseCase {
       };
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Return retrieved successfully',
       data: {
@@ -69,6 +72,6 @@ export class GetReturnByIdUseCase {
         lines,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

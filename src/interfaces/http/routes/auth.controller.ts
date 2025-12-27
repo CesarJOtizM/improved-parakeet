@@ -19,6 +19,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrgId } from '@shared/decorators/orgId.decorator';
+import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
 import type { ILoginRequest, ILoginResponse } from '@application/authUseCases/loginUseCase';
 import type { ILogoutRequest, ILogoutResponse } from '@application/authUseCases/logoutUseCase';
@@ -95,7 +96,8 @@ export class AuthController {
       userAgent,
     };
 
-    return this.loginUseCase.execute(request);
+    const result = await this.loginUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Post('logout')
@@ -140,7 +142,8 @@ export class AuthController {
       ipAddress,
     };
 
-    return this.logoutUseCase.execute(request);
+    const result = await this.logoutUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Post('refresh')
@@ -196,7 +199,8 @@ export class AuthController {
       userAgent,
     };
 
-    return this.refreshTokenUseCase.execute(request);
+    const result = await this.refreshTokenUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Post('logout-all')
@@ -238,7 +242,8 @@ export class AuthController {
       reason: 'SECURITY',
     };
 
-    return this.logoutUseCase.execute(request);
+    const result = await this.logoutUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Get('test-orgid')

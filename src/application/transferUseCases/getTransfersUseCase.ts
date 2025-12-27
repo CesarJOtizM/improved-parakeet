@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
 import type { ITransferData } from './initiateTransferUseCase';
@@ -27,7 +28,9 @@ export class GetTransfersUseCase {
     @Inject('TransferRepository') private readonly transferRepository: ITransferRepository
   ) {}
 
-  async execute(request: IGetTransfersRequest): Promise<IGetTransfersResponse> {
+  async execute(
+    request: IGetTransfersRequest
+  ): Promise<Result<IGetTransfersResponse, DomainError>> {
     this.logger.log('Getting transfers', {
       orgId: request.orgId,
       page: request.page,
@@ -118,7 +121,7 @@ export class GetTransfersUseCase {
     const paginatedTransfers = transfers.slice(skip, skip + limit);
     const totalPages = Math.ceil(total / limit);
 
-    return {
+    return ok({
       success: true,
       message: 'Transfers retrieved successfully',
       data: paginatedTransfers.map(transfer => ({
@@ -142,6 +145,6 @@ export class GetTransfersUseCase {
         hasPrev: page > 1,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

@@ -1,12 +1,14 @@
 import { UserManagementService } from '@auth/domain/services/userManagementService';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
-  BadRequestException,
-  ConflictException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+  ConflictError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+  ValidationError,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IUserRepository } from '@auth/domain/repositories';
@@ -40,13 +42,13 @@ export class UpdateUserUseCase {
 
   constructor(@Inject('UserRepository') private readonly userRepository: IUserRepository) {}
 
-  async execute(request: IUpdateUserRequest): Promise<IUpdateUserResponse> {
+  async execute(request: IUpdateUserRequest): Promise<Result<IUpdateUserResponse, DomainError>> {
     this.logger.log('Updating user', { userId: request.userId, orgId: request.orgId });
 
     // Get existing user
     const user = await this.userRepository.findById(request.userId, request.orgId);
     if (!user) {
-      throw new NotFoundException('User not found');
+      return err(new NotFoundError('User not found'));
     }
 
     // Validate update data
@@ -58,7 +60,7 @@ export class UpdateUserUseCase {
     });
 
     if (!validation.isValid) {
-      throw new BadRequestException(`Validation failed: ${validation.errors.join(', ')}`);
+      return err(new ValidationError(`Validation failed: ${validation.errors.join(', ')}`));
     }
 
     // Check email uniqueness if email is being changed
@@ -69,8 +71,8 @@ export class UpdateUserUseCase {
         async (email, orgId) => this.userRepository.existsByEmail(email, orgId)
       );
       if (!emailValidation.isValid) {
-        throw new ConflictException(
-          `Email validation failed: ${emailValidation.errors.join(', ')}`
+        return err(
+          new ConflictError(`Email validation failed: ${emailValidation.errors.join(', ')}`)
         );
       }
     }
@@ -83,8 +85,8 @@ export class UpdateUserUseCase {
         async (username, orgId) => this.userRepository.existsByUsername(username, orgId)
       );
       if (!usernameValidation.isValid) {
-        throw new ConflictException(
-          `Username validation failed: ${usernameValidation.errors.join(', ')}`
+        return err(
+          new ConflictError(`Username validation failed: ${usernameValidation.errors.join(', ')}`)
         );
       }
     }
@@ -102,7 +104,7 @@ export class UpdateUserUseCase {
 
     this.logger.log('User updated successfully', { userId: updatedUser.id });
 
-    return {
+    return ok({
       success: true,
       message: 'User updated successfully',
       data: {
@@ -116,6 +118,6 @@ export class UpdateUserUseCase {
         updatedAt: updatedUser.updatedAt,
       } as IUpdateUserData,
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

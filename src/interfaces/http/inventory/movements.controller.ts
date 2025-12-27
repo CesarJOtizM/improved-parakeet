@@ -35,6 +35,7 @@ import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
 import { OrgId } from '@shared/decorators/orgId.decorator';
 import { RequirePermissions } from '@shared/decorators/requirePermissions.decorator';
 import { AuditInterceptor } from '@shared/interceptors/audit.interceptor';
+import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
 import type { IAuthenticatedUser } from '@shared/types/http.types';
 import type { Request } from 'express';
@@ -98,7 +99,8 @@ export class MovementsController {
       orgId,
     };
 
-    return await this.createMovementUseCase.execute(request);
+    const result = await this.createMovementUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Get()
@@ -152,7 +154,8 @@ export class MovementsController {
       sortOrder: query.sortOrder,
     };
 
-    return await this.getMovementsUseCase.execute(request);
+    const result = await this.getMovementsUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Post(':id/post')
@@ -191,6 +194,7 @@ export class MovementsController {
       orgId,
     };
 
-    return await this.postMovementUseCase.execute(request);
+    const result = await this.postMovementUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 }

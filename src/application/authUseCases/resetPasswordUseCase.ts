@@ -1,11 +1,6 @@
 import { AuthenticationService } from '@auth/domain/services/authenticationService';
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  Logger,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, err, ok, Result, TokenError, ValidationError } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IOtpRepository, IUserRepository } from '@auth/domain/repositories';
@@ -33,11 +28,13 @@ export class ResetPasswordUseCase {
     @Inject('OtpRepository') private readonly otpRepository: IOtpRepository
   ) {}
 
-  async execute(request: IResetPasswordRequest): Promise<IResetPasswordResponse> {
+  async execute(
+    request: IResetPasswordRequest
+  ): Promise<Result<IResetPasswordResponse, DomainError>> {
     try {
       // Validar que las contraseñas coincidan
       if (request.newPassword !== request.confirmPassword) {
-        throw new UnauthorizedException('Passwords do not match');
+        return err(new ValidationError('Passwords do not match'));
       }
 
       // Validar la fortaleza de la nueva contraseña
@@ -45,22 +42,26 @@ export class ResetPasswordUseCase {
         request.newPassword
       );
       if (!passwordValidation.isValid) {
-        throw new UnauthorizedException(
-          `Password does not meet security requirements: ${passwordValidation.errors.join(', ')}`
+        return err(
+          new ValidationError(
+            `Password does not meet security requirements: ${passwordValidation.errors.join(', ')}`
+          )
         );
       }
 
       // Buscar usuario por email
       const user = await this.userRepository.findByEmail(request.email, request.orgId);
       if (!user) {
+        // SECURITY: Log details but return generic error
         this.logger.warn(`Password reset attempt with non-existent email: ${request.email}`);
-        throw new UnauthorizedException('User not found');
+        return err(new TokenError('user_not_found'));
       }
 
       // Verificar que el usuario esté activo
       if (!user.canLogin()) {
+        // SECURITY: Log details but return generic error
         this.logger.warn(`Password reset attempt for locked/inactive user: ${user.id}`);
-        throw new UnauthorizedException('Account is locked or inactive');
+        return err(new TokenError('account_locked'));
       }
 
       // Buscar OTP válido
@@ -71,10 +72,11 @@ export class ResetPasswordUseCase {
       );
 
       if (!otp) {
+        // SECURITY: Log details but return generic error
         this.logger.warn(
           `Password reset attempt with invalid/expired OTP for email: ${request.email}`
         );
-        throw new UnauthorizedException('Invalid or expired verification code');
+        return err(new TokenError('invalid_or_expired_otp'));
       }
 
       // Verificar el código OTP
@@ -83,13 +85,12 @@ export class ResetPasswordUseCase {
         await this.otpRepository.save(otp); // Guardar el intento fallido
 
         if (otp.hasExceededMaxAttempts()) {
-          throw new UnauthorizedException(
-            'Maximum number of attempts exceeded. Request a new code.'
-          );
+          // SECURITY: Log details but return generic error
+          return err(new TokenError('max_attempts_exceeded'));
         }
 
-        const attemptsRemaining = otp.maxAttempts - otp.attempts;
-        throw new UnauthorizedException(`Incorrect code. Attempts remaining: ${attemptsRemaining}`);
+        // SECURITY: Log details but return generic error
+        return err(new TokenError('invalid_otp_code'));
       }
 
       // Verificar que la nueva contraseña sea diferente a la actual
@@ -99,7 +100,7 @@ export class ResetPasswordUseCase {
       );
 
       if (isSamePassword) {
-        throw new UnauthorizedException('New password must be different from current password');
+        return err(new ValidationError('New password must be different from current password'));
       }
 
       // Cambiar la contraseña del usuario
@@ -112,32 +113,18 @@ export class ResetPasswordUseCase {
 
       this.logger.log(`Password reset completed successfully for user: ${user.id}`);
 
-      return {
+      return ok({
         success: true,
         message: 'Password updated successfully. You can now log in with your new password.',
         data: {
           email: request.email,
         },
         timestamp: new Date().toISOString(),
-      };
+      });
     } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-
-      // Si es un error de validación de contraseña, convertirlo a BadRequestException
-      if (
-        error instanceof Error &&
-        (error.message.includes('Password must be at least') ||
-          error.message.includes('Password too long') ||
-          error.message.includes('Password must contain at least') ||
-          error.message.includes('Password contains common patterns'))
-      ) {
-        throw new BadRequestException(error.message);
-      }
-
+      // SECURITY: Log full error but return generic message
       this.logger.error('Reset password use case failed:', error);
-      throw new Error('Error resetting password');
+      return err(new TokenError('internal_error'));
     }
   }
 }

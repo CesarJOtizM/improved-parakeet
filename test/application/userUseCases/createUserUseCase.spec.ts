@@ -5,7 +5,7 @@ import { IUserRepository } from '@auth/domain/repositories/userRepository.interf
 import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import { ConflictError, ValidationError } from '@shared/domain/result/domainError';
 
 describe('CreateUserUseCase', () => {
   const mockOrgId = 'test-org-id';
@@ -54,7 +54,7 @@ describe('CreateUserUseCase', () => {
       createdBy: mockCreatedBy,
     };
 
-    it('Given: valid user data When: creating user Then: should create user successfully', async () => {
+    it('Given: valid user data When: creating user Then: should return success result', async () => {
       // Arrange
       mockUserRepository.existsByEmail.mockResolvedValue(false);
       mockUserRepository.existsByUsername.mockResolvedValue(false);
@@ -92,10 +92,16 @@ describe('CreateUserUseCase', () => {
       const result = await useCase.execute(validRequest);
 
       // Assert
-      expect(result.success).toBe(true);
-      expect(result.message).toBe('User created successfully');
-      expect(result.data.email).toBe(validRequest.email);
-      expect(result.data.username).toBe(validRequest.username);
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.message).toBe('User created successfully');
+          expect(value.data.email).toBe(validRequest.email);
+          expect(value.data.username).toBe(validRequest.username);
+        },
+        () => fail('Should not return error')
+      );
       expect(mockUserRepository.existsByEmail).toHaveBeenCalledWith(validRequest.email, mockOrgId);
       expect(mockUserRepository.existsByUsername).toHaveBeenCalledWith(
         validRequest.username,
@@ -104,35 +110,64 @@ describe('CreateUserUseCase', () => {
       expect(mockUserRepository.save).toHaveBeenCalled();
     });
 
-    it('Given: invalid email When: creating user Then: should throw BadRequestException', async () => {
+    it('Given: invalid email When: creating user Then: should return ValidationError result', async () => {
       // Arrange
       const invalidRequest = {
         ...validRequest,
         email: 'invalid-email',
       };
 
-      // Act & Assert
-      await expect(useCase.execute(invalidRequest)).rejects.toThrow(BadRequestException);
+      // Act
+      const result = await useCase.execute(invalidRequest);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+        }
+      );
       expect(mockUserRepository.existsByEmail).not.toHaveBeenCalled();
     });
 
-    it('Given: email already exists When: creating user Then: should throw ConflictException', async () => {
+    it('Given: email already exists When: creating user Then: should return ConflictError result', async () => {
       // Arrange
       mockUserRepository.existsByEmail.mockResolvedValue(true);
 
-      // Act & Assert
-      await expect(useCase.execute(validRequest)).rejects.toThrow(ConflictException);
+      // Act
+      const result = await useCase.execute(validRequest);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(ConflictError);
+          expect(error.message).toContain('Email is already in use');
+        }
+      );
       expect(mockUserRepository.existsByEmail).toHaveBeenCalledWith(validRequest.email, mockOrgId);
       expect(mockUserRepository.save).not.toHaveBeenCalled();
     });
 
-    it('Given: username already exists When: creating user Then: should throw ConflictException', async () => {
+    it('Given: username already exists When: creating user Then: should return ConflictError result', async () => {
       // Arrange
       mockUserRepository.existsByEmail.mockResolvedValue(false);
       mockUserRepository.existsByUsername.mockResolvedValue(true);
 
-      // Act & Assert
-      await expect(useCase.execute(validRequest)).rejects.toThrow(ConflictException);
+      // Act
+      const result = await useCase.execute(validRequest);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(ConflictError);
+          expect(error.message).toContain('Username is already in use');
+        }
+      );
       expect(mockUserRepository.existsByUsername).toHaveBeenCalledWith(
         validRequest.username,
         mockOrgId
@@ -140,26 +175,44 @@ describe('CreateUserUseCase', () => {
       expect(mockUserRepository.save).not.toHaveBeenCalled();
     });
 
-    it('Given: short password When: creating user Then: should throw BadRequestException', async () => {
+    it('Given: short password When: creating user Then: should return ValidationError result', async () => {
       // Arrange
       const invalidRequest = {
         ...validRequest,
         password: 'short',
       };
 
-      // Act & Assert
-      await expect(useCase.execute(invalidRequest)).rejects.toThrow(BadRequestException);
+      // Act
+      const result = await useCase.execute(invalidRequest);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+        }
+      );
     });
 
-    it('Given: empty first name When: creating user Then: should throw BadRequestException', async () => {
+    it('Given: empty first name When: creating user Then: should return ValidationError result', async () => {
       // Arrange
       const invalidRequest = {
         ...validRequest,
         firstName: '',
       };
 
-      // Act & Assert
-      await expect(useCase.execute(invalidRequest)).rejects.toThrow(BadRequestException);
+      // Act
+      const result = await useCase.execute(invalidRequest);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+        }
+      );
     });
   });
 });

@@ -3,6 +3,7 @@ import { RegisterUserDto, RegisterUserResponseDto } from '@auth/dto';
 import { Public, RateLimited } from '@auth/security/decorators/auth.decorators';
 import { Body, Controller, HttpCode, HttpStatus, Logger, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
 @ApiTags('User Registration')
 @Controller('register')
@@ -74,13 +75,14 @@ export class RegisterController {
     };
 
     const result = await this.registerUserUseCase.execute(request);
+    const response = resultToHttpResponse(result);
 
     this.logger.log('User registered successfully', {
-      userId: result.data.id,
-      email: result.data.email,
-      orgId: result.data.orgId,
+      userId: response.data.id,
+      email: response.data.email,
+      orgId: response.data.orgId,
     });
 
-    return result;
+    return response;
   }
 }

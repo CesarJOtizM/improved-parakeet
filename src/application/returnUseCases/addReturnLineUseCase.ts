@@ -1,7 +1,16 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ReturnLine } from '@returns/domain/entities/returnLine.entity';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  BusinessRuleError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+  ValidationError,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 import { Money } from '@stock/domain/valueObjects/money.valueObject';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
@@ -39,7 +48,9 @@ export class AddReturnLineUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: IAddReturnLineRequest): Promise<IAddReturnLineResponse> {
+  async execute(
+    request: IAddReturnLineRequest
+  ): Promise<Result<IAddReturnLineResponse, DomainError>> {
     this.logger.log('Adding line to return', {
       returnId: request.returnId,
       productId: request.productId,
@@ -50,13 +61,13 @@ export class AddReturnLineUseCase {
     const returnEntity = await this.returnRepository.findById(request.returnId, request.orgId);
 
     if (!returnEntity) {
-      throw new NotFoundException(`Return with ID ${request.returnId} not found`);
+      return err(new NotFoundError(`Return with ID ${request.returnId} not found`));
     }
 
     // Validate product exists
     const product = await this.productRepository.findById(request.productId, request.orgId);
     if (!product) {
-      throw new BadRequestException(`Product with ID ${request.productId} not found`);
+      return err(new ValidationError(`Product with ID ${request.productId} not found`));
     }
 
     const currency = request.currency || 'COP';
@@ -68,18 +79,20 @@ export class AddReturnLineUseCase {
     // Get original price/cost based on return type
     if (returnEntity.type.isCustomerReturn()) {
       if (!returnEntity.saleId) {
-        throw new BadRequestException('Sale ID is required for customer returns');
+        return err(new ValidationError('Sale ID is required for customer returns'));
       }
 
       const sale = await this.saleRepository.findById(returnEntity.saleId, request.orgId);
       if (!sale) {
-        throw new BadRequestException(`Sale with ID ${returnEntity.saleId} not found`);
+        return err(new NotFoundError(`Sale with ID ${returnEntity.saleId} not found`));
       }
 
       const saleLine = sale.getLines().find(line => line.productId === request.productId);
       if (!saleLine) {
-        throw new BadRequestException(
-          `Product ${request.productId} was not sold in sale ${returnEntity.saleId}`
+        return err(
+          new ValidationError(
+            `Product ${request.productId} was not sold in sale ${returnEntity.saleId}`
+          )
         );
       }
 
@@ -88,7 +101,7 @@ export class AddReturnLineUseCase {
     } else {
       // Supplier return
       if (!returnEntity.sourceMovementId) {
-        throw new BadRequestException('Source movement ID is required for supplier returns');
+        return err(new ValidationError('Source movement ID is required for supplier returns'));
       }
 
       const sourceMovement = await this.movementRepository.findById(
@@ -96,8 +109,8 @@ export class AddReturnLineUseCase {
         request.orgId
       );
       if (!sourceMovement) {
-        throw new BadRequestException(
-          `Movement with ID ${returnEntity.sourceMovementId} not found`
+        return err(
+          new NotFoundError(`Movement with ID ${returnEntity.sourceMovementId} not found`)
         );
       }
 
@@ -105,8 +118,10 @@ export class AddReturnLineUseCase {
         .getLines()
         .find(line => line.productId === request.productId);
       if (!movementLine) {
-        throw new BadRequestException(
-          `Product ${request.productId} was not purchased in movement ${returnEntity.sourceMovementId}`
+        return err(
+          new ValidationError(
+            `Product ${request.productId} was not purchased in movement ${returnEntity.sourceMovementId}`
+          )
         );
       }
 
@@ -115,9 +130,11 @@ export class AddReturnLineUseCase {
         originalUnitCost = movementLine.unitCost;
       } else {
         // If no unit cost in movement, we need to get it from stock or use a default
-        // For now, throw an error as we need unit cost for supplier returns
-        throw new BadRequestException(
-          `Unit cost is required for supplier returns. Movement line for product ${request.productId} does not have unit cost.`
+        // For now, return an error as we need unit cost for supplier returns
+        return err(
+          new ValidationError(
+            `Unit cost is required for supplier returns. Movement line for product ${request.productId} does not have unit cost.`
+          )
         );
       }
     }
@@ -140,8 +157,10 @@ export class AddReturnLineUseCase {
     try {
       returnEntity.addLine(line);
     } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Failed to add line to return'
+      return err(
+        new BusinessRuleError(
+          error instanceof Error ? error.message : 'Failed to add line to return'
+        )
       );
     }
 
@@ -160,7 +179,7 @@ export class AddReturnLineUseCase {
 
     const totalPrice = line.getTotalPrice();
 
-    return {
+    return ok({
       success: true,
       message: 'Line added to return successfully',
       data: {
@@ -174,6 +193,6 @@ export class AddReturnLineUseCase {
         totalPrice: totalPrice?.getAmount() || 0,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

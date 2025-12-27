@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
 import type { IAuditLogRepository } from '@shared/audit/domain/repositories/auditLogRepository.interface';
@@ -36,7 +37,9 @@ export class GetUserActivityUseCase {
     private readonly auditRepository: IAuditLogRepository
   ) {}
 
-  async execute(request: IGetUserActivityRequest): Promise<IGetUserActivityResponse> {
+  async execute(
+    request: IGetUserActivityRequest
+  ): Promise<Result<IGetUserActivityResponse, DomainError>> {
     this.logger.log('Getting user activity', {
       userId: request.userId,
       orgId: request.orgId,
@@ -62,7 +65,7 @@ export class GetUserActivityUseCase {
       auditLogs.length === limit ? limit * page + 1 : auditLogs.length + (page - 1) * limit;
     const totalPages = Math.ceil(total / limit);
 
-    return {
+    return ok({
       success: true,
       message: 'User activity retrieved successfully',
       data: auditLogs.map(log => ({
@@ -88,6 +91,6 @@ export class GetUserActivityUseCase {
         hasPrev: page > 1,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

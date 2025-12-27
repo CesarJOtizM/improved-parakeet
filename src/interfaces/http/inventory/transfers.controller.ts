@@ -20,6 +20,7 @@ import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
 import { OrgId } from '@shared/decorators/orgId.decorator';
 import { RequirePermissions } from '@shared/decorators/requirePermissions.decorator';
 import { AuditInterceptor } from '@shared/interceptors/audit.interceptor';
+import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 import {
   InitiateTransferDto,
   GetTransfersQueryDto,
@@ -86,7 +87,8 @@ export class TransfersController {
       orgId,
     };
 
-    return await this.initiateTransferUseCase.execute(request);
+    const result = await this.initiateTransferUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Get()
@@ -142,6 +144,7 @@ export class TransfersController {
       sortOrder: query.sortOrder,
     };
 
-    return await this.getTransfersUseCase.execute(request);
+    const result = await this.getTransfersUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 }

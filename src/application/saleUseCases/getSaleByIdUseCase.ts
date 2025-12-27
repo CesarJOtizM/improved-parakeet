@@ -1,4 +1,5 @@
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISaleData } from './createSaleUseCase';
@@ -20,18 +21,18 @@ export class GetSaleByIdUseCase {
     private readonly saleRepository: ISaleRepository
   ) {}
 
-  async execute(request: IGetSaleByIdRequest): Promise<IGetSaleByIdResponse> {
+  async execute(request: IGetSaleByIdRequest): Promise<Result<IGetSaleByIdResponse, DomainError>> {
     this.logger.log('Getting sale by ID', { saleId: request.id, orgId: request.orgId });
 
     const sale = await this.saleRepository.findById(request.id, request.orgId);
 
     if (!sale) {
-      throw new BadRequestException(`Sale with ID ${request.id} not found`);
+      return err(new NotFoundError(`Sale with ID ${request.id} not found`));
     }
 
     const totalAmount = sale.getTotalAmount();
 
-    return {
+    return ok({
       success: true,
       message: 'Sale retrieved successfully',
       data: {
@@ -53,6 +54,6 @@ export class GetSaleByIdUseCase {
         currency: totalAmount.getCurrency(),
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

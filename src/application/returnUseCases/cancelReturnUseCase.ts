@@ -1,6 +1,14 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ReturnValidationService } from '@returns/domain/services/returnValidation.service';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  BusinessRuleError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IReturnData } from './createReturnUseCase';
@@ -24,21 +32,23 @@ export class CancelReturnUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: ICancelReturnRequest): Promise<ICancelReturnResponse> {
+  async execute(
+    request: ICancelReturnRequest
+  ): Promise<Result<ICancelReturnResponse, DomainError>> {
     this.logger.log('Cancelling return', { returnId: request.id, orgId: request.orgId });
 
     // Retrieve return
     const returnEntity = await this.returnRepository.findById(request.id, request.orgId);
 
     if (!returnEntity) {
-      throw new NotFoundException(`Return with ID ${request.id} not found`);
+      return err(new NotFoundError(`Return with ID ${request.id} not found`));
     }
 
     // Validate return can be cancelled
     const validationResult = ReturnValidationService.validateReturnCanBeCancelled(returnEntity);
     if (!validationResult.isValid) {
-      throw new BadRequestException(
-        `Return cannot be cancelled: ${validationResult.errors.join(', ')}`
+      return err(
+        new BusinessRuleError(`Return cannot be cancelled: ${validationResult.errors.join(', ')}`)
       );
     }
 
@@ -46,8 +56,8 @@ export class CancelReturnUseCase {
     try {
       returnEntity.cancel(request.reason);
     } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Failed to cancel return'
+      return err(
+        new BusinessRuleError(error instanceof Error ? error.message : 'Failed to cancel return')
       );
     }
 
@@ -79,7 +89,7 @@ export class CancelReturnUseCase {
       };
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Return cancelled successfully',
       data: {
@@ -104,6 +114,6 @@ export class CancelReturnUseCase {
         lines,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

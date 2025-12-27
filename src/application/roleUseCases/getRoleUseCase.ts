@@ -1,4 +1,5 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IRoleRepository } from '@auth/domain/repositories';
@@ -27,20 +28,20 @@ export class GetRoleUseCase {
 
   constructor(@Inject('RoleRepository') private readonly roleRepository: IRoleRepository) {}
 
-  async execute(request: IGetRoleRequest): Promise<IGetRoleResponse> {
+  async execute(request: IGetRoleRequest): Promise<Result<IGetRoleResponse, DomainError>> {
     this.logger.log('Getting role', { roleId: request.roleId, orgId: request.orgId });
 
     // Try to find role (can be system or custom)
     const role = await this.roleRepository.findById(request.roleId);
 
     if (!role) {
-      throw new NotFoundException('Role not found');
+      return err(new NotFoundError('Role not found'));
     }
 
     // Verify role is available for this organization
     // System roles are available to all, custom roles only to their org
     if (!role.isSystem && role.orgId !== request.orgId) {
-      throw new NotFoundException('Role not found in this organization');
+      return err(new NotFoundError('Role not found in this organization'));
     }
 
     this.logger.log('Role retrieved successfully', {
@@ -49,7 +50,7 @@ export class GetRoleUseCase {
       isSystem: role.isSystem,
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Role retrieved successfully',
       data: {
@@ -63,6 +64,6 @@ export class GetRoleUseCase {
         updatedAt: role.updatedAt,
       } as IGetRoleData,
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

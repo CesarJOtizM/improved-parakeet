@@ -1,8 +1,16 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InventoryOutGeneratedEvent } from '@sale/domain/events/inventoryOutGenerated.event';
 import { InventoryIntegrationService } from '@sale/domain/services/inventoryIntegration.service';
 import { SaleValidationService } from '@sale/domain/services/saleValidation.service';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  BusinessRuleError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISaleData } from './createSaleUseCase';
@@ -31,21 +39,21 @@ export class ConfirmSaleUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: IConfirmSaleRequest): Promise<IConfirmSaleResponse> {
+  async execute(request: IConfirmSaleRequest): Promise<Result<IConfirmSaleResponse, DomainError>> {
     this.logger.log('Confirming sale', { saleId: request.id, orgId: request.orgId });
 
     // Retrieve sale
     const sale = await this.saleRepository.findById(request.id, request.orgId);
 
     if (!sale) {
-      throw new NotFoundException(`Sale with ID ${request.id} not found`);
+      return err(new NotFoundError(`Sale with ID ${request.id} not found`));
     }
 
     // Validate sale can be confirmed
     const validationResult = SaleValidationService.validateSaleCanBeConfirmed(sale);
     if (!validationResult.isValid) {
-      throw new BadRequestException(
-        `Sale cannot be confirmed: ${validationResult.errors.join(', ')}`
+      return err(
+        new BusinessRuleError(`Sale cannot be confirmed: ${validationResult.errors.join(', ')}`)
       );
     }
 
@@ -55,7 +63,7 @@ export class ConfirmSaleUseCase {
       this.stockRepository
     );
     if (!stockValidation.isValid) {
-      throw new BadRequestException(`Insufficient stock: ${stockValidation.errors.join(', ')}`);
+      return err(new BusinessRuleError(`Insufficient stock: ${stockValidation.errors.join(', ')}`));
     }
 
     // Generate movement from sale
@@ -96,7 +104,7 @@ export class ConfirmSaleUseCase {
 
     const totalAmount = confirmedSale.getTotalAmount();
 
-    return {
+    return ok({
       success: true,
       message: 'Sale confirmed successfully',
       data: {
@@ -118,6 +126,6 @@ export class ConfirmSaleUseCase {
         currency: totalAmount.getCurrency(),
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

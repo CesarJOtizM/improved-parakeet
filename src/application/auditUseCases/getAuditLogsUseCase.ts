@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { AuditAction } from '@shared/audit/domain/valueObjects/auditAction.valueObject';
 import { EntityType } from '@shared/audit/domain/valueObjects/entityType.valueObject';
+import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
 import type { IAuditLogRepository } from '@shared/audit/domain/repositories/auditLogRepository.interface';
@@ -45,7 +46,9 @@ export class GetAuditLogsUseCase {
     private readonly auditRepository: IAuditLogRepository
   ) {}
 
-  async execute(request: IGetAuditLogsRequest): Promise<IGetAuditLogsResponse> {
+  async execute(
+    request: IGetAuditLogsRequest
+  ): Promise<Result<IGetAuditLogsResponse, DomainError>> {
     this.logger.log('Getting audit logs', {
       orgId: request.orgId,
       page: request.page,
@@ -98,7 +101,7 @@ export class GetAuditLogsUseCase {
 
     const totalPages = Math.ceil(total / limit);
 
-    return {
+    return ok({
       success: true,
       message: 'Audit logs retrieved successfully',
       data: auditLogs.map(log => ({
@@ -126,6 +129,6 @@ export class GetAuditLogsUseCase {
         hasPrev: page > 1,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

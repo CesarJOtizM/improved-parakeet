@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
 import type { IReturnData } from './createReturnUseCase';
@@ -28,7 +29,7 @@ export class GetReturnsUseCase {
     private readonly returnRepository: IReturnRepository
   ) {}
 
-  async execute(request: IGetReturnsRequest): Promise<IGetReturnsResponse> {
+  async execute(request: IGetReturnsRequest): Promise<Result<IGetReturnsResponse, DomainError>> {
     this.logger.log('Getting returns', {
       orgId: request.orgId,
       page: request.page,
@@ -111,7 +112,7 @@ export class GetReturnsUseCase {
     const paginatedReturns = returns.slice(skip, skip + limit);
     const totalPages = Math.ceil(total / limit);
 
-    return {
+    return ok({
       success: true,
       message: 'Returns retrieved successfully',
       data: paginatedReturns.map(returnEntity => {
@@ -161,6 +162,6 @@ export class GetReturnsUseCase {
         hasPrev: page > 1,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

@@ -1,7 +1,15 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { SaleLine } from '@sale/domain/entities/saleLine.entity';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  DomainError,
+  NotFoundError,
+  Result,
+  ValidationError,
+  err,
+  ok,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
@@ -42,20 +50,20 @@ export class AddSaleLineUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: IAddSaleLineRequest): Promise<IAddSaleLineResponse> {
+  async execute(request: IAddSaleLineRequest): Promise<Result<IAddSaleLineResponse, DomainError>> {
     this.logger.log('Adding line to sale', { saleId: request.saleId, orgId: request.orgId });
 
     // Retrieve sale
     const sale = await this.saleRepository.findById(request.saleId, request.orgId);
 
     if (!sale) {
-      throw new NotFoundException(`Sale with ID ${request.saleId} not found`);
+      return err(new NotFoundError(`Sale with ID ${request.saleId} not found`));
     }
 
     // Validate product exists
     const product = await this.productRepository.findById(request.productId, request.orgId);
     if (!product) {
-      throw new BadRequestException(`Product with ID ${request.productId} not found`);
+      return err(new ValidationError(`Product with ID ${request.productId} not found`));
     }
 
     // Create sale line
@@ -90,7 +98,7 @@ export class AddSaleLineUseCase {
 
     const totalPrice = line.getTotalPrice();
 
-    return {
+    return ok({
       success: true,
       message: 'Line added to sale successfully',
       data: {
@@ -103,6 +111,6 @@ export class AddSaleLineUseCase {
         totalPrice: totalPrice.getAmount(),
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

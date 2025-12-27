@@ -1,4 +1,5 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IProductData } from './createProductUseCase';
@@ -19,7 +20,9 @@ export class GetProductByIdUseCase {
     @Inject('ProductRepository') private readonly productRepository: IProductRepository
   ) {}
 
-  async execute(request: IGetProductByIdRequest): Promise<IGetProductByIdResponse> {
+  async execute(
+    request: IGetProductByIdRequest
+  ): Promise<Result<IGetProductByIdResponse, DomainError>> {
     this.logger.log('Getting product by ID', {
       productId: request.productId,
       orgId: request.orgId,
@@ -28,10 +31,10 @@ export class GetProductByIdUseCase {
     const product = await this.productRepository.findById(request.productId, request.orgId);
 
     if (!product) {
-      throw new NotFoundException('Product not found');
+      return err(new NotFoundError('Product not found'));
     }
 
-    return {
+    return ok({
       success: true,
       message: 'Product retrieved successfully',
       data: {
@@ -54,6 +57,6 @@ export class GetProductByIdUseCase {
         updatedAt: product.updatedAt,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

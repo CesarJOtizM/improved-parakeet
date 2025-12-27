@@ -1,5 +1,13 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+  ValidationError,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IRoleRepository } from '@auth/domain/repositories';
@@ -31,7 +39,7 @@ export class AssignPermissionsToRoleUseCase {
 
   async execute(
     request: IAssignPermissionsToRoleRequest
-  ): Promise<IAssignPermissionsToRoleResponse> {
+  ): Promise<Result<IAssignPermissionsToRoleResponse, DomainError>> {
     this.logger.log('Assigning permissions to role', {
       roleId: request.roleId,
       permissionCount: request.permissionIds.length,
@@ -39,19 +47,19 @@ export class AssignPermissionsToRoleUseCase {
     });
 
     if (!request.permissionIds || request.permissionIds.length === 0) {
-      throw new BadRequestException('At least one permission ID is required');
+      return err(new ValidationError('At least one permission ID is required'));
     }
 
     // Find role
     const role = await this.roleRepository.findById(request.roleId);
 
     if (!role) {
-      throw new NotFoundException('Role not found');
+      return err(new NotFoundError('Role not found'));
     }
 
     // Verify role is available for this organization
     if (!role.isSystem && role.orgId !== request.orgId) {
-      throw new NotFoundException('Role not found in this organization');
+      return err(new NotFoundError('Role not found in this organization'));
     }
 
     // Verify all permissions exist
@@ -66,7 +74,7 @@ export class AssignPermissionsToRoleUseCase {
     if (permissions.length !== request.permissionIds.length) {
       const foundIds = permissions.map(p => p.id);
       const missingIds = request.permissionIds.filter(id => !foundIds.includes(id));
-      throw new NotFoundException(`Permissions not found: ${missingIds.join(', ')}`);
+      return err(new NotFoundError(`Permissions not found: ${missingIds.join(', ')}`));
     }
 
     // Remove existing permissions for this role
@@ -92,7 +100,7 @@ export class AssignPermissionsToRoleUseCase {
       permissionCount: request.permissionIds.length,
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Permissions assigned successfully',
       data: {
@@ -102,6 +110,6 @@ export class AssignPermissionsToRoleUseCase {
         assignedAt: new Date(),
       } as IAssignPermissionsToRoleData,
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

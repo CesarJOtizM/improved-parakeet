@@ -1,4 +1,12 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  BusinessRuleError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
@@ -36,19 +44,21 @@ export class GetSaleMovementUseCase {
     private readonly movementRepository: IMovementRepository
   ) {}
 
-  async execute(request: IGetSaleMovementRequest): Promise<IGetSaleMovementResponse> {
+  async execute(
+    request: IGetSaleMovementRequest
+  ): Promise<Result<IGetSaleMovementResponse, DomainError>> {
     this.logger.log('Getting movement for sale', { saleId: request.saleId, orgId: request.orgId });
 
     // Retrieve sale
     const sale = await this.saleRepository.findById(request.saleId, request.orgId);
 
     if (!sale) {
-      throw new NotFoundException(`Sale with ID ${request.saleId} not found`);
+      return err(new NotFoundError(`Sale with ID ${request.saleId} not found`));
     }
 
     if (!sale.movementId) {
-      throw new BadRequestException(
-        'Sale is not confirmed or does not have an associated movement'
+      return err(
+        new BusinessRuleError('Sale is not confirmed or does not have an associated movement')
       );
     }
 
@@ -56,10 +66,10 @@ export class GetSaleMovementUseCase {
     const movement = await this.movementRepository.findById(sale.movementId, request.orgId);
 
     if (!movement) {
-      throw new NotFoundException(`Movement with ID ${sale.movementId} not found`);
+      return err(new NotFoundError(`Movement with ID ${sale.movementId} not found`));
     }
 
-    return {
+    return ok({
       success: true,
       message: 'Movement retrieved successfully',
       data: {
@@ -76,6 +86,6 @@ export class GetSaleMovementUseCase {
         updatedAt: movement.updatedAt,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

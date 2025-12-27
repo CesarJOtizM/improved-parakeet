@@ -5,7 +5,7 @@ import { IUserRepository } from '@auth/domain/repositories/userRepository.interf
 import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictError, NotFoundError, ValidationError } from '@shared/domain/result/domainError';
 
 describe('UpdateUserUseCase', () => {
   const mockOrgId = 'test-org-id';
@@ -71,7 +71,7 @@ describe('UpdateUserUseCase', () => {
       );
     };
 
-    it('Given: valid update data When: updating user Then: should update successfully', async () => {
+    it('Given: valid update data When: updating user Then: should return success result', async () => {
       // Arrange
       const user = createMockUser();
       mockUserRepository.findById.mockResolvedValue(user);
@@ -89,13 +89,19 @@ describe('UpdateUserUseCase', () => {
       const result = await useCase.execute(request);
 
       // Assert
-      expect(result.success).toBe(true);
-      expect(result.message).toBe('User updated successfully');
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.message).toBe('User updated successfully');
+        },
+        () => fail('Should not return error')
+      );
       expect(mockUserRepository.findById).toHaveBeenCalledWith(mockUserId, mockOrgId);
       expect(mockUserRepository.save).toHaveBeenCalled();
     });
 
-    it('Given: non-existent user When: updating user Then: should throw NotFoundException', async () => {
+    it('Given: non-existent user When: updating user Then: should return NotFoundError result', async () => {
       // Arrange
       mockUserRepository.findById.mockResolvedValue(null);
 
@@ -106,11 +112,21 @@ describe('UpdateUserUseCase', () => {
         updatedBy: mockUpdatedBy,
       };
 
-      // Act & Assert
-      await expect(useCase.execute(request)).rejects.toThrow(NotFoundException);
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(NotFoundError);
+          expect(error.message).toContain('User not found');
+        }
+      );
     });
 
-    it('Given: invalid email When: updating user Then: should throw BadRequestException', async () => {
+    it('Given: invalid email When: updating user Then: should return ValidationError result', async () => {
       // Arrange
       const user = createMockUser();
       mockUserRepository.findById.mockResolvedValue(user);
@@ -122,11 +138,20 @@ describe('UpdateUserUseCase', () => {
         updatedBy: mockUpdatedBy,
       };
 
-      // Act & Assert
-      await expect(useCase.execute(request)).rejects.toThrow(BadRequestException);
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+        }
+      );
     });
 
-    it('Given: email already in use When: updating user Then: should throw ConflictException', async () => {
+    it('Given: email already in use When: updating user Then: should return ConflictError result', async () => {
       // Arrange
       const user = createMockUser();
       mockUserRepository.findById.mockResolvedValue(user);
@@ -139,11 +164,21 @@ describe('UpdateUserUseCase', () => {
         updatedBy: mockUpdatedBy,
       };
 
-      // Act & Assert
-      await expect(useCase.execute(request)).rejects.toThrow(ConflictException);
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(ConflictError);
+          expect(error.message).toContain('Email is already in use');
+        }
+      );
     });
 
-    it('Given: username already in use When: updating user Then: should throw ConflictException', async () => {
+    it('Given: username already in use When: updating user Then: should return ConflictError result', async () => {
       // Arrange
       const user = createMockUser();
       mockUserRepository.findById.mockResolvedValue(user);
@@ -156,8 +191,18 @@ describe('UpdateUserUseCase', () => {
         updatedBy: mockUpdatedBy,
       };
 
-      // Act & Assert
-      await expect(useCase.execute(request)).rejects.toThrow(ConflictException);
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(ConflictError);
+          expect(error.message).toContain('Username is already in use');
+        }
+      );
     });
   });
 });

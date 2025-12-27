@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Product } from '@product/domain/entities/product.entity';
 import { ProductBusinessRulesService } from '@product/domain/services/productBusinessRules.service';
 import { CostMethod } from '@product/domain/valueObjects/costMethod.valueObject';
@@ -7,6 +7,14 @@ import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueO
 import { SKU } from '@product/domain/valueObjects/sku.valueObject';
 import { UnitValueObject } from '@product/domain/valueObjects/unit.valueObject';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  ConflictError,
+  DomainError,
+  Result,
+  ValidationError,
+  err,
+  ok,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
@@ -60,7 +68,9 @@ export class CreateProductUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: ICreateProductRequest): Promise<ICreateProductResponse> {
+  async execute(
+    request: ICreateProductRequest
+  ): Promise<Result<ICreateProductResponse, DomainError>> {
     this.logger.log('Creating product', { sku: request.sku, orgId: request.orgId });
 
     try {
@@ -76,11 +86,20 @@ export class CreateProductUseCase {
       const costMethod = CostMethod.create(request.costMethod || 'AVG');
 
       // Validate SKU uniqueness using business rules
-      await ProductBusinessRulesService.validateSkuUniquenessOrThrow(
+      const validationResult = await ProductBusinessRulesService.validateProductCreationRules(
         sku,
         request.orgId,
         this.productRepository
       );
+
+      if (!validationResult.isValid) {
+        return err(
+          new ConflictError(validationResult.errors.join(', '), 'SKU_CONFLICT', {
+            sku: request.sku,
+            orgId: request.orgId,
+          })
+        );
+      }
 
       // Create product entity
       const product = Product.create(
@@ -111,7 +130,7 @@ export class CreateProductUseCase {
         sku: savedProduct.sku.getValue(),
       });
 
-      return {
+      const response: ICreateProductResponse = {
         success: true,
         message: 'Product created successfully',
         data: {
@@ -135,24 +154,20 @@ export class CreateProductUseCase {
         } as IProductData,
         timestamp: new Date().toISOString(),
       };
+
+      return ok(response);
     } catch (error) {
-      if (error instanceof ConflictException) {
-        throw error;
-      }
-
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-
       this.logger.error('Error creating product', {
         error: error instanceof Error ? error.message : 'Unknown error',
         sku: request.sku,
         orgId: request.orgId,
       });
 
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Failed to create product'
-      );
+      if (error instanceof Error) {
+        return err(new ValidationError(error.message, 'PRODUCT_CREATION_ERROR'));
+      }
+
+      return err(new ValidationError('Failed to create product', 'PRODUCT_CREATION_ERROR'));
     }
   }
 }

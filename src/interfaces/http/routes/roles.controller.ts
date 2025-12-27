@@ -36,6 +36,7 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@ne
 import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
 import { OrgId } from '@shared/decorators/orgId.decorator';
 import { RequirePermissions } from '@shared/decorators/requirePermissions.decorator';
+import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
 import type { IAuthenticatedUser } from '@shared/types/http.types';
 import type { Request } from 'express';
@@ -93,7 +94,8 @@ export class RolesController {
       createdBy: user.id,
     };
 
-    return await this.createRoleUseCase.execute(request);
+    const result = await this.createRoleUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Get()
@@ -118,7 +120,8 @@ export class RolesController {
     this.logger.log('Getting roles', { orgId });
 
     const request = { orgId };
-    return await this.getRolesUseCase.execute(request);
+    const result = await this.getRolesUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Get(':id')
@@ -147,7 +150,8 @@ export class RolesController {
     this.logger.log('Getting role', { roleId, orgId });
 
     const request = { roleId, orgId };
-    return await this.getRoleUseCase.execute(request);
+    const result = await this.getRoleUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Patch(':id')
@@ -195,7 +199,8 @@ export class RolesController {
       updatedBy: user.id,
     };
 
-    return await this.updateRoleUseCase.execute(request);
+    const result = await this.updateRoleUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Delete(':id')
@@ -239,7 +244,8 @@ export class RolesController {
       deletedBy: user.id,
     };
 
-    return await this.deleteRoleUseCase.execute(request);
+    const result = await this.deleteRoleUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Post(':id/permissions')
@@ -290,6 +296,7 @@ export class RolesController {
       assignedBy: user.id,
     };
 
-    return await this.assignPermissionsToRoleUseCase.execute(request);
+    const result = await this.assignPermissionsToRoleUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 }

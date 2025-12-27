@@ -1,17 +1,19 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ProductBusinessRulesService } from '@product/domain/services/productBusinessRules.service';
 import { CostMethod } from '@product/domain/valueObjects/costMethod.valueObject';
 import { ProductName } from '@product/domain/valueObjects/productName.valueObject';
 import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
 import { UnitValueObject } from '@product/domain/valueObjects/unit.valueObject';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  BusinessRuleError,
+  DomainError,
+  NotFoundError,
+  Result,
+  ValidationError,
+  err,
+  ok,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IProductData } from './createProductUseCase';
@@ -50,7 +52,9 @@ export class UpdateProductUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: IUpdateProductRequest): Promise<IUpdateProductResponse> {
+  async execute(
+    request: IUpdateProductRequest
+  ): Promise<Result<IUpdateProductResponse, DomainError>> {
     this.logger.log('Updating product', { productId: request.productId, orgId: request.orgId });
 
     try {
@@ -58,7 +62,12 @@ export class UpdateProductUseCase {
       const product = await this.productRepository.findById(request.productId, request.orgId);
 
       if (!product) {
-        throw new NotFoundException('Product not found');
+        return err(
+          new NotFoundError('Product not found', 'PRODUCT_NOT_FOUND', {
+            productId: request.productId,
+            orgId: request.orgId,
+          })
+        );
       }
 
       // Build update props
@@ -105,7 +114,12 @@ export class UpdateProductUseCase {
         );
 
         if (!validation.isValid) {
-          throw new BadRequestException(validation.errors.join(', '));
+          return err(
+            new BusinessRuleError(validation.errors.join(', '), 'COST_METHOD_CHANGE_ERROR', {
+              productId: product.id,
+              orgId: request.orgId,
+            })
+          );
         }
 
         updateProps.costMethod = CostMethod.create(request.costMethod);
@@ -127,7 +141,7 @@ export class UpdateProductUseCase {
         sku: savedProduct.sku.getValue(),
       });
 
-      return {
+      const response: IUpdateProductResponse = {
         success: true,
         message: 'Product updated successfully',
         data: {
@@ -151,24 +165,20 @@ export class UpdateProductUseCase {
         } as IProductData,
         timestamp: new Date().toISOString(),
       };
+
+      return ok(response);
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ConflictException) {
-        throw error;
-      }
-
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-
       this.logger.error('Error updating product', {
         error: error instanceof Error ? error.message : 'Unknown error',
         productId: request.productId,
         orgId: request.orgId,
       });
 
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Failed to update product'
-      );
+      if (error instanceof Error) {
+        return err(new ValidationError(error.message, 'PRODUCT_UPDATE_ERROR'));
+      }
+
+      return err(new ValidationError('Failed to update product', 'PRODUCT_UPDATE_ERROR'));
     }
   }
 }

@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, err, ok, Result, TokenError } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IOtpRepository } from '@auth/domain/repositories';
@@ -24,7 +25,7 @@ export class VerifyOtpUseCase {
 
   constructor(@Inject('OtpRepository') private readonly otpRepository: IOtpRepository) {}
 
-  async execute(request: IVerifyOtpRequest): Promise<IVerifyOtpResponse> {
+  async execute(request: IVerifyOtpRequest): Promise<Result<IVerifyOtpResponse, DomainError>> {
     try {
       // Buscar OTP válido por email y tipo
       const otp = await this.otpRepository.findValidByEmailAndType(
@@ -34,10 +35,11 @@ export class VerifyOtpUseCase {
       );
 
       if (!otp) {
+        // SECURITY: Log details but return success with isValid: false
         this.logger.warn(
           `OTP verification attempt with invalid/expired OTP for email: ${request.email}`
         );
-        return {
+        return ok({
           success: true,
           message: 'Invalid or expired verification code.',
           data: {
@@ -45,7 +47,7 @@ export class VerifyOtpUseCase {
             email: request.email,
           },
           timestamp: new Date().toISOString(),
-        };
+        });
       }
 
       // Verificar el código OTP
@@ -56,7 +58,7 @@ export class VerifyOtpUseCase {
 
       if (isValid) {
         this.logger.log(`OTP verified successfully for email: ${request.email}`);
-        return {
+        return ok({
           success: true,
           message: 'Valid verification code.',
           data: {
@@ -65,13 +67,13 @@ export class VerifyOtpUseCase {
             expiresAt: otp.expiresAt,
           },
           timestamp: new Date().toISOString(),
-        };
+        });
       } else {
         const attemptsRemaining = otp.maxAttempts - otp.attempts;
 
         if (otp.hasExceededMaxAttempts()) {
           this.logger.warn(`OTP max attempts exceeded for email: ${request.email}`);
-          return {
+          return ok({
             success: true,
             message: 'Maximum number of attempts exceeded. Request a new code.',
             data: {
@@ -80,13 +82,13 @@ export class VerifyOtpUseCase {
               attemptsRemaining: 0,
             },
             timestamp: new Date().toISOString(),
-          };
+          });
         }
 
         this.logger.warn(
           `OTP verification failed for email: ${request.email}, attempts: ${otp.attempts}`
         );
-        return {
+        return ok({
           success: true,
           message: `Incorrect code. Attempts remaining: ${attemptsRemaining}`,
           data: {
@@ -95,11 +97,12 @@ export class VerifyOtpUseCase {
             attemptsRemaining,
           },
           timestamp: new Date().toISOString(),
-        };
+        });
       }
     } catch (error) {
+      // SECURITY: Log full error but return generic error
       this.logger.error('Verify OTP use case failed:', error);
-      throw new Error('Error verifying OTP code');
+      return err(new TokenError('internal_error'));
     }
   }
 }

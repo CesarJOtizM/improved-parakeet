@@ -1,6 +1,14 @@
 import { RoleAssignmentService } from '@auth/domain/services/roleAssignmentService';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  BusinessRuleError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IRoleRepository, IUserRepository } from '@auth/domain/repositories';
@@ -31,7 +39,9 @@ export class RemoveRoleFromUserUseCase {
     private readonly prisma: PrismaService
   ) {}
 
-  async execute(request: IRemoveRoleFromUserRequest): Promise<IRemoveRoleFromUserResponse> {
+  async execute(
+    request: IRemoveRoleFromUserRequest
+  ): Promise<Result<IRemoveRoleFromUserResponse, DomainError>> {
     this.logger.log('Removing role from user', {
       userId: request.userId,
       roleId: request.roleId,
@@ -42,13 +52,13 @@ export class RemoveRoleFromUserUseCase {
     // Get user
     const user = await this.userRepository.findById(request.userId, request.orgId);
     if (!user) {
-      throw new NotFoundException('User not found');
+      return err(new NotFoundError('User not found'));
     }
 
     // Get role
     const role = await this.roleRepository.findById(request.roleId, request.orgId);
     if (!role) {
-      throw new NotFoundException('Role not found');
+      return err(new NotFoundError('Role not found'));
     }
 
     // Get current user roles for validation
@@ -62,7 +72,7 @@ export class RemoveRoleFromUserUseCase {
       currentUserRoles
     );
     if (!validation.isValid) {
-      throw new BadRequestException(`Cannot remove role: ${validation.errors.join(', ')}`);
+      return err(new BusinessRuleError(`Cannot remove role: ${validation.errors.join(', ')}`));
     }
 
     // Check if user has this role
@@ -77,7 +87,7 @@ export class RemoveRoleFromUserUseCase {
     });
 
     if (!existingAssignment) {
-      throw new NotFoundException('User does not have this role');
+      return err(new NotFoundError('User does not have this role'));
     }
 
     // Remove role
@@ -97,7 +107,7 @@ export class RemoveRoleFromUserUseCase {
       roleName: role.name,
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Role removed successfully',
       data: {
@@ -107,6 +117,6 @@ export class RemoveRoleFromUserUseCase {
         removedAt: new Date(),
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

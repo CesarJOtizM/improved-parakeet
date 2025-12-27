@@ -7,7 +7,6 @@ import { MovementLine } from '@movement/domain/entities/movementLine.entity';
 import { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
 import { MovementStatus } from '@movement/domain/valueObjects/movementStatus.valueObject';
 import { MovementType } from '@movement/domain/valueObjects/movementType.valueObject';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { IStockRepository } from '@stock/domain/repositories/stockRepository.interface';
 
 describe('Movement Integration Tests', () => {
@@ -79,7 +78,13 @@ describe('Movement Integration Tests', () => {
       });
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+        },
+        () => fail('Should not return error')
+      );
       expect(mockStockRepository.getStockQuantity).toHaveBeenCalledWith(
         testProductId,
         testWarehouseId,
@@ -89,7 +94,7 @@ describe('Movement Integration Tests', () => {
       expect(mockMovementRepository.save).toHaveBeenCalled();
     });
 
-    it('Given: output movement with insufficient stock When: posting movement Then: should throw BadRequestException', async () => {
+    it('Given: output movement with insufficient stock When: posting movement Then: should return BusinessRuleError result', async () => {
       // Arrange
       const movement = Movement.create(
         {
@@ -118,14 +123,14 @@ describe('Movement Integration Tests', () => {
       mockMovementRepository.findDraftMovements.mockResolvedValue([]);
       mockMovementRepository.findPostedMovements.mockResolvedValue([]);
 
-      // Act & Assert
-      await expect(
-        postMovementUseCase.execute({
-          movementId: movement.id,
-          orgId: testOrgId,
-        })
-      ).rejects.toThrow(BadRequestException);
+      // Act
+      const result = await postMovementUseCase.execute({
+        movementId: movement.id,
+        orgId: testOrgId,
+      });
 
+      // Assert
+      expect(result.isErr()).toBe(true);
       expect(mockMovementRepository.save).not.toHaveBeenCalled();
     });
 
@@ -164,25 +169,32 @@ describe('Movement Integration Tests', () => {
       });
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+        },
+        () => fail('Should not return error')
+      );
       expect(mockStockRepository.getStockQuantity).not.toHaveBeenCalled();
       expect(mockMovementRepository.save).toHaveBeenCalled();
     });
 
-    it('Given: movement not found When: posting movement Then: should throw NotFoundException', async () => {
+    it('Given: movement not found When: posting movement Then: should return NotFoundError result', async () => {
       // Arrange
       mockMovementRepository.findById.mockResolvedValue(null);
 
-      // Act & Assert
-      await expect(
-        postMovementUseCase.execute({
-          movementId: 'non-existent-id',
-          orgId: testOrgId,
-        })
-      ).rejects.toThrow(NotFoundException);
+      // Act
+      const result = await postMovementUseCase.execute({
+        movementId: 'non-existent-id',
+        orgId: testOrgId,
+      });
+
+      // Assert
+      expect(result.isErr()).toBe(true);
     });
 
-    it('Given: movement already posted When: posting movement Then: should throw BadRequestException', async () => {
+    it('Given: movement already posted When: posting movement Then: should return BusinessRuleError result', async () => {
       // Arrange
       const movement = Movement.create(
         {
@@ -196,13 +208,14 @@ describe('Movement Integration Tests', () => {
 
       mockMovementRepository.findById.mockResolvedValue(movement);
 
-      // Act & Assert
-      await expect(
-        postMovementUseCase.execute({
-          movementId: movement.id,
-          orgId: testOrgId,
-        })
-      ).rejects.toThrow(BadRequestException);
+      // Act
+      const result = await postMovementUseCase.execute({
+        movementId: movement.id,
+        orgId: testOrgId,
+      });
+
+      // Assert
+      expect(result.isErr()).toBe(true);
     });
   });
 });

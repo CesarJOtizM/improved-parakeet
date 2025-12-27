@@ -1,13 +1,8 @@
 import { IJwtPayloadWithExp, JwtService } from '@auth/domain/services/jwtService';
 import { RateLimitService } from '@auth/domain/services/rateLimitService';
 import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  Logger,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, err, ok, RateLimitError, Result, TokenError } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISessionRepository, IUserRepository } from '@auth/domain/repositories';
@@ -48,7 +43,9 @@ export class RefreshTokenUseCase {
     @Inject('SessionRepository') private readonly sessionRepository: ISessionRepository
   ) {}
 
-  async execute(request: IRefreshTokenRequest): Promise<IRefreshTokenResponse> {
+  async execute(
+    request: IRefreshTokenRequest
+  ): Promise<Result<IRefreshTokenResponse, DomainError>> {
     try {
       // Verificar rate limiting para refresh token
       const rateLimitResult = await this.rateLimitService.checkRefreshTokenRateLimit(
@@ -57,7 +54,7 @@ export class RefreshTokenUseCase {
 
       if (!rateLimitResult.allowed) {
         this.logger.warn(`Refresh token rate limit exceeded for IP: ${request.ipAddress}`);
-        throw new ForbiddenException('Too many refresh attempts. Please try again later.');
+        return err(new RateLimitError('Too many refresh attempts. Please try again later.'));
       }
 
       // Verificar y decodificar refresh token
@@ -65,8 +62,9 @@ export class RefreshTokenUseCase {
       try {
         refreshTokenPayload = await this.jwtService.verifyToken(request.refreshToken);
       } catch (_error) {
+        // SECURITY: Log details but return generic error
         this.logger.warn('Invalid refresh token provided');
-        throw new UnauthorizedException('Invalid refresh token');
+        return err(new TokenError('invalid_token'));
       }
 
       // Verificar que no esté en blacklist
@@ -74,8 +72,9 @@ export class RefreshTokenUseCase {
         refreshTokenPayload.jti
       );
       if (isBlacklisted) {
+        // SECURITY: Log details but return generic error
         this.logger.warn(`Blacklisted refresh token used: ${refreshTokenPayload.jti}`);
-        throw new UnauthorizedException('Refresh token has been revoked');
+        return err(new TokenError('token_blacklisted'));
       }
 
       // Buscar usuario
@@ -84,14 +83,16 @@ export class RefreshTokenUseCase {
         refreshTokenPayload.org_id
       );
       if (!user) {
+        // SECURITY: Log details but return generic error
         this.logger.warn(`User not found for refresh token: ${refreshTokenPayload.sub}`);
-        throw new UnauthorizedException('User not found');
+        return err(new TokenError('user_not_found'));
       }
 
       // Verificar que el usuario pueda hacer login
       if (!user.canLogin()) {
+        // SECURITY: Log details but return generic error
         this.logger.warn(`Refresh attempt for locked/inactive user: ${user.id}`);
-        throw new UnauthorizedException('Account is locked or inactive');
+        return err(new TokenError('account_locked'));
       }
 
       // Verificar que la sesión esté activa
@@ -102,8 +103,9 @@ export class RefreshTokenUseCase {
       );
 
       if (!activeSession) {
+        // SECURITY: Log details but return generic error
         this.logger.warn(`No active session found for refresh token: ${refreshTokenPayload.jti}`);
-        throw new UnauthorizedException('No active session found');
+        return err(new TokenError('session_not_found'));
       }
 
       // Generar nuevos tokens
@@ -144,7 +146,7 @@ export class RefreshTokenUseCase {
 
       this.logger.log(`Token refreshed successfully for user: ${user.id}`);
 
-      return {
+      return ok({
         success: true,
         message: 'Token refreshed successfully',
         data: {
@@ -163,14 +165,11 @@ export class RefreshTokenUseCase {
           },
         },
         timestamp: new Date().toISOString(),
-      };
+      });
     } catch (error) {
-      if (error instanceof UnauthorizedException || error instanceof ForbiddenException) {
-        throw error;
-      }
-
+      // SECURITY: Log full error but return generic message
       this.logger.error('Refresh token use case failed:', error);
-      throw new UnauthorizedException('Token refresh failed');
+      return err(new TokenError('internal_error'));
     }
   }
 }

@@ -1,5 +1,13 @@
 import { Movement } from '@inventory/movements/domain/entities/movement.entity';
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  BusinessRuleError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 import { StockValidationService } from '@stock/domain/services/stockValidation.service';
 
@@ -34,24 +42,29 @@ export class PostMovementUseCase {
     private readonly stockRepository: IStockRepository
   ) {}
 
-  async execute(request: IPostMovementRequest): Promise<IPostMovementResponse> {
+  async execute(
+    request: IPostMovementRequest
+  ): Promise<Result<IPostMovementResponse, DomainError>> {
     this.logger.log('Posting movement', { movementId: request.movementId, orgId: request.orgId });
 
     // Retrieve movement
     const movement = await this.movementRepository.findById(request.movementId, request.orgId);
 
     if (!movement) {
-      throw new NotFoundException('Movement not found');
+      return err(new NotFoundError('Movement not found'));
     }
 
     // Validate movement can be posted
     if (!movement.status.canPost()) {
-      throw new BadRequestException('Movement cannot be posted in its current status');
+      return err(new BusinessRuleError('Movement cannot be posted in its current status'));
     }
 
     // Validate stock availability for output movements
     if (movement.type.isOutput()) {
-      await this.validateStockAvailability(movement, request.orgId);
+      const stockValidationResult = await this.validateStockAvailability(movement, request.orgId);
+      if (stockValidationResult.isErr()) {
+        return err(stockValidationResult.unwrapErr());
+      }
     }
 
     // Post the movement (this will emit MovementPostedEvent)
@@ -65,7 +78,7 @@ export class PostMovementUseCase {
       type: savedMovement.type.getValue(),
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Movement posted successfully',
       data: {
@@ -78,10 +91,13 @@ export class PostMovementUseCase {
         totalQuantity: savedMovement.getTotalQuantity(),
       } as IPostMovementData,
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 
-  private async validateStockAvailability(movement: Movement, orgId: string): Promise<void> {
+  private async validateStockAvailability(
+    movement: Movement,
+    orgId: string
+  ): Promise<Result<void, DomainError>> {
     const lines = movement.getLines();
     const warehouseId = movement.warehouseId;
 
@@ -110,10 +126,14 @@ export class PostMovementUseCase {
       );
 
       if (!validation.isValid) {
-        throw new BadRequestException(
-          `Insufficient stock for product ${line.productId} at location ${line.locationId}: ${validation.errors.join(', ')}`
+        return err(
+          new BusinessRuleError(
+            `Insufficient stock for product ${line.productId} at location ${line.locationId}: ${validation.errors.join(', ')}`
+          )
         );
       }
     }
+
+    return ok(undefined);
   }
 }

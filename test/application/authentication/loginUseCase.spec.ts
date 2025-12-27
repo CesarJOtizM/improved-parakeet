@@ -10,6 +10,7 @@ import { RateLimitService } from '@auth/domain/services/rateLimitService';
 import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
 import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
+import { AuthenticationError, RateLimitError } from '@shared/domain/result';
 
 // Mock dependencies
 jest.mock('@auth/domain/services/authenticationService');
@@ -203,10 +204,18 @@ describe('LoginUseCase', () => {
       const result = await loginUseCase.execute(loginDto);
 
       // Assert
-      expect(result.success).toBe(true);
-      expect(result.data).toHaveProperty('accessToken');
-      expect(result.data).toHaveProperty('refreshToken');
-      expect(result.data).toHaveProperty('user');
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data).toHaveProperty('accessToken');
+          expect(value.data).toHaveProperty('refreshToken');
+          expect(value.data).toHaveProperty('user');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
       expect(mockUserRepository.findByEmail).toHaveBeenCalledWith('test@example.com', mockOrgId);
       expect(mockRateLimitService.checkRateLimit).toHaveBeenCalledWith('192.168.1.1', 'LOGIN');
       expect(mockJwtService.generateTokenPair).toHaveBeenCalledWith(
@@ -220,7 +229,7 @@ describe('LoginUseCase', () => {
       expect(mockSessionRepository.save).toHaveBeenCalled();
     });
 
-    it('Given: invalid email When: executing login Then: should return error result', async () => {
+    it('Given: invalid email When: executing login Then: should return AuthenticationError', async () => {
       // Arrange
       const loginDto = {
         email: 'nonexistent@example.com',
@@ -239,8 +248,20 @@ describe('LoginUseCase', () => {
         blocked: false,
       });
 
-      // Act & Assert
-      await expect(loginUseCase.execute(loginDto)).rejects.toThrow('Invalid credentials');
+      // Act
+      const result = await loginUseCase.execute(loginDto);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(AuthenticationError);
+          expect(error.message).toBe('Authentication failed');
+        }
+      );
 
       // Verify repository calls
       expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(
@@ -250,7 +271,7 @@ describe('LoginUseCase', () => {
       expect(mockRateLimitService.checkRateLimit).toHaveBeenCalledWith('192.168.1.1', 'LOGIN');
     });
 
-    it('Given: incorrect password When: executing login Then: should return error result', async () => {
+    it('Given: incorrect password When: executing login Then: should return AuthenticationError', async () => {
       // Arrange
       const loginDto = {
         email: 'test@example.com',
@@ -287,8 +308,20 @@ describe('LoginUseCase', () => {
       jest.spyOn(AuthenticationService, 'validateLoginCredentials').mockResolvedValue(false);
       jest.spyOn(AuthenticationService, 'processFailedLogin').mockImplementation(() => {});
 
-      // Act & Assert
-      await expect(loginUseCase.execute(loginDto)).rejects.toThrow('Invalid credentials');
+      // Act
+      const result = await loginUseCase.execute(loginDto);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(AuthenticationError);
+          expect(error.message).toBe('Authentication failed');
+        }
+      );
 
       // Verify repository calls
       expect(mockUserRepository.findByEmail).toHaveBeenCalledWith('test@example.com', mockOrgId);
@@ -301,7 +334,7 @@ describe('LoginUseCase', () => {
       expect(AuthenticationService.processFailedLogin).toHaveBeenCalledWith(mockUser);
     });
 
-    it('Given: inactive user When: executing login Then: should return error result', async () => {
+    it('Given: inactive user When: executing login Then: should return AuthenticationError', async () => {
       // Arrange
       const loginDto = {
         email: 'test@example.com',
@@ -333,15 +366,27 @@ describe('LoginUseCase', () => {
         blocked: false,
       });
 
-      // Act & Assert
-      await expect(loginUseCase.execute(loginDto)).rejects.toThrow('Account is locked or inactive');
+      // Act
+      const result = await loginUseCase.execute(loginDto);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(AuthenticationError);
+          expect(error.message).toBe('Authentication failed');
+        }
+      );
 
       // Verify repository calls
       expect(mockUserRepository.findByEmail).toHaveBeenCalledWith('test@example.com', mockOrgId);
       expect(mockRateLimitService.checkRateLimit).toHaveBeenCalledWith('192.168.1.1', 'LOGIN');
     });
 
-    it('Given: locked user When: executing login Then: should return error result', async () => {
+    it('Given: locked user When: executing login Then: should return AuthenticationError', async () => {
       // Arrange
       const loginDto = {
         email: 'test@example.com',
@@ -373,15 +418,27 @@ describe('LoginUseCase', () => {
         blocked: false,
       });
 
-      // Act & Assert
-      await expect(loginUseCase.execute(loginDto)).rejects.toThrow('Account is locked or inactive');
+      // Act
+      const result = await loginUseCase.execute(loginDto);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(AuthenticationError);
+          expect(error.message).toBe('Authentication failed');
+        }
+      );
 
       // Verify repository calls
       expect(mockUserRepository.findByEmail).toHaveBeenCalledWith('test@example.com', mockOrgId);
       expect(mockRateLimitService.checkRateLimit).toHaveBeenCalledWith('192.168.1.1', 'LOGIN');
     });
 
-    it('Given: rate limit exceeded When: executing login Then: should return error result', async () => {
+    it('Given: rate limit exceeded When: executing login Then: should return RateLimitError', async () => {
       // Arrange
       const loginDto = {
         email: 'test@example.com',
@@ -400,16 +457,26 @@ describe('LoginUseCase', () => {
         blockExpiresAt: new Date(Date.now() + 30 * 60 * 1000),
       });
 
-      // Act & Assert
-      await expect(loginUseCase.execute(loginDto)).rejects.toThrow(
-        'Too many login attempts. Please try again later.'
+      // Act
+      const result = await loginUseCase.execute(loginDto);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(RateLimitError);
+          expect(error.message).toBe('Too many login attempts. Please try again later.');
+        }
       );
 
       // Verify rate limit check
       expect(mockRateLimitService.checkRateLimit).toHaveBeenCalledWith('192.168.1.1', 'LOGIN');
     });
 
-    it('Given: JWT service error When: executing login Then: should return error result', async () => {
+    it('Given: JWT service error When: executing login Then: should return AuthenticationError', async () => {
       // Arrange
       const loginDto = {
         email: 'test@example.com',
@@ -447,8 +514,20 @@ describe('LoginUseCase', () => {
       jest.spyOn(AuthenticationService, 'validateLoginCredentials').mockResolvedValue(true);
       jest.spyOn(AuthenticationService, 'processSuccessfulLogin').mockImplementation(() => {});
 
-      // Act & Assert
-      await expect(loginUseCase.execute(loginDto)).rejects.toThrow('Authentication failed');
+      // Act
+      const result = await loginUseCase.execute(loginDto);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(AuthenticationError);
+          expect(error.message).toBe('Authentication failed');
+        }
+      );
 
       // Verify service calls
       expect(AuthenticationService.validateLoginCredentials).toHaveBeenCalledWith(
@@ -463,7 +542,7 @@ describe('LoginUseCase', () => {
       );
     });
 
-    it('Given: session creation error When: executing login Then: should return error result', async () => {
+    it('Given: session creation error When: executing login Then: should return AuthenticationError', async () => {
       // Arrange
       const loginDto = {
         email: 'test@example.com',
@@ -520,8 +599,20 @@ describe('LoginUseCase', () => {
       jest.spyOn(AuthenticationService, 'validateLoginCredentials').mockResolvedValue(true);
       jest.spyOn(AuthenticationService, 'processSuccessfulLogin').mockImplementation(() => {});
 
-      // Act & Assert
-      await expect(loginUseCase.execute(loginDto)).rejects.toThrow('Authentication failed');
+      // Act
+      const result = await loginUseCase.execute(loginDto);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(AuthenticationError);
+          expect(error.message).toBe('Authentication failed');
+        }
+      );
 
       // Verify service calls
       expect(AuthenticationService.validateLoginCredentials).toHaveBeenCalledWith(

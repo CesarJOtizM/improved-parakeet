@@ -1,6 +1,14 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ReturnReason } from '@returns/domain/valueObjects/returnReason.valueObject';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  BusinessRuleError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IReturnData } from './createReturnUseCase';
@@ -25,13 +33,15 @@ export class UpdateReturnUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: IUpdateReturnRequest): Promise<IUpdateReturnResponse> {
+  async execute(
+    request: IUpdateReturnRequest
+  ): Promise<Result<IUpdateReturnResponse, DomainError>> {
     this.logger.log('Updating return', { returnId: request.id, orgId: request.orgId });
 
     const returnEntity = await this.returnRepository.findById(request.id, request.orgId);
 
     if (!returnEntity) {
-      throw new NotFoundException(`Return with ID ${request.id} not found`);
+      return err(new NotFoundError(`Return with ID ${request.id} not found`));
     }
 
     // Update return
@@ -46,8 +56,8 @@ export class UpdateReturnUseCase {
     try {
       returnEntity.update(updateProps);
     } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Failed to update return'
+      return err(
+        new BusinessRuleError(error instanceof Error ? error.message : 'Failed to update return')
       );
     }
 
@@ -79,7 +89,7 @@ export class UpdateReturnUseCase {
       };
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Return updated successfully',
       data: {
@@ -104,6 +114,6 @@ export class UpdateReturnUseCase {
         lines,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

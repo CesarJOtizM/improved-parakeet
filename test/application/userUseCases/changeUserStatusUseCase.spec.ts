@@ -6,8 +6,12 @@ import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  BusinessRuleError,
+  NotFoundError,
+  ValidationError,
+} from '@shared/domain/result/domainError';
 
 describe('ChangeUserStatusUseCase', () => {
   const mockOrgId = 'test-org-id';
@@ -92,7 +96,7 @@ describe('ChangeUserStatusUseCase', () => {
       );
     };
 
-    it('Given: active user When: changing to inactive Then: should change status successfully', async () => {
+    it('Given: active user When: changing to inactive Then: should return success result', async () => {
       // Arrange
       const user = createMockUser('ACTIVE');
       mockUserRepository.findById.mockResolvedValue(user);
@@ -111,14 +115,20 @@ describe('ChangeUserStatusUseCase', () => {
       const result = await useCase.execute(request);
 
       // Assert
-      expect(result.success).toBe(true);
-      expect(result.message).toContain('INACTIVE');
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.message).toContain('INACTIVE');
+        },
+        () => fail('Should not return error')
+      );
       expect(mockUserRepository.findById).toHaveBeenCalledWith(mockUserId, mockOrgId);
       expect(mockUserRepository.save).toHaveBeenCalled();
       expect(mockPrismaService.user.update).toHaveBeenCalled();
     });
 
-    it('Given: inactive user When: changing to active Then: should change status successfully', async () => {
+    it('Given: inactive user When: changing to active Then: should return success result', async () => {
       // Arrange
       const user = createMockUser('INACTIVE');
       mockUserRepository.findById.mockResolvedValue(user);
@@ -136,12 +146,18 @@ describe('ChangeUserStatusUseCase', () => {
       const result = await useCase.execute(request);
 
       // Assert
-      expect(result.success).toBe(true);
-      expect(result.message).toContain('ACTIVE');
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.message).toContain('ACTIVE');
+        },
+        () => fail('Should not return error')
+      );
       expect(mockUserRepository.save).toHaveBeenCalled();
     });
 
-    it('Given: active user When: locking user Then: should lock successfully', async () => {
+    it('Given: active user When: locking user Then: should return success result', async () => {
       // Arrange
       const user = createMockUser('ACTIVE');
       mockUserRepository.findById.mockResolvedValue(user);
@@ -161,12 +177,18 @@ describe('ChangeUserStatusUseCase', () => {
       const result = await useCase.execute(request);
 
       // Assert
-      expect(result.success).toBe(true);
-      expect(result.message).toContain('LOCKED');
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.message).toContain('LOCKED');
+        },
+        () => fail('Should not return error')
+      );
       expect(mockUserRepository.save).toHaveBeenCalled();
     });
 
-    it('Given: non-existent user When: changing status Then: should throw NotFoundException', async () => {
+    it('Given: non-existent user When: changing status Then: should return NotFoundError result', async () => {
       // Arrange
       mockUserRepository.findById.mockResolvedValue(null);
 
@@ -177,12 +199,22 @@ describe('ChangeUserStatusUseCase', () => {
         changedBy: mockChangedBy,
       };
 
-      // Act & Assert
-      await expect(useCase.execute(request)).rejects.toThrow(NotFoundException);
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(NotFoundError);
+          expect(error.message).toContain('User not found');
+        }
+      );
       expect(mockUserRepository.save).not.toHaveBeenCalled();
     });
 
-    it('Given: user trying to deactivate themselves When: changing status Then: should throw BadRequestException', async () => {
+    it('Given: user trying to deactivate themselves When: changing status Then: should return BusinessRuleError result', async () => {
       // Arrange
       const user = createMockUser('ACTIVE');
       mockUserRepository.findById.mockResolvedValue(user);
@@ -194,11 +226,20 @@ describe('ChangeUserStatusUseCase', () => {
         changedBy: mockUserId, // User trying to deactivate themselves
       };
 
-      // Act & Assert
-      await expect(useCase.execute(request)).rejects.toThrow(BadRequestException);
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(BusinessRuleError);
+        }
+      );
     });
 
-    it('Given: invalid status When: changing status Then: should throw BadRequestException', async () => {
+    it('Given: invalid status When: changing status Then: should return ValidationError result', async () => {
       // Arrange
       const user = createMockUser('ACTIVE');
       mockUserRepository.findById.mockResolvedValue(user);
@@ -210,8 +251,17 @@ describe('ChangeUserStatusUseCase', () => {
         changedBy: mockChangedBy,
       };
 
-      // Act & Assert
-      await expect(useCase.execute(request)).rejects.toThrow(BadRequestException);
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+        }
+      );
     });
   });
 });

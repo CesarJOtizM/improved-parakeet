@@ -5,7 +5,7 @@ import { IUserRepository } from '@auth/domain/repositories/userRepository.interf
 import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundError } from '@shared/domain/result/domainError';
 
 describe('GetUserUseCase', () => {
   const mockOrgId = 'test-org-id';
@@ -43,7 +43,7 @@ describe('GetUserUseCase', () => {
   });
 
   describe('execute', () => {
-    it('Given: existing user When: getting user Then: should return user data', async () => {
+    it('Given: existing user When: getting user Then: should return success result with user data', async () => {
       // Arrange
       const mockUser = User.reconstitute(
         {
@@ -78,20 +78,34 @@ describe('GetUserUseCase', () => {
       const result = await useCase.execute({ userId: mockUserId, orgId: mockOrgId });
 
       // Assert
-      expect(result.success).toBe(true);
-      expect(result.data.id).toBe(mockUserId);
-      expect(result.data.email).toBe('test@example.com');
-      expect(result.data.roles).toEqual(['ADMIN']);
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data.id).toBe(mockUserId);
+          expect(value.data.email).toBe('test@example.com');
+          expect(value.data.roles).toEqual(['ADMIN']);
+        },
+        () => fail('Should not return error')
+      );
       expect(mockUserRepository.findById).toHaveBeenCalledWith(mockUserId, mockOrgId);
     });
 
-    it('Given: non-existent user When: getting user Then: should throw NotFoundException', async () => {
+    it('Given: non-existent user When: getting user Then: should return NotFoundError result', async () => {
       // Arrange
       mockUserRepository.findById.mockResolvedValue(null);
 
-      // Act & Assert
-      await expect(useCase.execute({ userId: mockUserId, orgId: mockOrgId })).rejects.toThrow(
-        NotFoundException
+      // Act
+      const result = await useCase.execute({ userId: mockUserId, orgId: mockOrgId });
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(NotFoundError);
+          expect(error.message).toContain('User not found');
+        }
       );
       expect(mockUserRepository.findById).toHaveBeenCalledWith(mockUserId, mockOrgId);
     });

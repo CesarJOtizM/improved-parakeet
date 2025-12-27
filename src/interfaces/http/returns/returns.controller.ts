@@ -37,6 +37,7 @@ import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
 import { OrgId } from '@shared/decorators/orgId.decorator';
 import { RequirePermissions } from '@shared/decorators/requirePermissions.decorator';
 import { AuditInterceptor } from '@shared/interceptors/audit.interceptor';
+import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
 import type { IAuthenticatedUser } from '@shared/types/http.types';
 import type { Request } from 'express';
@@ -104,7 +105,8 @@ export class ReturnsController {
       orgId,
     };
 
-    return await this.createReturnUseCase.execute(request);
+    const result = await this.createReturnUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Get()
@@ -156,7 +158,8 @@ export class ReturnsController {
   async getReturnById(@Param('id') id: string, @OrgId() orgId: string) {
     this.logger.log('Getting return by ID', { returnId: id, orgId });
 
-    return await this.getReturnByIdUseCase.execute({ id, orgId });
+    const result = await this.getReturnByIdUseCase.execute({ id, orgId });
+    return resultToHttpResponse(result);
   }
 
   @Put(':id')
@@ -189,7 +192,8 @@ export class ReturnsController {
       orgId,
     };
 
-    return await this.updateReturnUseCase.execute(request);
+    const result = await this.updateReturnUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Post(':id/confirm')
@@ -212,7 +216,8 @@ export class ReturnsController {
   async confirmReturn(@Param('id') id: string, @OrgId() orgId: string) {
     this.logger.log('Confirming return', { returnId: id, orgId });
 
-    return await this.confirmReturnUseCase.execute({ id, orgId });
+    const result = await this.confirmReturnUseCase.execute({ id, orgId });
+    return resultToHttpResponse(result);
   }
 
   @Post(':id/cancel')
@@ -239,7 +244,8 @@ export class ReturnsController {
   ) {
     this.logger.log('Cancelling return', { returnId: id, orgId, reason });
 
-    return await this.cancelReturnUseCase.execute({ id, reason, orgId });
+    const result = await this.cancelReturnUseCase.execute({ id, reason, orgId });
+    return resultToHttpResponse(result);
   }
 
   @Post(':id/lines')
@@ -280,7 +286,8 @@ export class ReturnsController {
       orgId,
     };
 
-    return await this.addReturnLineUseCase.execute(request);
+    const result = await this.addReturnLineUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Delete(':id/lines/:lineId')
@@ -308,6 +315,7 @@ export class ReturnsController {
   ) {
     this.logger.log('Removing line from return', { returnId, lineId, orgId });
 
-    return await this.removeReturnLineUseCase.execute({ returnId, lineId, orgId });
+    const result = await this.removeReturnLineUseCase.execute({ returnId, lineId, orgId });
+    return resultToHttpResponse(result);
   }
 }

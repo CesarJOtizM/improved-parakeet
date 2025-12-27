@@ -6,7 +6,7 @@ import { PrismaService } from '@infrastructure/database/prisma.service';
 import { RoleRepository } from '@infrastructure/database/repositories/role.repository';
 import { UserRepository } from '@infrastructure/database/repositories/user.repository';
 import { beforeEach, describe, expect, it } from '@jest/globals';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 const describeIf = (condition: boolean) => (condition ? describe : describe.skip);
@@ -52,7 +52,7 @@ describeIf(!!process.env.DATABASE_URL)('RBAC Integration Tests', () => {
     } catch (error) {
       // If database connection fails, skip the test suite
       if (error instanceof Error && error.message.includes('database')) {
-        console.warn('Database connection failed, skipping RBAC integration tests');
+        Logger.warn('Database connection failed, skipping RBAC integration tests');
         return;
       }
       throw error;
@@ -95,8 +95,14 @@ describeIf(!!process.env.DATABASE_URL)('RBAC Integration Tests', () => {
       });
 
       // Assert
-      expect(result.success).toBe(true);
-      expect(result.data.roleName).toBe('SUPERVISOR');
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data.roleName).toBe('SUPERVISOR');
+        },
+        () => fail('Should not return error')
+      );
 
       // Verify role assignment in database
       const userRole = await prismaService.userRole.findUnique({
@@ -196,7 +202,13 @@ describeIf(!!process.env.DATABASE_URL)('RBAC Integration Tests', () => {
       });
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+        },
+        () => fail('Should not return error')
+      );
 
       // Verify role removal in database
       const userRole = await prismaService.userRole.findUnique({

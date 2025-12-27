@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, Result, ok } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
 import type { IUserRepository } from '@auth/domain/repositories';
@@ -31,7 +32,7 @@ export class GetUsersUseCase {
 
   constructor(@Inject('UserRepository') private readonly userRepository: IUserRepository) {}
 
-  async execute(request: IGetUsersRequest): Promise<IGetUsersResponse> {
+  async execute(request: IGetUsersRequest): Promise<Result<IGetUsersResponse, DomainError>> {
     this.logger.log('Getting users', {
       orgId: request.orgId,
       page: request.page,
@@ -69,7 +70,7 @@ export class GetUsersUseCase {
     const paginatedUsers = users.slice(skip, skip + limit);
     const totalPages = Math.ceil(total / limit);
 
-    return {
+    return ok({
       success: true,
       message: 'Users retrieved successfully',
       data: paginatedUsers.map(user => ({
@@ -92,6 +93,6 @@ export class GetUsersUseCase {
         hasPrev: page > 1,
       },
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

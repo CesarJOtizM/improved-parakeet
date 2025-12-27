@@ -2,7 +2,15 @@ import { User } from '@auth/domain/entities/user.entity';
 import { UserManagementService } from '@auth/domain/services/userManagementService';
 import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
-import { BadRequestException, ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  ConflictError,
+  DomainError,
+  err,
+  ok,
+  Result,
+  ValidationError,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IUserRepository } from '@auth/domain/repositories';
@@ -37,7 +45,7 @@ export class CreateUserUseCase {
 
   constructor(@Inject('UserRepository') private readonly userRepository: IUserRepository) {}
 
-  async execute(request: ICreateUserRequest): Promise<ICreateUserResponse> {
+  async execute(request: ICreateUserRequest): Promise<Result<ICreateUserResponse, DomainError>> {
     this.logger.log('Creating user', { email: request.email, orgId: request.orgId });
 
     // Validate user creation data
@@ -50,13 +58,13 @@ export class CreateUserUseCase {
     });
 
     if (!validation.isValid) {
-      throw new BadRequestException(`Validation failed: ${validation.errors.join(', ')}`);
+      return err(new ValidationError(`Validation failed: ${validation.errors.join(', ')}`));
     }
 
     // Check if email already exists
     const emailExists = await this.userRepository.existsByEmail(request.email, request.orgId);
     if (emailExists) {
-      throw new ConflictException('Email is already in use');
+      return err(new ConflictError('Email is already in use'));
     }
 
     // Check if username already exists
@@ -65,7 +73,7 @@ export class CreateUserUseCase {
       request.orgId
     );
     if (usernameExists) {
-      throw new ConflictException('Username is already in use');
+      return err(new ConflictError('Username is already in use'));
     }
 
     // Create user entity
@@ -90,7 +98,7 @@ export class CreateUserUseCase {
     // Publish domain events (handled by repository or event dispatcher)
     // Domain events are automatically collected and can be dispatched
 
-    return {
+    return ok({
       success: true,
       message: 'User created successfully',
       data: {
@@ -105,6 +113,6 @@ export class CreateUserUseCase {
         updatedAt: savedUser.updatedAt,
       } as ICreateUserData,
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

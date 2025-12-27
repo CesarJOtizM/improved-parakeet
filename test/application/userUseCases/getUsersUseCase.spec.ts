@@ -88,13 +88,21 @@ describe('GetUsersUseCase', () => {
       const result = await useCase.execute(request);
 
       // Assert
-      expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(10);
-      expect(result.pagination.total).toBe(15);
-      expect(result.pagination.page).toBe(1);
-      expect(result.pagination.limit).toBe(10);
-      expect(result.pagination.hasNext).toBe(true);
-      expect(result.pagination.hasPrev).toBe(false);
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data).toHaveLength(10);
+          expect(value.pagination.total).toBe(15);
+          expect(value.pagination.page).toBe(1);
+          expect(value.pagination.limit).toBe(10);
+          expect(value.pagination.hasNext).toBe(true);
+          expect(value.pagination.hasPrev).toBe(false);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
     });
 
     it('Given: users exist When: getting second page Then: should return correct page', async () => {
@@ -112,11 +120,19 @@ describe('GetUsersUseCase', () => {
       const result = await useCase.execute(request);
 
       // Assert
-      expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(5);
-      expect(result.pagination.page).toBe(2);
-      expect(result.pagination.hasNext).toBe(false);
-      expect(result.pagination.hasPrev).toBe(true);
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data).toHaveLength(5);
+          expect(value.pagination.page).toBe(2);
+          expect(value.pagination.hasNext).toBe(false);
+          expect(value.pagination.hasPrev).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
     });
 
     it('Given: status filter When: getting users Then: should filter by status', async () => {
@@ -133,7 +149,15 @@ describe('GetUsersUseCase', () => {
       const result = await useCase.execute(request);
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
       expect(mockUserRepository.findByStatus).toHaveBeenCalledWith('ACTIVE', mockOrgId);
       expect(mockUserRepository.findAll).not.toHaveBeenCalled();
     });
@@ -153,9 +177,17 @@ describe('GetUsersUseCase', () => {
       const result = await useCase.execute(request);
 
       // Assert
-      expect(result.success).toBe(true);
-      expect(result.data.length).toBeGreaterThan(0);
-      expect(result.data.some(u => u.firstName.includes('John'))).toBe(true);
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data.length).toBeGreaterThan(0);
+          expect(value.data.some(u => u.firstName.includes('John'))).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
     });
 
     it('Given: no users When: getting users Then: should return empty list', async () => {
@@ -170,9 +202,17 @@ describe('GetUsersUseCase', () => {
       const result = await useCase.execute(request);
 
       // Assert
-      expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(0);
-      expect(result.pagination.total).toBe(0);
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data).toHaveLength(0);
+          expect(value.pagination.total).toBe(0);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
     });
 
     it('Given: default pagination When: getting users Then: should use defaults', async () => {
@@ -188,8 +228,16 @@ describe('GetUsersUseCase', () => {
       const result = await useCase.execute(request);
 
       // Assert
-      expect(result.pagination.page).toBe(1);
-      expect(result.pagination.limit).toBe(10);
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.pagination.page).toBe(1);
+          expect(value.pagination.limit).toBe(10);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
     });
   });
 });

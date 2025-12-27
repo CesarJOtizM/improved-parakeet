@@ -1,4 +1,5 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IUserRepository } from '@auth/domain/repositories';
@@ -31,16 +32,16 @@ export class GetUserUseCase {
 
   constructor(@Inject('UserRepository') private readonly userRepository: IUserRepository) {}
 
-  async execute(request: IGetUserRequest): Promise<IGetUserResponse> {
+  async execute(request: IGetUserRequest): Promise<Result<IGetUserResponse, DomainError>> {
     this.logger.log('Getting user', { userId: request.userId, orgId: request.orgId });
 
     const user = await this.userRepository.findById(request.userId, request.orgId);
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      return err(new NotFoundError('User not found'));
     }
 
-    return {
+    return ok({
       success: true,
       message: 'User retrieved successfully',
       data: {
@@ -58,6 +59,6 @@ export class GetUserUseCase {
         updatedAt: user.updatedAt,
       } as IGetUserData,
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

@@ -1,7 +1,8 @@
 import { IJwtPayloadWithExp, JwtService } from '@auth/domain/services/jwtService';
 import { RateLimitService } from '@auth/domain/services/rateLimitService';
 import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
-import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DomainError, RateLimitError, Result, TokenError, err, ok } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISessionRepository } from '@auth/domain/repositories';
@@ -32,7 +33,7 @@ export class LogoutUseCase {
     private readonly rateLimitService: RateLimitService
   ) {}
 
-  async execute(request: ILogoutRequest): Promise<ILogoutResponse> {
+  async execute(request: ILogoutRequest): Promise<Result<ILogoutResponse, DomainError>> {
     try {
       // Verificar rate limiting para logout
       const rateLimitResult = await this.rateLimitService.checkRateLimit(
@@ -42,7 +43,7 @@ export class LogoutUseCase {
 
       if (!rateLimitResult.allowed) {
         this.logger.warn(`Logout rate limit exceeded for IP: ${request.ipAddress}`);
-        throw new UnauthorizedException('Too many logout attempts. Please try again later.');
+        return err(new RateLimitError('Too many logout attempts. Please try again later.'));
       }
 
       let blacklistedTokens = 0;
@@ -58,7 +59,9 @@ export class LogoutUseCase {
           accessTokenPayload.sub !== request.userId ||
           accessTokenPayload.org_id !== request.orgId
         ) {
-          throw new UnauthorizedException('Token does not belong to the specified user');
+          // SECURITY: Log details but return generic error
+          this.logger.warn(`Token mismatch during logout for user: ${request.userId}`);
+          return err(new TokenError('token_user_mismatch'));
         }
 
         // Blacklist access token
@@ -103,19 +106,15 @@ export class LogoutUseCase {
           `Successful logout for user: ${request.userId}, blacklisted tokens: ${blacklistedTokens}`
         );
 
-        return {
+        return ok({
           success: true,
           message: 'Logout successful',
           data: {
             blacklistedTokens,
           },
           timestamp: new Date().toISOString(),
-        };
-      } catch (tokenError) {
-        if (tokenError instanceof UnauthorizedException) {
-          throw tokenError;
-        }
-
+        });
+      } catch (_tokenError) {
         // Si el token es inválido, aún así intentar blacklistear por seguridad
         this.logger.warn(`Invalid token during logout for user: ${request.userId}`);
 
@@ -128,22 +127,22 @@ export class LogoutUseCase {
 
         blacklistedTokens = securityBlacklisted;
 
-        return {
+        // Desactivar sesión en la base de datos
+        await this.deactivateUserSessions(request.userId, request.orgId);
+
+        return ok({
           success: true,
           message: 'Logout completed with security measures',
           data: {
             blacklistedTokens,
           },
           timestamp: new Date().toISOString(),
-        };
+        });
       }
     } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-
+      // SECURITY: Log full error but return generic message
       this.logger.error('Logout use case failed:', error);
-      throw new UnauthorizedException('Logout failed');
+      return err(new TokenError('logout_failed'));
     }
   }
 

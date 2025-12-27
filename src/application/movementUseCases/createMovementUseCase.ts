@@ -3,8 +3,16 @@ import { Movement } from '@movement/domain/entities/movement.entity';
 import { MovementLine } from '@movement/domain/entities/movementLine.entity';
 import { MovementStatus } from '@movement/domain/valueObjects/movementStatus.valueObject';
 import { MovementType } from '@movement/domain/valueObjects/movementType.valueObject';
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import {
+  DomainError,
+  NotFoundError,
+  Result,
+  ValidationError,
+  err,
+  ok,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
@@ -72,7 +80,9 @@ export class CreateMovementUseCase {
     private readonly eventDispatcher: DomainEventDispatcher
   ) {}
 
-  async execute(request: ICreateMovementRequest): Promise<ICreateMovementResponse> {
+  async execute(
+    request: ICreateMovementRequest
+  ): Promise<Result<ICreateMovementResponse, DomainError>> {
     this.logger.log('Creating movement', {
       type: request.type,
       warehouseId: request.warehouseId,
@@ -84,7 +94,12 @@ export class CreateMovementUseCase {
       // Validate warehouse exists
       const warehouse = await this.warehouseRepository.findById(request.warehouseId, request.orgId);
       if (!warehouse) {
-        throw new NotFoundException('Warehouse not found');
+        return err(
+          new NotFoundError('Warehouse not found', 'WAREHOUSE_NOT_FOUND', {
+            warehouseId: request.warehouseId,
+            orgId: request.orgId,
+          })
+        );
       }
 
       // Validate products exist and get unit precision
@@ -92,7 +107,12 @@ export class CreateMovementUseCase {
       for (const line of request.lines) {
         const product = await this.productRepository.findById(line.productId, request.orgId);
         if (!product) {
-          throw new NotFoundException(`Product not found: ${line.productId}`);
+          return err(
+            new NotFoundError(`Product not found: ${line.productId}`, 'PRODUCT_NOT_FOUND', {
+              productId: line.productId,
+              orgId: request.orgId,
+            })
+          );
         }
         productPrecisions.set(line.productId, product.unit.getValue().precision);
       }
@@ -150,7 +170,7 @@ export class CreateMovementUseCase {
         type: savedMovement.type.getValue(),
       });
 
-      return {
+      const response: ICreateMovementResponse = {
         success: true,
         message: 'Movement created successfully',
         data: {
@@ -177,15 +197,9 @@ export class CreateMovementUseCase {
         } as IMovementData,
         timestamp: new Date().toISOString(),
       };
+
+      return ok(response);
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-
       this.logger.error('Error creating movement', {
         error: error instanceof Error ? error.message : 'Unknown error',
         type: request.type,
@@ -193,9 +207,11 @@ export class CreateMovementUseCase {
         orgId: request.orgId,
       });
 
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Failed to create movement'
-      );
+      if (error instanceof Error) {
+        return err(new ValidationError(error.message, 'MOVEMENT_CREATION_ERROR'));
+      }
+
+      return err(new ValidationError('Failed to create movement', 'MOVEMENT_CREATION_ERROR'));
     }
   }
 }

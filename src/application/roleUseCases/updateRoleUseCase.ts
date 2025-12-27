@@ -1,4 +1,13 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  BusinessRuleError,
+  DomainError,
+  err,
+  NotFoundError,
+  ok,
+  Result,
+  ValidationError,
+} from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IRoleRepository } from '@auth/domain/repositories';
@@ -29,29 +38,29 @@ export class UpdateRoleUseCase {
 
   constructor(@Inject('RoleRepository') private readonly roleRepository: IRoleRepository) {}
 
-  async execute(request: IUpdateRoleRequest): Promise<IUpdateRoleResponse> {
+  async execute(request: IUpdateRoleRequest): Promise<Result<IUpdateRoleResponse, DomainError>> {
     this.logger.log('Updating role', { roleId: request.roleId, orgId: request.orgId });
 
     // Find role
     const role = await this.roleRepository.findById(request.roleId);
 
     if (!role) {
-      throw new NotFoundException('Role not found');
+      return err(new NotFoundError('Role not found'));
     }
 
     // Cannot update system roles
     if (role.isSystem) {
-      throw new BadRequestException('Cannot update system roles');
+      return err(new BusinessRuleError('Cannot update system roles'));
     }
 
     // Verify role belongs to this organization
     if (role.orgId !== request.orgId) {
-      throw new NotFoundException('Role not found in this organization');
+      return err(new NotFoundError('Role not found in this organization'));
     }
 
     // Validate description length if provided
     if (request.description !== undefined && request.description.length > 500) {
-      throw new BadRequestException('Description must not exceed 500 characters');
+      return err(new ValidationError('Description must not exceed 500 characters'));
     }
 
     // Update role
@@ -68,7 +77,7 @@ export class UpdateRoleUseCase {
       name: updatedRole.name,
     });
 
-    return {
+    return ok({
       success: true,
       message: 'Role updated successfully',
       data: {
@@ -81,6 +90,6 @@ export class UpdateRoleUseCase {
         updatedAt: updatedRole.updatedAt,
       } as IUpdateRoleData,
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

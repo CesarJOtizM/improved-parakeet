@@ -4,6 +4,7 @@ import { LogoutUseCase } from '@application/authUseCases/logoutUseCase';
 import { RefreshTokenUseCase } from '@application/authUseCases/refreshTokenUseCase';
 import { AuthController } from '@interface/http/routes/auth.controller';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { AuthenticationError, err, ok, RateLimitError, TokenError } from '@shared/domain/result';
 
 describe('AuthController', () => {
   let authController: AuthController;
@@ -44,7 +45,7 @@ describe('AuthController', () => {
         orgId: 'org-123',
       };
 
-      const mockLoginResult = {
+      const mockLoginData = {
         success: true as const,
         data: {
           user: {
@@ -66,7 +67,7 @@ describe('AuthController', () => {
         timestamp: new Date().toISOString(),
       };
 
-      mockLoginUseCase.execute.mockResolvedValue(mockLoginResult);
+      mockLoginUseCase.execute.mockResolvedValue(ok(mockLoginData));
 
       // Act
       const result = await authController.login(
@@ -84,10 +85,10 @@ describe('AuthController', () => {
         userAgent: 'Mozilla/5.0',
         orgId: 'org-123',
       });
-      expect(result).toEqual(mockLoginResult);
+      expect(result).toEqual(mockLoginData);
     });
 
-    it('Given: invalid credentials When: logging in Then: should return error response', async () => {
+    it('Given: invalid credentials When: logging in Then: should throw UnauthorizedException', async () => {
       // Arrange
       const loginRequest = {
         email: 'test@example.com',
@@ -95,15 +96,15 @@ describe('AuthController', () => {
         orgId: 'org-123',
       };
 
-      mockLoginUseCase.execute.mockRejectedValue(new Error('Invalid credentials'));
+      mockLoginUseCase.execute.mockResolvedValue(err(new AuthenticationError('invalid_password')));
 
       // Act & Assert
       await expect(
         authController.login(loginRequest, '192.168.1.1', 'Mozilla/5.0', 'org-123')
-      ).rejects.toThrow('Invalid credentials');
+      ).rejects.toThrow('Authentication failed');
     });
 
-    it('Given: rate limit exceeded When: logging in Then: should return rate limit error', async () => {
+    it('Given: rate limit exceeded When: logging in Then: should throw rate limit error', async () => {
       // Arrange
       const loginRequest = {
         email: 'test@example.com',
@@ -111,7 +112,9 @@ describe('AuthController', () => {
         orgId: 'org-123',
       };
 
-      mockLoginUseCase.execute.mockRejectedValue(new Error('Too many login attempts'));
+      mockLoginUseCase.execute.mockResolvedValue(
+        err(new RateLimitError('Too many login attempts. Please try again later.'))
+      );
 
       // Act & Assert
       await expect(
@@ -119,7 +122,7 @@ describe('AuthController', () => {
       ).rejects.toThrow('Too many login attempts');
     });
 
-    it('Given: login use case error When: logging in Then: should return server error', async () => {
+    it('Given: internal error When: logging in Then: should throw authentication error', async () => {
       // Arrange
       const loginRequest = {
         email: 'test@example.com',
@@ -127,12 +130,12 @@ describe('AuthController', () => {
         orgId: 'org-123',
       };
 
-      mockLoginUseCase.execute.mockRejectedValue(new Error('Database connection failed'));
+      mockLoginUseCase.execute.mockResolvedValue(err(new AuthenticationError('internal_error')));
 
       // Act & Assert
       await expect(
         authController.login(loginRequest, '192.168.1.1', 'Mozilla/5.0', 'org-123')
-      ).rejects.toThrow('Database connection failed');
+      ).rejects.toThrow('Authentication failed');
     });
   });
 
@@ -158,7 +161,7 @@ describe('AuthController', () => {
         user: mockUser,
       } as any;
 
-      const mockLogoutResult = {
+      const mockLogoutData = {
         success: true as const,
         message: 'Logout successful',
         data: {
@@ -167,7 +170,7 @@ describe('AuthController', () => {
         timestamp: new Date().toISOString(),
       };
 
-      mockLogoutUseCase.execute.mockResolvedValue(mockLogoutResult);
+      mockLogoutUseCase.execute.mockResolvedValue(ok(mockLogoutData));
 
       // Act
       const result = await authController.logout(logoutRequest, mockReq, '192.168.1.1');
@@ -179,10 +182,10 @@ describe('AuthController', () => {
         orgId: 'org-123',
         ipAddress: '192.168.1.1',
       });
-      expect(result).toEqual(mockLogoutResult);
+      expect(result).toEqual(mockLogoutData);
     });
 
-    it('Given: logout use case error When: logging out Then: should return server error', async () => {
+    it('Given: token error When: logging out Then: should throw UnauthorizedException', async () => {
       // Arrange
       const logoutRequest = {
         accessToken: 'token-123',
@@ -203,11 +206,11 @@ describe('AuthController', () => {
         user: mockUser,
       } as any;
 
-      mockLogoutUseCase.execute.mockRejectedValue(new Error('Token blacklist failed'));
+      mockLogoutUseCase.execute.mockResolvedValue(err(new TokenError('token_user_mismatch')));
 
       // Act & Assert
       await expect(authController.logout(logoutRequest, mockReq, '192.168.1.1')).rejects.toThrow(
-        'Token blacklist failed'
+        'Invalid or expired token'
       );
     });
   });
@@ -219,7 +222,7 @@ describe('AuthController', () => {
         refreshToken: 'refresh-token-456',
       };
 
-      const mockRefreshResult = {
+      const mockRefreshData = {
         success: true as const,
         data: {
           accessToken: 'new-access-token-789',
@@ -240,7 +243,7 @@ describe('AuthController', () => {
         timestamp: new Date().toISOString(),
       };
 
-      mockRefreshTokenUseCase.execute.mockResolvedValue(mockRefreshResult);
+      mockRefreshTokenUseCase.execute.mockResolvedValue(ok(mockRefreshData));
 
       // Act
       const result = await authController.refreshToken(
@@ -255,35 +258,37 @@ describe('AuthController', () => {
         ipAddress: '192.168.1.1',
         userAgent: 'Mozilla/5.0',
       });
-      expect(result).toEqual(mockRefreshResult);
+      expect(result).toEqual(mockRefreshData);
     });
 
-    it('Given: invalid refresh token When: refreshing token Then: should return error response', async () => {
+    it('Given: invalid refresh token When: refreshing token Then: should throw UnauthorizedException', async () => {
       // Arrange
       const refreshRequest = {
         refreshToken: 'invalid-refresh-token',
       };
 
-      mockRefreshTokenUseCase.execute.mockRejectedValue(new Error('Invalid refresh token'));
+      mockRefreshTokenUseCase.execute.mockResolvedValue(err(new TokenError('invalid_token')));
 
       // Act & Assert
       await expect(
         authController.refreshToken(refreshRequest, '192.168.1.1', 'Mozilla/5.0')
-      ).rejects.toThrow('Invalid refresh token');
+      ).rejects.toThrow('Invalid or expired token');
     });
 
-    it('Given: refresh token use case error When: refreshing token Then: should return server error', async () => {
+    it('Given: rate limit exceeded When: refreshing token Then: should throw rate limit error', async () => {
       // Arrange
       const refreshRequest = {
         refreshToken: 'refresh-token-456',
       };
 
-      mockRefreshTokenUseCase.execute.mockRejectedValue(new Error('JWT verification failed'));
+      mockRefreshTokenUseCase.execute.mockResolvedValue(
+        err(new RateLimitError('Too many refresh attempts. Please try again later.'))
+      );
 
       // Act & Assert
       await expect(
         authController.refreshToken(refreshRequest, '192.168.1.1', 'Mozilla/5.0')
-      ).rejects.toThrow('JWT verification failed');
+      ).rejects.toThrow('Too many refresh attempts');
     });
   });
 });
