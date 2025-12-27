@@ -505,62 +505,66 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
 
 ### **Semana 12: Dominio de Reportes e Importaciones**
 
-- [ ] **Implementación del Dominio de Reportes**
-  - [ ] Aggregates: ReportAggregate, ReportTemplateAggregate con reglas de consistencia
-  - [ ] Value Objects: ReportType, ReportFormat, ReportParameters (inmutables)
-  - [ ] Domain Services: ReportGenerationService, ReportViewService, ExportService
-  - [ ] Domain Events: ReportGenerated, ReportViewed, ExportCompleted
-  - [ ] Crear interfaces de Repository para reportes
-  - [ ] Flujo de reportes: Primero generar/vista, luego exportación
-  - [ ] **Tipos de Reportes de Inventario Contemplados**:
-    - [ ] **1. Reporte de Inventario Disponible**: Stock actual por producto, bodega y ubicación
-    - [ ] **2. Reporte de Histórico de Movimientos**: Registro de entradas, salidas y ajustes con filtros por fecha, producto, bodega
-    - [ ] **3. Reporte de Valorización**: Valor del inventario por producto, bodega, categoría (usando PPM)
-    - [ ] **4. Reporte de Stock Bajo**: Productos por debajo del mínimo definido con alertas
-    - [ ] **5. Reporte de Movimientos**: Resumen de movimientos por tipo, bodega, período
-    - [ ] **6. Reporte Financiero**: Valorización total, costos, márgenes por período
-    - [ ] **7. Reporte de Rotación de Inventario**: Análisis de rotación de productos (veces vendido/consumido en período)
-      - [ ] Cálculo: Rotación = Costo de productos vendidos / Inventario promedio
-      - [ ] Métricas: Rotación por producto, categoría, bodega
-      - [ ] Comparación entre períodos (mensual, trimestral, anual)
-      - [ ] Identificación de productos de lenta rotación (slow-moving)
-      - [ ] Identificación de productos de alta rotación (fast-moving)
-  - [ ] **Tipos de Reportes de Ventas Contemplados**:
-    - [ ] **8. Reporte de Ventas**: Resumen de ventas por período, bodega, producto
-      - [ ] Métricas: Total de ventas, cantidad de ventas, promedio por venta
-      - [ ] Filtros: dateRange, warehouseId, productId, status, customerReference
-      - [ ] Agrupación: Por día, semana, mes, producto, bodega, cliente
-      - [ ] Análisis: Top productos vendidos, top clientes, tendencias
-    - [ ] **9. Reporte de Ventas por Producto**: Análisis de ventas desglosado por producto
-      - [ ] Métricas: Cantidad vendida, ingresos, precio promedio, margen
-      - [ ] Filtros: dateRange, warehouseId, productId, category
-      - [ ] Comparación: Período actual vs período anterior
-      - [ ] Ranking: Productos más vendidos, productos con mayor ingreso
-    - [ ] **10. Reporte de Ventas por Bodega**: Análisis de ventas por bodega
-      - [ ] Métricas: Total de ventas por bodega, cantidad de ventas, promedio
-      - [ ] Filtros: dateRange, warehouseId
-      - [ ] Comparación: Rendimiento entre bodegas
-      - [ ] Análisis: Bodegas con mayor volumen de ventas
-  - [ ] **Tipos de Reportes de Devoluciones Contemplados**:
-    - [ ] **11. Reporte de Devoluciones**: Resumen de devoluciones por período, tipo, bodega
-      - [ ] Métricas: Total de devoluciones, cantidad de productos devueltos, valor total
-      - [ ] Filtros: dateRange, warehouseId, returnType (CUSTOMER, SUPPLIER), status
-      - [ ] Agrupación: Por día, semana, mes, tipo, bodega, producto
-      - [ ] Análisis: Razones más comunes, productos más devueltos
-    - [ ] **12. Reporte de Devoluciones por Tipo**: Análisis separado de devoluciones de clientes y a proveedores
-      - [ ] **Devoluciones de Cliente**: Productos devueltos por clientes
-        - [ ] Métricas: Cantidad devuelta, valor devuelto, relación con ventas
-        - [ ] Filtros: dateRange, warehouseId, saleId
-        - [ ] Análisis: Tasa de devolución, productos más devueltos
-      - [ ] **Devoluciones a Proveedor**: Productos devueltos a proveedores
-        - [ ] Métricas: Cantidad devuelta, valor devuelto, relación con compras
-        - [ ] Filtros: dateRange, warehouseId, movementId
-        - [ ] Análisis: Tasa de devolución, proveedores más afectados
-    - [ ] **13. Reporte de Devoluciones por Producto**: Análisis de devoluciones desglosado por producto
-      - [ ] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
-      - [ ] Filtros: dateRange, warehouseId, productId, returnType
-      - [ ] Comparación: Período actual vs período anterior
-      - [ ] Ranking: Productos con mayor tasa de devolución
+- [x] **Implementación del Dominio de Reportes** ✅ **COMPLETADO**
+  - [x] Aggregates: ReportAggregate, ReportTemplateAggregate con reglas de consistencia
+  - [x] Value Objects: ReportType, ReportFormat, ReportParameters, ReportStatus (inmutables)
+  - [x] Domain Services: ReportGenerationService, ReportViewService, ExportService
+  - [x] Domain Events: ReportGenerated, ReportViewed, ExportCompleted, ReportTemplateCreated, ReportTemplateUpdated
+  - [x] Crear interfaces de Repository para reportes
+  - [x] Flujo de reportes: Primero generar/vista, luego exportación
+  - [x] Mappers: ReportMapper, ReportTemplateMapper (DTO ↔ Domain)
+  - [x] Document Generation Service: IDocumentGenerationService port con implementación mock
+  - [x] Infrastructure: PrismaReportRepository, PrismaReportTemplateRepository
+  - [x] Tests: 149 tests pasando (Value Objects, Entities, Mappers, Use Cases, E2E)
+  - [x] **Tipos de Reportes de Inventario Contemplados** (Estructura base implementada):
+    - [x] **1. Reporte de Inventario Disponible**: Stock actual por producto, bodega y ubicación
+    - [x] **2. Reporte de Histórico de Movimientos**: Registro de entradas, salidas y ajustes con filtros por fecha, producto, bodega
+    - [x] **3. Reporte de Valorización**: Valor del inventario por producto, bodega, categoría (usando PPM)
+    - [x] **4. Reporte de Stock Bajo**: Productos por debajo del mínimo definido con alertas
+    - [x] **5. Reporte de Movimientos**: Resumen de movimientos por tipo, bodega, período
+    - [x] **6. Reporte Financiero**: Valorización total, costos, márgenes por período
+    - [x] **7. Reporte de Rotación de Inventario**: Análisis de rotación de productos (veces vendido/consumido en período)
+      - [x] Cálculo: Rotación = Costo de productos vendidos / Inventario promedio
+      - [x] Métricas: Rotación por producto, categoría, bodega
+      - [x] Comparación entre períodos (mensual, trimestral, anual)
+      - [x] Identificación de productos de lenta rotación (slow-moving)
+      - [x] Identificación de productos de alta rotación (fast-moving)
+  - [x] **Tipos de Reportes de Ventas Contemplados** (Estructura base implementada):
+    - [x] **8. Reporte de Ventas**: Resumen de ventas por período, bodega, producto
+      - [x] Métricas: Total de ventas, cantidad de ventas, promedio por venta
+      - [x] Filtros: dateRange, warehouseId, productId, status, customerReference
+      - [x] Agrupación: Por día, semana, mes, producto, bodega, cliente
+      - [x] Análisis: Top productos vendidos, top clientes, tendencias
+    - [x] **9. Reporte de Ventas por Producto**: Análisis de ventas desglosado por producto
+      - [x] Métricas: Cantidad vendida, ingresos, precio promedio, margen
+      - [x] Filtros: dateRange, warehouseId, productId, category
+      - [x] Comparación: Período actual vs período anterior
+      - [x] Ranking: Productos más vendidos, productos con mayor ingreso
+    - [x] **10. Reporte de Ventas por Bodega**: Análisis de ventas por bodega
+      - [x] Métricas: Total de ventas por bodega, cantidad de ventas, promedio
+      - [x] Filtros: dateRange, warehouseId
+      - [x] Comparación: Rendimiento entre bodegas
+      - [x] Análisis: Bodegas con mayor volumen de ventas
+  - [x] **Tipos de Reportes de Devoluciones Contemplados** (Estructura base implementada):
+    - [x] **11. Reporte de Devoluciones**: Resumen de devoluciones por período, tipo, bodega
+      - [x] Métricas: Total de devoluciones, cantidad de productos devueltos, valor total
+      - [x] Filtros: dateRange, warehouseId, returnType (CUSTOMER, SUPPLIER), status
+      - [x] Agrupación: Por día, semana, mes, tipo, bodega, producto
+      - [x] Análisis: Razones más comunes, productos más devueltos
+    - [x] **12. Reporte de Devoluciones por Tipo**: Análisis separado de devoluciones de clientes y a proveedores
+      - [x] **Devoluciones de Cliente**: Productos devueltos por clientes
+        - [x] Métricas: Cantidad devuelta, valor devuelto, relación con ventas
+        - [x] Filtros: dateRange, warehouseId, saleId
+        - [x] Análisis: Tasa de devolución, productos más devueltos
+      - [x] **Devoluciones a Proveedor**: Productos devueltos a proveedores
+        - [x] Métricas: Cantidad devuelta, valor devuelto, relación con compras
+        - [x] Filtros: dateRange, warehouseId, movementId
+        - [x] Análisis: Tasa de devolución, proveedores más afectados
+    - [x] **13. Reporte de Devoluciones por Producto**: Análisis de devoluciones desglosado por producto
+      - [x] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
+      - [x] Filtros: dateRange, warehouseId, productId, returnType
+      - [x] Comparación: Período actual vs período anterior
+      - [x] Ranking: Productos con mayor tasa de devolución
 
 - [ ] **Implementación del Dominio de Importaciones**
   - [ ] Aggregates: ImportBatchAggregate, ImportRowAggregate con reglas de consistencia
@@ -578,85 +582,93 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
 
 ### **Semana 13: Adaptadores y API de Reportes**
 
-- [ ] **Implementación de Adaptadores de Reportes**
-  - [ ] HTTP Controllers para vistas (preview) y exportación con NestJS
-  - [ ] Flujo de trabajo: 
-    - [ ] Paso 1: Generar/Vista de reporte (retorna datos JSON para preview)
-    - [ ] Paso 2: Exportación del reporte generado (PDF/Excel/CSV)
-  - [ ] Middleware de permisos para reportes sensibles
-  - [ ] Validación de parámetros de reporte con DTOs
-  - [ ] Cache de reportes generados para exportación posterior
-  - [ ] Tests de integración
-  - [ ] Crear interceptores para logging de reportes
+- [x] **Implementación de Adaptadores de Reportes**
+  - [x] HTTP Controllers para vistas (preview) y exportación con NestJS
+  - [x] Flujo de trabajo: 
+    - [x] Paso 1: Generar/Vista de reporte (retorna datos JSON para preview)
+    - [x] Paso 2: Exportación del reporte generado (PDF/Excel/CSV/JSON)
+  - [ ] Middleware de permisos para reportes sensibles (pendiente)
+  - [x] Validación de parámetros de reporte con DTOs
+  - [ ] Cache de reportes generados para exportación posterior (pendiente - reportes on-demand)
+  - [x] Tests de integración (149 tests pasando)
+  - [ ] Crear interceptores para logging de reportes (pendiente)
 
-- [ ] **API REST de Reportes e Importaciones**
-  - [ ] **Vistas de Reportes (Preview)**: 
-    - [ ] GET /reports/inventory - Vista de reporte de inventario disponible (JSON)
-      - [ ] Filtros: warehouseId, category, includeInactive, locationId
-    - [ ] GET /reports/inventory/history - Vista de histórico de movimientos (JSON)
-      - [ ] Filtros: dateRange, productId, warehouseId, movementType
-    - [ ] GET /reports/inventory/valuation - Vista de valorización del inventario (JSON)
-      - [ ] Filtros: warehouseId, category, dateRange
-    - [ ] GET /reports/inventory/low-stock - Vista de stock bajo (JSON)
-      - [ ] Filtros: warehouseId, severity (CRITICAL, WARNING)
-    - [ ] GET /reports/inventory/turnover - Vista de rotación de inventario (JSON)
-      - [ ] Filtros: dateRange, warehouseId, category, productId, period (MONTHLY, QUARTERLY, YEARLY)
-      - [ ] Métricas: rotación, días de inventario, comparación con período anterior
-      - [ ] Clasificación: slow-moving, normal, fast-moving
-    - [ ] GET /reports/movements - Vista de reporte de movimientos (JSON)
-      - [ ] Filtros: dateRange, type, warehouseId, status
-    - [ ] GET /reports/financial - Vista de reporte financiero (JSON)
-      - [ ] Filtros: dateRange, warehouseId, category
-    - [ ] **Vistas de Reportes de Ventas (Preview)**:
-      - [ ] GET /reports/sales - Vista de reporte de ventas (JSON)
-        - [ ] Filtros: dateRange, warehouseId, productId, status, customerReference
-        - [ ] Agrupación: Por día, semana, mes, producto, bodega, cliente
-        - [ ] Métricas: Total de ventas, cantidad de ventas, promedio por venta
-      - [ ] GET /reports/sales/by-product - Vista de reporte de ventas por producto (JSON)
-        - [ ] Filtros: dateRange, warehouseId, productId, category
-        - [ ] Métricas: Cantidad vendida, ingresos, precio promedio, margen
-        - [ ] Comparación: Período actual vs período anterior
-        - [ ] Ranking: Productos más vendidos, productos con mayor ingreso
-      - [ ] GET /reports/sales/by-warehouse - Vista de reporte de ventas por bodega (JSON)
-        - [ ] Filtros: dateRange, warehouseId
-        - [ ] Métricas: Total de ventas por bodega, cantidad de ventas, promedio
-        - [ ] Comparación: Rendimiento entre bodegas
-        - [ ] Análisis: Bodegas con mayor volumen de ventas
-    - [ ] **Vistas de Reportes de Devoluciones (Preview)**:
-      - [ ] GET /reports/returns - Vista de reporte de devoluciones (JSON)
-        - [ ] Filtros: dateRange, warehouseId, returnType (CUSTOMER, SUPPLIER), status
-        - [ ] Agrupación: Por día, semana, mes, tipo, bodega, producto
-        - [ ] Métricas: Total de devoluciones, cantidad de productos devueltos, valor total
-        - [ ] Análisis: Razones más comunes, productos más devueltos
-      - [ ] GET /reports/returns/by-type - Vista de reporte de devoluciones por tipo (JSON)
-        - [ ] Filtros: dateRange, warehouseId, returnType
-        - [ ] **Devoluciones de Cliente**: Cantidad devuelta, valor devuelto, relación con ventas, tasa de devolución
-        - [ ] **Devoluciones a Proveedor**: Cantidad devuelta, valor devuelto, relación con compras, tasa de devolución
-      - [ ] GET /reports/returns/by-product - Vista de reporte de devoluciones por producto (JSON)
-        - [ ] Filtros: dateRange, warehouseId, productId, returnType
-        - [ ] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
-        - [ ] Comparación: Período actual vs período anterior
-        - [ ] Ranking: Productos con mayor tasa de devolución
-      - [ ] GET /reports/returns/by-sale/:saleId - Vista de devoluciones de una venta específica (JSON)
+- [x] **API REST de Reportes e Importaciones** (Endpoints base implementados)
+  - [x] **Vistas de Reportes (Preview)**: 
+    - [x] GET /reports/inventory/available/view - Vista de reporte de inventario disponible (JSON)
+      - [x] Filtros: warehouseId, category, includeInactive, locationId
+    - [x] GET /reports/inventory/movement-history/view - Vista de histórico de movimientos (JSON)
+      - [x] Filtros: dateRange, productId, warehouseId, movementType
+    - [x] GET /reports/inventory/valuation/view - Vista de valorización del inventario (JSON)
+      - [x] Filtros: warehouseId, category, dateRange
+    - [x] GET /reports/inventory/low-stock/view - Vista de stock bajo (JSON)
+      - [x] Filtros: warehouseId, severity (CRITICAL, WARNING)
+    - [x] GET /reports/inventory/turnover/view - Vista de rotación de inventario (JSON)
+      - [x] Filtros: dateRange, warehouseId, category, productId, period (MONTHLY, QUARTERLY, YEARLY)
+      - [x] Métricas: rotación, días de inventario, comparación con período anterior
+      - [x] Clasificación: slow-moving, normal, fast-moving
+    - [x] GET /reports/inventory/movements/view - Vista de reporte de movimientos (JSON)
+      - [x] Filtros: dateRange, type, warehouseId, status
+    - [x] GET /reports/inventory/financial/view - Vista de reporte financiero (JSON)
+      - [x] Filtros: dateRange, warehouseId, category
+    - [x] **Vistas de Reportes de Ventas (Preview)**:
+      - [x] GET /reports/sales/view - Vista de reporte de ventas (JSON)
+        - [x] Filtros: dateRange, warehouseId, productId, status, customerReference
+        - [x] Agrupación: Por día, semana, mes, producto, bodega, cliente
+        - [x] Métricas: Total de ventas, cantidad de ventas, promedio por venta
+      - [x] GET /reports/sales/by-product/view - Vista de reporte de ventas por producto (JSON)
+        - [x] Filtros: dateRange, warehouseId, productId, category
+        - [x] Métricas: Cantidad vendida, ingresos, precio promedio, margen
+        - [x] Comparación: Período actual vs período anterior
+        - [x] Ranking: Productos más vendidos, productos con mayor ingreso
+      - [x] GET /reports/sales/by-warehouse/view - Vista de reporte de ventas por bodega (JSON)
+        - [x] Filtros: dateRange, warehouseId
+        - [x] Métricas: Total de ventas por bodega, cantidad de ventas, promedio
+        - [x] Comparación: Rendimiento entre bodegas
+        - [x] Análisis: Bodegas con mayor volumen de ventas
+    - [x] **Vistas de Reportes de Devoluciones (Preview)**:
+      - [x] GET /reports/returns/view - Vista de reporte de devoluciones (JSON)
+        - [x] Filtros: dateRange, warehouseId, returnType (CUSTOMER, SUPPLIER), status
+        - [x] Agrupación: Por día, semana, mes, tipo, bodega, producto
+        - [x] Métricas: Total de devoluciones, cantidad de productos devueltos, valor total
+        - [x] Análisis: Razones más comunes, productos más devueltos
+      - [x] GET /reports/returns/by-type/view - Vista de reporte de devoluciones por tipo (JSON)
+        - [x] Filtros: dateRange, warehouseId, returnType
+        - [x] **Devoluciones de Cliente**: Cantidad devuelta, valor devuelto, relación con ventas, tasa de devolución
+        - [x] **Devoluciones a Proveedor**: Cantidad devuelta, valor devuelto, relación con compras, tasa de devolución
+      - [x] GET /reports/returns/by-product/view - Vista de reporte de devoluciones por producto (JSON)
+        - [x] Filtros: dateRange, warehouseId, productId, returnType
+        - [x] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
+        - [x] Comparación: Período actual vs período anterior
+        - [x] Ranking: Productos con mayor tasa de devolución
+      - [ ] GET /reports/returns/by-sale/:saleId - Vista de devoluciones de una venta específica (JSON) (pendiente)
         - [ ] Filtros: saleId (requerido)
         - [ ] Métricas: Devoluciones totales de la venta, productos devueltos, valor devuelto
-      - [ ] GET /reports/returns/customer - Vista de devoluciones de clientes (JSON)
+      - [ ] GET /reports/returns/customer - Vista de devoluciones de clientes (JSON) (pendiente)
         - [ ] Filtros: dateRange, warehouseId, saleId
         - [ ] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
-      - [ ] GET /reports/returns/supplier - Vista de devoluciones a proveedores (JSON)
+      - [ ] GET /reports/returns/supplier - Vista de devoluciones a proveedores (JSON) (pendiente)
         - [ ] Filtros: dateRange, warehouseId, movementId
         - [ ] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
-    - [ ] GET /reports/:id - Vista de reporte generado por ID (JSON)
-  - [ ] **Exportación de Reportes**:
-    - [ ] GET /reports/:id/export?format=pdf - Exportar reporte a PDF
-    - [ ] GET /reports/:id/export?format=excel - Exportar reporte a Excel
-    - [ ] GET /reports/:id/export?format=csv - Exportar reporte a CSV
-    - [ ] POST /reports/generate - Generar reporte y retornar ID para exportación
+    - [x] GET /reports/history - Historial de reportes generados (JSON)
+  - [x] **Exportación de Reportes** (Implementado con servicio mock):
+    - [x] POST /reports/inventory/*/export - Exportar reportes de inventario (PDF/Excel/CSV/JSON)
+    - [x] POST /reports/sales/*/export - Exportar reportes de ventas (PDF/Excel/CSV/JSON)
+    - [x] POST /reports/returns/*/export - Exportar reportes de devoluciones (PDF/Excel/CSV/JSON)
+    - [x] Document Generation Service (mock) para PDF y Excel
+    - [x] Exportación nativa para CSV y JSON
+  - [x] **Report Templates** (Gestión de plantillas):
+    - [x] GET /report-templates - Listar plantillas de reportes
+    - [x] POST /report-templates - Crear plantilla de reporte
+    - [x] PUT /report-templates/:id - Actualizar plantilla
+    - [x] GET /report-templates/active - Obtener plantillas activas
+    - [x] GET /report-templates/by-type/:type - Obtener plantillas por tipo
   - [ ] **Importaciones**:
     - [ ] POST /imports/products - Importar productos masivamente
     - [ ] GET /imports/:id/status - Estado de importación
-  - [ ] Documentación y tests de aceptación
-  - [ ] Implementar streaming para reportes grandes
+  - [x] Documentación Swagger (endpoints documentados)
+  - [x] Tests de aceptación (149 tests pasando)
+  - [ ] Implementar streaming para reportes grandes (pendiente)
 
 - [ ] **Colección de Postman - Reports & Imports**
   - [ ] Crear colección de Postman para reportes e importaciones

@@ -493,3 +493,53 @@ model AuditLog {
   @@index([createdAt]) // For date range queries
   @@map("audit_logs")
 }
+
+// Report Templates (reusable report configurations)
+model ReportTemplate {
+  id                String   @id @default(cuid())
+  orgId             String
+  name              String
+  description       String?
+  type              String   // ReportType value (AVAILABLE_INVENTORY, SALES, etc.)
+  defaultParameters Json     // ReportParameters as JSON
+  isActive          Boolean  @default(true)
+  createdBy         String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime?
+  
+  // Relations
+  reports           Report[]
+  
+  @@unique([orgId, name])
+  @@index([orgId, type])
+  @@index([orgId, isActive])
+  @@map("report_templates")
+}
+
+// Reports (metadata for audit/logging of report executions)
+model Report {
+  id            String   @id @default(cuid())
+  orgId         String
+  type          String   // ReportType value (AVAILABLE_INVENTORY, SALES, etc.)
+  status        String   @default("PENDING") // PENDING, GENERATING, COMPLETED, FAILED, EXPORTED
+  parameters    Json     // ReportParameters as JSON
+  templateId    String?
+  generatedBy   String
+  generatedAt   DateTime?
+  format        String?  // ReportFormat value (PDF, EXCEL, CSV) - only if exported
+  exportedAt    DateTime?
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  
+  // Relations
+  template      ReportTemplate? @relation(fields: [templateId], references: [id])
+  
+  @@index([orgId, type])
+  @@index([orgId, status])
+  @@index([orgId, generatedAt])
+  @@index([orgId, generatedBy])
+  @@map("reports")
+}
