@@ -1,6 +1,3 @@
-import { Entity } from '@shared/domain/base/entity.base';
-
-export interface IWriteRepository<T extends Entity<unknown>> {
-  save(entity: T): Promise<T>;
-  delete(id: string, orgId: string): Promise<void>;
-}
+// Re-export from new ports location for backward compatibility
+// TODO: Update all imports to use @shared/ports/repositories directly
+export type { IWriteRepository } from '@shared/ports/repositories';

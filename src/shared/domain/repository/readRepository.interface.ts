@@ -1,7 +1,3 @@
-import { Entity } from '@shared/domain/base/entity.base';
-
-export interface IReadRepository<T extends Entity<unknown>> {
-  findById(id: string, orgId: string): Promise<T | null>;
-  findAll(orgId: string): Promise<T[]>;
-  exists(id: string, orgId: string): Promise<boolean>;
-}
+// Re-export from new ports location for backward compatibility
+// TODO: Update all imports to use @shared/ports/repositories directly
+export type { IReadRepository } from '@shared/ports/repositories';

@@ -1,18 +1,3 @@
-import { DomainEvent } from './domainEvent.base';
-
-/**
- * Interface for domain event dispatcher
- * Follows the Hexagonal Architecture pattern for ports
- */
-export interface IDomainEventDispatcher {
-  /**
-   * Dispatch all domain events from an aggregate root
-   * Only dispatches events that are marked for dispatch
-   */
-  dispatchEvents(events: DomainEvent[]): Promise<void>;
-
-  /**
-   * Mark events for dispatch and then dispatch them
-   */
-  markAndDispatch(events: DomainEvent[]): Promise<void>;
-}
+// Re-export from new ports location for backward compatibility
+// TODO: Update all imports to use @shared/ports/events directly
+export type { IDomainEventDispatcher } from '@shared/ports/events';

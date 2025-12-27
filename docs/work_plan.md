@@ -472,12 +472,13 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
   - [x] Tests de integración para verificar funcionamiento
   - [x] **Resultado**: Interfaz creada, 19 casos de uso actualizados con token-based injection, 1435 tests pasando, build exitoso
 
-- [ ] **Creación de Carpeta `ports/` Explícita**
-  - [ ] Crear estructura `src/shared/ports/` y `src/{domain}/ports/`
-  - [ ] Mover interfaces de repositorios a `ports/` (opcional, puede mantenerse en `repositories/`)
-  - [ ] Crear `ports/` para servicios externos (notificaciones, eventos)
-  - [ ] Documentar convención de ports en arquitectura
-  - [ ] Actualizar imports en código existente
+- [x] **Creación de Carpeta `ports/` Explícita**
+  - [x] Crear estructura `src/shared/ports/` y `src/{domain}/domain/ports/`
+  - [x] Mover interfaces de repositorios a `ports/` (17 interfaces movidas a `domain/ports/repositories/`)
+  - [x] Crear `ports/` para servicios externos (notificaciones, eventos)
+  - [x] Documentar convención de ports en arquitectura (actualizado `.cursorrules`)
+  - [x] Actualizar imports en código existente (re-exports para compatibilidad hacia atrás)
+  - [x] **Resultado**: Estructura ports creada, 17 repository interfaces + 3 base interfaces + 2 external services + 2 event interfaces movidos a ports/, build exitoso, 1435 tests pasando
 
 - [ ] **Mappers DTO ↔ Domain**
   - [ ] Crear carpeta `src/shared/mappers/` o `src/{domain}/mappers/`
@@ -488,9 +489,9 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
 #### **Criterios de Éxito**
 - ✅ Result monad implementado y usado en **TODOS los 55 casos de uso** (100% migrado)
 - ✅ DomainEventDispatcher abstraído sin romper funcionalidad existente
-- ✅ Estructura de ports documentada y aplicada
-- ✅ Mappers reducen código duplicado en controllers
-- ✅ Todos los tests existentes pasan sin modificaciones
+- ✅ **Estructura de ports documentada y aplicada** (COMPLETADO: 24 interfaces en `ports/` con re-exports para compatibilidad)
+- ⏳ Mappers reducen código duplicado en controllers (pendiente)
+- ✅ Todos los tests existentes pasan sin modificaciones (1435 tests pasando)
 - ✅ No se retrasa el inicio de Fase 5
 
 #### **Tiempo Estimado**

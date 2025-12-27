@@ -2,9 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { DomainEvent } from './domainEvent.base';
 
-export interface IDomainEventHandler<T extends DomainEvent> {
-  handle(event: T): Promise<void> | void;
-}
+import type { IDomainEventHandler } from '@shared/ports/events';
+export type { IDomainEventHandler } from '@shared/ports/events';
 
 @Injectable()
 export class DomainEventBus {

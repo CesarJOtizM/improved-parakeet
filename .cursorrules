@@ -174,14 +174,79 @@ export class Organization extends AggregateRoot<IOrganizationProps> {
 - Value comparison, not reference
 - No setters
 
+### Ports (Hexagonal Architecture)
+
+Ports are interfaces that define how the application core communicates with the outside world. Following Hexagonal Architecture, ports are organized in explicit `ports/` directories.
+
+#### Port Types
+
+1. **Output Ports** (driven adapters): Interfaces that the application uses to interact with external systems
+   - Repository interfaces (persistence)
+   - External service interfaces (notifications, email)
+   - Event dispatcher interfaces
+
+2. **Input Ports** (driving adapters): Interfaces for use cases (optional, can use use case classes directly)
+
+#### Folder Structure
+
+```
+src/
+├── shared/ports/                    # Shared ports
+│   ├── repositories/                # Base repository interfaces
+│   │   ├── iRepository.port.ts
+│   │   ├── iReadRepository.port.ts
+│   │   ├── iWriteRepository.port.ts
+│   │   └── index.ts
+│   ├── externalServices/            # External service interfaces
+│   │   ├── iNotificationService.port.ts
+│   │   ├── iEmailService.port.ts
+│   │   └── index.ts
+│   └── events/                      # Event interfaces
+│       ├── iDomainEventDispatcher.port.ts
+│       ├── iDomainEventHandler.port.ts
+│       └── index.ts
+├── {domain}/domain/ports/           # Domain-specific ports
+│   └── repositories/
+│       ├── i{Entity}Repository.port.ts
+│       └── index.ts
+```
+
+#### Naming Conventions
+
+- **Port files**: `i{Name}.port.ts` (e.g., `iProductRepository.port.ts`)
+- **Interface names**: `I{Name}` prefix (e.g., `IProductRepository`)
+- **Exports**: Use barrel exports via `index.ts`
+
+#### Usage Examples
+
+```typescript
+// Import from ports
+import { IProductRepository } from '@product/domain/ports/repositories';
+import { IReadRepository, IWriteRepository } from '@shared/ports/repositories';
+import { IDomainEventDispatcher } from '@shared/ports/events';
+import { INotificationService } from '@shared/ports/externalServices';
+
+// Define domain-specific port
+export interface IProductRepository 
+  extends IReadRepository<Product>, 
+    IWriteRepository<Product> {
+  findBySku(sku: string, orgId: string): Promise<Product | null>;
+  existsBySku(sku: string, orgId: string): Promise<boolean>;
+}
+```
+
+#### Migration Note
+
+For backward compatibility, the old `domain/repositories/` folders now re-export from the new `domain/ports/repositories/` location. New code should import directly from `@{domain}/domain/ports/repositories`.
+
 ### Repositories
 
-- Interfaces in `domain/repositories/` with `I` prefix (e.g., `IOrganizationRepository`)
-- Implementations in `infrastructure/database/repositories/`
+- **Interfaces**: Located in `domain/ports/repositories/` with `I` prefix (e.g., `IOrganizationRepository`)
+- **Implementations**: Located in `infrastructure/database/repositories/`
 - Use dependency injection with tokens (`@Inject('OrganizationRepository')`)
 
 ```typescript
-// Interface in domain
+// Interface in domain/ports/repositories/
 export interface IOrganizationRepository {
   save(organization: Organization, slug: string, domain?: string): Promise<Organization>;
   existsBySlug(slug: string): Promise<boolean>;
@@ -561,7 +626,7 @@ When creating a new feature, follow this order:
 1. **Domain**:
    - [ ] Create entity (extend `AggregateRoot`)
    - [ ] Create Value Objects if necessary
-   - [ ] Create repository interface
+   - [ ] Create repository port interface in `domain/ports/repositories/`
    - [ ] Create Domain Services if necessary
 
 2. **Infrastructure**:

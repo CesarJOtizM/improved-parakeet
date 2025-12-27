@@ -1,12 +1,3 @@
-import { ReorderRule } from '@stock/domain/entities/reorderRule.entity';
-
-export interface IReorderRuleRepository {
-  /**
-   * Finds a reorder rule by product and warehouse
-   */
-  findByProductAndWarehouse(
-    productId: string,
-    warehouseId: string,
-    orgId: string
-  ): Promise<ReorderRule | null>;
-}
+// Re-export from new ports location for backward compatibility
+// TODO: Update all imports to use @stock/domain/ports/repositories directly
+export type { IReorderRuleRepository } from '@stock/domain/ports/repositories';

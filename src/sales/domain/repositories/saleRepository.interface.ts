@@ -1,11 +1,3 @@
-import { Sale } from '@sale/domain/entities/sale.entity';
-import { IReadRepository, IWriteRepository } from '@shared/domain/repository';
-
-export interface ISaleRepository extends IReadRepository<Sale>, IWriteRepository<Sale> {
-  findBySaleNumber(saleNumber: string, orgId: string): Promise<Sale | null>;
-  findByStatus(status: string, orgId: string): Promise<Sale[]>;
-  findByWarehouse(warehouseId: string, orgId: string): Promise<Sale[]>;
-  findByDateRange(startDate: Date, endDate: Date, orgId: string): Promise<Sale[]>;
-  getLastSaleNumberForYear(year: number, orgId: string): Promise<string | null>;
-  findByMovementId(movementId: string, orgId: string): Promise<Sale | null>;
-}
+// Re-export from new ports location for backward compatibility
+// TODO: Update all imports to use @sale/domain/ports/repositories directly
+export type { ISaleRepository } from '@sale/domain/ports/repositories';

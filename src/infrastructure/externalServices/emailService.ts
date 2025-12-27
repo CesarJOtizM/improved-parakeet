@@ -1,22 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-export interface IEmailRequest {
-  to: string;
-  subject: string;
-  body: string;
-  template?: string;
-  variables?: Record<string, unknown>;
-  orgId: string;
-}
-
-export interface IEmailResponse {
-  success: boolean;
-  messageId?: string;
-  error?: string;
-}
+import type { IEmailRequest, IEmailResponse, IEmailService } from '@shared/ports/externalServices';
+export type { IEmailRequest, IEmailResponse, IEmailService } from '@shared/ports/externalServices';
 
 @Injectable()
-export class EmailService {
+export class EmailService implements IEmailService {
   private readonly logger = new Logger(EmailService.name);
 
   /**
