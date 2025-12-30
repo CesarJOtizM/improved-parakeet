@@ -4,10 +4,31 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
 
+// Mock PrismaClient for testing (Prisma 7 requires valid configuration)
+const mockConnect = jest.fn().mockResolvedValue(undefined);
+const mockDisconnect = jest.fn().mockResolvedValue(undefined);
+const mockQueryRaw = jest.fn();
+
+jest.mock('@infrastructure/database/generated/prisma', () => {
+  class MockPrismaClient {
+    $connect = mockConnect;
+    $disconnect = mockDisconnect;
+    $queryRaw = mockQueryRaw;
+  }
+  return {
+    PrismaClient: MockPrismaClient,
+  };
+});
+
 describe('PrismaService', () => {
   let service: PrismaService;
 
   beforeEach(async () => {
+    // Clear all mocks before each test
+    jest.clearAllMocks();
+    mockConnect.mockResolvedValue(undefined);
+    mockDisconnect.mockResolvedValue(undefined);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [PrismaService],
     }).compile();
@@ -44,44 +65,44 @@ describe('PrismaService', () => {
   describe('Module lifecycle methods', () => {
     it('Given: service instance When: calling onModuleInit Then: should connect to database', async () => {
       // Arrange
-      const connectSpy = jest.spyOn(service, '$connect').mockResolvedValue(undefined);
+      mockConnect.mockResolvedValue(undefined);
 
       // Act
       await service.onModuleInit();
 
       // Assert
-      expect(connectSpy).toHaveBeenCalledTimes(1);
+      expect(mockConnect).toHaveBeenCalledTimes(1);
     });
 
     it('Given: service instance When: calling onModuleDestroy Then: should disconnect from database', async () => {
       // Arrange
-      const disconnectSpy = jest.spyOn(service, '$disconnect').mockResolvedValue(undefined);
+      mockDisconnect.mockResolvedValue(undefined);
 
       // Act
       await service.onModuleDestroy();
 
       // Assert
-      expect(disconnectSpy).toHaveBeenCalledTimes(1);
+      expect(mockDisconnect).toHaveBeenCalledTimes(1);
     });
 
     it('Given: connection error When: calling onModuleInit Then: should propagate error', async () => {
       // Arrange
       const connectError = new Error('Connection failed');
-      const connectSpy = jest.spyOn(service, '$connect').mockRejectedValue(connectError);
+      mockConnect.mockRejectedValue(connectError);
 
       // Act & Assert
       await expect(service.onModuleInit()).rejects.toThrow('Connection failed');
-      expect(connectSpy).toHaveBeenCalledTimes(1);
+      expect(mockConnect).toHaveBeenCalledTimes(1);
     });
 
     it('Given: disconnection error When: calling onModuleDestroy Then: should propagate error', async () => {
       // Arrange
       const disconnectError = new Error('Disconnection failed');
-      const disconnectSpy = jest.spyOn(service, '$disconnect').mockRejectedValue(disconnectError);
+      mockDisconnect.mockRejectedValue(disconnectError);
 
       // Act & Assert
       await expect(service.onModuleDestroy()).rejects.toThrow('Disconnection failed');
-      expect(disconnectSpy).toHaveBeenCalledTimes(1);
+      expect(mockDisconnect).toHaveBeenCalledTimes(1);
     });
   });
 });

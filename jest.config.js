@@ -48,8 +48,8 @@ const config = {
     '^@return/(.*)$': '<rootDir>/src/returns/$1',
     '^@report$': '<rootDir>/src/report',
     '^@report/(.*)$': '<rootDir>/src/report/$1',
-    '^@import$': '<rootDir>/src/imports',
-    '^@import/(.*)$': '<rootDir>/src/imports/$1',
+    '^@import$': '<rootDir>/src/import',
+    '^@import/(.*)$': '<rootDir>/src/import/$1',
     '^@organization$': '<rootDir>/src/organization',
     '^@organization/(.*)$': '<rootDir>/src/organization/$1',
     '^@application$': '<rootDir>/src/application',
@@ -78,6 +78,20 @@ const config = {
   },
   // Configuración para TypeScript
   moduleFileExtensions: ['js', 'json', 'ts'],
+  // Transform uuid module (ES modules)
+  transformIgnorePatterns: ['node_modules/(?!(uuid|@js-joda)/)'],
+  // Transform configuration for ts-jest
+  transform: {
+    '^.+\\.(t|j)s$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          esModuleInterop: true,
+          allowSyntheticDefaultImports: true,
+        },
+      },
+    ],
+  },
 };
 
 module.exports = config;

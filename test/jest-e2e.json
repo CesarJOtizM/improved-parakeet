@@ -24,11 +24,23 @@
     "^@returns/(.*)$": "<rootDir>/src/returns/$1",
     "^@return/(.*)$": "<rootDir>/src/returns/$1",
     "^@report/(.*)$": "<rootDir>/src/reporting/$1",
-    "^@import/(.*)$": "<rootDir>/src/imports/$1",
+    "^@import/(.*)$": "<rootDir>/src/import/$1",
     "^@organization/(.*)$": "<rootDir>/src/organization/$1",
     "^@application/(.*)$": "<rootDir>/src/application/$1",
     "^@infrastructure/(.*)$": "<rootDir>/src/infrastructure/$1",
     "^@interface/(.*)$": "<rootDir>/src/interfaces/$1",
     "^@shared/(.*)$": "<rootDir>/src/shared/$1"
+  },
+  "transformIgnorePatterns": ["node_modules/(?!(uuid|@js-joda)/)"],
+  "transform": {
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": {
+          "esModuleInterop": true,
+          "allowSyntheticDefaultImports": true
+        }
+      }
+    ]
   }
 }
