@@ -17,11 +17,13 @@ import {
   Headers,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiHeader } from '@nestjs/swagger';
+import { IReportParametersInput } from '@report/domain/valueObjects';
 import {
   CreateReportTemplateDto,
   UpdateReportTemplateDto,
   ReportTemplateListResponseDto,
   ReportTemplateCreateResponseDto,
+  ReportParametersDto,
 } from '@report/dto';
 import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
@@ -94,7 +96,9 @@ export class ReportTemplateController {
       name: dto.name,
       description: dto.description,
       type: dto.type,
-      defaultParameters: dto.defaultParameters || {},
+      defaultParameters: dto.defaultParameters
+        ? this.mapDtoToParameters(dto.defaultParameters)
+        : {},
       createdBy: userId,
       orgId,
     });
@@ -137,7 +141,9 @@ export class ReportTemplateController {
       templateId: id,
       name: dto.name,
       description: dto.description,
-      defaultParameters: dto.defaultParameters,
+      defaultParameters: dto.defaultParameters
+        ? this.mapDtoToParameters(dto.defaultParameters)
+        : undefined,
       isActive: dto.isActive,
       updatedBy: userId,
       orgId,
@@ -186,5 +192,38 @@ export class ReportTemplateController {
       type,
     });
     return resultToHttpResponse(result);
+  }
+
+  private mapDtoToParameters(dto: ReportParametersDto): IReportParametersInput {
+    return {
+      dateRange: dto.dateRange
+        ? {
+            startDate: new Date(dto.dateRange.startDate),
+            endDate: new Date(dto.dateRange.endDate),
+          }
+        : undefined,
+      warehouseId: dto.warehouseId,
+      productId: dto.productId,
+      category: dto.category,
+      status: dto.status,
+      returnType: dto.returnType as 'CUSTOMER' | 'SUPPLIER' | undefined,
+      groupBy: dto.groupBy as
+        | 'DAY'
+        | 'WEEK'
+        | 'MONTH'
+        | 'PRODUCT'
+        | 'WAREHOUSE'
+        | 'CUSTOMER'
+        | 'TYPE'
+        | undefined,
+      period: dto.period as 'MONTHLY' | 'QUARTERLY' | 'YEARLY' | undefined,
+      movementType: dto.movementType,
+      customerReference: dto.customerReference,
+      saleId: dto.saleId,
+      movementId: dto.movementId,
+      includeInactive: dto.includeInactive,
+      locationId: dto.locationId,
+      severity: dto.severity as 'CRITICAL' | 'WARNING' | undefined,
+    };
   }
 }

@@ -30,6 +30,7 @@ describe('CreateReportTemplateUseCase', () => {
 
     mockEventDispatcher = {
       dispatchEvents: jest.fn(),
+      markAndDispatch: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({

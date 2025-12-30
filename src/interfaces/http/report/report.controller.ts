@@ -19,7 +19,8 @@ import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
 import { REPORT_TYPES } from '@report/domain/valueObjects';
 import { ViewReportQueryDto, ViewReportResponseDto, ExportReportDto } from '@report/dto';
 import { resultToHttpResponse } from '@shared/utils/resultToHttp';
-import { Response } from 'express';
+
+import type { Response } from 'express';
 
 @ApiTags('Reports')
 @Controller('reports')

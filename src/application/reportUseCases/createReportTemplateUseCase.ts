@@ -1,11 +1,12 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
-import { IReportTemplateRepository } from '@report/domain/ports/repositories';
 import { ReportType } from '@report/domain/valueObjects';
 import { IReportParametersInput } from '@report/domain/valueObjects';
 import { IReportTemplateData, ReportTemplateMapper } from '@report/mappers';
-import { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 import { err, ok, Result } from '@shared/domain/result';
 import { ConflictError, DomainError, ValidationError } from '@shared/domain/result/domainError';
+
+import type { IReportTemplateRepository } from '@report/domain/ports/repositories';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 
 export interface ICreateReportTemplateRequest {
   name: string;

@@ -46,7 +46,7 @@ export class ExportReportDto {
   })
   @IsNotEmpty()
   @IsIn(['PDF', 'EXCEL', 'CSV'])
-  format: string;
+  format!: string;
 
   @ApiPropertyOptional({
     description: 'Report parameters',

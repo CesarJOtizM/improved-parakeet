@@ -1,3 +1,4 @@
+import { Prisma } from '@infrastructure/database/generated/prisma';
 import { Injectable, Logger } from '@nestjs/common';
 import { Report, IReportProps } from '@report/domain/entities/report.entity';
 import { IReportRepository } from '@report/domain/ports/repositories';
@@ -57,7 +58,7 @@ export class PrismaReportRepository implements IReportRepository {
         data: {
           type: data.type,
           status: data.status,
-          parameters: data.parameters,
+          parameters: data.parameters as Prisma.InputJsonValue,
           templateId: data.templateId,
           generatedAt: data.generatedAt,
           format: data.format,
@@ -75,7 +76,7 @@ export class PrismaReportRepository implements IReportRepository {
         orgId: entity.orgId!,
         type: data.type,
         status: data.status,
-        parameters: data.parameters,
+        parameters: data.parameters as Prisma.InputJsonValue,
         templateId: data.templateId,
         generatedBy: data.generatedBy,
         generatedAt: data.generatedAt,

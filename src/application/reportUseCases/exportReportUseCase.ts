@@ -1,5 +1,4 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
-import { IReportRepository } from '@report/domain/ports/repositories';
 import { ExportService, IExportOptions } from '@report/domain/services';
 import {
   IReportParametersInput,
@@ -8,9 +7,11 @@ import {
   REPORT_FORMATS,
 } from '@report/domain/valueObjects';
 import { ReportMapper } from '@report/mappers';
-import { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 import { err, ok, Result } from '@shared/domain/result';
 import { DomainError, ValidationError } from '@shared/domain/result/domainError';
+
+import type { IReportRepository } from '@report/domain/ports/repositories';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 
 export interface IExportReportRequest {
   type: string;

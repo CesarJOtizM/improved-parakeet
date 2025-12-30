@@ -5,14 +5,17 @@ import {
   CreateReportTemplateUseCase,
   UpdateReportTemplateUseCase,
   GetReportTemplatesUseCase,
+  IUpdateReportTemplateResponse,
+  IGetReportTemplatesResponse,
 } from '@application/reportUseCases';
 import { ReportTemplateController } from '@interface/http/report';
 import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { REPORT_TYPES } from '@report/domain/valueObjects';
+import { IReportTemplateData } from '@report/mappers';
 import { ok, err } from '@shared/domain/result';
 import { ConflictError, NotFoundError } from '@shared/domain/result/domainError';
-import * as request from 'supertest';
+import request from 'supertest';
 
 describe('Report Template Endpoints (E2E)', () => {
   let app: INestApplication;
@@ -162,9 +165,9 @@ describe('Report Template Endpoints (E2E)', () => {
             type: REPORT_TYPES.RETURNS,
             isActive: true,
           },
-        ],
+        ] as IReportTemplateData[],
         timestamp: new Date().toISOString(),
-      };
+      } as IGetReportTemplatesResponse;
 
       mockGetUseCase.execute.mockResolvedValue(ok(mockResponse));
 
@@ -216,9 +219,9 @@ describe('Report Template Endpoints (E2E)', () => {
             name: 'Active Template',
             isActive: true,
           },
-        ],
+        ] as IReportTemplateData[],
         timestamp: new Date().toISOString(),
-      };
+      } as IGetReportTemplatesResponse;
 
       mockGetUseCase.execute.mockResolvedValue(ok(mockResponse));
 
@@ -246,7 +249,7 @@ describe('Report Template Endpoints (E2E)', () => {
           defaultParameters: {},
         },
         timestamp: new Date().toISOString(),
-      };
+      } as IUpdateReportTemplateResponse;
 
       mockUpdateUseCase.execute.mockResolvedValue(ok(mockResponse));
 
@@ -289,7 +292,7 @@ describe('Report Template Endpoints (E2E)', () => {
           isActive: false,
         },
         timestamp: new Date().toISOString(),
-      };
+      } as IUpdateReportTemplateResponse;
 
       mockUpdateUseCase.execute.mockResolvedValue(ok(mockResponse));
 
@@ -319,9 +322,9 @@ describe('Report Template Endpoints (E2E)', () => {
             name: 'Financial Template',
             type: REPORT_TYPES.FINANCIAL,
           },
-        ],
+        ] as IReportTemplateData[],
         timestamp: new Date().toISOString(),
-      };
+      } as IGetReportTemplatesResponse;
 
       mockGetUseCase.execute.mockResolvedValue(ok(mockResponse));
 

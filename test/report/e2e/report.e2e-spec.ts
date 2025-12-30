@@ -5,14 +5,17 @@ import {
   ViewReportUseCase,
   ExportReportUseCase,
   GetReportsUseCase,
+  IViewReportResponse,
+  IGetReportsResponse,
 } from '@application/reportUseCases';
 import { ReportController } from '@interface/http/report';
 import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { REPORT_TYPES } from '@report/domain/valueObjects';
+import { IReportParametersInput, REPORT_TYPES } from '@report/domain/valueObjects';
+import { IReportData } from '@report/mappers';
 import { ok, err } from '@shared/domain/result';
 import { ValidationError } from '@shared/domain/result/domainError';
-import * as request from 'supertest';
+import request from 'supertest';
 
 describe('Report Endpoints (E2E)', () => {
   let app: INestApplication;
@@ -63,7 +66,7 @@ describe('Report Endpoints (E2E)', () => {
   describe('GET /reports/inventory/available/view', () => {
     it('Given: valid request When: viewing available inventory Then: should return report data', async () => {
       // Arrange
-      const mockResponse = {
+      const mockResponse: IViewReportResponse = {
         success: true,
         message: 'Report generated successfully',
         data: {
@@ -73,7 +76,7 @@ describe('Report Endpoints (E2E)', () => {
             reportType: REPORT_TYPES.AVAILABLE_INVENTORY,
             reportTitle: 'Available Inventory Report',
             generatedAt: new Date(),
-            parameters: {},
+            parameters: {} as IReportParametersInput,
             totalRecords: 1,
             orgId: 'org-123',
           },
@@ -110,7 +113,7 @@ describe('Report Endpoints (E2E)', () => {
   describe('GET /reports/sales/view', () => {
     it('Given: valid request with parameters When: viewing sales report Then: should return data', async () => {
       // Arrange
-      const mockResponse = {
+      const mockResponse: IViewReportResponse = {
         success: true,
         message: 'Report generated successfully',
         data: {
@@ -120,7 +123,7 @@ describe('Report Endpoints (E2E)', () => {
             reportType: REPORT_TYPES.SALES,
             reportTitle: 'Sales Report',
             generatedAt: new Date(),
-            parameters: { warehouseId: 'warehouse-123' },
+            parameters: { warehouseId: 'warehouse-123' } as IReportParametersInput,
             totalRecords: 1,
             orgId: 'org-123',
           },
@@ -192,7 +195,7 @@ describe('Report Endpoints (E2E)', () => {
   describe('GET /reports/history', () => {
     it('Given: valid request When: getting report history Then: should return list', async () => {
       // Arrange
-      const mockResponse = {
+      const mockResponse: IGetReportsResponse = {
         success: true,
         message: 'Reports retrieved successfully',
         data: [
@@ -201,7 +204,7 @@ describe('Report Endpoints (E2E)', () => {
             type: REPORT_TYPES.SALES,
             status: 'COMPLETED',
             generatedAt: new Date(),
-          },
+          } as IReportData,
         ],
         timestamp: new Date().toISOString(),
       };
@@ -247,7 +250,7 @@ describe('Report Endpoints (E2E)', () => {
   describe('GET /reports/returns/view', () => {
     it('Given: valid request When: viewing returns report Then: should return data', async () => {
       // Arrange
-      const mockResponse = {
+      const mockResponse: IViewReportResponse = {
         success: true,
         message: 'Report generated successfully',
         data: {
@@ -257,7 +260,7 @@ describe('Report Endpoints (E2E)', () => {
             reportType: REPORT_TYPES.RETURNS,
             reportTitle: 'Returns Report',
             generatedAt: new Date(),
-            parameters: {},
+            parameters: {} as IReportParametersInput,
             totalRecords: 1,
             orgId: 'org-123',
           },

@@ -14,6 +14,8 @@ import {
 
 import { ReportParametersDto } from './viewReport.dto';
 
+import type { IReportParametersInput } from '@report/domain/valueObjects';
+
 export class CreateReportTemplateDto {
   @ApiProperty({
     description: 'Template name',
@@ -25,7 +27,7 @@ export class CreateReportTemplateDto {
   @IsNotEmpty()
   @MinLength(3)
   @MaxLength(100)
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional({
     description: 'Template description',
@@ -43,7 +45,7 @@ export class CreateReportTemplateDto {
   })
   @IsNotEmpty()
   @IsIn(Object.values(REPORT_TYPES))
-  type: string;
+  type!: string;
 
   @ApiPropertyOptional({
     description: 'Default parameters for the template',
@@ -97,60 +99,60 @@ export class UpdateReportTemplateDto {
 
 export class ReportTemplateResponseDto {
   @ApiProperty({ description: 'Template ID' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ description: 'Template name' })
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional({ description: 'Template description' })
   description?: string;
 
   @ApiProperty({ description: 'Report type' })
-  type: string;
+  type!: string;
 
   @ApiProperty({ description: 'Default parameters' })
-  defaultParameters: ReportParametersDto;
+  defaultParameters!: IReportParametersInput;
 
   @ApiProperty({ description: 'Whether the template is active' })
-  isActive: boolean;
+  isActive!: boolean;
 
   @ApiProperty({ description: 'User who created the template' })
-  createdBy: string;
+  createdBy!: string;
 
   @ApiProperty({ description: 'Organization ID' })
-  orgId: string;
+  orgId!: string;
 
   @ApiProperty({ description: 'Creation timestamp' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty({ description: 'Last update timestamp' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 export class ReportTemplateListResponseDto {
   @ApiProperty({ description: 'Whether the operation was successful' })
-  success: boolean;
+  success!: boolean;
 
   @ApiProperty({ description: 'Response message' })
-  message: string;
+  message!: string;
 
   @ApiProperty({ description: 'List of report templates', type: [ReportTemplateResponseDto] })
-  data: ReportTemplateResponseDto[];
+  data!: ReportTemplateResponseDto[];
 
   @ApiProperty({ description: 'Timestamp of the response' })
-  timestamp: string;
+  timestamp!: string;
 }
 
 export class ReportTemplateCreateResponseDto {
   @ApiProperty({ description: 'Whether the operation was successful' })
-  success: boolean;
+  success!: boolean;
 
   @ApiProperty({ description: 'Response message' })
-  message: string;
+  message!: string;
 
   @ApiProperty({ description: 'Created report template', type: ReportTemplateResponseDto })
-  data: ReportTemplateResponseDto;
+  data!: ReportTemplateResponseDto;
 
   @ApiProperty({ description: 'Timestamp of the response' })
-  timestamp: string;
+  timestamp!: string;
 }

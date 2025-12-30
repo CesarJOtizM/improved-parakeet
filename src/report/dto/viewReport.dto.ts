@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   GROUP_BY_OPTIONS,
+  IReportParametersInput,
   LOW_STOCK_SEVERITY,
   PERIOD_OPTIONS,
   RETURN_TYPE_OPTIONS,
@@ -22,7 +23,7 @@ export class DateRangeDto {
   })
   @IsDateString()
   @IsNotEmpty()
-  startDate: string;
+  startDate!: string;
 
   @ApiProperty({
     description: 'End date for the report',
@@ -30,7 +31,7 @@ export class DateRangeDto {
   })
   @IsDateString()
   @IsNotEmpty()
-  endDate: string;
+  endDate!: string;
 }
 
 export class ReportParametersDto {
@@ -165,13 +166,13 @@ export class ViewReportQueryDto extends ReportParametersDto {
 
 export class ViewReportResponseDto {
   @ApiProperty({ description: 'Whether the operation was successful' })
-  success: boolean;
+  success!: boolean;
 
   @ApiProperty({ description: 'Response message' })
-  message: string;
+  message!: string;
 
   @ApiProperty({ description: 'Report data with columns, rows, and metadata' })
-  data: {
+  data!: {
     columns: Array<{
       key: string;
       header: string;
@@ -186,7 +187,7 @@ export class ViewReportResponseDto {
       reportType: string;
       reportTitle: string;
       generatedAt: Date;
-      parameters: ReportParametersDto;
+      parameters: IReportParametersInput;
       totalRecords: number;
       orgId: string;
     };
@@ -194,5 +195,5 @@ export class ViewReportResponseDto {
   };
 
   @ApiProperty({ description: 'Timestamp of the response' })
-  timestamp: string;
+  timestamp!: string;
 }

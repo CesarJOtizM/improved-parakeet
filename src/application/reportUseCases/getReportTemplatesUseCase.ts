@@ -1,8 +1,9 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
-import { IReportTemplateRepository } from '@report/domain/ports/repositories';
 import { IReportTemplateData, ReportTemplateMapper } from '@report/mappers';
 import { ok, Result } from '@shared/domain/result';
 import { DomainError } from '@shared/domain/result/domainError';
+
+import type { IReportTemplateRepository } from '@report/domain/ports/repositories';
 
 export interface IGetReportTemplatesRequest {
   orgId: string;
