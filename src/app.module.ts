@@ -2,6 +2,7 @@ import { AuthenticationModule } from '@auth/authentication.module';
 import authConfig from '@auth/config/auth.config';
 import { PrismaModule } from '@infrastructure/database/prisma.module';
 import { HealthCheckModule } from '@interface/http/healthCheck/healthCheck.module';
+import { ImportHttpModule } from '@interface/http/import/importHttp.module';
 import { InventoryHttpModule } from '@interface/http/inventory/inventoryHttp.module';
 import { ClientIpMiddleware } from '@interface/http/middlewares/clientIpMiddleware';
 import { ReturnsHttpModule } from '@interface/http/returns/returnsHttp.module';
@@ -26,6 +27,7 @@ import { SecurityMiddleware } from '@shared/middleware';
     InventoryHttpModule,
     SalesHttpModule,
     ReturnsHttpModule,
+    ImportHttpModule,
   ],
   controllers: [],
   providers: [],

@@ -540,3 +540,56 @@ model Report {
   @@index([orgId, generatedBy])
   @@map("reports")
 }
+
+// Import Batches (Import processing batches)
+model ImportBatch {
+  id            String    @id @default(cuid())
+  orgId         String
+  type          String // PRODUCTS, MOVEMENTS, WAREHOUSES, STOCK, TRANSFERS
+  status        String    @default("PENDING") // PENDING, VALIDATING, VALIDATED, PROCESSING, COMPLETED, FAILED
+  fileName      String
+  totalRows     Int       @default(0)
+  processedRows Int       @default(0)
+  validRows     Int       @default(0)
+  invalidRows   Int       @default(0)
+  startedAt     DateTime?
+  validatedAt   DateTime?
+  completedAt   DateTime?
+  errorMessage  String?
+  note          String?
+  createdBy     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  // Relations
+  rows ImportRow[]
+
+  @@index([orgId, type])
+  @@index([orgId, status])
+  @@index([orgId, createdBy])
+  @@index([orgId, createdAt])
+  @@map("import_batches")
+}
+
+// Import Rows (Individual rows in an import batch)
+model ImportRow {
+  id               String   @id @default(cuid())
+  orgId            String
+  importBatchId    String
+  rowNumber        Int
+  data             Json // Raw row data
+  isValid          Boolean  @default(true)
+  validationErrors Json? // Array of validation errors
+  warnings         Json? // Array of warnings
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  importBatch ImportBatch @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
+
+  @@unique([importBatchId, rowNumber])
+  @@index([importBatchId])
+  @@index([orgId, isValid])
+  @@map("import_rows")
+}

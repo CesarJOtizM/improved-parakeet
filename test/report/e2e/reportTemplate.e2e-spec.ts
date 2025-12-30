@@ -3,17 +3,17 @@
 
 import {
   CreateReportTemplateUseCase,
-  UpdateReportTemplateUseCase,
   GetReportTemplatesUseCase,
-  IUpdateReportTemplateResponse,
   IGetReportTemplatesResponse,
+  IUpdateReportTemplateResponse,
+  UpdateReportTemplateUseCase,
 } from '@application/reportUseCases';
 import { ReportTemplateController } from '@interface/http/report';
 import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { REPORT_TYPES } from '@report/domain/valueObjects';
 import { IReportTemplateData } from '@report/mappers';
-import { ok, err } from '@shared/domain/result';
+import { err, ok } from '@shared/domain/result';
 import { ConflictError, NotFoundError } from '@shared/domain/result/domainError';
 import request from 'supertest';
 

@@ -566,19 +566,28 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
       - [x] Comparación: Período actual vs período anterior
       - [x] Ranking: Productos con mayor tasa de devolución
 
-- [ ] **Implementación del Dominio de Importaciones**
-  - [ ] Aggregates: ImportBatchAggregate, ImportRowAggregate con reglas de consistencia
-  - [ ] Value Objects: ImportType, ImportStatus, ValidationResult (inmutables)
-  - [ ] Domain Services: ImportValidationService, ImportProcessingService
-  - [ ] Domain Events: ImportStarted, ImportValidated, ImportCompleted
-  - [ ] Crear interfaces de Repository para importaciones
+- [x] **Implementación del Dominio de Importaciones** ✅ **COMPLETADO**
+  - [x] Aggregates: ImportBatchAggregate, ImportRowAggregate con reglas de consistencia
+  - [x] Value Objects: ImportType, ImportStatus, ValidationResult (inmutables)
+  - [x] Domain Services: ImportValidationService, ImportProcessingService, ImportTemplateService, ImportErrorReportService
+  - [x] Domain Events: ImportStarted, ImportValidated, ImportCompleted
+  - [x] Crear interfaces de Repository para importaciones (IImportBatchRepository)
+  - [x] Prisma schema: ImportBatch y ImportRow models
+  - [x] Repository implementation: PrismaImportBatchRepository
+  - [x] Use Cases: CreateImportBatch, ValidateImport, ProcessImport, GetImportStatus, DownloadImportTemplate, DownloadErrorReport
+  - [x] Nuevos Use Cases: PreviewImport (validación sin persistir), ExecuteImport (proceso completo en cadena)
+  - [x] DTOs: CreateImportBatchDto, ValidateImportDto, ProcessImportDto, PreviewImportDto, ExecuteImportDto, ImportStatusResponseDto, ErrorReportResponseDto
+  - [x] Controller: ImportController con endpoints completos
+  - [x] Flujo de importación: Preview → Execute (2 pasos) y Execute directo (1 paso)
+  - [x] Flujo manual: Create → Validate → Process (3 pasos, mantenido para compatibilidad)
 
-- [ ] **Setup de Procesamiento de Archivos**
-  - [ ] Implementar validación de archivos Excel/CSV
-  - [ ] Crear sistema de procesamiento por lotes
-  - [ ] Setup de validaciones de datos de entrada
-  - [ ] Implementar sistema de reportes de errores
-  - [ ] Tests de integración para importaciones y reportes
+- [x] **Setup de Procesamiento de Archivos** ✅ **COMPLETADO** (excepto tests)
+  - [x] Implementar validación de archivos Excel/CSV (IFileParsingService port + FileParsingService implementation)
+  - [x] Crear sistema de procesamiento por lotes (ImportProcessingService)
+  - [x] Setup de validaciones de datos de entrada (ImportValidationService con validaciones por tipo)
+  - [x] Implementar sistema de reportes de errores (ImportErrorReportService)
+  - [x] Plantillas de importación para cada tipo (ImportTemplateService)
+  - [ ] Tests de integración para importaciones y reportes (pendiente)
 
 ### **Semana 13: Adaptadores y API de Reportes**
 
@@ -663,9 +672,15 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
     - [x] PUT /report-templates/:id - Actualizar plantilla
     - [x] GET /report-templates/active - Obtener plantillas activas
     - [x] GET /report-templates/by-type/:type - Obtener plantillas por tipo
-  - [ ] **Importaciones**:
-    - [ ] POST /imports/products - Importar productos masivamente
-    - [ ] GET /imports/:id/status - Estado de importación
+  - [x] **Importaciones** ✅ **COMPLETADO**:
+    - [x] POST /imports/preview - Preview y validación de archivo sin persistir
+    - [x] POST /imports/execute - Ejecutar importación completa (validar + crear + procesar en cadena)
+    - [x] POST /imports - Crear batch de importación (flujo manual)
+    - [x] POST /imports/:id/validate - Validar batch existente con archivo
+    - [x] POST /imports/:id/process - Procesar batch validado
+    - [x] GET /imports/:id/status - Estado de importación
+    - [x] GET /imports/templates/:type - Descargar plantilla de importación
+    - [x] GET /imports/:id/errors - Descargar reporte de errores
   - [x] Documentación Swagger (endpoints documentados)
   - [x] Tests de aceptación (149 tests pasando)
   - [ ] Implementar streaming para reportes grandes (pendiente)
@@ -1787,7 +1802,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Semana 10**: Dominio de ventas ✅ **COMPLETADA**
 - [x] **Semana 11**: Dominio de devoluciones y adaptadores ✅ **COMPLETADA (100%)**
 - [x] **Semana 11.5**: Mejoras de arquitectura ✅ **COMPLETADA** - Result monad (55/55), ports (24 interfaces), mappers (4 mappers, 48 tests)
-- [ ] **Semana 12**: Dominio de reportes e importaciones
+- [x] **Semana 12**: Dominio de reportes e importaciones ✅ **COMPLETADA** - Dominio de importaciones implementado, flujo Preview/Execute, plantillas, reportes de errores
 - [ ] **Semana 13**: Adaptadores y API de reportes
 - [ ] **Semana 14**: Dominio de personalización y configuración
 - [ ] **Semana 15**: Testing y optimización
@@ -1801,7 +1816,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Fase 3**: Sistema de inventarios completo ✅ **COMPLETADA (100%)**
 - [x] **Fase 4**: Sistema de ventas y devoluciones ✅ **COMPLETADA (100%)**
 - [x] **Fase 4.5**: Mejoras de arquitectura ✅ **COMPLETADA (100%)** - Result monad (55/55 casos de uso), ports (24 interfaces), mappers (4 mappers, 48 tests)
-- [ ] **Fase 5**: Sistema de reportes e importaciones
+- [x] **Fase 5**: Sistema de reportes e importaciones ✅ **COMPLETADA (~90%)** - Reportes completos (149 tests), Importaciones completas (dominio, use cases, endpoints, flujo Preview/Execute), falta colección Postman
 - [ ] **Fase 6**: Testing, optimización y despliegue (incluye refactoring funcional)
 
 ### **Colecciones de Postman Completadas**
@@ -1811,8 +1826,8 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Inventory Collection**: Productos, bodegas, movimientos ✅ **COMPLETADA**
 - [x] **Sales Collection**: Ventas y gestión de ventas ✅ **COMPLETADA**
 - [x] **Returns Collection**: Devoluciones de clientes y a proveedores ✅ **COMPLETADA**
-- [ ] **Reports Collection**: Reportes y exportaciones
-- [ ] **Imports Collection**: Importaciones masivas
+- [x] **Reports Collection**: Reportes y exportaciones ✅ **COMPLETADA**
+- [ ] **Imports Collection**: Importaciones masivas (pendiente - endpoints implementados)
 - [ ] **Organization Collection**: Configuración y personalización
 
 ### **📊 Estado Actual del Proyecto**
@@ -1992,9 +2007,60 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
   - ✅ Tests E2E para endpoints de devoluciones
   - ✅ Colección de Postman para devoluciones
 
+#### **✅ Completado - Semana 12 (Dominio de Importaciones)**
+
+- **Dominio de Importaciones**: 
+  - ✅ ImportBatch (AggregateRoot) e ImportRow (entidades) implementadas
+  - ✅ Value Objects: ImportType, ImportStatus, ValidationResult (inmutables)
+  - ✅ Domain Services: ImportValidationService, ImportProcessingService, ImportTemplateService, ImportErrorReportService
+  - ✅ Domain Events: ImportStarted, ImportValidated, ImportCompleted
+  - ✅ Repository: IImportBatchRepository interface y PrismaImportBatchRepository implementation
+  - ✅ Prisma schema: ImportBatch y ImportRow models con índices optimizados
+- **Infraestructura**:
+  - ✅ IFileParsingService port (abstracción para parsing de archivos)
+  - ✅ FileParsingService implementation (usando xlsx library)
+  - ✅ Validación de formato de archivos (Excel/CSV)
+  - ✅ Parsing de archivos con headers y rows
+- **Casos de Uso**: 8 casos de uso implementados
+  - ✅ CreateImportBatchUseCase - Crear batch de importación
+  - ✅ ValidateImportUseCase - Validar batch existente con archivo
+  - ✅ ProcessImportUseCase - Procesar batch validado
+  - ✅ GetImportStatusUseCase - Obtener estado de importación
+  - ✅ DownloadImportTemplateUseCase - Descargar plantilla de importación
+  - ✅ DownloadErrorReportUseCase - Descargar reporte de errores
+  - ✅ PreviewImportUseCase - Preview y validación sin persistir (nuevo flujo)
+  - ✅ ExecuteImportUseCase - Ejecutar importación completa en cadena (nuevo flujo)
+- **Flujos de Importación**:
+  - ✅ **Flujo nuevo (2 pasos)**: POST /imports/preview → POST /imports/execute
+  - ✅ **Flujo directo (1 paso)**: POST /imports/execute (valida y ejecuta todo)
+  - ✅ **Flujo manual (3 pasos)**: POST /imports → POST /imports/:id/validate → POST /imports/:id/process (mantenido para compatibilidad)
+- **Características Implementadas**:
+  - ✅ Validación de formato de archivo (Excel/CSV)
+  - ✅ Validación de estructura (headers requeridos por tipo)
+  - ✅ Validación de datos de filas (validaciones específicas por tipo de importación)
+  - ✅ Sistema de procesamiento por lotes con progreso
+  - ✅ Reportes de errores detallados (estructura y filas)
+  - ✅ Plantillas de importación para cada tipo (PRODUCTS, MOVEMENTS, WAREHOUSES, STOCK, TRANSFERS)
+  - ✅ Rechazo automático si hay errores en flujo Execute
+  - ✅ Persistencia de batches y rows para auditoría
+  - ✅ Estados de importación: PENDING, VALIDATING, VALIDATED, PROCESSING, COMPLETED, FAILED
+- **API REST**:
+  - ✅ POST /imports/preview - Preview y validación sin persistir
+  - ✅ POST /imports/execute - Ejecutar importación completa
+  - ✅ POST /imports - Crear batch (flujo manual)
+  - ✅ POST /imports/:id/validate - Validar batch existente
+  - ✅ POST /imports/:id/process - Procesar batch validado
+  - ✅ GET /imports/:id/status - Estado de importación
+  - ✅ GET /imports/templates/:type - Descargar plantilla
+  - ✅ GET /imports/:id/errors - Descargar reporte de errores
+- **DTOs**: CreateImportBatchDto, ValidateImportDto, ProcessImportDto, PreviewImportDto, ExecuteImportDto, ImportStatusResponseDto, ErrorReportResponseDto
+- **Módulos**: ImportHttpModule creado e integrado en AppModule
+- **Build**: ✅ Compilación exitosa, sin errores de linting
+
 #### **⏳ Pendiente**
 
-- **Fase 5**: Reportes e importaciones
+- **Fase 5**: Colección de Postman para importaciones
+- **Fase 5**: Tests de integración para importaciones
 - **Fase 6**: Testing completo, optimización, refactoring funcional y despliegue
 
 ---

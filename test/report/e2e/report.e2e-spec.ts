@@ -2,18 +2,18 @@
 // E2E tests for report view and export endpoints
 
 import {
-  ViewReportUseCase,
   ExportReportUseCase,
   GetReportsUseCase,
-  IViewReportResponse,
   IGetReportsResponse,
+  IViewReportResponse,
+  ViewReportUseCase,
 } from '@application/reportUseCases';
 import { ReportController } from '@interface/http/report';
 import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { IReportParametersInput, REPORT_TYPES } from '@report/domain/valueObjects';
 import { IReportData } from '@report/mappers';
-import { ok, err } from '@shared/domain/result';
+import { err, ok } from '@shared/domain/result';
 import { ValidationError } from '@shared/domain/result/domainError';
 import request from 'supertest';
 
