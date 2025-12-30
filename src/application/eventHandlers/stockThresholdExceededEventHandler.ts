@@ -5,9 +5,7 @@ import { StockThresholdExceededEvent } from '@stock/domain/events/stockThreshold
 import type { INotificationService } from '@infrastructure/externalServices/notificationService.interface';
 
 @Injectable()
-export class StockThresholdExceededEventHandler
-  implements IDomainEventHandler<StockThresholdExceededEvent>
-{
+export class StockThresholdExceededEventHandler implements IDomainEventHandler<StockThresholdExceededEvent> {
   private readonly logger = new Logger(StockThresholdExceededEventHandler.name);
 
   constructor(private readonly notificationService: INotificationService) {}

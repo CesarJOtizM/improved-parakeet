@@ -8,59 +8,58 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // Base entities for all domains
 model BaseEntity {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
-  orgId       String   // Multi-tenant organization ID
-  
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  orgId     String // Multi-tenant organization ID
+
   @@map("base_entities")
 }
 
 // Organizations (Multi-tenant)
 model Organization {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  domain      String?  @unique
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  domain    String?  @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  users       User[]
-  products    Product[]
-  warehouses  Warehouse[]
-  
+  users      User[]
+  products   Product[]
+  warehouses Warehouse[]
+
   @@map("organizations")
 }
 
 // Users
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  username     String   @unique
-  firstName    String
-  lastName     String
-  passwordHash String
-  isActive     Boolean  @default(true)
-  lastLoginAt  DateTime?
-  failedLoginAttempts Int      @default(0)
-  lockedUntil  DateTime?
-  orgId        String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  username            String    @unique
+  firstName           String
+  lastName            String
+  passwordHash        String
+  isActive            Boolean   @default(true)
+  lastLoginAt         DateTime?
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  orgId               String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
   // Relations
   organization Organization @relation(fields: [orgId], references: [id])
   userRoles    UserRole[]
   sessions     Session[]
-  
+
   @@map("users")
 }
 
@@ -74,11 +73,11 @@ model Role {
   orgId       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   // Relations
   userRoles   UserRole[]
   permissions RolePermission[]
-  
+
   @@unique([name, orgId])
   @@index([isSystem])
   @@map("roles")
@@ -90,26 +89,26 @@ model UserRole {
   userId String
   roleId String
   orgId  String
-  
+
   // Relations
   user User @relation(fields: [userId], references: [id])
   role Role @relation(fields: [roleId], references: [id])
-  
+
   @@unique([userId, roleId, orgId])
   @@map("user_roles")
 }
 
 // Permissions
 model Permission {
-  id          String @id @default(cuid())
-  name        String @unique
+  id          String  @id @default(cuid())
+  name        String  @unique
   description String?
   module      String
   action      String
-  
+
   // Relations
   rolePermissions RolePermission[]
-  
+
   @@map("permissions")
 }
 
@@ -118,11 +117,11 @@ model RolePermission {
   id           String @id @default(cuid())
   roleId       String
   permissionId String
-  
+
   // Relations
   role       Role       @relation(fields: [roleId], references: [id])
   permission Permission @relation(fields: [permissionId], references: [id])
-  
+
   @@unique([roleId, permissionId])
   @@map("role_permissions")
 }
@@ -139,40 +138,38 @@ model Session {
   orgId     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // Relations
   user User @relation(fields: [userId], references: [id])
-  
+
   @@index([userId, orgId])
   @@index([token])
   @@index([expiresAt])
   @@index([isActive])
-  
   @@map("sessions")
 }
 
 // OTP (One-Time Password) for password reset and account activation
 model Otp {
-  id         String   @id @default(cuid())
-  email      String
-  code       String
-  type       String   // PASSWORD_RESET, ACCOUNT_ACTIVATION, TWO_FACTOR
-  expiresAt  DateTime
-  isUsed     Boolean  @default(false)
-  attempts   Int      @default(0)
-  maxAttempts Int     @default(3)
-  ipAddress  String?
-  userAgent  String?
-  orgId      String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  
+  id          String   @id @default(cuid())
+  email       String
+  code        String
+  type        String // PASSWORD_RESET, ACCOUNT_ACTIVATION, TWO_FACTOR
+  expiresAt   DateTime
+  isUsed      Boolean  @default(false)
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(3)
+  ipAddress   String?
+  userAgent   String?
+  orgId       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   // Indexes for performance
   @@index([email, type, orgId])
   @@index([expiresAt])
   @@index([isUsed])
   @@index([orgId])
-  
   @@map("otp")
 }
 
@@ -193,16 +190,16 @@ model Product {
   orgId       String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   // Relations
-  organization Organization @relation(fields: [orgId], references: [id])
+  organization Organization   @relation(fields: [orgId], references: [id])
   movements    MovementLine[]
   transfers    TransferLine[]
   stock        Stock[]
   reorderRules ReorderRule[]
   saleLines    SaleLine[]
   returnLines  ReturnLine[]
-  
+
   @@unique([sku, orgId])
   @@map("products")
 }
@@ -218,54 +215,54 @@ model Warehouse {
   orgId       String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   // Relations
-  organization Organization @relation(fields: [orgId], references: [id])
-  stock        Stock[]
-  reorderRules ReorderRule[]
-  movements    Movement[]
-  fromTransfers Transfer[] @relation("FromTransfers")
-  toTransfers   Transfer[] @relation("ToTransfers")
-  sales        Sale[]
-  returns      Return[]
-  
+  organization  Organization  @relation(fields: [orgId], references: [id])
+  stock         Stock[]
+  reorderRules  ReorderRule[]
+  movements     Movement[]
+  fromTransfers Transfer[]    @relation("FromTransfers")
+  toTransfers   Transfer[]    @relation("ToTransfers")
+  sales         Sale[]
+  returns       Return[]
+
   @@unique([code, orgId])
   @@map("warehouses")
 }
 
 // Stock
 model Stock {
-  id         String  @id @default(cuid())
-  productId  String
+  id          String  @id @default(cuid())
+  productId   String
   warehouseId String
-  quantity   Int     @default(0)
-  unitCost   Decimal @db.Decimal(10, 2)
-  orgId      String
-  
+  quantity    Int     @default(0)
+  unitCost    Decimal @db.Decimal(10, 2)
+  orgId       String
+
   // Relations
   product   Product   @relation(fields: [productId], references: [id])
   warehouse Warehouse @relation(fields: [warehouseId], references: [id])
-  
+
   @@unique([productId, warehouseId, orgId])
   @@map("stock")
 }
 
 // Reorder Rules
 model ReorderRule {
-  id         String   @id @default(cuid())
-  productId  String
+  id          String   @id @default(cuid())
+  productId   String
   warehouseId String
-  minQty     Decimal  @db.Decimal(10, 6)
-  maxQty     Decimal  @db.Decimal(10, 6)
-  safetyQty  Decimal  @db.Decimal(10, 6)
-  orgId      String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  
+  minQty      Decimal  @db.Decimal(10, 6)
+  maxQty      Decimal  @db.Decimal(10, 6)
+  safetyQty   Decimal  @db.Decimal(10, 6)
+  orgId       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   // Relations
   product   Product   @relation(fields: [productId], references: [id])
   warehouse Warehouse @relation(fields: [warehouseId], references: [id])
-  
+
   @@unique([productId, warehouseId, orgId])
   @@index([productId, orgId])
   @@index([warehouseId, orgId])
@@ -274,9 +271,9 @@ model ReorderRule {
 
 // Movements
 model Movement {
-  id          String   @id @default(cuid())
-  type        String   // IN, OUT, ADJUSTMENT
-  status      String   @default("DRAFT") // DRAFT, POSTED, VOIDED
+  id          String    @id @default(cuid())
+  type        String // IN, OUT, ADJUSTMENT
+  status      String    @default("DRAFT") // DRAFT, POSTED, VOIDED
   warehouseId String
   reference   String?
   reason      String?
@@ -284,22 +281,22 @@ model Movement {
   postedAt    DateTime?
   createdBy   String
   orgId       String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   // Relations
-  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
-  lines     MovementLine[]
-  sale      Sale?
-  sourceReturns Return[] @relation("SourceReturns")
-  returnMovements Return[] @relation("ReturnMovements")
-  
+  warehouse       Warehouse      @relation(fields: [warehouseId], references: [id])
+  lines           MovementLine[]
+  sale            Sale?
+  sourceReturns   Return[]       @relation("SourceReturns")
+  returnMovements Return[]       @relation("ReturnMovements")
+
   @@map("movements")
 }
 
 // Movement Lines
 model MovementLine {
-  id         String  @id @default(cuid())
+  id         String   @id @default(cuid())
   movementId String
   productId  String
   locationId String?
@@ -307,33 +304,33 @@ model MovementLine {
   unitCost   Decimal? @db.Decimal(10, 2)
   currency   String
   orgId      String
-  
+
   // Relations
   movement Movement @relation(fields: [movementId], references: [id])
   product  Product  @relation(fields: [productId], references: [id])
-  
+
   @@map("movement_lines")
 }
 
 // Transfers
 model Transfer {
-  id            String   @id @default(cuid())
+  id              String    @id @default(cuid())
   fromWarehouseId String
   toWarehouseId   String
-  status         String   @default("DRAFT") // DRAFT, IN_TRANSIT, RECEIVED, REJECTED, CANCELED, PARTIAL
-  note           String?
-  initiatedAt    DateTime?
-  receivedAt     DateTime?
-  createdBy      String
-  orgId          String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
+  status          String    @default("DRAFT") // DRAFT, IN_TRANSIT, RECEIVED, REJECTED, CANCELED, PARTIAL
+  note            String?
+  initiatedAt     DateTime?
+  receivedAt      DateTime?
+  createdBy       String
+  orgId           String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
   // Relations
-  fromWarehouse Warehouse @relation("FromTransfers", fields: [fromWarehouseId], references: [id])
-  toWarehouse   Warehouse @relation("ToTransfers", fields: [toWarehouseId], references: [id])
+  fromWarehouse Warehouse      @relation("FromTransfers", fields: [fromWarehouseId], references: [id])
+  toWarehouse   Warehouse      @relation("ToTransfers", fields: [toWarehouseId], references: [id])
   lines         TransferLine[]
-  
+
   @@map("transfers")
 }
 
@@ -346,37 +343,37 @@ model TransferLine {
   fromLocationId String?
   toLocationId   String?
   orgId          String
-  
+
   // Relations
   transfer Transfer @relation(fields: [transferId], references: [id])
   product  Product  @relation(fields: [productId], references: [id])
-  
+
   @@map("transfer_lines")
 }
 
 // Sales
 model Sale {
-  id              String   @id @default(cuid())
-  saleNumber      String
-  status          String   @default("DRAFT") // DRAFT, CONFIRMED, CANCELLED
-  warehouseId     String
+  id                String    @id @default(cuid())
+  saleNumber        String
+  status            String    @default("DRAFT") // DRAFT, CONFIRMED, CANCELLED
+  warehouseId       String
   customerReference String?
   externalReference String?
-  note            String?
-  confirmedAt     DateTime?
-  cancelledAt     DateTime?
-  movementId      String? @unique
-  createdBy       String
-  orgId           String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  note              String?
+  confirmedAt       DateTime?
+  cancelledAt       DateTime?
+  movementId        String?   @unique
+  createdBy         String
+  orgId             String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
   // Relations
-  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
-  movement Movement? @relation(fields: [movementId], references: [id])
-  lines    SaleLine[]
-  returns  Return[]
-  
+  warehouse Warehouse  @relation(fields: [warehouseId], references: [id])
+  movement  Movement?  @relation(fields: [movementId], references: [id])
+  lines     SaleLine[]
+  returns   Return[]
+
   @@unique([saleNumber, orgId])
   @@index([status, orgId])
   @@index([warehouseId, orgId])
@@ -386,22 +383,22 @@ model Sale {
 
 // Sale Lines
 model SaleLine {
-  id         String  @id @default(cuid())
+  id         String   @id @default(cuid())
   saleId     String
   productId  String
   locationId String
-  quantity   Decimal @db.Decimal(10, 6)
-  salePrice  Decimal @db.Decimal(10, 2)
+  quantity   Decimal  @db.Decimal(10, 6)
+  salePrice  Decimal  @db.Decimal(10, 2)
   currency   String
   extra      Json?
   orgId      String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  
+
   // Relations
   sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
-  
+
   @@index([saleId])
   @@index([productId, orgId])
   @@map("sale_lines")
@@ -409,30 +406,30 @@ model SaleLine {
 
 // Returns
 model Return {
-  id              String   @id @default(cuid())
-  returnNumber    String
-  status          String   @default("DRAFT") // DRAFT, CONFIRMED, CANCELLED
-  type            String   // RETURN_CUSTOMER, RETURN_SUPPLIER
-  reason          String?
-  warehouseId     String
-  saleId          String?  // For customer returns
+  id               String    @id @default(cuid())
+  returnNumber     String
+  status           String    @default("DRAFT") // DRAFT, CONFIRMED, CANCELLED
+  type             String // RETURN_CUSTOMER, RETURN_SUPPLIER
+  reason           String?
+  warehouseId      String
+  saleId           String? // For customer returns
   sourceMovementId String? // For supplier returns (purchase movement)
-  returnMovementId String? @unique // Generated movement (IN for customer, OUT for supplier)
-  note            String?
-  confirmedAt     DateTime?
-  cancelledAt     DateTime?
-  createdBy       String
-  orgId           String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  returnMovementId String?   @unique // Generated movement (IN for customer, OUT for supplier)
+  note             String?
+  confirmedAt      DateTime?
+  cancelledAt      DateTime?
+  createdBy        String
+  orgId            String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
   // Relations
-  warehouse       Warehouse @relation(fields: [warehouseId], references: [id])
-  sale           Sale? @relation(fields: [saleId], references: [id])
-  sourceMovement Movement? @relation("SourceReturns", fields: [sourceMovementId], references: [id])
-  returnMovement Movement? @relation("ReturnMovements", fields: [returnMovementId], references: [id])
+  warehouse      Warehouse    @relation(fields: [warehouseId], references: [id])
+  sale           Sale?        @relation(fields: [saleId], references: [id])
+  sourceMovement Movement?    @relation("SourceReturns", fields: [sourceMovementId], references: [id])
+  returnMovement Movement?    @relation("ReturnMovements", fields: [returnMovementId], references: [id])
   lines          ReturnLine[]
-  
+
   @@unique([returnNumber, orgId])
   @@index([status, orgId])
   @@index([type, orgId])
@@ -445,23 +442,23 @@ model Return {
 
 // Return Lines
 model ReturnLine {
-  id               String  @id @default(cuid())
-  returnId         String
-  productId        String
-  locationId       String
-  quantity         Decimal @db.Decimal(10, 6)
+  id                String   @id @default(cuid())
+  returnId          String
+  productId         String
+  locationId        String
+  quantity          Decimal  @db.Decimal(10, 6)
   originalSalePrice Decimal? @db.Decimal(10, 2) // For customer returns
   originalUnitCost  Decimal? @db.Decimal(10, 2) // For supplier returns
-  currency         String
-  extra            Json?
-  orgId            String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
+  currency          String
+  extra             Json?
+  orgId             String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
   // Relations
-  return Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  return  Return  @relation(fields: [returnId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
-  
+
   @@index([returnId])
   @@index([productId, orgId])
   @@map("return_lines")
@@ -469,21 +466,21 @@ model ReturnLine {
 
 // Audit Logs
 model AuditLog {
-  id            String   @id @default(cuid())
-  orgId         String?  // Nullable for system-level audits
-  entityType    String   // User, Product, Warehouse, etc.
-  entityId      String?  // Nullable for system-level actions
-  action        String   // CREATE, UPDATE, DELETE, ASSIGN_ROLE, etc.
-  performedBy   String?  // User ID, nullable for system actions
-  metadata      Json?    // Flexible JSON for additional data
-  ipAddress     String?
-  userAgent     String?
-  httpMethod    String?  // GET, POST, PUT, DELETE, etc.
-  httpUrl       String?
+  id             String   @id @default(cuid())
+  orgId          String? // Nullable for system-level audits
+  entityType     String // User, Product, Warehouse, etc.
+  entityId       String? // Nullable for system-level actions
+  action         String // CREATE, UPDATE, DELETE, ASSIGN_ROLE, etc.
+  performedBy    String? // User ID, nullable for system actions
+  metadata       Json? // Flexible JSON for additional data
+  ipAddress      String?
+  userAgent      String?
+  httpMethod     String? // GET, POST, PUT, DELETE, etc.
+  httpUrl        String?
   httpStatusCode Int?
-  duration      Int?     // Request duration in ms
-  createdAt     DateTime @default(now())
-  
+  duration       Int? // Request duration in ms
+  createdAt      DateTime @default(now())
+
   // Indexes for performance
   @@index([orgId, createdAt])
   @@index([orgId, entityType, createdAt])
@@ -496,21 +493,21 @@ model AuditLog {
 
 // Report Templates (reusable report configurations)
 model ReportTemplate {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   orgId             String
   name              String
   description       String?
-  type              String   // ReportType value (AVAILABLE_INVENTORY, SALES, etc.)
-  defaultParameters Json     // ReportParameters as JSON
-  isActive          Boolean  @default(true)
+  type              String // ReportType value (AVAILABLE_INVENTORY, SALES, etc.)
+  defaultParameters Json // ReportParameters as JSON
+  isActive          Boolean   @default(true)
   createdBy         String
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
-  
+
   // Relations
-  reports           Report[]
-  
+  reports Report[]
+
   @@unique([orgId, name])
   @@index([orgId, type])
   @@index([orgId, isActive])
@@ -519,24 +516,24 @@ model ReportTemplate {
 
 // Reports (metadata for audit/logging of report executions)
 model Report {
-  id            String   @id @default(cuid())
-  orgId         String
-  type          String   // ReportType value (AVAILABLE_INVENTORY, SALES, etc.)
-  status        String   @default("PENDING") // PENDING, GENERATING, COMPLETED, FAILED, EXPORTED
-  parameters    Json     // ReportParameters as JSON
-  templateId    String?
-  generatedBy   String
-  generatedAt   DateTime?
-  format        String?  // ReportFormat value (PDF, EXCEL, CSV) - only if exported
-  exportedAt    DateTime?
-  errorMessage  String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  deletedAt     DateTime?
-  
+  id           String    @id @default(cuid())
+  orgId        String
+  type         String // ReportType value (AVAILABLE_INVENTORY, SALES, etc.)
+  status       String    @default("PENDING") // PENDING, GENERATING, COMPLETED, FAILED, EXPORTED
+  parameters   Json // ReportParameters as JSON
+  templateId   String?
+  generatedBy  String
+  generatedAt  DateTime?
+  format       String? // ReportFormat value (PDF, EXCEL, CSV) - only if exported
+  exportedAt   DateTime?
+  errorMessage String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
   // Relations
-  template      ReportTemplate? @relation(fields: [templateId], references: [id])
-  
+  template ReportTemplate? @relation(fields: [templateId], references: [id])
+
   @@index([orgId, type])
   @@index([orgId, status])
   @@index([orgId, generatedAt])

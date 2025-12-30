@@ -6,8 +6,7 @@ import { IReadRepository, IWriteRepository } from '@shared/ports/repositories';
  * Output port for permission persistence following Hexagonal Architecture
  */
 export interface IPermissionRepository
-  extends IReadRepository<Permission>,
-    IWriteRepository<Permission> {
+  extends IReadRepository<Permission>, IWriteRepository<Permission> {
   findByName(name: string): Promise<Permission | null>;
   findByModule(module: string): Promise<Permission[]>;
   findByAction(action: string): Promise<Permission[]>;

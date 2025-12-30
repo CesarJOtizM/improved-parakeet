@@ -6,8 +6,7 @@ import { IReadRepository, IWriteRepository } from '@shared/ports/repositories';
  * Output port for organization persistence following Hexagonal Architecture
  */
 export interface IOrganizationRepository
-  extends IReadRepository<Organization>,
-    Omit<IWriteRepository<Organization>, 'save'> {
+  extends IReadRepository<Organization>, Omit<IWriteRepository<Organization>, 'save'> {
   findBySlug(slug: string): Promise<Organization | null>;
   findById(id: string): Promise<Organization | null>;
   findByDomain(domain: string): Promise<Organization | null>;

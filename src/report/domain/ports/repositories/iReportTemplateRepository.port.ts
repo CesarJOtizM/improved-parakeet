@@ -7,8 +7,7 @@ import { ReportTemplate } from '../../entities/reportTemplate.entity';
  * Output port for report template persistence following Hexagonal Architecture
  */
 export interface IReportTemplateRepository
-  extends IReadRepository<ReportTemplate>,
-    IWriteRepository<ReportTemplate> {
+  extends IReadRepository<ReportTemplate>, IWriteRepository<ReportTemplate> {
   /**
    * Find templates by type
    */
