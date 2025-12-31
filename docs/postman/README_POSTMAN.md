@@ -14,6 +14,14 @@ La colección utiliza las siguientes variables que debes configurar:
 - **`organizationId`**: ID de la organización (ej: `dev-org`)
 - **`userAgent`**: User-Agent del cliente (ej: `PostmanRuntime/7.32.3`)
 - **`requestId`**: ID único para correlación de requests (opcional)
+- **`reportType`**: Tipo de reporte actual (ej: `AVAILABLE_INVENTORY`, `SALES`, `RETURNS`)
+- **`reportFormat`**: Formato de exportación (ej: `PDF`, `EXCEL`, `CSV`)
+- **`importType`**: Tipo de importación (ej: `PRODUCTS`, `MOVEMENTS`, `WAREHOUSES`, `STOCK`, `TRANSFERS`)
+- **`importBatchId`**: ID del batch de importación actual (se extrae automáticamente)
+- **`warehouseId`**: ID de bodega para filtros de reportes
+- **`productId`**: ID de producto para filtros de reportes
+- **`dateRangeStart`**: Fecha de inicio para rangos de fecha (formato: `YYYY-MM-DD`)
+- **`dateRangeEnd`**: Fecha de fin para rangos de fecha (formato: `YYYY-MM-DD`)
 
 ### Headers Requeridos
 
@@ -95,18 +103,126 @@ La colección utiliza las siguientes variables que debes configurar:
 - **GET** `/organization/branding` - Información de marca
 - **GET** `/organization/tenant` - Información del tenant actual
 
-### 📊 Reporting (Pendiente de implementación)
+### 📊 Reports
 
-- **POST** `/reporting/inventory` - Generar reporte de inventario
-- **POST** `/reporting/financial` - Generar reporte financiero
-- **POST** `/reporting/movements` - Generar reporte de movimientos
-- **GET** `/reporting/export/:reportId` - Descargar reporte generado
+La sección de Reports incluye endpoints para generar, visualizar y exportar reportes del sistema.
 
-### 📥 Bulk Imports (Pendiente de implementación)
+#### Inventory Reports - View
+Endpoints GET que retornan datos JSON para visualización en frontend:
+- **GET** `/reports/inventory/available/view` - Vista de inventario disponible
+- **GET** `/reports/inventory/movement-history/view` - Histórico de movimientos
+- **GET** `/reports/inventory/valuation/view` - Valorización de inventario (PPM)
+- **GET** `/reports/inventory/low-stock/view` - Alertas de stock bajo
+- **GET** `/reports/inventory/movements/view` - Resumen de movimientos
+- **GET** `/reports/inventory/financial/view` - Reporte financiero
+- **GET** `/reports/inventory/turnover/view` - Rotación de inventario
 
-- **POST** `/imports/products` - Importar productos masivamente
-- **POST** `/imports/stock` - Importar stock masivamente
-- **GET** `/imports/status/:importId` - Estado de importación
+#### Sales Reports - View
+- **GET** `/reports/sales/view` - Reporte de ventas
+- **GET** `/reports/sales/by-product/view` - Ventas por producto
+- **GET** `/reports/sales/by-warehouse/view` - Ventas por bodega
+
+#### Returns Reports - View
+- **GET** `/reports/returns/view` - Reporte de devoluciones
+- **GET** `/reports/returns/by-type/view` - Devoluciones por tipo
+- **GET** `/reports/returns/by-product/view` - Devoluciones por producto
+- **GET** `/reports/returns/by-sale/:saleId/view` - Devoluciones por venta
+- **GET** `/reports/returns/customer/view` - Devoluciones de cliente
+- **GET** `/reports/returns/supplier/view` - Devoluciones a proveedor
+
+#### Stream Endpoints (NDJSON)
+Endpoints GET que retornan datos en formato NDJSON (Newline Delimited JSON) para grandes volúmenes:
+- **GET** `/reports/inventory/available/stream` - Stream de inventario disponible
+- **GET** `/reports/sales/view/stream` - Stream de ventas
+- **GET** `/reports/returns/view/stream` - Stream de devoluciones
+
+#### Export Endpoints
+Endpoints POST que retornan archivos en diferentes formatos (PDF, Excel, CSV):
+- **POST** `/reports/inventory/available/export` - Exportar inventario disponible
+- **POST** `/reports/inventory/movement-history/export` - Exportar histórico
+- **POST** `/reports/inventory/valuation/export` - Exportar valorización
+- **POST** `/reports/inventory/low-stock/export` - Exportar stock bajo
+- **POST** `/reports/inventory/movements/export` - Exportar movimientos
+- **POST** `/reports/inventory/financial/export` - Exportar reporte financiero
+- **POST** `/reports/inventory/turnover/export` - Exportar rotación
+- **POST** `/reports/sales/export` - Exportar ventas
+- **POST** `/reports/sales/by-product/export` - Exportar ventas por producto
+- **POST** `/reports/sales/by-warehouse/export` - Exportar ventas por bodega
+- **POST** `/reports/returns/export` - Exportar devoluciones
+- **POST** `/reports/returns/by-type/export` - Exportar devoluciones por tipo
+- **POST** `/reports/returns/by-product/export` - Exportar devoluciones por producto
+
+#### Report History
+- **GET** `/reports/history` - Historial de ejecución de reportes (filtros: type, status, generatedBy, dateRange)
+
+**Parámetros comunes para View endpoints:**
+- `dateRange[startDate]` / `dateRange[endDate]`: Rango de fechas
+- `warehouseId`: Filtrar por bodega
+- `productId`: Filtrar por producto
+- `category`: Filtrar por categoría
+- `status`: Filtrar por estado
+- `groupBy`: Agrupar resultados (DAY, WEEK, MONTH, PRODUCT, WAREHOUSE, etc.)
+
+**Body para Export endpoints:**
+```json
+{
+  "format": "EXCEL",
+  "parameters": {
+    "dateRange": {
+      "startDate": "2024-01-01",
+      "endDate": "2024-12-31"
+    },
+    "warehouseId": "warehouse-id"
+  },
+  "options": {
+    "includeHeader": true,
+    "includeSummary": true,
+    "title": "Custom Report Title"
+  },
+  "saveMetadata": true
+}
+```
+
+### 📥 Imports
+
+La sección de Imports incluye endpoints para importaciones masivas de datos.
+
+#### Import Operations
+- **POST** `/imports/preview` - Previsualizar y validar archivo sin persistir
+- **POST** `/imports/execute` - Ejecutar importación completa (validate + create + process)
+- **POST** `/imports` - Crear batch de importación
+
+#### Import Batch Management
+- **POST** `/imports/:id/validate` - Validar batch de importación con archivo
+- **POST** `/imports/:id/process` - Procesar batch validado
+- **GET** `/imports/:id/status` - Obtener estado del batch
+
+#### Import Templates & Reports
+- **GET** `/imports/templates/:type` - Descargar plantilla de importación (format: csv o xlsx)
+- **GET** `/imports/:id/errors` - Descargar reporte de errores (format: csv o xlsx)
+
+**Tipos de importación soportados:**
+- `PRODUCTS` - Importación de productos
+- `MOVEMENTS` - Importación de movimientos
+- `WAREHOUSES` - Importación de bodegas
+- `STOCK` - Importación de stock
+- `TRANSFERS` - Importación de transferencias
+
+**Estados de batch:**
+- `PENDING` - Batch creado, pendiente de validación
+- `VALIDATING` - En proceso de validación
+- `VALIDATED` - Validado, listo para procesar
+- `PROCESSING` - En proceso de importación
+- `COMPLETED` - Importación completada
+- `FAILED` - Importación fallida
+
+**Ejemplo de uso:**
+1. Descargar plantilla: `GET /imports/templates/PRODUCTS?format=csv`
+2. Llenar plantilla con datos
+3. Previsualizar: `POST /imports/preview` (con archivo adjunto)
+4. Ejecutar importación: `POST /imports/execute` (con archivo adjunto)
+5. Verificar estado: `GET /imports/:batchId/status`
+6. Si hay errores: `GET /imports/:batchId/errors?format=csv`
 
 ## 🚀 Instalación y Uso
 
@@ -149,7 +265,15 @@ Una vez configurado el token, todos los endpoints protegidos funcionarán autom�
   "refreshToken": "",
   "organizationId": "",
   "userId": "",
-  "roleId": ""
+  "roleId": "",
+  "reportType": "AVAILABLE_INVENTORY",
+  "reportFormat": "EXCEL",
+  "importType": "PRODUCTS",
+  "importBatchId": "",
+  "warehouseId": "",
+  "productId": "",
+  "dateRangeStart": "2024-01-01",
+  "dateRangeEnd": "2024-12-31"
 }
 ```
 
@@ -166,13 +290,13 @@ Puedes crear un entorno en Postman con estas variables para mayor flexibilidad.
 - ✅ **Password Reset**: Completamente implementado
 - ✅ **Users Management**: Completamente implementado
 - ✅ **Health Check**: Completamente implementado
+- ✅ **Reports**: Completamente implementado (View, Stream, Export, History)
+- ✅ **Imports**: Completamente implementado (Preview, Execute, Batch Management, Templates)
 
 ### Endpoints Pendientes
 
 - ⏳ **Inventory Management**: Estructura definida, pendiente implementación
 - ⏳ **Organization Management**: Estructura definida, pendiente implementación
-- ⏳ **Reporting**: Estructura definida, pendiente implementación
-- ⏳ **Bulk Imports**: Estructura definida, pendiente implementación
 
 ### Autenticación
 
@@ -189,9 +313,33 @@ Puedes crear un entorno en Postman con estas variables para mayor flexibilidad.
 
 La colección incluye scripts de test automático que:
 
-- Verifican que el código de estado sea 200
-- Validan que el tiempo de respuesta sea menor a 2000ms
+- Verifican que el código de estado sea correcto (200, 201, etc.)
+- Validan que el tiempo de respuesta sea razonable
+- Validan estructura de respuestas JSON
+- Extraen y guardan IDs automáticamente (importBatchId, etc.)
+- Validan formatos de archivo (PDF, Excel, CSV)
+- Validan formato NDJSON en streams
 - Pueden ser personalizados según tus necesidades
+
+### Scripts de Testing Masivo
+
+La colección incluye scripts especiales para testing masivo:
+
+#### Bulk Import Testing
+- **Bulk Import Products Script**: Ejecuta múltiples importaciones secuencialmente
+- Configura diferentes tipos de importación automáticamente
+- Valida estados y extrae métricas de importación
+- Úsalo con Collection Runner para probar todos los tipos de importación
+
+#### Export Validation Scripts
+- **Test All Export Formats**: Prueba todos los formatos (PDF, EXCEL, CSV) para un reporte
+- Valida Content-Type y Content-Disposition headers
+- Verifica tamaño mínimo de archivos
+
+#### Stream Testing Scripts
+- **Test Stream with Large Dataset**: Valida streams NDJSON con grandes volúmenes
+- Verifica formato de cada línea JSON
+- Valida performance (tiempo de respuesta < 30s)
 
 ## 🔍 Swagger Documentation
 

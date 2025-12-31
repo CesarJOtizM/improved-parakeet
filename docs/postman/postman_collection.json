@@ -90,6 +90,46 @@
       "key": "sourceMovementId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "reportType",
+      "value": "AVAILABLE_INVENTORY",
+      "type": "string"
+    },
+    {
+      "key": "reportFormat",
+      "value": "EXCEL",
+      "type": "string"
+    },
+    {
+      "key": "importType",
+      "value": "PRODUCTS",
+      "type": "string"
+    },
+    {
+      "key": "importBatchId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "warehouseId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "dateRangeStart",
+      "value": "2024-01-01",
+      "type": "string"
+    },
+    {
+      "key": "dateRangeEnd",
+      "value": "2024-12-31",
+      "type": "string"
     }
   ],
   "item": [
@@ -3976,6 +4016,2633 @@
             },
             "description": "Remove a line from a return (only DRAFT status)"
           }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "description": "Endpoints for generating and exporting reports (Inventory, Sales, Returns)",
+      "item": [
+        {
+          "name": "Inventory Reports - View",
+          "description": "View endpoints return JSON data for frontend tables",
+          "item": [
+            {
+              "name": "View Available Inventory",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/available/view?warehouseId={{warehouseId}}&productId={{productId}}&category=&includeInactive=false&locationId={{locationId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "inventory", "available", "view"],
+                  "query": [
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "productId",
+                      "value": "{{productId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "category",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "includeInactive",
+                      "value": "false",
+                      "disabled": true
+                    },
+                    {
+                      "key": "locationId",
+                      "value": "{{locationId}}",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "View available inventory report. Returns JSON data with rows and summary for frontend display."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response time is less than 5000ms', function () {",
+                      "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});",
+                      "",
+                      "pm.test('Response has data with rows and summary', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('data');",
+                      "    pm.expect(responseJson.data).to.have.property('rows');",
+                      "    pm.expect(responseJson.data).to.have.property('summary');",
+                      "    pm.expect(responseJson.data.rows).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "View Movement History",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/movement-history/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&productId={{productId}}&warehouseId={{warehouseId}}&movementType=",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "inventory", "movement-history", "view"],
+                  "query": [
+                    {
+                      "key": "dateRange[startDate]",
+                      "value": "{{dateRangeStart}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[endDate]",
+                      "value": "{{dateRangeEnd}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "productId",
+                      "value": "{{productId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "movementType",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "View movement history report. Returns JSON data with historical movement records."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});",
+                      "",
+                      "pm.test('Response has data with rows and summary', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('data');",
+                      "    pm.expect(responseJson.data).to.have.property('rows');",
+                      "    pm.expect(responseJson.data).to.have.property('summary');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "View Inventory Valuation",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/valuation/view?warehouseId={{warehouseId}}&category=&dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "inventory", "valuation", "view"],
+                  "query": [
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "category",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[startDate]",
+                      "value": "{{dateRangeStart}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[endDate]",
+                      "value": "{{dateRangeEnd}}",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "View inventory valuation report using PPM (Perpetual Inventory Method). Returns JSON data."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});",
+                      "",
+                      "pm.test('Response has data with rows and summary', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('data');",
+                      "    pm.expect(responseJson.data).to.have.property('rows');",
+                      "    pm.expect(responseJson.data).to.have.property('summary');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "View Low Stock",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/low-stock/view?warehouseId={{warehouseId}}&severity=CRITICAL",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "inventory", "low-stock", "view"],
+                  "query": [
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "severity",
+                      "value": "CRITICAL",
+                      "disabled": true,
+                      "description": "CRITICAL or WARNING"
+                    }
+                  ]
+                },
+                "description": "View low stock alert report. Returns JSON data with products below threshold."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "View Movements Summary",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/movements/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&type=&warehouseId={{warehouseId}}&status=",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "inventory", "movements", "view"],
+                  "query": [
+                    {
+                      "key": "dateRange[startDate]",
+                      "value": "{{dateRangeStart}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[endDate]",
+                      "value": "{{dateRangeEnd}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "type",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "status",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "View movements summary report. Returns JSON data with movement summaries."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "View Financial Report",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/financial/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}&category=",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "inventory", "financial", "view"],
+                  "query": [
+                    {
+                      "key": "dateRange[startDate]",
+                      "value": "{{dateRangeStart}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[endDate]",
+                      "value": "{{dateRangeEnd}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "category",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "View financial report. Returns JSON data with financial metrics."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "View Inventory Turnover",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/turnover/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}&category=&productId={{productId}}&period=MONTHLY",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "inventory", "turnover", "view"],
+                  "query": [
+                    {
+                      "key": "dateRange[startDate]",
+                      "value": "{{dateRangeStart}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[endDate]",
+                      "value": "{{dateRangeEnd}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "category",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "productId",
+                      "value": "{{productId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "period",
+                      "value": "MONTHLY",
+                      "disabled": true,
+                      "description": "MONTHLY, QUARTERLY, or YEARLY"
+                    }
+                  ]
+                },
+                "description": "View inventory turnover report. Returns JSON data with turnover metrics and comparisons."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Sales Reports - View",
+          "description": "View endpoints for sales reports",
+          "item": [
+            {
+              "name": "View Sales",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/sales/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}&productId={{productId}}&status=&customerReference=",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "sales", "view"],
+                  "query": [
+                    {
+                      "key": "dateRange[startDate]",
+                      "value": "{{dateRangeStart}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[endDate]",
+                      "value": "{{dateRangeEnd}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "productId",
+                      "value": "{{productId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "status",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "customerReference",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "View sales report. Returns JSON data with sales grouped by day, week, month, product, warehouse, or customer."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});",
+                      "",
+                      "pm.test('Response has data with rows and summary', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('data');",
+                      "    pm.expect(responseJson.data).to.have.property('rows');",
+                      "    pm.expect(responseJson.data).to.have.property('summary');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "View Sales by Product",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/sales/by-product/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}&productId={{productId}}&category=",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "sales", "by-product", "view"],
+                  "query": [
+                    {
+                      "key": "dateRange[startDate]",
+                      "value": "{{dateRangeStart}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[endDate]",
+                      "value": "{{dateRangeEnd}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "productId",
+                      "value": "{{productId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "category",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "View sales by product report. Returns JSON data with sales metrics per product including rankings."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "View Sales by Warehouse",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/sales/by-warehouse/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "sales", "by-warehouse", "view"],
+                  "query": [
+                    {
+                      "key": "dateRange[startDate]",
+                      "value": "{{dateRangeStart}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[endDate]",
+                      "value": "{{dateRangeEnd}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "View sales by warehouse report. Returns JSON data with sales performance per warehouse."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Returns Reports - View",
+          "description": "View endpoints for returns reports",
+          "item": [
+            {
+              "name": "View Returns",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/returns/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}&returnType=&status=",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "returns", "view"],
+                  "query": [
+                    {
+                      "key": "dateRange[startDate]",
+                      "value": "{{dateRangeStart}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[endDate]",
+                      "value": "{{dateRangeEnd}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "returnType",
+                      "value": "",
+                      "disabled": true,
+                      "description": "CUSTOMER or SUPPLIER"
+                    },
+                    {
+                      "key": "status",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "View returns report. Returns JSON data with returns grouped by day, week, month, type, warehouse, or product."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "View Returns by Type",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/returns/by-type/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}&returnType=",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "returns", "by-type", "view"],
+                  "query": [
+                    {
+                      "key": "dateRange[startDate]",
+                      "value": "{{dateRangeStart}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[endDate]",
+                      "value": "{{dateRangeEnd}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "returnType",
+                      "value": "",
+                      "disabled": true,
+                      "description": "CUSTOMER or SUPPLIER"
+                    }
+                  ]
+                },
+                "description": "View returns by type report. Returns JSON data with customer and supplier returns separately."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "View Returns by Product",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/returns/by-product/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}&productId={{productId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "returns", "by-product", "view"],
+                  "query": [
+                    {
+                      "key": "dateRange[startDate]",
+                      "value": "{{dateRangeStart}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[endDate]",
+                      "value": "{{dateRangeEnd}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "productId",
+                      "value": "{{productId}}",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "View returns by product report. Returns JSON data with return metrics per product."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "View Returns by Sale",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/returns/by-sale/{{saleId}}/view",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "returns", "by-sale", "{{saleId}}", "view"],
+                  "variable": [
+                    {
+                      "key": "saleId",
+                      "value": "{{saleId}}"
+                    }
+                  ]
+                },
+                "description": "View returns by sale report. Returns JSON data with returns for a specific sale."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "View Customer Returns",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/returns/customer/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "returns", "customer", "view"],
+                  "query": [
+                    {
+                      "key": "dateRange[startDate]",
+                      "value": "{{dateRangeStart}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[endDate]",
+                      "value": "{{dateRangeEnd}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "View customer returns report. Returns JSON data with customer return metrics."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "View Supplier Returns",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/returns/supplier/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "returns", "supplier", "view"],
+                  "query": [
+                    {
+                      "key": "dateRange[startDate]",
+                      "value": "{{dateRangeStart}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[endDate]",
+                      "value": "{{dateRangeEnd}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "View supplier returns report. Returns JSON data with supplier return metrics."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Inventory Reports - Stream",
+          "description": "Stream endpoints return NDJSON format for large datasets",
+          "item": [
+            {
+              "name": "Stream Available Inventory",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/x-ndjson",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/available/stream?warehouseId={{warehouseId}}&productId={{productId}}&category=&includeInactive=false",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "inventory", "available", "stream"],
+                  "query": [
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "productId",
+                      "value": "{{productId}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "category",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "includeInactive",
+                      "value": "false",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Stream available inventory report in NDJSON format. Each line is a JSON object. Useful for large datasets."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Content-Type is application/x-ndjson', function () {",
+                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/x-ndjson');",
+                      "});",
+                      "",
+                      "pm.test('Response is NDJSON format', function () {",
+                      "    const responseText = pm.response.text();",
+                      "    if (responseText) {",
+                      "        const lines = responseText.trim().split('\\n');",
+                      "        lines.forEach(line => {",
+                      "            if (line.trim()) {",
+                      "                try {",
+                      "                    JSON.parse(line);",
+                      "                } catch (e) {",
+                      "                    pm.expect.fail('Invalid JSON line: ' + line);",
+                      "                }",
+                      "            }",
+                      "        });",
+                      "    }",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Sales Reports - Stream",
+          "description": "Stream endpoints for sales reports in NDJSON format",
+          "item": [
+            {
+              "name": "Stream Sales",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/x-ndjson",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/sales/view/stream?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "sales", "view", "stream"],
+                  "query": [
+                    {
+                      "key": "dateRange[startDate]",
+                      "value": "{{dateRangeStart}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[endDate]",
+                      "value": "{{dateRangeEnd}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Stream sales report in NDJSON format. Each line is a JSON object."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Content-Type is application/x-ndjson', function () {",
+                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/x-ndjson');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Returns Reports - Stream",
+          "description": "Stream endpoints for returns reports in NDJSON format",
+          "item": [
+            {
+              "name": "Stream Returns",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/x-ndjson",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/returns/view/stream?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "returns", "view", "stream"],
+                  "query": [
+                    {
+                      "key": "dateRange[startDate]",
+                      "value": "{{dateRangeStart}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "dateRange[endDate]",
+                      "value": "{{dateRangeEnd}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "warehouseId",
+                      "value": "{{warehouseId}}",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Stream returns report in NDJSON format. Each line is a JSON object."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Content-Type is application/x-ndjson', function () {",
+                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/x-ndjson');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Inventory Reports - Export",
+          "description": "Export endpoints return files (PDF, Excel, CSV)",
+          "item": [
+            {
+              "name": "Export Available Inventory",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"format\": \"{{reportFormat}}\",\n  \"parameters\": {\n    \"warehouseId\": \"{{warehouseId}}\",\n    \"productId\": \"{{productId}}\",\n    \"includeInactive\": false\n  },\n  \"options\": {\n    \"includeHeader\": true,\n    \"includeSummary\": true,\n    \"title\": \"Available Inventory Report\"\n  },\n  \"saveMetadata\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/available/export",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "inventory", "available", "export"]
+                },
+                "description": "Export available inventory report. Returns file in specified format (PDF, EXCEL, or CSV)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has Content-Type header', function () {",
+                      "    const contentType = pm.response.headers.get('Content-Type');",
+                      "    pm.expect(contentType).to.exist;",
+                      "    ",
+                      "    const format = pm.collectionVariables.get('reportFormat');",
+                      "    if (format === 'PDF') {",
+                      "        pm.expect(contentType).to.include('application/pdf');",
+                      "    } else if (format === 'EXCEL') {",
+                      "        pm.expect(contentType).to.include('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');",
+                      "    } else if (format === 'CSV') {",
+                      "        pm.expect(contentType).to.include('text/csv');",
+                      "    }",
+                      "});",
+                      "",
+                      "pm.test('Response has Content-Disposition with filename', function () {",
+                      "    const contentDisposition = pm.response.headers.get('Content-Disposition');",
+                      "    pm.expect(contentDisposition).to.exist;",
+                      "    pm.expect(contentDisposition).to.include('attachment');",
+                      "    pm.expect(contentDisposition).to.include('filename');",
+                      "});",
+                      "",
+                      "pm.test('Response body is not empty', function () {",
+                      "    pm.expect(pm.response.body).to.not.be.empty;",
+                      "});",
+                      "",
+                      "pm.test('Response has minimum file size', function () {",
+                      "    const bodySize = pm.response.body.length || 0;",
+                      "    pm.expect(bodySize).to.be.above(0);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Sales Reports - Export",
+          "description": "Export endpoints for sales reports",
+          "item": [
+            {
+              "name": "Export Sales",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"format\": \"{{reportFormat}}\",\n  \"parameters\": {\n    \"dateRange\": {\n      \"startDate\": \"{{dateRangeStart}}\",\n      \"endDate\": \"{{dateRangeEnd}}\"\n    },\n    \"warehouseId\": \"{{warehouseId}}\",\n    \"productId\": \"{{productId}}\"\n  },\n  \"options\": {\n    \"includeHeader\": true,\n    \"includeSummary\": true,\n    \"title\": \"Sales Report\"\n  },\n  \"saveMetadata\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reports/sales/export",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "sales", "export"]
+                },
+                "description": "Export sales report. Returns file in specified format (PDF, EXCEL, or CSV)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has Content-Type header', function () {",
+                      "    const contentType = pm.response.headers.get('Content-Type');",
+                      "    pm.expect(contentType).to.exist;",
+                      "});",
+                      "",
+                      "pm.test('Response has Content-Disposition with filename', function () {",
+                      "    const contentDisposition = pm.response.headers.get('Content-Disposition');",
+                      "    pm.expect(contentDisposition).to.exist;",
+                      "    pm.expect(contentDisposition).to.include('attachment');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Export Sales by Product",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"format\": \"{{reportFormat}}\",\n  \"parameters\": {\n    \"dateRange\": {\n      \"startDate\": \"{{dateRangeStart}}\",\n      \"endDate\": \"{{dateRangeEnd}}\"\n    },\n    \"warehouseId\": \"{{warehouseId}}\",\n    \"productId\": \"{{productId}}\"\n  },\n  \"options\": {\n    \"includeHeader\": true,\n    \"includeSummary\": true\n  },\n  \"saveMetadata\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reports/sales/by-product/export",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "sales", "by-product", "export"]
+                },
+                "description": "Export sales by product report."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Export Sales by Warehouse",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"format\": \"{{reportFormat}}\",\n  \"parameters\": {\n    \"dateRange\": {\n      \"startDate\": \"{{dateRangeStart}}\",\n      \"endDate\": \"{{dateRangeEnd}}\"\n    },\n    \"warehouseId\": \"{{warehouseId}}\"\n  },\n  \"options\": {\n    \"includeHeader\": true,\n    \"includeSummary\": true\n  },\n  \"saveMetadata\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reports/sales/by-warehouse/export",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "sales", "by-warehouse", "export"]
+                },
+                "description": "Export sales by warehouse report."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Returns Reports - Export",
+          "description": "Export endpoints for returns reports",
+          "item": [
+            {
+              "name": "Export Returns",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"format\": \"{{reportFormat}}\",\n  \"parameters\": {\n    \"dateRange\": {\n      \"startDate\": \"{{dateRangeStart}}\",\n      \"endDate\": \"{{dateRangeEnd}}\"\n    },\n    \"warehouseId\": \"{{warehouseId}}\",\n    \"returnType\": \"\"\n  },\n  \"options\": {\n    \"includeHeader\": true,\n    \"includeSummary\": true\n  },\n  \"saveMetadata\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reports/returns/export",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "returns", "export"]
+                },
+                "description": "Export returns report."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Export Returns by Type",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"format\": \"{{reportFormat}}\",\n  \"parameters\": {\n    \"dateRange\": {\n      \"startDate\": \"{{dateRangeStart}}\",\n      \"endDate\": \"{{dateRangeEnd}}\"\n    },\n    \"warehouseId\": \"{{warehouseId}}\",\n    \"returnType\": \"\"\n  },\n  \"options\": {\n    \"includeHeader\": true\n  },\n  \"saveMetadata\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reports/returns/by-type/export",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "returns", "by-type", "export"]
+                },
+                "description": "Export returns by type report."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Export Returns by Product",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"format\": \"{{reportFormat}}\",\n  \"parameters\": {\n    \"dateRange\": {\n      \"startDate\": \"{{dateRangeStart}}\",\n      \"endDate\": \"{{dateRangeEnd}}\"\n    },\n    \"warehouseId\": \"{{warehouseId}}\",\n    \"productId\": \"{{productId}}\"\n  },\n  \"options\": {\n    \"includeHeader\": true\n  },\n  \"saveMetadata\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reports/returns/by-product/export",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "returns", "by-product", "export"]
+                },
+                "description": "Export returns by product report."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Report History",
+          "description": "Get report execution history",
+          "item": [
+            {
+              "name": "Get Report History",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/history?type={{reportType}}&status=&generatedBy=&startDate=&endDate=",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "history"],
+                  "query": [
+                    {
+                      "key": "type",
+                      "value": "{{reportType}}",
+                      "disabled": true
+                    },
+                    {
+                      "key": "status",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "generatedBy",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "startDate",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "endDate",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Get report execution history. Filter by type, status, generatedBy, or date range."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Imports",
+      "description": "Endpoints for bulk import operations (Products, Movements, Warehouses, Stock, Transfers)",
+      "item": [
+        {
+          "name": "Import Operations",
+          "description": "Main import operations",
+          "item": [
+            {
+              "name": "Preview Import",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": []
+                    },
+                    {
+                      "key": "type",
+                      "value": "{{importType}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/imports/preview",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["imports", "preview"]
+                },
+                "description": "Preview and validate import file without persisting. Returns validation results and preview data."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});",
+                      "",
+                      "pm.test('Response has preview data', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('data');",
+                      "    pm.expect(responseJson.data).to.have.property('validRows');",
+                      "    pm.expect(responseJson.data).to.have.property('invalidRows');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Execute Import",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": []
+                    },
+                    {
+                      "key": "type",
+                      "value": "{{importType}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "note",
+                      "value": "Test import batch",
+                      "type": "text",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/imports/execute",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["imports", "execute"]
+                },
+                "description": "Execute complete import process (validate + create + process) in one operation. Returns import batch ID and status."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});",
+                      "",
+                      "pm.test('Response has import batch ID', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    if (responseJson.data && responseJson.data.batchId) {",
+                      "        pm.collectionVariables.set('importBatchId', responseJson.data.batchId);",
+                      "        console.log('Import batch ID saved:', responseJson.data.batchId);",
+                      "    }",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Create Import Batch",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"{{importType}}\",\n  \"fileName\": \"import-file.xlsx\",\n  \"note\": \"Test import batch\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/imports",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["imports"]
+                },
+                "description": "Create a new import batch. Returns batch ID for subsequent operations."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 201', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "pm.test('Response has batch ID', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    if (responseJson.data && responseJson.data.id) {",
+                      "        pm.collectionVariables.set('importBatchId', responseJson.data.id);",
+                      "        console.log('Import batch ID saved:', responseJson.data.id);",
+                      "    }",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Import Batch Management",
+          "description": "Manage import batches",
+          "item": [
+            {
+              "name": "Validate Import Batch",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": []
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/imports/{{importBatchId}}/validate",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["imports", "{{importBatchId}}", "validate"],
+                  "variable": [
+                    {
+                      "key": "importBatchId",
+                      "value": "{{importBatchId}}"
+                    }
+                  ]
+                },
+                "description": "Validate an import batch with uploaded file. Returns validation results."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Process Import Batch",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"skipInvalidRows\": false\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/imports/{{importBatchId}}/process",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["imports", "{{importBatchId}}", "process"],
+                  "variable": [
+                    {
+                      "key": "importBatchId",
+                      "value": "{{importBatchId}}"
+                    }
+                  ]
+                },
+                "description": "Process a validated import batch. Only works if batch status is VALIDATED."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Get Import Status",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/imports/{{importBatchId}}/status",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["imports", "{{importBatchId}}", "status"],
+                  "variable": [
+                    {
+                      "key": "importBatchId",
+                      "value": "{{importBatchId}}"
+                    }
+                  ]
+                },
+                "description": "Get import batch status. Returns current status (PENDING, VALIDATING, VALIDATED, PROCESSING, COMPLETED, FAILED)."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has success field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.success).to.be.true;",
+                      "});",
+                      "",
+                      "pm.test('Response has status field', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson.data).to.have.property('status');",
+                      "    ",
+                      "    const validStatuses = ['PENDING', 'VALIDATING', 'VALIDATED', 'PROCESSING', 'COMPLETED', 'FAILED'];",
+                      "    pm.expect(validStatuses).to.include(responseJson.data.status);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Import Templates & Reports",
+          "description": "Download templates and error reports",
+          "item": [
+            {
+              "name": "Download Import Template",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/imports/templates/{{importType}}?format=csv",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["imports", "templates", "{{importType}}"],
+                  "query": [
+                    {
+                      "key": "format",
+                      "value": "csv",
+                      "description": "csv or xlsx",
+                      "disabled": true
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "importType",
+                      "value": "{{importType}}"
+                    }
+                  ]
+                },
+                "description": "Download import template for a specific type. Returns CSV or Excel file with column headers and example data."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has Content-Type header', function () {",
+                      "    const contentType = pm.response.headers.get('Content-Type');",
+                      "    pm.expect(contentType).to.exist;",
+                      "});",
+                      "",
+                      "pm.test('Response has Content-Disposition with filename', function () {",
+                      "    const contentDisposition = pm.response.headers.get('Content-Disposition');",
+                      "    pm.expect(contentDisposition).to.exist;",
+                      "    pm.expect(contentDisposition).to.include('attachment');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Download Error Report",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/imports/{{importBatchId}}/errors?format=csv",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["imports", "{{importBatchId}}", "errors"],
+                  "query": [
+                    {
+                      "key": "format",
+                      "value": "csv",
+                      "description": "csv or xlsx",
+                      "disabled": true
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "importBatchId",
+                      "value": "{{importBatchId}}"
+                    }
+                  ]
+                },
+                "description": "Get error report for an import batch. Returns CSV or Excel file with validation errors and row details."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Response has Content-Type header', function () {",
+                      "    const contentType = pm.response.headers.get('Content-Type');",
+                      "    pm.expect(contentType).to.exist;",
+                      "});",
+                      "",
+                      "pm.test('Response has Content-Disposition with filename', function () {",
+                      "    const contentDisposition = pm.response.headers.get('Content-Disposition');",
+                      "    pm.expect(contentDisposition).to.exist;",
+                      "    pm.expect(contentDisposition).to.include('attachment');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Bulk Testing Scripts",
+          "description": "Scripts for bulk testing and validation",
+          "item": [
+            {
+              "name": "Test All Export Formats",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Script to test all export formats for a report",
+                      "// Set reportType and other parameters before running",
+                      "",
+                      "const formats = ['PDF', 'EXCEL', 'CSV'];",
+                      "const currentFormat = pm.collectionVariables.get('reportFormat') || 'EXCEL';",
+                      "",
+                      "// Store current format index",
+                      "let formatIndex = formats.indexOf(currentFormat);",
+                      "if (formatIndex === -1) formatIndex = 0;",
+                      "",
+                      "// Set next format",
+                      "const nextFormat = formats[formatIndex];",
+                      "pm.collectionVariables.set('reportFormat', nextFormat);",
+                      "",
+                      "console.log('Testing export format:', nextFormat);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Validate export response",
+                      "pm.test('Export format ' + pm.collectionVariables.get('reportFormat') + ' works', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    ",
+                      "    const contentType = pm.response.headers.get('Content-Type');",
+                      "    const format = pm.collectionVariables.get('reportFormat');",
+                      "    ",
+                      "    if (format === 'PDF') {",
+                      "        pm.expect(contentType).to.include('application/pdf');",
+                      "    } else if (format === 'EXCEL') {",
+                      "        pm.expect(contentType).to.include('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');",
+                      "    } else if (format === 'CSV') {",
+                      "        pm.expect(contentType).to.include('text/csv');",
+                      "    }",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/available/export",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "inventory", "available", "export"]
+                },
+                "description": "Script to test all export formats. Modify the URL to test different report types. This is a template - copy and modify for each report type."
+              }
+            },
+            {
+              "name": "Test Stream with Large Dataset",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Test stream endpoint with large dataset",
+                      "pm.test('Stream response is valid', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/x-ndjson');",
+                      "});",
+                      "",
+                      "pm.test('Stream contains valid NDJSON', function () {",
+                      "    const responseText = pm.response.text();",
+                      "    if (responseText) {",
+                      "        const lines = responseText.trim().split('\\n');",
+                      "        let validLines = 0;",
+                      "        ",
+                      "        lines.forEach((line, index) => {",
+                      "            if (line.trim()) {",
+                      "                try {",
+                      "                    JSON.parse(line);",
+                      "                    validLines++;",
+                      "                } catch (e) {",
+                      "                    console.error('Invalid JSON at line ' + (index + 1) + ':', line.substring(0, 100));",
+                      "                }",
+                      "            }",
+                      "        });",
+                      "        ",
+                      "        console.log('Valid NDJSON lines:', validLines);",
+                      "        pm.expect(validLines).to.be.above(0);",
+                      "    }",
+                      "});",
+                      "",
+                      "pm.test('Stream performance is acceptable', function () {",
+                      "    pm.expect(pm.response.responseTime).to.be.below(30000); // 30 seconds max",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/available/stream",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "inventory", "available", "stream"]
+                },
+                "description": "Script to test stream endpoints with large datasets. Validates NDJSON format and performance."
+              }
+            }
+          ]
         }
       ]
     }

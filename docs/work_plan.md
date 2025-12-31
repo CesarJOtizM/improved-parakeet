@@ -663,15 +663,15 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
         - [x] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
         - [x] Comparación: Período actual vs período anterior
         - [x] Ranking: Productos con mayor tasa de devolución
-      - [ ] GET /reports/returns/by-sale/:saleId - Vista de devoluciones de una venta específica (JSON) (pendiente)
-        - [ ] Filtros: saleId (requerido)
-        - [ ] Métricas: Devoluciones totales de la venta, productos devueltos, valor devuelto
-      - [ ] GET /reports/returns/customer - Vista de devoluciones de clientes (JSON) (pendiente)
-        - [ ] Filtros: dateRange, warehouseId, saleId
-        - [ ] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
-      - [ ] GET /reports/returns/supplier - Vista de devoluciones a proveedores (JSON) (pendiente)
-        - [ ] Filtros: dateRange, warehouseId, movementId
-        - [ ] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
+      - [x] GET /reports/returns/by-sale/:saleId/view - Vista de devoluciones de una venta específica (JSON) ✅
+        - [x] Filtros: saleId (requerido)
+        - [x] Métricas: Devoluciones totales de la venta, productos devueltos, valor devuelto
+      - [x] GET /reports/returns/customer/view - Vista de devoluciones de clientes (JSON) ✅
+        - [x] Filtros: dateRange, warehouseId, saleId
+        - [x] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
+      - [x] GET /reports/returns/supplier/view - Vista de devoluciones a proveedores (JSON) ✅
+        - [x] Filtros: dateRange, warehouseId, movementId
+        - [x] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
     - [x] GET /reports/history - Historial de reportes generados (JSON)
   - [x] **Exportación de Reportes** (Implementado con servicio mock):
     - [x] POST /reports/inventory/*/export - Exportar reportes de inventario (PDF/Excel/CSV/JSON)
@@ -696,14 +696,19 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
     - [x] GET /imports/:id/errors - Descargar reporte de errores
   - [x] Documentación Swagger (endpoints documentados)
   - [x] Tests de aceptación (149 tests pasando)
-  - [ ] Implementar streaming para reportes grandes (pendiente)
+  - [x] Implementar streaming para reportes grandes ✅
+    - [x] Endpoints de streaming: GET /reports/{category}/{type}/stream
+    - [x] Formato NDJSON (JSON Lines) para streaming
+    - [x] StreamReportUseCase implementado
+    - [x] Procesamiento en batches para reportes grandes
+    - [x] Manejo de cancelación cuando el cliente cierra la conexión
 
-- [ ] **Colección de Postman - Reports & Imports**
-  - [ ] Crear colección de Postman para reportes e importaciones
-  - [ ] Configurar variables para diferentes tipos de reporte
-  - [ ] Implementar tests para validación de exportaciones
-  - [ ] Crear scripts para testing de importaciones masivas
-  - [ ] Documentar todos los endpoints de reportes e importaciones
+- [x] **Colección de Postman - Reports & Imports**
+  - [x] Crear colección de Postman para reportes e importaciones
+  - [x] Configurar variables para diferentes tipos de reporte
+  - [x] Implementar tests para validación de exportaciones
+  - [x] Crear scripts para testing de importaciones masivas
+  - [x] Documentar todos los endpoints de reportes e importaciones
 
 ### **Semana 14: Dominio de Personalización y Configuración**
 
