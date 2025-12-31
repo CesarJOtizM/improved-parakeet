@@ -9,14 +9,14 @@ export class TenantMiddleware implements NestMiddleware {
 
   async use(req: Request, _res: Response, next: NextFunction) {
     try {
-      // Obtener el identificador de la organización desde diferentes fuentes
+      // Get organization identifier from different sources
       const orgId = this.extractOrganizationId(req);
 
       if (!orgId) {
-        throw new ForbiddenException('Identificador de organización requerido');
+        throw new ForbiddenException('Organization identifier required');
       }
 
-      // Validar que la organización existe y está activa
+      // Validate that organization exists and is active
       const organization = await this.prisma.organization.findFirst({
         where: {
           OR: [{ id: orgId }, { slug: orgId }, { domain: req.headers.host }],
@@ -31,16 +31,16 @@ export class TenantMiddleware implements NestMiddleware {
       });
 
       if (!organization) {
-        throw new ForbiddenException('Organización no encontrada o inactiva');
+        throw new ForbiddenException('Organization not found or inactive');
       }
 
-      // Establecer el contexto de la organización en el request
+      // Set organization context in request
       req.organization = organization as IOrganizationContext;
       req.orgId = organization.id;
 
-      // Si hay un usuario autenticado, verificar que pertenece a la organización
+      // If user is authenticated, verify they belong to the organization
       if (req.user && req.user.orgId && req.user.orgId !== organization.id) {
-        throw new ForbiddenException('Usuario no tiene acceso a esta organización');
+        throw new ForbiddenException('User does not have access to this organization');
       }
 
       next();
@@ -50,17 +50,17 @@ export class TenantMiddleware implements NestMiddleware {
   }
 
   private extractOrganizationId(req: Request): string | null {
-    // 1. Desde el header X-Organization-ID
+    // 1. From X-Organization-ID header
     if (req.headers['x-organization-id']) {
       return req.headers['x-organization-id'] as string;
     }
 
-    // 2. Desde el header X-Organization-Slug
+    // 2. From X-Organization-Slug header
     if (req.headers['x-organization-slug']) {
       return req.headers['x-organization-slug'] as string;
     }
 
-    // 3. Desde el subdominio
+    // 3. From subdomain
     const host = req.headers.host;
     if (host && host.includes('.')) {
       const subdomain = host.split('.')[0];
@@ -69,12 +69,12 @@ export class TenantMiddleware implements NestMiddleware {
       }
     }
 
-    // 4. Desde el query parameter
+    // 4. From query parameter
     if (req.query.orgId) {
       return req.query.orgId as string;
     }
 
-    // 5. Desde el body (para POST/PUT requests)
+    // 5. From body (for POST/PUT requests)
     if (req.body && req.body.orgId) {
       return req.body.orgId as string;
     }
@@ -83,4 +83,4 @@ export class TenantMiddleware implements NestMiddleware {
   }
 }
 
-// Las interfaces están definidas en src/shared/types/http.types.ts
+// Interfaces are defined in src/shared/types/http.types.ts

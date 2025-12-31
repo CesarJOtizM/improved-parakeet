@@ -75,7 +75,11 @@ export class UpdateProductUseCase {
       const updateProps: Partial<IProductProps> = {};
 
       if (request.name !== undefined) {
-        updateProps.name = ProductName.create(request.name);
+        const nameResult = ProductName.create(request.name);
+        if (nameResult.isErr()) {
+          return err(nameResult.unwrapErr());
+        }
+        updateProps.name = nameResult.unwrap();
       }
 
       if (request.description !== undefined) {

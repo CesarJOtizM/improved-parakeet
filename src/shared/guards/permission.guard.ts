@@ -17,7 +17,7 @@ export class PermissionGuard implements CanActivate {
       string[] | { type: 'ANY' | 'ALL'; permissions: string[] }
     >(PERMISSIONS_KEY, [context.getHandler(), context.getClass()]);
 
-    // Si no hay permisos requeridos, permitir acceso
+    // If no permissions required, allow access
     if (!requiredPermissions) {
       return true;
     }
@@ -25,26 +25,26 @@ export class PermissionGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
-    // Verificar que el usuario esté autenticado
+    // Verify user is authenticated
     if (!user) {
-      throw new UnauthorizedException('Usuario no autenticado');
+      throw new UnauthorizedException('User not authenticated');
     }
 
-    // Verificar que el usuario tenga la organización
+    // Verify user has organization
     if (!user.orgId) {
-      throw new ForbiddenException('Usuario sin organización asignada');
+      throw new ForbiddenException('User without assigned organization');
     }
 
-    // Obtener permisos del usuario desde el request (seteado por el middleware de auth)
+    // Get user permissions from request (set by auth middleware)
     const userPermissions = request.userPermissions || [];
     const userRoles = request.userRoles || [];
 
-    // Verificar si es un super admin (tiene acceso total)
+    // Verify if user is super admin (has full access)
     if (userRoles.includes('ADMIN')) {
       return true;
     }
 
-    // Verificar permisos requeridos
+    // Verify required permissions
     const hasPermission = this.checkPermissions(requiredPermissions, userPermissions, userRoles);
 
     if (!hasPermission) {
@@ -53,7 +53,7 @@ export class PermissionGuard implements CanActivate {
           ? requiredPermissions.permissions.join(', ')
           : requiredPermissions.join(', ');
 
-      throw new ForbiddenException(`Permisos insuficientes. Requeridos: ${permissionList}`);
+      throw new ForbiddenException(`Insufficient permissions. Required: ${permissionList}`);
     }
 
     return true;
@@ -64,23 +64,23 @@ export class PermissionGuard implements CanActivate {
     userPermissions: string[],
     _userRoles: string[]
   ): boolean {
-    // Si es un objeto con tipo específico
+    // If it's an object with specific type
     if (typeof requiredPermissions === 'object' && 'type' in requiredPermissions) {
       const { type, permissions } = requiredPermissions;
 
       switch (type) {
         case 'ANY':
-          // Al menos uno de los permisos
+          // At least one of the permissions
           return permissions.some(permission => userPermissions.includes(permission));
         case 'ALL':
-          // Todos los permisos
+          // All permissions
           return permissions.every(permission => userPermissions.includes(permission));
         default:
           return false;
       }
     }
 
-    // Por defecto, requerir todos los permisos
+    // By default, require all permissions
     return requiredPermissions.every(permission => userPermissions.includes(permission));
   }
 }

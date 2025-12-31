@@ -1,4 +1,5 @@
 import { ValueObject } from '@shared/domain/base/valueObject.base';
+import { ValidationError, Result, err, ok } from '@shared/domain/result';
 
 export interface ISkuProps {
   value: string;
@@ -7,42 +8,61 @@ export interface ISkuProps {
 export class SKU extends ValueObject<ISkuProps> {
   private constructor(props: ISkuProps) {
     super(props);
-    this.validate(props);
   }
 
-  public static create(value: string): SKU {
-    return new SKU({ value: value.trim() });
-  }
+  public static create(value: string): Result<SKU, ValidationError> {
+    const trimmed = value.trim();
+    const validationResult = this.validate(trimmed);
 
-  private validate(props: ISkuProps): void {
-    if (!props.value || props.value.trim().length === 0) {
-      throw new Error('SKU cannot be empty');
+    if (validationResult.isErr()) {
+      const error = validationResult.unwrapErr();
+      return err(error);
     }
 
-    const trimmed = props.value.trim();
+    return ok(new SKU({ value: trimmed }));
+  }
+
+  /**
+   * Reconstitute SKU from persistence (bypasses validation)
+   * Use only when loading from database where data is already validated
+   */
+  public static reconstitute(value: string): SKU {
+    return new SKU({ value });
+  }
+
+  private static validate(value: string): Result<void, ValidationError> {
+    if (!value || value.trim().length === 0) {
+      return err(new ValidationError('SKU cannot be empty'));
+    }
+
+    const trimmed = value.trim();
 
     if (trimmed.length < 3) {
-      throw new Error('SKU must be at least 3 characters long');
+      return err(new ValidationError('SKU must be at least 3 characters long'));
     }
 
     if (trimmed.length > 50) {
-      throw new Error('SKU must be at most 50 characters long');
+      return err(new ValidationError('SKU must be at most 50 characters long'));
     }
 
     // Alphanumeric, underscore, and hyphen only
     const skuRegex = /^[a-zA-Z0-9_-]+$/;
     if (!skuRegex.test(trimmed)) {
-      throw new Error('SKU can only contain letters, numbers, underscores, and hyphens');
+      return err(
+        new ValidationError('SKU can only contain letters, numbers, underscores, and hyphens')
+      );
     }
 
     // Cannot start or end with underscore or hyphen
     if (trimmed.startsWith('_') || trimmed.startsWith('-')) {
-      throw new Error('SKU cannot start with underscore or hyphen');
+      return err(new ValidationError('SKU cannot start with underscore or hyphen'));
     }
 
     if (trimmed.endsWith('_') || trimmed.endsWith('-')) {
-      throw new Error('SKU cannot end with underscore or hyphen');
+      return err(new ValidationError('SKU cannot end with underscore or hyphen'));
     }
+
+    return ok(undefined);
   }
 
   public getValue(): string {

@@ -24,8 +24,8 @@ export class PrismaProductRepository implements IProductRepository {
 
       return Product.reconstitute(
         {
-          sku: SKU.create(productData.sku),
-          name: ProductName.create(productData.name),
+          sku: SKU.reconstitute(productData.sku),
+          name: ProductName.reconstitute(productData.name),
           description: productData.description || undefined,
           unit: UnitValueObject.create(
             productData.unit,
@@ -60,8 +60,8 @@ export class PrismaProductRepository implements IProductRepository {
       return productsData.map(productData =>
         Product.reconstitute(
           {
-            sku: SKU.create(productData.sku),
-            name: ProductName.create(productData.name),
+            sku: SKU.reconstitute(productData.sku),
+            name: ProductName.reconstitute(productData.name),
             description: productData.description || undefined,
             unit: UnitValueObject.create(productData.unit, productData.unit, 0),
             barcode: productData.barcode || undefined,
@@ -135,8 +135,8 @@ export class PrismaProductRepository implements IProductRepository {
 
           return Product.reconstitute(
             {
-              sku: SKU.create(updatedProduct.sku),
-              name: ProductName.create(updatedProduct.name),
+              sku: SKU.reconstitute(updatedProduct.sku),
+              name: ProductName.reconstitute(updatedProduct.name),
               description: updatedProduct.description || undefined,
               unit: UnitValueObject.create(updatedProduct.unit, updatedProduct.unit, 0),
               barcode: updatedProduct.barcode || undefined,
@@ -157,8 +157,8 @@ export class PrismaProductRepository implements IProductRepository {
 
       return Product.reconstitute(
         {
-          sku: SKU.create(newProduct.sku),
-          name: ProductName.create(newProduct.name),
+          sku: SKU.reconstitute(newProduct.sku),
+          name: ProductName.reconstitute(newProduct.name),
           description: newProduct.description || undefined,
           unit: UnitValueObject.create(newProduct.unit, newProduct.unit, 0),
           barcode: newProduct.barcode || undefined,
@@ -207,8 +207,8 @@ export class PrismaProductRepository implements IProductRepository {
 
       return Product.reconstitute(
         {
-          sku: SKU.create(productData.sku),
-          name: ProductName.create(productData.name),
+          sku: SKU.reconstitute(productData.sku),
+          name: ProductName.reconstitute(productData.name),
           description: productData.description || undefined,
           unit: UnitValueObject.create(productData.unit, productData.unit, 0),
           barcode: productData.barcode || undefined,
@@ -239,8 +239,8 @@ export class PrismaProductRepository implements IProductRepository {
       return productsData.map(productData =>
         Product.reconstitute(
           {
-            sku: SKU.create(productData.sku),
-            name: ProductName.create(productData.name),
+            sku: SKU.reconstitute(productData.sku),
+            name: ProductName.reconstitute(productData.name),
             description: productData.description || undefined,
             unit: UnitValueObject.create(productData.unit, productData.unit, 0),
             barcode: productData.barcode || undefined,
@@ -273,8 +273,8 @@ export class PrismaProductRepository implements IProductRepository {
       return productsData.map(productData =>
         Product.reconstitute(
           {
-            sku: SKU.create(productData.sku),
-            name: ProductName.create(productData.name),
+            sku: SKU.reconstitute(productData.sku),
+            name: ProductName.reconstitute(productData.name),
             description: productData.description || undefined,
             unit: UnitValueObject.create(productData.unit, productData.unit, 0),
             barcode: productData.barcode || undefined,
@@ -308,8 +308,8 @@ export class PrismaProductRepository implements IProductRepository {
       return stockData.map(stock =>
         Product.reconstitute(
           {
-            sku: SKU.create(stock.product.sku),
-            name: ProductName.create(stock.product.name),
+            sku: SKU.reconstitute(stock.product.sku),
+            name: ProductName.reconstitute(stock.product.name),
             description: stock.product.description || undefined,
             unit: UnitValueObject.create(stock.product.unit, stock.product.unit, 0),
             barcode: stock.product.barcode || undefined,
@@ -348,8 +348,8 @@ export class PrismaProductRepository implements IProductRepository {
         if (!stock) throw new Error('Product not found');
         return Product.reconstitute(
           {
-            sku: SKU.create(stock.product.sku),
-            name: ProductName.create(stock.product.name),
+            sku: SKU.reconstitute(stock.product.sku),
+            name: ProductName.reconstitute(stock.product.name),
             description: stock.product.description || undefined,
             unit: UnitValueObject.create(stock.product.unit, stock.product.unit, 0),
             barcode: stock.product.barcode || undefined,

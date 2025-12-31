@@ -15,8 +15,8 @@ export class ProductFactory {
    */
   static create(overrides?: Partial<IProductProps>, orgId?: string): Product {
     const props: IProductProps = {
-      sku: SKU.create('TEST-SKU-001'),
-      name: ProductName.create('Test Product'),
+      sku: SKU.reconstitute('TEST-SKU-001'),
+      name: ProductName.reconstitute('Test Product'),
       unit: UnitValueObject.create('UNIT', 'Unit', 0),
       status: ProductStatus.create('ACTIVE'),
       costMethod: CostMethod.create('FIFO'),
@@ -38,7 +38,7 @@ export class ProductFactory {
    */
   static createMany(count: number, overrides?: Partial<IProductProps>, orgId?: string): Product[] {
     return BaseFactory.createMany(count, (index: number) => {
-      const sku = SKU.create(`TEST-SKU-${String(index + 1).padStart(3, '0')}`);
+      const sku = SKU.reconstitute(`TEST-SKU-${String(index + 1).padStart(3, '0')}`);
       return this.create(
         {
           ...overrides,
@@ -54,8 +54,8 @@ export class ProductFactory {
    */
   static createProps(overrides?: Partial<IProductProps>): IProductProps {
     return {
-      sku: SKU.create('TEST-SKU-001'),
-      name: ProductName.create('Test Product'),
+      sku: SKU.reconstitute('TEST-SKU-001'),
+      name: ProductName.reconstitute('Test Product'),
       unit: UnitValueObject.create('UNIT', 'Unit', 0),
       status: ProductStatus.create('ACTIVE'),
       costMethod: CostMethod.create('FIFO'),

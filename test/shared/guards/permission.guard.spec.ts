@@ -62,7 +62,7 @@ describe('PermissionGuard', () => {
 
       // Act & Assert
       expect(() => guard.canActivate(mockExecutionContext)).toThrow(UnauthorizedException);
-      expect(() => guard.canActivate(mockExecutionContext)).toThrow('Usuario no autenticado');
+      expect(() => guard.canActivate(mockExecutionContext)).toThrow('User not authenticated');
     });
 
     it('Given: user without organization When: checking access Then: should throw ForbiddenException', () => {
@@ -90,7 +90,7 @@ describe('PermissionGuard', () => {
       // Act & Assert
       expect(() => guard.canActivate(mockExecutionContext)).toThrow(ForbiddenException);
       expect(() => guard.canActivate(mockExecutionContext)).toThrow(
-        'Usuario sin organización asignada'
+        'User without assigned organization'
       );
     });
 
@@ -177,7 +177,7 @@ describe('PermissionGuard', () => {
       // Act & Assert
       expect(() => guard.canActivate(mockExecutionContext)).toThrow(ForbiddenException);
       expect(() => guard.canActivate(mockExecutionContext)).toThrow(
-        'Permisos insuficientes. Requeridos: PRODUCTS:CREATE, PRODUCTS:UPDATE'
+        'Insufficient permissions. Required: PRODUCTS:CREATE, PRODUCTS:UPDATE'
       );
     });
   });

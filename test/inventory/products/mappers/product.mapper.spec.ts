@@ -27,25 +27,29 @@ describe('ProductMapper', () => {
       };
 
       // Act
-      const props = ProductMapper.toDomainProps(input);
+      const propsResult = ProductMapper.toDomainProps(input);
 
       // Assert
-      expect(props.sku).toBeInstanceOf(SKU);
-      expect(props.sku.getValue()).toBe('PROD-001');
-      expect(props.name).toBeInstanceOf(ProductName);
-      expect(props.name.getValue()).toBe('Test Product');
-      expect(props.unit).toBeInstanceOf(UnitValueObject);
-      expect(props.unit.getValue().code).toBe('UNIT');
-      expect(props.unit.getValue().name).toBe('Unit');
-      expect(props.unit.getValue().precision).toBe(0);
-      expect(props.status).toBeInstanceOf(ProductStatus);
-      expect(props.status.getValue()).toBe('ACTIVE');
-      expect(props.costMethod).toBeInstanceOf(CostMethod);
-      expect(props.costMethod.getValue()).toBe('AVG');
-      expect(props.description).toBe('Test Description');
-      expect(props.barcode).toBe('1234567890');
-      expect(props.brand).toBe('Test Brand');
-      expect(props.model).toBe('Test Model');
+      expect(propsResult.isOk()).toBe(true);
+      if (propsResult.isOk()) {
+        const props = propsResult.unwrap();
+        expect(props.sku).toBeInstanceOf(SKU);
+        expect(props.sku.getValue()).toBe('PROD-001');
+        expect(props.name).toBeInstanceOf(ProductName);
+        expect(props.name.getValue()).toBe('Test Product');
+        expect(props.unit).toBeInstanceOf(UnitValueObject);
+        expect(props.unit.getValue().code).toBe('UNIT');
+        expect(props.unit.getValue().name).toBe('Unit');
+        expect(props.unit.getValue().precision).toBe(0);
+        expect(props.status).toBeInstanceOf(ProductStatus);
+        expect(props.status.getValue()).toBe('ACTIVE');
+        expect(props.costMethod).toBeInstanceOf(CostMethod);
+        expect(props.costMethod.getValue()).toBe('AVG');
+        expect(props.description).toBe('Test Description');
+        expect(props.barcode).toBe('1234567890');
+        expect(props.brand).toBe('Test Brand');
+        expect(props.model).toBe('Test Model');
+      }
     });
 
     it('Given: minimal CreateProductDto When: converting to domain props Then: should use default values', () => {
@@ -61,17 +65,21 @@ describe('ProductMapper', () => {
       };
 
       // Act
-      const props = ProductMapper.toDomainProps(input);
+      const propsResult = ProductMapper.toDomainProps(input);
 
       // Assert
-      expect(props.sku.getValue()).toBe('PROD-002');
-      expect(props.name.getValue()).toBe('Minimal Product');
-      expect(props.status.getValue()).toBe('ACTIVE'); // Default
-      expect(props.costMethod.getValue()).toBe('AVG'); // Default
-      expect(props.description).toBeUndefined();
-      expect(props.barcode).toBeUndefined();
-      expect(props.brand).toBeUndefined();
-      expect(props.model).toBeUndefined();
+      expect(propsResult.isOk()).toBe(true);
+      if (propsResult.isOk()) {
+        const props = propsResult.unwrap();
+        expect(props.sku.getValue()).toBe('PROD-002');
+        expect(props.name.getValue()).toBe('Minimal Product');
+        expect(props.status.getValue()).toBe('ACTIVE'); // Default
+        expect(props.costMethod.getValue()).toBe('AVG'); // Default
+        expect(props.description).toBeUndefined();
+        expect(props.barcode).toBeUndefined();
+        expect(props.brand).toBeUndefined();
+        expect(props.model).toBeUndefined();
+      }
     });
 
     it('Given: FIFO cost method When: converting to domain props Then: should create FIFO value object', () => {
@@ -84,10 +92,13 @@ describe('ProductMapper', () => {
       };
 
       // Act
-      const props = ProductMapper.toDomainProps(input);
+      const propsResult = ProductMapper.toDomainProps(input);
 
       // Assert
-      expect(props.costMethod.getValue()).toBe('FIFO');
+      expect(propsResult.isOk()).toBe(true);
+      if (propsResult.isOk()) {
+        expect(propsResult.unwrap().costMethod.getValue()).toBe('FIFO');
+      }
     });
 
     it('Given: INACTIVE status When: converting to domain props Then: should create INACTIVE value object', () => {
@@ -100,18 +111,21 @@ describe('ProductMapper', () => {
       };
 
       // Act
-      const props = ProductMapper.toDomainProps(input);
+      const propsResult = ProductMapper.toDomainProps(input);
 
       // Assert
-      expect(props.status.getValue()).toBe('INACTIVE');
+      expect(propsResult.isOk()).toBe(true);
+      if (propsResult.isOk()) {
+        expect(propsResult.unwrap().status.getValue()).toBe('INACTIVE');
+      }
     });
   });
 
   describe('toResponseData', () => {
     const createTestProduct = (): Product => {
       const props = {
-        sku: SKU.create('PROD-001'),
-        name: ProductName.create('Test Product'),
+        sku: SKU.reconstitute('PROD-001'),
+        name: ProductName.reconstitute('Test Product'),
         description: 'Test Description',
         unit: UnitValueObject.create('UNIT', 'Unit', 0),
         barcode: '1234567890',
@@ -151,8 +165,8 @@ describe('ProductMapper', () => {
     it('Given: Product entity with optional fields undefined When: converting to response DTO Then: should handle undefined fields', () => {
       // Arrange
       const props = {
-        sku: SKU.create('PROD-002'),
-        name: ProductName.create('Minimal Product'),
+        sku: SKU.reconstitute('PROD-002'),
+        name: ProductName.reconstitute('Minimal Product'),
         unit: UnitValueObject.create('KG', 'Kilogram', 2),
         status: ProductStatus.create('ACTIVE'),
         costMethod: CostMethod.create('FIFO'),
@@ -177,15 +191,15 @@ describe('ProductMapper', () => {
     it('Given: array of Product entities When: converting to response DTOs Then: should convert all products', () => {
       // Arrange
       const props1 = {
-        sku: SKU.create('PROD-001'),
-        name: ProductName.create('Product 1'),
+        sku: SKU.reconstitute('PROD-001'),
+        name: ProductName.reconstitute('Product 1'),
         unit: UnitValueObject.create('UNIT', 'Unit', 0),
         status: ProductStatus.create('ACTIVE'),
         costMethod: CostMethod.create('AVG'),
       };
       const props2 = {
-        sku: SKU.create('PROD-002'),
-        name: ProductName.create('Product 2'),
+        sku: SKU.reconstitute('PROD-002'),
+        name: ProductName.reconstitute('Product 2'),
         unit: UnitValueObject.create('KG', 'Kilogram', 2),
         status: ProductStatus.create('INACTIVE'),
         costMethod: CostMethod.create('FIFO'),

@@ -1,4 +1,5 @@
 import { ValueObject } from '@shared/domain/base/valueObject.base';
+import { ValidationError, Result, err, ok } from '@shared/domain/result';
 
 export interface IProductNameProps {
   value: string;
@@ -7,27 +8,44 @@ export interface IProductNameProps {
 export class ProductName extends ValueObject<IProductNameProps> {
   private constructor(props: IProductNameProps) {
     super(props);
-    this.validate(props);
   }
 
-  public static create(value: string): ProductName {
-    return new ProductName({ value: value.trim() });
-  }
+  public static create(value: string): Result<ProductName, ValidationError> {
+    const trimmed = value.trim();
+    const validationResult = this.validate(trimmed);
 
-  private validate(props: IProductNameProps): void {
-    if (!props.value || props.value.trim().length === 0) {
-      throw new Error('Product name cannot be empty');
+    if (validationResult.isErr()) {
+      const error = validationResult.unwrapErr();
+      return err(error);
     }
 
-    const trimmed = props.value.trim();
+    return ok(new ProductName({ value: trimmed }));
+  }
+
+  /**
+   * Reconstitute ProductName from persistence (bypasses validation)
+   * Use only when loading from database where data is already validated
+   */
+  public static reconstitute(value: string): ProductName {
+    return new ProductName({ value });
+  }
+
+  private static validate(value: string): Result<void, ValidationError> {
+    if (!value || value.trim().length === 0) {
+      return err(new ValidationError('Product name cannot be empty'));
+    }
+
+    const trimmed = value.trim();
 
     if (trimmed.length < 2) {
-      throw new Error('Product name must be at least 2 characters long');
+      return err(new ValidationError('Product name must be at least 2 characters long'));
     }
 
     if (trimmed.length > 200) {
-      throw new Error('Product name must be at most 200 characters long');
+      return err(new ValidationError('Product name must be at most 200 characters long'));
     }
+
+    return ok(undefined);
   }
 
   public getValue(): string {

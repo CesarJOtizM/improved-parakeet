@@ -1,5 +1,5 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   IBaseEntity,
   IFilterOptions,
@@ -70,20 +70,15 @@ export abstract class BaseRepositoryService<T extends IBaseEntity> {
 
   /**
    * Buscar por ID dentro de una organización
+   * Returns null if not found (use cases should handle this and return NotFoundError)
    */
-  async findById(id: string, orgId: string): Promise<T> {
+  async findById(id: string, orgId: string): Promise<T | null> {
     try {
       const result = await this.getModel().findFirst({
         where: { id, orgId },
       });
 
-      if (!result) {
-        throw new NotFoundException(
-          `${this.modelName} with ID ${id} not found in organization ${orgId}`
-        );
-      }
-
-      return result;
+      return result || null;
     } catch (error) {
       this.logger.error(`Error finding ${this.modelName} by ID:`, error);
       throw error;

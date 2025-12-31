@@ -48,19 +48,15 @@ export class ProductValidationService {
     const errors: string[] = [];
 
     // Validate SKU
-    try {
-      SKU.create(data.sku);
-    } catch (error) {
-      errors.push(`Invalid SKU: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const skuResult = SKU.create(data.sku);
+    if (skuResult.isErr()) {
+      errors.push(`Invalid SKU: ${skuResult.unwrapErr().message}`);
     }
 
     // Validate product name
-    try {
-      ProductName.create(data.name);
-    } catch (error) {
-      errors.push(
-        `Invalid product name: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+    const nameResult = ProductName.create(data.name);
+    if (nameResult.isErr()) {
+      errors.push(`Invalid product name: ${nameResult.unwrapErr().message}`);
     }
 
     // Validate unit
@@ -104,12 +100,9 @@ export class ProductValidationService {
 
     // Validate product name if provided
     if (data.name !== undefined) {
-      try {
-        ProductName.create(data.name);
-      } catch (error) {
-        errors.push(
-          `Invalid product name: ${error instanceof Error ? error.message : 'Unknown error'}`
-        );
+      const nameResult = ProductName.create(data.name);
+      if (nameResult.isErr()) {
+        errors.push(`Invalid product name: ${nameResult.unwrapErr().message}`);
       }
     }
 

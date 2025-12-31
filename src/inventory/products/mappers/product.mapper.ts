@@ -4,6 +4,7 @@ import { ProductName } from '@product/domain/valueObjects/productName.valueObjec
 import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
 import { SKU } from '@product/domain/valueObjects/sku.valueObject';
 import { UnitValueObject } from '@product/domain/valueObjects/unit.valueObject';
+import { Result, ValidationError, combine } from '@shared/domain/result';
 
 /**
  * Product DTO for creating products (input)
@@ -59,26 +60,35 @@ export class ProductMapper {
    * Creates all necessary value objects (SKU, ProductName, etc.)
    *
    * @param input - The DTO input for creating a product
-   * @returns IProductProps ready for Product.create()
+   * @returns Result with IProductProps ready for Product.create() or ValidationError
    */
-  public static toDomainProps(input: IProductCreateInput): IProductProps {
-    const sku = SKU.create(input.sku);
-    const name = ProductName.create(input.name);
+  public static toDomainProps(input: IProductCreateInput): Result<IProductProps, ValidationError> {
+    // Create all value objects and collect results
+    const skuResult = SKU.create(input.sku);
+    const nameResult = ProductName.create(input.name);
     const unit = UnitValueObject.create(input.unit.code, input.unit.name, input.unit.precision);
     const status = ProductStatus.create(input.status || 'ACTIVE');
     const costMethod = CostMethod.create(input.costMethod || 'AVG');
 
-    return {
-      sku,
-      name,
-      description: input.description,
-      unit,
-      barcode: input.barcode,
-      brand: input.brand,
-      model: input.model,
-      status,
-      costMethod,
-    };
+    // Combine all Results - returns first error if any fail
+    const combinedResult = combine([skuResult, nameResult]);
+
+    return combinedResult
+      .map(([sku, name]) => ({
+        sku,
+        name,
+        description: input.description,
+        unit,
+        barcode: input.barcode,
+        brand: input.brand,
+        model: input.model,
+        status,
+        costMethod,
+      }))
+      .mapErr((error): ValidationError => {
+        // combine returns unknown, but we know it's ValidationError from our VOs
+        return error as ValidationError;
+      });
   }
 
   /**

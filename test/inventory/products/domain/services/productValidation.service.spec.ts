@@ -174,7 +174,11 @@ describe('ProductValidationService', () => {
   describe('validateSkuUniqueness', () => {
     it('Given: unique SKU When: validating uniqueness Then: should return true', async () => {
       // Arrange
-      const sku = SKU.create('PROD-001');
+      const skuResult = SKU.create('PROD-001');
+      if (skuResult.isErr()) {
+        throw new Error('Failed to create SKU in test');
+      }
+      const sku = skuResult.unwrap();
       const mockRepository: IProductRepository = {
         findBySku: jest.fn<() => Promise<Product | null>>().mockResolvedValue(null),
       } as unknown as IProductRepository;
@@ -193,11 +197,15 @@ describe('ProductValidationService', () => {
 
     it('Given: existing SKU When: validating uniqueness Then: should return false', async () => {
       // Arrange
-      const sku = SKU.create('PROD-001');
+      const skuResult = SKU.create('PROD-001');
+      if (skuResult.isErr()) {
+        throw new Error('Failed to create SKU in test');
+      }
+      const sku = skuResult.unwrap();
       const existingProduct = Product.create(
         {
-          sku: SKU.create('PROD-001'),
-          name: ProductName.create('Existing Product'),
+          sku: SKU.reconstitute('PROD-001'),
+          name: ProductName.reconstitute('Existing Product'),
           unit: UnitValueObject.create('KG', 'Kilogram', 2),
           status: ProductStatus.create('ACTIVE'),
           costMethod: CostMethod.create('AVG'),
@@ -223,7 +231,11 @@ describe('ProductValidationService', () => {
   describe('validateSkuUniquenessOrThrow', () => {
     it('Given: unique SKU When: validating uniqueness Then: should not throw', async () => {
       // Arrange
-      const sku = SKU.create('PROD-001');
+      const skuResult = SKU.create('PROD-001');
+      if (skuResult.isErr()) {
+        throw new Error('Failed to create SKU in test');
+      }
+      const sku = skuResult.unwrap();
       const mockRepository: IProductRepository = {
         findBySku: jest.fn<() => Promise<Product | null>>().mockResolvedValue(null),
       } as unknown as IProductRepository;
@@ -231,17 +243,21 @@ describe('ProductValidationService', () => {
       // Act & Assert
       await expect(
         ProductValidationService.validateSkuUniquenessOrThrow(sku, mockOrgId, mockRepository)
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
       expect(mockRepository.findBySku).toHaveBeenCalledWith('PROD-001', mockOrgId);
     });
 
     it('Given: existing SKU When: validating uniqueness Then: should throw ConflictException', async () => {
       // Arrange
-      const sku = SKU.create('PROD-001');
+      const skuResult = SKU.create('PROD-001');
+      if (skuResult.isErr()) {
+        throw new Error('Failed to create SKU in test');
+      }
+      const sku = skuResult.unwrap();
       const existingProduct = Product.create(
         {
-          sku: SKU.create('PROD-001'),
-          name: ProductName.create('Existing Product'),
+          sku: SKU.reconstitute('PROD-001'),
+          name: ProductName.reconstitute('Existing Product'),
           unit: UnitValueObject.create('KG', 'Kilogram', 2),
           status: ProductStatus.create('ACTIVE'),
           costMethod: CostMethod.create('AVG'),
@@ -263,11 +279,15 @@ describe('ProductValidationService', () => {
 
     it('Given: existing SKU with excludeProductId matching When: validating uniqueness Then: should not throw', async () => {
       // Arrange
-      const sku = SKU.create('PROD-001');
+      const skuResult = SKU.create('PROD-001');
+      if (skuResult.isErr()) {
+        throw new Error('Failed to create SKU in test');
+      }
+      const sku = skuResult.unwrap();
       const existingProduct = Product.create(
         {
-          sku: SKU.create('PROD-001'),
-          name: ProductName.create('Existing Product'),
+          sku: SKU.reconstitute('PROD-001'),
+          name: ProductName.reconstitute('Existing Product'),
           unit: UnitValueObject.create('KG', 'Kilogram', 2),
           status: ProductStatus.create('ACTIVE'),
           costMethod: CostMethod.create('AVG'),
@@ -286,7 +306,7 @@ describe('ProductValidationService', () => {
           mockRepository,
           existingProduct.id
         )
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
     });
   });
 
@@ -295,8 +315,8 @@ describe('ProductValidationService', () => {
       // Arrange
       const product = Product.create(
         {
-          sku: SKU.create('PROD-001'),
-          name: ProductName.create('Test Product'),
+          sku: SKU.reconstitute('PROD-001'),
+          name: ProductName.reconstitute('Test Product'),
           unit: UnitValueObject.create('KG', 'Kilogram', 2),
           status: ProductStatus.create('ACTIVE'),
           costMethod: CostMethod.create('AVG'),
@@ -316,8 +336,8 @@ describe('ProductValidationService', () => {
       // Arrange
       const product = Product.create(
         {
-          sku: SKU.create('PROD-001'),
-          name: ProductName.create('Test Product'),
+          sku: SKU.reconstitute('PROD-001'),
+          name: ProductName.reconstitute('Test Product'),
           unit: UnitValueObject.create('KG', 'Kilogram', 2),
           status: ProductStatus.create('INACTIVE'),
           costMethod: CostMethod.create('AVG'),
@@ -337,8 +357,8 @@ describe('ProductValidationService', () => {
       // Arrange
       const product = Product.create(
         {
-          sku: SKU.create('PROD-001'),
-          name: ProductName.create('Test Product'),
+          sku: SKU.reconstitute('PROD-001'),
+          name: ProductName.reconstitute('Test Product'),
           unit: UnitValueObject.create('KG', 'Kilogram', 2),
           status: ProductStatus.create('DISCONTINUED'),
           costMethod: CostMethod.create('AVG'),

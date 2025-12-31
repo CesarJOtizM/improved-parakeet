@@ -1,24 +1,13 @@
-// Prisma Service Tests - Servicio de Base de Datos
-// Tests unitarios para el servicio de Prisma siguiendo AAA y Given-When-Then
+// Prisma Service Tests - Database Service
+// Unit tests for Prisma service following AAA and Given-When-Then
 
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
 
-// Mock PrismaClient for testing (Prisma 7 requires valid configuration)
+// Mock PrismaService methods for testing
 const mockConnect = jest.fn().mockResolvedValue(undefined);
 const mockDisconnect = jest.fn().mockResolvedValue(undefined);
 const mockQueryRaw = jest.fn();
-
-jest.mock('@infrastructure/database/generated/prisma', () => {
-  class MockPrismaClient {
-    $connect = mockConnect;
-    $disconnect = mockDisconnect;
-    $queryRaw = mockQueryRaw;
-  }
-  return {
-    PrismaClient: MockPrismaClient,
-  };
-});
 
 describe('PrismaService', () => {
   let service: PrismaService;
@@ -30,7 +19,22 @@ describe('PrismaService', () => {
     mockDisconnect.mockResolvedValue(undefined);
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [PrismaService],
+      providers: [
+        {
+          provide: PrismaService,
+          useValue: {
+            $connect: mockConnect,
+            $disconnect: mockDisconnect,
+            $queryRaw: mockQueryRaw,
+            onModuleInit: jest.fn().mockImplementation(async function (this: PrismaService) {
+              await this.$connect();
+            }),
+            onModuleDestroy: jest.fn().mockImplementation(async function (this: PrismaService) {
+              await this.$disconnect();
+            }),
+          } as unknown as PrismaService,
+        },
+      ],
     }).compile();
 
     service = module.get<PrismaService>(PrismaService);

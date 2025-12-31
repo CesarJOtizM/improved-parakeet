@@ -71,8 +71,15 @@ export class CreateProductUseCase {
     this.logger.log('Creating product', { sku: request.sku, orgId: request.orgId });
 
     try {
-      // Convert DTO to domain props using mapper
-      const props = ProductMapper.toDomainProps(request);
+      // Convert DTO to domain props using mapper (returns Result)
+      const propsResult = ProductMapper.toDomainProps(request);
+
+      if (propsResult.isErr()) {
+        const validationError = propsResult.unwrapErr();
+        return err(validationError);
+      }
+
+      const props = propsResult.unwrap();
 
       // Validate SKU uniqueness using business rules
       const validationResult = await ProductBusinessRulesService.validateProductCreationRules(

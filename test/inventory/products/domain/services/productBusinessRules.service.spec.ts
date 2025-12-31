@@ -17,7 +17,11 @@ describe('ProductBusinessRulesService', () => {
   describe('validateProductCreationRules', () => {
     it('Given: unique SKU When: validating creation rules Then: should return valid', async () => {
       // Arrange
-      const sku = SKU.create('PROD-001');
+      const skuResult = SKU.create('PROD-001');
+      if (skuResult.isErr()) {
+        throw new Error('Failed to create SKU in test');
+      }
+      const sku = skuResult.unwrap();
       const mockRepository: IProductRepository = {
         findBySku: jest.fn<() => Promise<Product | null>>().mockResolvedValue(null),
       } as unknown as IProductRepository;
@@ -37,7 +41,11 @@ describe('ProductBusinessRulesService', () => {
 
     it('Given: existing SKU When: validating creation rules Then: should return errors', async () => {
       // Arrange
-      const sku = SKU.create('PROD-001');
+      const skuResult = SKU.create('PROD-001');
+      if (skuResult.isErr()) {
+        throw new Error('Failed to create SKU in test');
+      }
+      const sku = skuResult.unwrap();
       const existingProduct = ProductFactory.create({ sku }, mockOrgId);
       const mockRepository: IProductRepository = {
         findBySku: jest.fn<() => Promise<Product | null>>().mockResolvedValue(existingProduct),
@@ -61,7 +69,11 @@ describe('ProductBusinessRulesService', () => {
     it('Given: unique SKU When: validating update rules Then: should return valid', async () => {
       // Arrange
       const productId = 'product-123';
-      const sku = SKU.create('PROD-002');
+      const skuResult = SKU.create('PROD-002');
+      if (skuResult.isErr()) {
+        throw new Error('Failed to create SKU in test');
+      }
+      const sku = skuResult.unwrap();
       const mockRepository: IProductRepository = {
         findBySku: jest.fn<() => Promise<Product | null>>().mockResolvedValue(null),
       } as unknown as IProductRepository;
@@ -82,7 +94,11 @@ describe('ProductBusinessRulesService', () => {
     it('Given: existing SKU for different product When: validating update rules Then: should return errors', async () => {
       // Arrange
       const productId = 'product-123';
-      const sku = SKU.create('PROD-001');
+      const skuResult = SKU.create('PROD-001');
+      if (skuResult.isErr()) {
+        throw new Error('Failed to create SKU in test');
+      }
+      const sku = skuResult.unwrap();
       const existingProduct = ProductFactory.create({ sku }, mockOrgId);
       const mockRepository: IProductRepository = {
         findBySku: jest.fn<() => Promise<Product | null>>().mockResolvedValue(existingProduct),
@@ -126,7 +142,11 @@ describe('ProductBusinessRulesService', () => {
   describe('validateSkuUniquenessOrThrow', () => {
     it('Given: unique SKU When: validating uniqueness Then: should not throw', async () => {
       // Arrange
-      const sku = SKU.create('PROD-001');
+      const skuResult = SKU.create('PROD-001');
+      if (skuResult.isErr()) {
+        throw new Error('Failed to create SKU in test');
+      }
+      const sku = skuResult.unwrap();
       const mockRepository: IProductRepository = {
         findBySku: jest.fn<() => Promise<Product | null>>().mockResolvedValue(null),
       } as unknown as IProductRepository;
@@ -134,12 +154,16 @@ describe('ProductBusinessRulesService', () => {
       // Act & Assert
       await expect(
         ProductBusinessRulesService.validateSkuUniquenessOrThrow(sku, mockOrgId, mockRepository)
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
     });
 
     it('Given: existing SKU When: validating uniqueness Then: should throw ConflictException', async () => {
       // Arrange
-      const sku = SKU.create('PROD-001');
+      const skuResult = SKU.create('PROD-001');
+      if (skuResult.isErr()) {
+        throw new Error('Failed to create SKU in test');
+      }
+      const sku = skuResult.unwrap();
       const existingProduct = ProductFactory.create({ sku }, mockOrgId);
       const mockRepository: IProductRepository = {
         findBySku: jest.fn<() => Promise<Product | null>>().mockResolvedValue(existingProduct),
@@ -170,7 +194,7 @@ describe('ProductBusinessRulesService', () => {
           mockRepository,
           existingProduct.id
         )
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
     });
   });
 
