@@ -16,9 +16,88 @@ export interface IMovementCalculation {
   totalCost?: Money;
 }
 
+// Inventory Calculation Service - Pure Functions
+// Pure functions for inventory calculations without side effects
+
+/**
+ * Calculates the new weighted moving average cost (PPM)
+ * Pure function - no side effects
+ */
+export function calculateAverageCost(
+  currentQuantity: Quantity,
+  currentAverageCost: Money,
+  newQuantity: Quantity,
+  newUnitCost: Money
+): Money {
+  if (newQuantity.isZero()) {
+    return currentAverageCost;
+  }
+
+  const totalCurrentValue = currentAverageCost.multiply(currentQuantity.getNumericValue());
+  const totalNewValue = newUnitCost.multiply(newQuantity.getNumericValue());
+  const totalQuantity = currentQuantity.add(newQuantity);
+
+  const newAverageCost = totalCurrentValue
+    .add(totalNewValue)
+    .divide(totalQuantity.getNumericValue());
+
+  return Money.create(
+    newAverageCost.getAmount(),
+    newAverageCost.getCurrency(),
+    newAverageCost.getPrecision()
+  );
+}
+
+/**
+ * Calculates inventory balance from movements
+ * Pure function - no side effects
+ */
+export function calculateInventoryBalance(movements: IMovementCalculation[]): {
+  quantity: Quantity;
+  totalCost: Money;
+} {
+  let totalQuantity = Quantity.create(0);
+  let totalValue = Money.create(0);
+
+  for (const movement of movements) {
+    if (movement.quantity) {
+      totalQuantity = totalQuantity.add(movement.quantity);
+    }
+
+    if (movement.totalCost) {
+      totalValue = totalValue.add(movement.totalCost);
+    }
+  }
+
+  return { quantity: totalQuantity, totalCost: totalValue };
+}
+
+/**
+ * Validates that there is sufficient stock for an output
+ * Pure function - no side effects
+ */
+export function validateStockAvailability(
+  availableQuantity: Quantity,
+  requestedQuantity: Quantity
+): boolean {
+  return availableQuantity.getNumericValue() >= requestedQuantity.getNumericValue();
+}
+
+/**
+ * Calculates total inventory value
+ * Pure function - no side effects
+ */
+export function calculateInventoryValue(quantity: Quantity, unitCost: Money): Money {
+  return unitCost.multiply(quantity.getNumericValue());
+}
+
+/**
+ * Legacy class export for backward compatibility
+ * @deprecated Use pure functions instead
+ */
 export class InventoryCalculationService {
   /**
-   * Calcula el nuevo costo promedio ponderado móvil (PPM)
+   * @deprecated Use calculateAverageCost instead
    */
   public static calculateAverageCost(
     currentQuantity: Quantity,
@@ -26,62 +105,33 @@ export class InventoryCalculationService {
     newQuantity: Quantity,
     newUnitCost: Money
   ): Money {
-    if (newQuantity.isZero()) {
-      return currentAverageCost;
-    }
-
-    const totalCurrentValue = currentAverageCost.multiply(currentQuantity.getNumericValue());
-    const totalNewValue = newUnitCost.multiply(newQuantity.getNumericValue());
-    const totalQuantity = currentQuantity.add(newQuantity);
-
-    const newAverageCost = totalCurrentValue
-      .add(totalNewValue)
-      .divide(totalQuantity.getNumericValue());
-
-    return Money.create(
-      newAverageCost.getAmount(),
-      newAverageCost.getCurrency(),
-      newAverageCost.getPrecision()
-    );
+    return calculateAverageCost(currentQuantity, currentAverageCost, newQuantity, newUnitCost);
   }
 
   /**
-   * Calcula el saldo de inventario
+   * @deprecated Use calculateInventoryBalance instead
    */
   public static calculateBalance(movements: IMovementCalculation[]): {
     quantity: Quantity;
     totalCost: Money;
   } {
-    let totalQuantity = Quantity.create(0);
-    let totalValue = Money.create(0);
-
-    for (const movement of movements) {
-      if (movement.quantity) {
-        totalQuantity = totalQuantity.add(movement.quantity);
-      }
-
-      if (movement.totalCost) {
-        totalValue = totalValue.add(movement.totalCost);
-      }
-    }
-
-    return { quantity: totalQuantity, totalCost: totalValue };
+    return calculateInventoryBalance(movements);
   }
 
   /**
-   * Valida que haya stock suficiente para una salida
+   * @deprecated Use validateStockAvailability instead
    */
   public static validateStockAvailability(
     availableQuantity: Quantity,
     requestedQuantity: Quantity
   ): boolean {
-    return availableQuantity.getNumericValue() >= requestedQuantity.getNumericValue();
+    return validateStockAvailability(availableQuantity, requestedQuantity);
   }
 
   /**
-   * Calcula el valor total del inventario
+   * @deprecated Use calculateInventoryValue instead
    */
   public static calculateInventoryValue(quantity: Quantity, unitCost: Money): Money {
-    return unitCost.multiply(quantity.getNumericValue());
+    return calculateInventoryValue(quantity, unitCost);
   }
 }

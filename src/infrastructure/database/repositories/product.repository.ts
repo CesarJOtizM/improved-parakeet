@@ -1,5 +1,5 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { Product } from '@product/domain/entities/product.entity';
 import { IProductRepository } from '@product/domain/repositories/productRepository.interface';
 import { CostMethod } from '@product/domain/valueObjects/costMethod.valueObject';
@@ -7,22 +7,38 @@ import { ProductName } from '@product/domain/valueObjects/productName.valueObjec
 import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
 import { SKU } from '@product/domain/valueObjects/sku.valueObject';
 import { UnitValueObject } from '@product/domain/valueObjects/unit.valueObject';
+import { cacheEntity, getCachedEntity, invalidateEntityCache } from '@shared/infrastructure/cache';
+
+import type { ICacheService } from '@shared/ports/cache';
 
 @Injectable()
 export class PrismaProductRepository implements IProductRepository {
   private readonly logger = new Logger(PrismaProductRepository.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject('CacheService')
+    @Optional()
+    private readonly cacheService?: ICacheService
+  ) {}
 
   async findById(id: string, orgId: string): Promise<Product | null> {
     try {
-      const productData = await this.prisma.product.findFirst({
-        where: { id, orgId },
+      // Try to get from cache first
+      if (this.cacheService) {
+        const cached = await getCachedEntity<Product>(this.cacheService, 'product', id, orgId);
+        if (cached) {
+          return cached;
+        }
+      }
+
+      const productData = await this.prisma.product.findUnique({
+        where: { id },
       });
 
-      if (!productData) return null;
+      if (!productData || productData.orgId !== orgId) return null;
 
-      return Product.reconstitute(
+      const product = Product.reconstitute(
         {
           sku: SKU.reconstitute(productData.sku),
           name: ProductName.reconstitute(productData.name),
@@ -41,6 +57,13 @@ export class PrismaProductRepository implements IProductRepository {
         productData.id,
         productData.orgId
       );
+
+      // Cache the product
+      if (this.cacheService) {
+        await cacheEntity(this.cacheService, 'product', product.id, product, orgId);
+      }
+
+      return product;
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Error finding product by ID: ${error.message}`);
@@ -133,7 +156,7 @@ export class PrismaProductRepository implements IProductRepository {
             data: productData,
           });
 
-          return Product.reconstitute(
+          const savedProduct = Product.reconstitute(
             {
               sku: SKU.reconstitute(updatedProduct.sku),
               name: ProductName.reconstitute(updatedProduct.name),
@@ -148,6 +171,25 @@ export class PrismaProductRepository implements IProductRepository {
             updatedProduct.id,
             updatedProduct.orgId
           );
+
+          // Invalidate and update cache
+          if (this.cacheService) {
+            await invalidateEntityCache(
+              this.cacheService,
+              'product',
+              savedProduct.id,
+              savedProduct.orgId
+            );
+            await cacheEntity(
+              this.cacheService,
+              'product',
+              savedProduct.id,
+              savedProduct,
+              savedProduct.orgId
+            );
+          }
+
+          return savedProduct;
         }
       }
 
@@ -155,7 +197,7 @@ export class PrismaProductRepository implements IProductRepository {
         data: productData,
       });
 
-      return Product.reconstitute(
+      const savedProduct = Product.reconstitute(
         {
           sku: SKU.reconstitute(newProduct.sku),
           name: ProductName.reconstitute(newProduct.name),
@@ -170,6 +212,19 @@ export class PrismaProductRepository implements IProductRepository {
         newProduct.id,
         newProduct.orgId
       );
+
+      // Cache the new product
+      if (this.cacheService) {
+        await cacheEntity(
+          this.cacheService,
+          'product',
+          savedProduct.id,
+          savedProduct,
+          savedProduct.orgId
+        );
+      }
+
+      return savedProduct;
     } catch (error) {
       this.logger.error('Error saving product', {
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -187,6 +242,11 @@ export class PrismaProductRepository implements IProductRepository {
         where: { id, orgId },
         data: { isActive: false },
       });
+
+      // Invalidate cache
+      if (this.cacheService) {
+        await invalidateEntityCache(this.cacheService, 'product', id, orgId);
+      }
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Error deleting product: ${error.message}`);
@@ -199,13 +259,28 @@ export class PrismaProductRepository implements IProductRepository {
 
   async findBySku(sku: string, orgId: string): Promise<Product | null> {
     try {
+      // For SKU lookup, we can't use simple cache key, so we'll query and cache by ID
+      // Use findFirst since sku+orgId is unique but Prisma requires findFirst for compound unique
       const productData = await this.prisma.product.findFirst({
         where: { sku, orgId },
       });
 
       if (!productData) return null;
 
-      return Product.reconstitute(
+      // Try cache by ID first
+      if (this.cacheService) {
+        const cached = await getCachedEntity<Product>(
+          this.cacheService,
+          'product',
+          productData.id,
+          orgId
+        );
+        if (cached) {
+          return cached;
+        }
+      }
+
+      const product = Product.reconstitute(
         {
           sku: SKU.reconstitute(productData.sku),
           name: ProductName.reconstitute(productData.name),
@@ -220,6 +295,13 @@ export class PrismaProductRepository implements IProductRepository {
         productData.id,
         productData.orgId
       );
+
+      // Cache the product
+      if (this.cacheService) {
+        await cacheEntity(this.cacheService, 'product', product.id, product, orgId);
+      }
+
+      return product;
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Error finding product by SKU: ${error.message}`);

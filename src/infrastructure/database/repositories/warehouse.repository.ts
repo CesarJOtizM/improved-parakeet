@@ -1,25 +1,41 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { cacheEntity, getCachedEntity, invalidateEntityCache } from '@shared/infrastructure/cache';
 import { Warehouse } from '@warehouse/domain/entities/warehouse.entity';
 import { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
 import { Address } from '@warehouse/domain/valueObjects/address.valueObject';
 import { WarehouseCode } from '@warehouse/domain/valueObjects/warehouseCode.valueObject';
 
+import type { ICacheService } from '@shared/ports/cache';
+
 @Injectable()
 export class PrismaWarehouseRepository implements IWarehouseRepository {
   private readonly logger = new Logger(PrismaWarehouseRepository.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject('CacheService')
+    @Optional()
+    private readonly cacheService?: ICacheService
+  ) {}
 
   async findById(id: string, orgId: string): Promise<Warehouse | null> {
     try {
+      // Try to get from cache first
+      if (this.cacheService) {
+        const cached = await getCachedEntity<Warehouse>(this.cacheService, 'warehouse', id, orgId);
+        if (cached) {
+          return cached;
+        }
+      }
+
       const warehouseData = await this.prisma.warehouse.findFirst({
         where: { id, orgId },
       });
 
       if (!warehouseData) return null;
 
-      return Warehouse.reconstitute(
+      const warehouse = Warehouse.reconstitute(
         {
           code: WarehouseCode.create(warehouseData.code),
           name: warehouseData.name,
@@ -29,6 +45,13 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
         warehouseData.id,
         warehouseData.orgId
       );
+
+      // Cache the warehouse
+      if (this.cacheService) {
+        await cacheEntity(this.cacheService, 'warehouse', warehouse.id, warehouse, orgId);
+      }
+
+      return warehouse;
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Error finding warehouse by ID: ${error.message}`);
@@ -112,7 +135,7 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
             data: warehouseData,
           });
 
-          return Warehouse.reconstitute(
+          const savedWarehouse = Warehouse.reconstitute(
             {
               code: WarehouseCode.create(updatedWarehouse.code),
               name: updatedWarehouse.name,
@@ -124,6 +147,25 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
             updatedWarehouse.id,
             updatedWarehouse.orgId
           );
+
+          // Invalidate and update cache
+          if (this.cacheService) {
+            await invalidateEntityCache(
+              this.cacheService,
+              'warehouse',
+              savedWarehouse.id,
+              savedWarehouse.orgId
+            );
+            await cacheEntity(
+              this.cacheService,
+              'warehouse',
+              savedWarehouse.id,
+              savedWarehouse,
+              savedWarehouse.orgId
+            );
+          }
+
+          return savedWarehouse;
         }
       }
 
@@ -131,7 +173,7 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
         data: warehouseData,
       });
 
-      return Warehouse.reconstitute(
+      const savedWarehouse = Warehouse.reconstitute(
         {
           code: WarehouseCode.create(newWarehouse.code),
           name: newWarehouse.name,
@@ -141,6 +183,19 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
         newWarehouse.id,
         newWarehouse.orgId
       );
+
+      // Cache the new warehouse
+      if (this.cacheService) {
+        await cacheEntity(
+          this.cacheService,
+          'warehouse',
+          savedWarehouse.id,
+          savedWarehouse,
+          savedWarehouse.orgId
+        );
+      }
+
+      return savedWarehouse;
     } catch (error) {
       this.logger.error('Error saving warehouse', {
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -158,6 +213,11 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
         where: { id, orgId },
         data: { isActive: false },
       });
+
+      // Invalidate cache
+      if (this.cacheService) {
+        await invalidateEntityCache(this.cacheService, 'warehouse', id, orgId);
+      }
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Error deleting warehouse: ${error.message}`);
@@ -176,7 +236,20 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
 
       if (!warehouseData) return null;
 
-      return Warehouse.reconstitute(
+      // Try cache by ID first
+      if (this.cacheService) {
+        const cached = await getCachedEntity<Warehouse>(
+          this.cacheService,
+          'warehouse',
+          warehouseData.id,
+          orgId
+        );
+        if (cached) {
+          return cached;
+        }
+      }
+
+      const warehouse = Warehouse.reconstitute(
         {
           code: WarehouseCode.create(warehouseData.code),
           name: warehouseData.name,
@@ -186,6 +259,13 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
         warehouseData.id,
         warehouseData.orgId
       );
+
+      // Cache the warehouse
+      if (this.cacheService) {
+        await cacheEntity(this.cacheService, 'warehouse', warehouse.id, warehouse, orgId);
+      }
+
+      return warehouse;
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Error finding warehouse by code: ${error.message}`);

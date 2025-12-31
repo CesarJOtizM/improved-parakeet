@@ -1,3 +1,4 @@
+import { Movement } from '@movement/domain/entities/movement.entity';
 import { MovementMapper } from '@movement/mappers';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DomainError, ok, Result } from '@shared/domain/result';
@@ -18,6 +19,7 @@ export interface IGetMovementsRequest {
   endDate?: Date;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  includeLines?: boolean; // Optional: include lines in response (default: true)
 }
 
 export type IGetMovementsResponse = IPaginatedResponse<IMovementData>;
@@ -46,49 +48,69 @@ export class GetMovementsUseCase {
     const limit = request.limit || 10;
     const skip = (page - 1) * limit;
 
+    // Determine if we should include lines (default: true for backward compatibility)
+    const includeLines = request.includeLines !== false;
+
     // Get movements based on filters
+    // Use lazy loading methods if includeLines is false and repository supports it
     let movements;
-    if (request.warehouseId) {
-      movements = await this.movementRepository.findByWarehouse(request.warehouseId, request.orgId);
-    } else if (request.status) {
-      movements = await this.movementRepository.findByStatus(request.status, request.orgId);
-    } else if (request.type) {
-      movements = await this.movementRepository.findByType(request.type, request.orgId);
-    } else if (request.productId) {
-      movements = await this.movementRepository.findByProduct(request.productId, request.orgId);
-    } else if (request.startDate && request.endDate) {
-      movements = await this.movementRepository.findByDateRange(
-        request.startDate,
-        request.endDate,
-        request.orgId
-      );
+    if (!includeLines && this.movementRepository.findAllWithoutLines) {
+      // Use lazy loading for list operations
+      const page = request.page || 1;
+      const limit = request.limit || 10;
+      const skip = (page - 1) * limit;
+      const paginationResult = await this.movementRepository.findAllWithoutLines(request.orgId, {
+        skip,
+        take: limit,
+      });
+      movements = paginationResult.data;
     } else {
-      movements = await this.movementRepository.findAll(request.orgId);
+      // Use regular methods that include lines
+      if (request.warehouseId) {
+        movements = await this.movementRepository.findByWarehouse(
+          request.warehouseId,
+          request.orgId
+        );
+      } else if (request.status) {
+        movements = await this.movementRepository.findByStatus(request.status, request.orgId);
+      } else if (request.type) {
+        movements = await this.movementRepository.findByType(request.type, request.orgId);
+      } else if (request.productId) {
+        movements = await this.movementRepository.findByProduct(request.productId, request.orgId);
+      } else if (request.startDate && request.endDate) {
+        movements = await this.movementRepository.findByDateRange(
+          request.startDate,
+          request.endDate,
+          request.orgId
+        );
+      } else {
+        movements = await this.movementRepository.findAll(request.orgId);
+      }
     }
 
     // Apply additional filters
     if (request.warehouseId && movements.length > 0) {
-      movements = movements.filter(m => m.warehouseId === request.warehouseId);
+      movements = movements.filter((m: Movement) => m.warehouseId === request.warehouseId);
     }
 
     if (request.status && movements.length > 0) {
-      movements = movements.filter(m => m.status.getValue() === request.status);
+      movements = movements.filter((m: Movement) => m.status.getValue() === request.status);
     }
 
     if (request.type && movements.length > 0) {
-      movements = movements.filter(m => m.type.getValue() === request.type);
+      movements = movements.filter((m: Movement) => m.type.getValue() === request.type);
     }
 
     if (request.productId && movements.length > 0) {
-      movements = movements.filter(m =>
-        m.getLines().some(line => line.productId === request.productId)
+      movements = movements.filter((m: Movement) =>
+        m.getLines().some((line: { productId: string }) => line.productId === request.productId)
       );
     }
 
     // Apply sorting
     if (request.sortBy) {
       const sortOrder = request.sortOrder || 'asc';
-      movements.sort((a, b) => {
+      movements.sort((a: Movement, b: Movement) => {
         let aValue: string | number;
         let bValue: string | number;
 

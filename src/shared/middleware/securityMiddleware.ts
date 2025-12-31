@@ -28,7 +28,11 @@ export class SecurityMiddleware implements NestMiddleware {
   }
 
   private generateRequestId(): string {
-    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Generate a 9-character random string
+    const randomPart = Math.random().toString(36).substring(2);
+    // Pad or truncate to exactly 9 characters
+    const paddedRandom = (randomPart + '0'.repeat(9)).substring(0, 9);
+    return `req_${Date.now()}_${paddedRandom}`;
   }
 
   private logSecurityHeaders(req: Request): void {

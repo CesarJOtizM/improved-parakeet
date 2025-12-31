@@ -710,8 +710,8 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
   - [x] Crear scripts para testing de importaciones masivas
   - [x] Documentar todos los endpoints de reportes e importaciones
 
-### **Semana 14: Dominio de Personalización y Configuración**
-
+<!-- ### **Semana 14: Dominio de Personalización y Configuración**
+to do - not necessary for now
 - [ ] **Implementación del Dominio de Personalización**
   - [ ] Aggregates: OrganizationBrandingAggregate, UserPreferencesAggregate
   - [ ] Value Objects: BrandColors, LogoURL, ThemeSettings (inmutables)
@@ -731,7 +731,7 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
   - [ ] Crear sistema de validación de colores y fuentes
   - [ ] Setup de almacenamiento de logos y assets
   - [ ] Implementar sistema de notificaciones configurables
-  - [ ] Tests de integración para personalización
+  - [ ] Tests de integración para personalización -->
 
 ---
 
@@ -739,19 +739,12 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
 
 ### **Semana 15: Testing y Optimización**
 
-- [ ] **Testing Completo del Sistema**
-  - [ ] Tests unitarios con Jest (mínimo 90% coverage)
-  - [ ] Tests de integración para todos los dominios
-  - [ ] Tests de aceptación para casos de uso
-  - [ ] Tests de performance y carga
-  - [ ] Tests de seguridad y permisos
-
-- [ ] **Optimización y Refactoring**
-  - [ ] Optimización de consultas SQL con Prisma
-  - [ ] Implementación de caché funcional con Redis
-  - [ ] Refactoring de código siguiendo principios FP
-  - [ ] Optimización de memoria y CPU
-  - [ ] Implementar lazy loading para entidades pesadas
+- [x] **Optimización y Refactoring**
+  - [x] Optimización de consultas SQL con Prisma
+  - [x] Implementación de caché funcional con Redis
+  - [x] Refactoring de código siguiendo principios FP
+  - [x] Optimización de memoria y CPU
+  - [x] Implementar lazy loading para entidades pesadas
 
 - [ ] **Mejoras de Arquitectura y Programación Funcional (Fase 6)**
   - [ ] **Inmutabilidad Completa en Entidades**
@@ -768,19 +761,19 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
     - [ ] Tests unitarios para specifications
     - [ ] Documentar uso del patrón
   
-  - [ ] **Funciones Puras en Domain Services**
-    - [ ] Convertir Domain Services estáticos a funciones puras exportadas
-    - [ ] Separar efectos secundarios (logging, eventos) de lógica pura
-    - [ ] Refactorizar: ProductBusinessRulesService, InventoryCalculationService, SaleCalculationService
-    - [ ] Tests unitarios mejorados (más fáciles de testear funciones puras)
-    - [ ] Documentar principios de funciones puras
+  - [x] **Funciones Puras en Domain Services**
+    - [x] Convertir Domain Services estáticos a funciones puras exportadas
+    - [x] Separar efectos secundarios (logging, eventos) de lógica pura
+    - [x] Refactorizar: ProductBusinessRulesService, InventoryCalculationService, SaleCalculationService
+    - [x] Tests unitarios mejorados (más fáciles de testear funciones puras)
+    - [x] Documentar principios de funciones puras
   
-  - [ ] **Utilidades de Composición Funcional**
-    - [ ] Crear `src/shared/utils/functional/` con `pipe()`, `compose()`, `curry()`
-    - [ ] Implementar helpers funcionales: `map`, `filter`, `reduce` con tipos
-    - [ ] Refactorizar código existente para usar composición
-    - [ ] Tests unitarios para utilidades funcionales
-    - [ ] Documentar patrones de composición
+  - [x] **Utilidades de Composición Funcional**
+    - [x] Crear `src/shared/utils/functional/` con `pipe()`, `compose()`, `curry()`
+    - [x] Implementar helpers funcionales: `map`, `filter`, `reduce` con tipos
+    - [x] Refactorizar código existente para usar composición
+    - [x] Tests unitarios para utilidades funcionales
+    - [x] Documentar patrones de composición
   
   - [ ] **Mover Invariantes a Agregados**
     - [ ] Identificar invariantes críticos en servicios de dominio
@@ -789,6 +782,13 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
     - [ ] Tests de regresión para validar comportamiento
     - [ ] Documentar principios de encapsulación de invariantes
 
+- [ ] **Testing Completo del Sistema**
+  - [ ] Tests unitarios con Jest (mínimo 90% coverage)
+  - [ ] Tests de integración para todos los dominios
+  - [ ] Tests de aceptación para casos de uso
+  - [ ] Tests de performance y carga
+  - [ ] Tests de seguridad y permisos
+  
 - [ ] **Testing de Postman**
   - [ ] Ejecutar todos los tests de Postman automáticamente
   - [ ] Validar cobertura de endpoints en todas las colecciones

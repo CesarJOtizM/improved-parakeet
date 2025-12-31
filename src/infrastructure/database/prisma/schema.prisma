@@ -201,6 +201,9 @@ model Product {
   returnLines  ReturnLine[]
 
   @@unique([sku, orgId])
+  @@index([orgId])
+  @@index([orgId, isActive])
+  @@index([orgId, category])
   @@map("products")
 }
 
@@ -244,6 +247,8 @@ model Stock {
   warehouse Warehouse @relation(fields: [warehouseId], references: [id])
 
   @@unique([productId, warehouseId, orgId])
+  @@index([orgId, warehouseId])
+  @@index([orgId, productId])
   @@map("stock")
 }
 
@@ -291,6 +296,8 @@ model Movement {
   sourceReturns   Return[]       @relation("SourceReturns")
   returnMovements Return[]       @relation("ReturnMovements")
 
+  @@index([orgId, warehouseId])
+  @@index([orgId, status, createdAt])
   @@map("movements")
 }
 
@@ -376,7 +383,8 @@ model Sale {
 
   @@unique([saleNumber, orgId])
   @@index([status, orgId])
-  @@index([warehouseId, orgId])
+  @@index([orgId, warehouseId])
+  @@index([orgId, status, createdAt])
   @@index([orgId, createdAt])
   @@map("sales")
 }
@@ -435,7 +443,8 @@ model Return {
   @@index([type, orgId])
   @@index([saleId, orgId])
   @@index([sourceMovementId, orgId])
-  @@index([warehouseId, orgId])
+  @@index([orgId, warehouseId])
+  @@index([orgId, status, createdAt])
   @@index([orgId, createdAt])
   @@map("returns")
 }

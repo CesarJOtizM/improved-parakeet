@@ -31,14 +31,34 @@ import {
 } from '@infrastructure/database/repositories';
 import { NotificationService } from '@infrastructure/externalServices/notificationService';
 import { StockValidationJob } from '@infrastructure/jobs/stockValidationJob';
+import { CacheModule } from '@nestjs/cache-manager';
 import { Module, OnModuleInit } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
+import { FunctionalCacheService } from '@shared/infrastructure/cache';
 
 @Module({
   imports: [
     AuthenticationModule, // Import to get access to DomainEventBus and EmailService
     ScheduleModule.forRoot(), // Import for scheduled jobs
+    ConfigModule,
+    CacheModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => {
+        const auth = configService.get('auth');
+        return {
+          store: 'redis',
+          host: auth?.redis?.host || 'localhost',
+          port: auth?.redis?.port || 6379,
+          password: auth?.redis?.password,
+          db: auth?.redis?.db || 0,
+          ttl: auth?.redis?.ttl || 3600,
+          max: 1000,
+        };
+      },
+      inject: [ConfigService],
+    }),
   ],
   providers: [
     // Repositories
@@ -95,6 +115,11 @@ import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
     StockThresholdExceededEventHandler,
     // Infrastructure services
     NotificationService,
+    // Cache service
+    {
+      provide: 'CacheService',
+      useClass: FunctionalCacheService,
+    },
     // Scheduled jobs
     StockValidationJob,
   ],

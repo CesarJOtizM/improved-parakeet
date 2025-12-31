@@ -2,7 +2,7 @@ import { Money, Quantity } from '@inventory/stock';
 import { MovementPostedEvent } from '@movement/domain/events/movementPosted.event';
 import { PPMRecalculatedEvent } from '@movement/domain/events/ppmRecalculated.event';
 import { StockUpdatedEvent } from '@movement/domain/events/stockUpdated.event';
-import { PPMService } from '@movement/domain/services/ppmService';
+import { calculatePPM } from '@movement/domain/services/ppmService';
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { IDomainEventHandler } from '@shared/domain/events/domainEventBus.service';
 import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
@@ -68,8 +68,8 @@ export class MovementPostedEventHandler implements IDomainEventHandler<MovementP
         if (movement.type.isInput()) {
           // Input movement: increment stock and calculate PPM if cost is provided
           if (lineUnitCost) {
-            // Calculate new PPM
-            const ppmResult = PPMService.calculatePPM(
+            // Calculate new PPM using pure function
+            const ppmResult = calculatePPM(
               quantityBefore,
               currentAverageCost,
               lineQuantity,

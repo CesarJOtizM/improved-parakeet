@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Sale } from '@sale/domain/entities/sale.entity';
 import { SaleMapper } from '@sale/mappers';
 import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
@@ -16,6 +17,7 @@ export interface IGetSalesRequest {
   endDate?: Date;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  includeLines?: boolean; // Optional: include lines in response (default: true)
 }
 
 export type IGetSalesResponse = IPaginatedResponse<ISaleData>;
@@ -42,35 +44,49 @@ export class GetSalesUseCase {
     const limit = request.limit || 10;
     const skip = (page - 1) * limit;
 
+    // Determine if we should include lines (default: true for backward compatibility)
+    const includeLines = request.includeLines !== false;
+
     // Get sales based on filters
+    // Use lazy loading methods if includeLines is false and repository supports it
     let sales;
-    if (request.warehouseId) {
-      sales = await this.saleRepository.findByWarehouse(request.warehouseId, request.orgId);
-    } else if (request.status) {
-      sales = await this.saleRepository.findByStatus(request.status, request.orgId);
-    } else if (request.startDate && request.endDate) {
-      sales = await this.saleRepository.findByDateRange(
-        request.startDate,
-        request.endDate,
-        request.orgId
-      );
+    if (!includeLines && this.saleRepository.findAllWithoutLines) {
+      // Use lazy loading for list operations
+      const paginationResult = await this.saleRepository.findAllWithoutLines(request.orgId, {
+        skip,
+        take: limit,
+      });
+      sales = paginationResult.data;
     } else {
-      sales = await this.saleRepository.findAll(request.orgId);
+      // Use regular methods that include lines
+      if (request.warehouseId) {
+        sales = await this.saleRepository.findByWarehouse(request.warehouseId, request.orgId);
+      } else if (request.status) {
+        sales = await this.saleRepository.findByStatus(request.status, request.orgId);
+      } else if (request.startDate && request.endDate) {
+        sales = await this.saleRepository.findByDateRange(
+          request.startDate,
+          request.endDate,
+          request.orgId
+        );
+      } else {
+        sales = await this.saleRepository.findAll(request.orgId);
+      }
     }
 
     // Apply additional filters
     if (request.warehouseId && sales.length > 0) {
-      sales = sales.filter(s => s.warehouseId === request.warehouseId);
+      sales = sales.filter((s: Sale) => s.warehouseId === request.warehouseId);
     }
 
     if (request.status && sales.length > 0) {
-      sales = sales.filter(s => s.status.getValue() === request.status);
+      sales = sales.filter((s: Sale) => s.status.getValue() === request.status);
     }
 
     // Apply sorting
     if (request.sortBy) {
       const sortOrder = request.sortOrder || 'asc';
-      sales.sort((a, b) => {
+      sales.sort((a: Sale, b: Sale) => {
         let aValue: string | number;
         let bValue: string | number;
 

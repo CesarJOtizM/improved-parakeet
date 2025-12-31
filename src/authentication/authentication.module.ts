@@ -66,6 +66,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import { FunctionalCacheService } from '@shared/infrastructure/cache';
 
 @Module({
   imports: [
@@ -166,6 +167,11 @@ import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatch
     // Infrastructure services
     PrismaService,
     EmailService,
+    // Cache service
+    {
+      provide: 'CacheService',
+      useClass: FunctionalCacheService,
+    },
 
     // Repositories
     {

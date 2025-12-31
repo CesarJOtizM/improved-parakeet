@@ -4,16 +4,34 @@ import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { Password } from '@auth/domain/valueObjects/password.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { cacheEntity, getCachedEntity, invalidateEntityCache } from '@shared/infrastructure/cache';
+
+import type { ICacheService } from '@shared/ports/cache';
 
 @Injectable()
 export class UserRepository implements UserRepositoryInterface {
   private readonly logger = new Logger(UserRepository.name);
+  // Shorter TTL for user data for security (15 minutes instead of default 30)
+  private readonly userCacheTtl = 900; // 15 minutes in seconds
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject('CacheService')
+    @Optional()
+    private readonly cacheService?: ICacheService
+  ) {}
 
   async findById(id: string, orgId: string): Promise<User | null> {
     try {
+      // Try to get from cache first (with shorter TTL for security)
+      if (this.cacheService) {
+        const cached = await getCachedEntity<User>(this.cacheService, 'user', id, orgId);
+        if (cached) {
+          return cached;
+        }
+      }
+
       const userData = await this.prisma.user.findFirst({
         where: { id, orgId },
         include: {
@@ -36,7 +54,7 @@ export class UserRepository implements UserRepositoryInterface {
       if (!userData) return null;
 
       // Convertir a entidad de dominio
-      return User.reconstitute(
+      const user = User.reconstitute(
         {
           email: Email.create(userData.email),
           username: userData.username,
@@ -55,6 +73,13 @@ export class UserRepository implements UserRepositoryInterface {
         userData.id,
         userData.orgId
       );
+
+      // Cache the user with shorter TTL for security
+      if (this.cacheService) {
+        await cacheEntity(this.cacheService, 'user', user.id, user, orgId, this.userCacheTtl);
+      }
+
+      return user;
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Error finding user by ID: ${error.message}`);
@@ -88,7 +113,15 @@ export class UserRepository implements UserRepositoryInterface {
 
       if (!userData) return null;
 
-      return User.reconstitute(
+      // Try cache by ID first
+      if (this.cacheService) {
+        const cached = await getCachedEntity<User>(this.cacheService, 'user', userData.id, orgId);
+        if (cached) {
+          return cached;
+        }
+      }
+
+      const user = User.reconstitute(
         {
           email: Email.create(userData.email),
           username: userData.username,
@@ -107,6 +140,13 @@ export class UserRepository implements UserRepositoryInterface {
         userData.id,
         userData.orgId
       );
+
+      // Cache the user with shorter TTL for security
+      if (this.cacheService) {
+        await cacheEntity(this.cacheService, 'user', user.id, user, orgId, this.userCacheTtl);
+      }
+
+      return user;
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Error finding user by email: ${error.message}`);
@@ -439,7 +479,7 @@ export class UserRepository implements UserRepositoryInterface {
 
           this.logger.debug('User updated successfully', { userId: updatedUser.id });
 
-          return User.reconstitute(
+          const savedUser = User.reconstitute(
             {
               email: Email.create(updatedUser.email),
               username: updatedUser.username,
@@ -456,6 +496,21 @@ export class UserRepository implements UserRepositoryInterface {
             updatedUser.id,
             updatedUser.orgId
           );
+
+          // Invalidate and update cache
+          if (this.cacheService) {
+            await invalidateEntityCache(this.cacheService, 'user', savedUser.id, savedUser.orgId);
+            await cacheEntity(
+              this.cacheService,
+              'user',
+              savedUser.id,
+              savedUser,
+              savedUser.orgId,
+              this.userCacheTtl
+            );
+          }
+
+          return savedUser;
         } else {
           // El ID existe pero no está en la base de datos, crear nuevo usuario
           this.logger.debug('User ID exists but not in database, creating new user', {
@@ -472,7 +527,7 @@ export class UserRepository implements UserRepositoryInterface {
 
       this.logger.debug('User created successfully', { userId: newUser.id });
 
-      return User.reconstitute(
+      const savedUser = User.reconstitute(
         {
           email: Email.create(newUser.email),
           username: newUser.username,
@@ -489,6 +544,20 @@ export class UserRepository implements UserRepositoryInterface {
         newUser.id,
         newUser.orgId
       );
+
+      // Cache the new user
+      if (this.cacheService) {
+        await cacheEntity(
+          this.cacheService,
+          'user',
+          savedUser.id,
+          savedUser,
+          savedUser.orgId,
+          this.userCacheTtl
+        );
+      }
+
+      return savedUser;
     } catch (error) {
       this.logger.error('Error saving user', {
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -506,6 +575,11 @@ export class UserRepository implements UserRepositoryInterface {
       await this.prisma.user.deleteMany({
         where: { id, orgId },
       });
+
+      // Invalidate cache
+      if (this.cacheService) {
+        await invalidateEntityCache(this.cacheService, 'user', id, orgId);
+      }
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Error deleting user: ${error.message}`);

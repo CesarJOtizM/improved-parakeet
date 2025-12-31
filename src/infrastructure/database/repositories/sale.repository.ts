@@ -1,4 +1,8 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
+import {
+  IPaginatedResult,
+  IPaginationOptions,
+} from '@infrastructure/database/utils/queryOptimizer';
 import { Injectable, Logger } from '@nestjs/common';
 import { Sale } from '@sale/domain/entities/sale.entity';
 import { SaleLine } from '@sale/domain/entities/saleLine.entity';
@@ -6,6 +10,7 @@ import { ISaleRepository } from '@sale/domain/repositories/saleRepository.interf
 import { SaleNumber } from '@sale/domain/valueObjects/saleNumber.valueObject';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
 import { SaleStatus } from '@sale/domain/valueObjects/saleStatus.valueObject';
+import { pipe } from '@shared/utils/functional';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 @Injectable()
@@ -16,12 +21,12 @@ export class PrismaSaleRepository implements ISaleRepository {
 
   async findById(id: string, orgId: string): Promise<Sale | null> {
     try {
-      const saleData = await this.prisma.sale.findFirst({
-        where: { id, orgId },
+      const saleData = await this.prisma.sale.findUnique({
+        where: { id },
         include: { lines: true },
       });
 
-      if (!saleData) return null;
+      if (!saleData || saleData.orgId !== orgId) return null;
 
       return this.mapToEntity(saleData);
     } catch (error) {
@@ -29,6 +34,99 @@ export class PrismaSaleRepository implements ISaleRepository {
         this.logger.error(`Error finding sale by ID: ${error.message}`);
       } else {
         this.logger.error(`Error finding sale by ID: ${error}`);
+      }
+      throw error;
+    }
+  }
+
+  async findByIdWithoutLines(id: string, orgId: string): Promise<Sale | null> {
+    try {
+      const saleData = await this.prisma.sale.findUnique({
+        where: { id },
+      });
+
+      if (!saleData || saleData.orgId !== orgId) return null;
+
+      return this.mapToEntityWithoutLines(saleData);
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error finding sale by ID without lines: ${error.message}`);
+      } else {
+        this.logger.error(`Error finding sale by ID without lines: ${error}`);
+      }
+      throw error;
+    }
+  }
+
+  async loadLines(saleId: string, orgId: string): Promise<SaleLine[]> {
+    try {
+      const linesData = await this.prisma.saleLine.findMany({
+        where: { saleId, orgId },
+      });
+
+      return linesData.map(lineData => {
+        const quantityValue =
+          typeof lineData.quantity === 'object' && 'toNumber' in lineData.quantity
+            ? lineData.quantity.toNumber()
+            : Number(lineData.quantity);
+        const quantity = Quantity.create(quantityValue, 6);
+
+        const salePriceValue =
+          typeof lineData.salePrice === 'object' && 'toNumber' in lineData.salePrice
+            ? lineData.salePrice.toNumber()
+            : Number(lineData.salePrice);
+        const salePrice = SalePrice.create(salePriceValue, lineData.currency);
+
+        return SaleLine.reconstitute(
+          {
+            productId: lineData.productId,
+            locationId: lineData.locationId,
+            quantity,
+            salePrice,
+            extra: lineData.extra as Record<string, unknown> | undefined,
+          },
+          lineData.id,
+          orgId
+        );
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error loading sale lines: ${error.message}`);
+      } else {
+        this.logger.error(`Error loading sale lines: ${error}`);
+      }
+      throw error;
+    }
+  }
+
+  async findAllWithoutLines(
+    orgId: string,
+    pagination?: IPaginationOptions
+  ): Promise<IPaginatedResult<Sale>> {
+    try {
+      const skip = pagination?.skip ?? 0;
+      const take = pagination?.take ?? 20;
+
+      const [salesData, total] = await Promise.all([
+        this.prisma.sale.findMany({
+          where: { orgId },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: take + 1,
+        }),
+        this.prisma.sale.count({ where: { orgId } }),
+      ]);
+
+      const hasMore = salesData.length > take;
+      const data = salesData.slice(0, take).map(saleData => this.mapToEntityWithoutLines(saleData));
+      const nextCursor = hasMore && data.length > 0 ? data[data.length - 1].id : undefined;
+
+      return { data, total, hasMore, nextCursor };
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error finding all sales without lines: ${error.message}`);
+      } else {
+        this.logger.error(`Error finding all sales without lines: ${error}`);
       }
       throw error;
     }
@@ -310,6 +408,84 @@ export class PrismaSaleRepository implements ISaleRepository {
     }
   }
 
+  // Helper functions for functional composition
+  private createSaleValueObjects(saleData: {
+    saleNumber: string;
+    status: string;
+    warehouseId: string;
+    customerReference: string | null;
+    externalReference: string | null;
+    note: string | null;
+    confirmedAt: Date | null;
+    cancelledAt: Date | null;
+    movementId: string | null;
+    createdBy: string;
+  }) {
+    return {
+      saleNumber: SaleNumber.fromString(saleData.saleNumber),
+      status: SaleStatus.create(saleData.status as 'DRAFT' | 'CONFIRMED' | 'CANCELLED'),
+      warehouseId: saleData.warehouseId,
+      customerReference: saleData.customerReference || undefined,
+      externalReference: saleData.externalReference || undefined,
+      note: saleData.note || undefined,
+      confirmedAt: saleData.confirmedAt || undefined,
+      cancelledAt: saleData.cancelledAt || undefined,
+      createdBy: saleData.createdBy,
+      movementId: saleData.movementId || undefined,
+    };
+  }
+
+  private createSaleLine(lineData: {
+    id: string;
+    productId: string;
+    locationId: string;
+    quantity: number | string | { toNumber(): number };
+    salePrice: number | string | { toNumber(): number };
+    currency: string;
+    extra: unknown;
+    orgId: string;
+  }): SaleLine {
+    const quantityValue =
+      typeof lineData.quantity === 'object' && 'toNumber' in lineData.quantity
+        ? lineData.quantity.toNumber()
+        : Number(lineData.quantity);
+    const quantity = Quantity.create(quantityValue, 6);
+
+    const salePriceValue =
+      typeof lineData.salePrice === 'object' && 'toNumber' in lineData.salePrice
+        ? lineData.salePrice.toNumber()
+        : Number(lineData.salePrice);
+    const salePrice = SalePrice.create(salePriceValue, lineData.currency, 2);
+
+    return SaleLine.reconstitute(
+      {
+        productId: lineData.productId,
+        locationId: lineData.locationId,
+        quantity,
+        salePrice,
+        extra: (lineData.extra as Record<string, unknown>) || undefined,
+      },
+      lineData.id,
+      lineData.orgId
+    );
+  }
+
+  private addLinesToSale(sale: Sale, lines: SaleLine[]): Sale {
+    // Add lines to sale (only works when status is DRAFT)
+    for (const line of lines) {
+      sale.addLine(line);
+    }
+    return sale;
+  }
+
+  private restoreSaleStatus(sale: Sale, actualStatus: SaleStatus): Sale {
+    // Restore the actual status if it's not DRAFT
+    if (actualStatus.getValue() !== 'DRAFT') {
+      (sale as unknown as { props: { status: SaleStatus } }).props.status = actualStatus;
+    }
+    return sale;
+  }
+
   private mapToEntity(saleData: {
     id: string;
     saleNumber: string;
@@ -336,6 +512,51 @@ export class PrismaSaleRepository implements ISaleRepository {
       orgId: string;
     }>;
   }): Sale {
+    // Use functional composition with pipe
+    const valueObjects = this.createSaleValueObjects(saleData);
+    const sale = Sale.reconstitute(
+      {
+        saleNumber: valueObjects.saleNumber,
+        status: valueObjects.status,
+        warehouseId: valueObjects.warehouseId,
+        customerReference: valueObjects.customerReference,
+        externalReference: valueObjects.externalReference,
+        note: valueObjects.note,
+        confirmedAt: valueObjects.confirmedAt,
+        cancelledAt: valueObjects.cancelledAt,
+        createdBy: valueObjects.createdBy,
+        movementId: valueObjects.movementId,
+      },
+      saleData.id,
+      saleData.orgId
+    );
+
+    // Create lines using functional approach
+    const lines = saleData.lines.map(lineData => this.createSaleLine(lineData));
+
+    // Compose operations using pipe
+    return pipe(
+      (s: Sale) => this.addLinesToSale(s, lines),
+      (s: Sale) => this.restoreSaleStatus(s, valueObjects.status)
+    )(sale);
+  }
+
+  private mapToEntityWithoutLines(saleData: {
+    id: string;
+    saleNumber: string;
+    status: string;
+    warehouseId: string;
+    customerReference: string | null;
+    externalReference: string | null;
+    note: string | null;
+    confirmedAt: Date | null;
+    cancelledAt: Date | null;
+    movementId: string | null;
+    createdBy: string;
+    orgId: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Sale {
     const saleNumber = SaleNumber.fromString(saleData.saleNumber);
     const status = SaleStatus.create(saleData.status as 'DRAFT' | 'CONFIRMED' | 'CANCELLED');
 
@@ -355,40 +576,6 @@ export class PrismaSaleRepository implements ISaleRepository {
       saleData.id,
       saleData.orgId
     );
-
-    // Add lines to sale (only works when status is DRAFT)
-    for (const lineData of saleData.lines) {
-      const quantityValue =
-        typeof lineData.quantity === 'object' && 'toNumber' in lineData.quantity
-          ? lineData.quantity.toNumber()
-          : Number(lineData.quantity);
-      const quantity = Quantity.create(quantityValue, 6);
-
-      const salePriceValue =
-        typeof lineData.salePrice === 'object' && 'toNumber' in lineData.salePrice
-          ? lineData.salePrice.toNumber()
-          : Number(lineData.salePrice);
-      const salePrice = SalePrice.create(salePriceValue, lineData.currency, 2);
-
-      const line = SaleLine.reconstitute(
-        {
-          productId: lineData.productId,
-          locationId: lineData.locationId,
-          quantity,
-          salePrice,
-          extra: (lineData.extra as Record<string, unknown>) || undefined,
-        },
-        lineData.id,
-        saleData.orgId
-      );
-
-      sale.addLine(line);
-    }
-
-    // Now restore the actual status if it's not DRAFT
-    if (saleData.status !== 'DRAFT') {
-      (sale as unknown as { props: { status: SaleStatus } }).props.status = status;
-    }
 
     return sale;
   }
