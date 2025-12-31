@@ -581,13 +581,13 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
   - [x] Flujo de importación: Preview → Execute (2 pasos) y Execute directo (1 paso)
   - [x] Flujo manual: Create → Validate → Process (3 pasos, mantenido para compatibilidad)
 
-- [x] **Setup de Procesamiento de Archivos** ✅ **COMPLETADO** (excepto tests)
+- [x] **Setup de Procesamiento de Archivos** ✅ **COMPLETADO**
   - [x] Implementar validación de archivos Excel/CSV (IFileParsingService port + FileParsingService implementation)
   - [x] Crear sistema de procesamiento por lotes (ImportProcessingService)
   - [x] Setup de validaciones de datos de entrada (ImportValidationService con validaciones por tipo)
   - [x] Implementar sistema de reportes de errores (ImportErrorReportService)
   - [x] Plantillas de importación para cada tipo (ImportTemplateService)
-  - [ ] Tests de integración para importaciones y reportes (pendiente)
+  - [x] Tests de integración para importaciones y reportes ✅ **COMPLETADO** (100 tests: 77 integración + 23 E2E)
 
 ### **Semana 13: Adaptadores y API de Reportes**
 
@@ -596,11 +596,24 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
   - [x] Flujo de trabajo: 
     - [x] Paso 1: Generar/Vista de reporte (retorna datos JSON para preview)
     - [x] Paso 2: Exportación del reporte generado (PDF/Excel/CSV/JSON)
-  - [ ] Middleware de permisos para reportes sensibles (pendiente)
+  - [x] Middleware de permisos para reportes sensibles ✅ **COMPLETADO**
+    - [x] Constantes de permisos sensibles (FINANCIAL, VALUATION, SALES)
+    - [x] Decorador `@RequireReportPermission()` con validación automática
+    - [x] Guards aplicados en ReportController
+    - [x] Permiso `REPORTS:READ_SENSITIVE` agregado a security.constants.ts
   - [x] Validación de parámetros de reporte con DTOs
-  - [ ] Cache de reportes generados para exportación posterior (pendiente - reportes on-demand)
+  - [x] Cache selectivo de reportes generados ✅ **COMPLETADO**
+    - [x] Cache solo para reportes históricos (con dateRange) y exportaciones
+    - [x] TTL configurable por tipo de reporte (default: 1h vistas, 24h exportaciones)
+    - [x] ReportCacheService con métodos isCacheable, get, set, generateKey
+    - [x] Integración en ViewReportUseCase y ExportReportUseCase
+    - [x] Invalidación automática por TTL (Redis)
   - [x] Tests de integración (149 tests pasando)
-  - [ ] Crear interceptores para logging de reportes (pendiente)
+  - [x] Interceptor de logging para reportes ✅ **COMPLETADO**
+    - [x] ReportLoggingInterceptor con logging estructurado
+    - [x] Logging de cache hits/misses, duración, tamaño de respuesta
+    - [x] Configuración via variables de entorno
+    - [x] Aplicado en ReportController
 
 - [x] **API REST de Reportes e Importaciones** (Endpoints base implementados)
   - [x] **Vistas de Reportes (Preview)**: 
@@ -1816,7 +1829,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Fase 3**: Sistema de inventarios completo ✅ **COMPLETADA (100%)**
 - [x] **Fase 4**: Sistema de ventas y devoluciones ✅ **COMPLETADA (100%)**
 - [x] **Fase 4.5**: Mejoras de arquitectura ✅ **COMPLETADA (100%)** - Result monad (55/55 casos de uso), ports (24 interfaces), mappers (4 mappers, 48 tests)
-- [x] **Fase 5**: Sistema de reportes e importaciones ✅ **COMPLETADA (~90%)** - Reportes completos (149 tests), Importaciones completas (dominio, use cases, endpoints, flujo Preview/Execute), falta colección Postman
+- [x] **Fase 5**: Sistema de reportes e importaciones ✅ **COMPLETADA (~95%)** - Reportes completos (149 tests), Importaciones completas (dominio, use cases, endpoints, flujo Preview/Execute, 100 tests de integración/E2E pasando), falta solo colección Postman
 - [ ] **Fase 6**: Testing, optimización y despliegue (incluye refactoring funcional)
 
 ### **Colecciones de Postman Completadas**
@@ -2060,7 +2073,6 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 #### **⏳ Pendiente**
 
 - **Fase 5**: Colección de Postman para importaciones
-- **Fase 5**: Tests de integración para importaciones
 - **Fase 6**: Testing completo, optimización, refactoring funcional y despliegue
 
 ---

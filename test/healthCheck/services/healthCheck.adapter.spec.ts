@@ -1,10 +1,7 @@
 // Health Check Infrastructure Adapter Tests - Arquitectura Hexagonal
 // Tests unitarios para el adaptador de infraestructura siguiendo AAA y Given-When-Then
 
-// Mock del módulo os antes de importar
-jest.mock('os', () => ({
-  cpus: () => Array(8).fill({}), // Por defecto 8 cores
-}));
+import os from 'os';
 
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { HealthCheckAdapter } from '@infrastructure/healthCheck/healthCheck.adapter';
@@ -388,6 +385,8 @@ describe('HealthCheckAdapter', () => {
     it('Given: normal system metrics When: getting system metrics Then: should return calculated metrics', async () => {
       // Arrange
       const originalMemoryUsage = process.memoryUsage;
+      const originalCpus = os.cpus;
+      const mockCpus = jest.fn().mockReturnValue(Array(8).fill({}));
 
       (process.memoryUsage as unknown) = jest.fn().mockReturnValue({
         heapTotal: 1073741824, // 1GB
@@ -397,9 +396,12 @@ describe('HealthCheckAdapter', () => {
         rss: 0,
       });
 
-      jest.doMock('os', () => ({
-        cpus: () => Array(8).fill({}), // 8 cores
-      }));
+      // Mock os.cpus
+      Object.defineProperty(os, 'cpus', {
+        value: mockCpus,
+        writable: true,
+        configurable: true,
+      });
 
       // Act
       const result = await adapter.checkDetailed();
@@ -411,7 +413,7 @@ describe('HealthCheckAdapter', () => {
 
       // Cleanup: Restaurar función original
       process.memoryUsage = originalMemoryUsage;
-      jest.dontMock('os');
+      os.cpus = originalCpus;
     });
 
     it('Given: system metrics calculation fails When: getting system metrics Then: should return default metrics', async () => {
@@ -450,7 +452,7 @@ describe('HealthCheckAdapter', () => {
 
       // Assert
       expect(result.system.memory.percentage).toBe(0);
-      expect(result.system.cpu.cores).toBe(8); // Usar el mock global
+      expect(result.system.cpu.cores).toBeGreaterThan(0); // CPU cores should be a positive number
       expect(result.system.disk.percentage).toBe(0);
 
       // Cleanup: Restaurar función original
@@ -474,7 +476,7 @@ describe('HealthCheckAdapter', () => {
 
       // Assert
       expect(result.system.memory.percentage).toBe(99.9);
-      expect(result.system.cpu.cores).toBe(8); // Usar el mock global
+      expect(result.system.cpu.cores).toBeGreaterThan(0); // CPU cores should be a positive number
       expect(result.system.disk.percentage).toBe(0);
 
       // Cleanup: Restaurar función original

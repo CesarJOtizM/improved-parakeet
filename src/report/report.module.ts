@@ -11,9 +11,17 @@ import { PrismaReportRepository } from '@infrastructure/database/repositories/re
 import { PrismaReportTemplateRepository } from '@infrastructure/database/repositories/reportTemplate.repository';
 import { DocumentGenerationService } from '@infrastructure/externalServices';
 import { ReportController, ReportTemplateController } from '@interface/http/report';
+import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { ExportService, ReportGenerationService, ReportViewService } from './domain/services';
+import {
+  ExportService,
+  ReportGenerationService,
+  ReportViewService,
+  ReportCacheService,
+} from './domain/services';
+import { ReportLoggingInterceptor } from './interceptors/reportLogging.interceptor';
 
 // Note: This module requires the following repositories from other modules:
 // - ProductRepository, WarehouseRepository, MovementRepository, StockRepository
@@ -21,7 +29,26 @@ import { ExportService, ReportGenerationService, ReportViewService } from './dom
 // These should be provided by their respective modules or a shared inventory module
 
 @Module({
-  imports: [PrismaModule],
+  imports: [
+    PrismaModule,
+    ConfigModule,
+    CacheModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => {
+        const auth = configService.get('auth');
+        return {
+          store: 'redis',
+          host: auth?.redis?.host || 'localhost',
+          port: auth?.redis?.port || 6379,
+          password: auth?.redis?.password,
+          db: auth?.redis?.db || 0,
+          ttl: auth?.redis?.ttl || 3600,
+          max: 1000,
+        };
+      },
+      inject: [ConfigService],
+    }),
+  ],
   controllers: [ReportController, ReportTemplateController],
   providers: [
     // Repositories
@@ -42,6 +69,9 @@ import { ExportService, ReportGenerationService, ReportViewService } from './dom
     ReportGenerationService,
     ReportViewService,
     ExportService,
+    ReportCacheService,
+    // Interceptors
+    ReportLoggingInterceptor,
     // Use Cases
     ViewReportUseCase,
     ExportReportUseCase,

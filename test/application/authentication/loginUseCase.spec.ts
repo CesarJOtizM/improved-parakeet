@@ -12,12 +12,6 @@ import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
 import { AuthenticationError, RateLimitError } from '@shared/domain/result';
 
-// Mock dependencies
-jest.mock('@auth/domain/services/authenticationService');
-jest.mock('@auth/domain/services/jwtService');
-jest.mock('@auth/domain/services/tokenBlacklistService');
-jest.mock('@auth/domain/services/rateLimitService');
-
 describe('LoginUseCase', () => {
   let loginUseCase: LoginUseCase;
   let mockUserRepository: jest.Mocked<IUserRepository>;

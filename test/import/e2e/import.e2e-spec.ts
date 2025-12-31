@@ -7,8 +7,12 @@ import {
   DownloadImportTemplateUseCase,
   ExecuteImportUseCase,
   GetImportStatusUseCase,
+  IDownloadErrorReportResponse,
   IExecuteImportResponse,
+  IGetImportStatusResponse,
   IPreviewImportResponse,
+  IProcessImportResponse,
+  IValidateImportResponse,
   PreviewImportUseCase,
   ProcessImportUseCase,
   ValidateImportUseCase,
@@ -130,18 +134,13 @@ describe('Import Endpoints (E2E)', () => {
         success: true,
         message: 'Preview generated successfully',
         data: {
+          canBeProcessed: true,
           totalRows: 2,
           validRows: 2,
           invalidRows: 0,
-          errors: [],
+          structureErrors: [],
+          rowErrors: [],
           warnings: [],
-          preview: {
-            headers: ['SKU', 'Name', 'Description'],
-            rows: [
-              { SKU: 'PROD-001', Name: 'Test Product 1' },
-              { SKU: 'PROD-002', Name: 'Test Product 2' },
-            ],
-          },
         },
         timestamp: new Date().toISOString(),
       };
@@ -206,15 +205,16 @@ describe('Import Endpoints (E2E)', () => {
         success: true,
         message: 'Preview generated with errors',
         data: {
+          canBeProcessed: false,
           totalRows: 2,
           validRows: 0,
           invalidRows: 2,
-          errors: ['Row 1: Missing required field "SKU"', 'Row 2: Missing required field "Name"'],
+          structureErrors: [],
+          rowErrors: [
+            { rowNumber: 1, errors: ['Missing required field "SKU"'] },
+            { rowNumber: 2, errors: ['Missing required field "Name"'] },
+          ],
           warnings: [],
-          preview: {
-            headers: ['SKU', 'Name'],
-            rows: [],
-          },
         },
         timestamp: new Date().toISOString(),
       };
@@ -230,7 +230,7 @@ describe('Import Endpoints (E2E)', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.invalidRows).toBe(2);
-      expect(response.body.data.errors.length).toBeGreaterThan(0);
+      expect(response.body.data.rowErrors.length).toBeGreaterThan(0);
     });
 
     it('Given: missing file When: previewing import Then: should return validation error', async () => {
@@ -266,7 +266,7 @@ describe('Import Endpoints (E2E)', () => {
         success: true,
         message: 'Import executed successfully',
         data: {
-          batchId: 'batch-123',
+          id: 'batch-123',
           status: 'COMPLETED',
           totalRows: 2,
           processedRows: 2,
@@ -373,15 +373,17 @@ describe('Import Endpoints (E2E)', () => {
     it('Given: valid file When: validating batch Then: should return success', async () => {
       // Arrange
       const file = generateValidProductsFile();
-      const mockResponse = {
+      const mockResponse: IValidateImportResponse = {
         success: true,
         message: 'Import batch validated successfully',
         data: {
-          batchId: 'batch-123',
+          id: 'batch-123',
           status: 'VALIDATED',
           totalRows: 2,
           validRows: 2,
           invalidRows: 0,
+          structureErrors: [],
+          warnings: [],
         },
         timestamp: new Date().toISOString(),
       };
@@ -430,14 +432,17 @@ describe('Import Endpoints (E2E)', () => {
   describe('POST /imports/:id/process', () => {
     it('Given: validated batch When: processing batch Then: should return success', async () => {
       // Arrange
-      const mockResponse = {
+      const mockResponse: IProcessImportResponse = {
         success: true,
         message: 'Import batch processed successfully',
         data: {
-          batchId: 'batch-123',
+          id: 'batch-123',
           status: 'COMPLETED',
+          totalRows: 2,
           processedRows: 2,
-          failedRows: 0,
+          validRows: 2,
+          invalidRows: 0,
+          progress: 100,
         },
         timestamp: new Date().toISOString(),
       };
@@ -471,17 +476,23 @@ describe('Import Endpoints (E2E)', () => {
   describe('GET /imports/:id/status', () => {
     it('Given: existing batch When: getting status Then: should return status', async () => {
       // Arrange
-      const mockResponse = {
+      const mockResponse: IGetImportStatusResponse = {
         success: true,
         message: 'Import status retrieved successfully',
         data: {
           id: 'batch-123',
           type: 'PRODUCTS',
           status: 'VALIDATED',
+          fileName: 'products.xlsx',
           totalRows: 2,
           processedRows: 0,
           validRows: 2,
           invalidRows: 0,
+          progress: 0,
+          createdBy: 'user-123',
+          orgId: 'org-123',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         },
         timestamp: new Date().toISOString(),
       };
@@ -553,13 +564,20 @@ describe('Import Endpoints (E2E)', () => {
   describe('GET /imports/:id/errors', () => {
     it('Given: validated batch with errors When: downloading error report Then: should return CSV file', async () => {
       // Arrange
-      const mockResponse = {
+      const mockResponse: IDownloadErrorReportResponse = {
         success: true,
         message: 'Error report generated successfully',
         data: {
           content: Buffer.from('Row Number,Severity,Error Message\n1,error,Missing required field'),
           filename: 'import-errors-PRODUCTS-batch-123-2024-01-01.csv',
           mimeType: 'text/csv',
+          summary: {
+            totalRows: 2,
+            validRows: 1,
+            invalidRows: 1,
+            errorCount: 1,
+            warningCount: 0,
+          },
         },
         timestamp: new Date().toISOString(),
       };

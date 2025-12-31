@@ -1,5 +1,5 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
-import { ExportService, IExportOptions } from '@report/domain/services';
+import { ExportService, IExportOptions, ReportCacheService } from '@report/domain/services';
 import {
   IReportParametersInput,
   ReportFormat,
@@ -34,6 +34,7 @@ export interface IExportReportResponse {
     reportId?: string; // Only if saveMetadata is true
   };
   timestamp: string;
+  fromCache?: boolean;
 }
 
 @Injectable()
@@ -45,7 +46,8 @@ export class ExportReportUseCase {
     @Inject('ReportRepository')
     private readonly reportRepository: IReportRepository,
     @Inject('DomainEventDispatcher')
-    private readonly eventDispatcher: IDomainEventDispatcher
+    private readonly eventDispatcher: IDomainEventDispatcher,
+    private readonly reportCacheService: ReportCacheService
   ) {}
 
   async execute(
@@ -78,14 +80,63 @@ export class ExportReportUseCase {
         );
       }
 
-      // Generate the export file directly
-      const exportResult = await this.exportService.exportReport(
-        reportType.getValue(),
-        reportFormat.getValue(),
+      const reportTypeValue = reportType.getValue();
+      const reportFormatValue = reportFormat.getValue();
+      let exportResult: { buffer: Buffer; filename: string; mimeType: string; size: number };
+      let fromCache = false;
+
+      // Exports are always cacheable
+      const cacheKey = this.reportCacheService.generateKey(
+        reportTypeValue,
         request.parameters,
-        request.orgId,
-        request.options
+        reportFormatValue,
+        true
       );
+
+      // Try to get from cache
+      const cachedExport = await this.reportCacheService.get<{
+        buffer: Buffer;
+        filename: string;
+        mimeType: string;
+        size: number;
+      }>(cacheKey);
+
+      if (cachedExport) {
+        this.logger.log('Export retrieved from cache', {
+          type: request.type,
+          format: request.format,
+          orgId: request.orgId,
+          cacheKey,
+        });
+        exportResult = cachedExport;
+        fromCache = true;
+      } else {
+        // Cache miss - generate export
+        this.logger.log('Cache miss - generating export', {
+          type: request.type,
+          format: request.format,
+          orgId: request.orgId,
+          cacheKey,
+        });
+        exportResult = await this.exportService.exportReport(
+          reportTypeValue,
+          reportFormatValue,
+          request.parameters,
+          request.orgId,
+          request.options
+        );
+
+        // Save to cache with TTL
+        const ttl = this.reportCacheService.getTtlForExport(reportTypeValue);
+        await this.reportCacheService.set(cacheKey, exportResult, ttl);
+        this.logger.log('Export cached successfully', {
+          type: request.type,
+          format: request.format,
+          orgId: request.orgId,
+          cacheKey,
+          ttl,
+        });
+      }
 
       let reportId: string | undefined;
 
@@ -122,6 +173,7 @@ export class ExportReportUseCase {
         size: exportResult.size,
         orgId: request.orgId,
         reportId,
+        fromCache,
       });
 
       return ok({
@@ -135,6 +187,7 @@ export class ExportReportUseCase {
           reportId,
         },
         timestamp: new Date().toISOString(),
+        fromCache,
       });
     } catch (error) {
       this.logger.error('Failed to export report', {

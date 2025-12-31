@@ -5,7 +5,7 @@ import { RoleAssignmentService } from '@auth/domain/services/roleAssignmentServi
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { RoleRepository } from '@infrastructure/database/repositories/role.repository';
 import { UserRepository } from '@infrastructure/database/repositories/user.repository';
-import { beforeEach, describe, expect, it } from '@jest/globals';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { INestApplication, Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 

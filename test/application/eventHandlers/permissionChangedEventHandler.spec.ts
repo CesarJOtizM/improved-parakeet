@@ -102,8 +102,8 @@ describe('PermissionChangedEventHandler', () => {
       });
       const errorLoggerSpy = jest.spyOn((handler as any).logger, 'error');
 
-      // Act
-      await expect(handler.handle(event)).resolves.not.toThrow();
+      // Act & Assert
+      await expect(handler.handle(event)).resolves.toBeUndefined();
 
       // Assert
       expect(errorLoggerSpy).toHaveBeenCalledWith('Error handling PermissionChanged event', {

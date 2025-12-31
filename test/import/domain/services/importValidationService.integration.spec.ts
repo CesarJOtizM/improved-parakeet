@@ -256,7 +256,7 @@ describe('ImportValidationService Integration Tests', () => {
       };
 
       // Act
-      const _result = ImportValidationService.validateRowData(type, rowData, 1);
+      ImportValidationService.validateRowData(type, rowData, 1);
 
       // Assert
       // Note: Date validation depends on template structure

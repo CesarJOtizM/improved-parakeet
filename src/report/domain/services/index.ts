@@ -21,3 +21,5 @@ export type { IReportColumn, IReportViewResult } from './reportView.service';
 
 export { ExportService } from './export.service';
 export type { IExportResult, IExportOptions } from './export.service';
+
+export { ReportCacheService } from './reportCache.service';

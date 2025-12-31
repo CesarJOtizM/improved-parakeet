@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IReportViewResult, ReportViewService } from '@report/domain/services';
+import { IReportViewResult, ReportViewService, ReportCacheService } from '@report/domain/services';
 import { IReportParametersInput, ReportType } from '@report/domain/valueObjects';
 import { err, ok, Result } from '@shared/domain/result';
 import { DomainError, ValidationError } from '@shared/domain/result/domainError';
@@ -16,13 +16,17 @@ export interface IViewReportResponse {
   message: string;
   data: IReportViewResult<unknown>;
   timestamp: string;
+  fromCache?: boolean;
 }
 
 @Injectable()
 export class ViewReportUseCase {
   private readonly logger = new Logger(ViewReportUseCase.name);
 
-  constructor(private readonly reportViewService: ReportViewService) {}
+  constructor(
+    private readonly reportViewService: ReportViewService,
+    private readonly reportCacheService: ReportCacheService
+  ) {}
 
   async execute(request: IViewReportRequest): Promise<Result<IViewReportResponse, DomainError>> {
     this.logger.log('Viewing report', {
@@ -39,17 +43,71 @@ export class ViewReportUseCase {
         return err(new ValidationError(`Invalid report type: ${request.type}`));
       }
 
-      // Generate report view data (on-demand, no persistence)
-      const viewResult = await this.reportViewService.viewReport(
-        reportType.getValue(),
-        request.parameters,
-        request.orgId
-      );
+      const reportTypeValue = reportType.getValue();
+      let viewResult: IReportViewResult<unknown>;
+      let fromCache = false;
+
+      // Check if report is cacheable
+      if (this.reportCacheService.isCacheable(reportTypeValue, request.parameters, false)) {
+        const cacheKey = this.reportCacheService.generateKey(
+          reportTypeValue,
+          request.parameters,
+          undefined,
+          false
+        );
+
+        // Try to get from cache
+        const cachedResult =
+          await this.reportCacheService.get<IReportViewResult<unknown>>(cacheKey);
+        if (cachedResult) {
+          this.logger.log('Report retrieved from cache', {
+            type: request.type,
+            orgId: request.orgId,
+            cacheKey,
+          });
+          viewResult = cachedResult;
+          fromCache = true;
+        } else {
+          // Cache miss - generate report
+          this.logger.log('Cache miss - generating report', {
+            type: request.type,
+            orgId: request.orgId,
+            cacheKey,
+          });
+          viewResult = await this.reportViewService.viewReport(
+            reportTypeValue,
+            request.parameters,
+            request.orgId
+          );
+
+          // Save to cache with TTL
+          const ttl = this.reportCacheService.getTtlForView(reportTypeValue);
+          await this.reportCacheService.set(cacheKey, viewResult, ttl);
+          this.logger.log('Report cached successfully', {
+            type: request.type,
+            orgId: request.orgId,
+            cacheKey,
+            ttl,
+          });
+        }
+      } else {
+        // Not cacheable - generate directly
+        this.logger.log('Report not cacheable - generating directly', {
+          type: request.type,
+          orgId: request.orgId,
+        });
+        viewResult = await this.reportViewService.viewReport(
+          reportTypeValue,
+          request.parameters,
+          request.orgId
+        );
+      }
 
       this.logger.log('Report viewed successfully', {
         type: request.type,
         totalRecords: viewResult.metadata.totalRecords,
         orgId: request.orgId,
+        fromCache,
       });
 
       return ok({
@@ -57,6 +115,7 @@ export class ViewReportUseCase {
         message: 'Report generated successfully',
         data: viewResult,
         timestamp: new Date().toISOString(),
+        fromCache,
       });
     } catch (error) {
       this.logger.error('Failed to view report', {

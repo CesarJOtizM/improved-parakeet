@@ -3,6 +3,8 @@ import {
   ExportReportUseCase,
   GetReportsUseCase,
 } from '@application/reportUseCases';
+import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
+import { PermissionsGuard } from '@auth/security/guards/permissionsGuard';
 import {
   Controller,
   Get,
@@ -14,16 +16,26 @@ import {
   Logger,
   Res,
   Headers,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiHeader, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  RequireReportPermission,
+  RequireExportPermission,
+} from '@report/decorators/requireReportPermission.decorator';
 import { REPORT_TYPES } from '@report/domain/valueObjects';
 import { ViewReportQueryDto, ViewReportResponseDto, ExportReportDto } from '@report/dto';
+import { ReportLoggingInterceptor } from '@report/interceptors/reportLogging.interceptor';
 import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
 import type { Response } from 'express';
 
 @ApiTags('Reports')
 @Controller('reports')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@UseInterceptors(ReportLoggingInterceptor)
+@ApiBearerAuth()
 export class ReportController {
   private readonly logger = new Logger(ReportController.name);
 
@@ -38,6 +50,7 @@ export class ReportController {
   // ============================================================
 
   @Get('inventory/available/view')
+  @RequireReportPermission(REPORT_TYPES.AVAILABLE_INVENTORY)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'View available inventory report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -62,6 +75,7 @@ export class ReportController {
   }
 
   @Get('inventory/movement-history/view')
+  @RequireReportPermission(REPORT_TYPES.MOVEMENT_HISTORY)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'View movement history report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -86,6 +100,7 @@ export class ReportController {
   }
 
   @Get('inventory/valuation/view')
+  @RequireReportPermission(REPORT_TYPES.VALUATION)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'View inventory valuation report (using PPM)' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -110,6 +125,7 @@ export class ReportController {
   }
 
   @Get('inventory/low-stock/view')
+  @RequireReportPermission(REPORT_TYPES.LOW_STOCK)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'View low stock alert report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -134,6 +150,7 @@ export class ReportController {
   }
 
   @Get('inventory/movements/view')
+  @RequireReportPermission(REPORT_TYPES.MOVEMENTS)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'View movements summary report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -158,6 +175,7 @@ export class ReportController {
   }
 
   @Get('inventory/financial/view')
+  @RequireReportPermission(REPORT_TYPES.FINANCIAL)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'View financial report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -182,6 +200,7 @@ export class ReportController {
   }
 
   @Get('inventory/turnover/view')
+  @RequireReportPermission(REPORT_TYPES.TURNOVER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'View inventory turnover report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -206,6 +225,7 @@ export class ReportController {
   }
 
   @Get('sales/view')
+  @RequireReportPermission(REPORT_TYPES.SALES)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'View sales report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -230,6 +250,7 @@ export class ReportController {
   }
 
   @Get('sales/by-product/view')
+  @RequireReportPermission(REPORT_TYPES.SALES_BY_PRODUCT)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'View sales by product report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -254,6 +275,7 @@ export class ReportController {
   }
 
   @Get('sales/by-warehouse/view')
+  @RequireReportPermission(REPORT_TYPES.SALES_BY_WAREHOUSE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'View sales by warehouse report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -278,6 +300,7 @@ export class ReportController {
   }
 
   @Get('returns/view')
+  @RequireReportPermission(REPORT_TYPES.RETURNS)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'View returns report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -302,6 +325,7 @@ export class ReportController {
   }
 
   @Get('returns/by-type/view')
+  @RequireReportPermission(REPORT_TYPES.RETURNS_BY_TYPE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'View returns by type report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -326,6 +350,7 @@ export class ReportController {
   }
 
   @Get('returns/by-product/view')
+  @RequireReportPermission(REPORT_TYPES.RETURNS_BY_PRODUCT)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'View returns by product report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -354,6 +379,7 @@ export class ReportController {
   // ============================================================
 
   @Post('inventory/available/export')
+  @RequireExportPermission()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Export available inventory report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -368,6 +394,7 @@ export class ReportController {
   }
 
   @Post('inventory/movement-history/export')
+  @RequireExportPermission()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Export movement history report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -382,6 +409,7 @@ export class ReportController {
   }
 
   @Post('inventory/valuation/export')
+  @RequireExportPermission()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Export inventory valuation report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -396,6 +424,7 @@ export class ReportController {
   }
 
   @Post('inventory/low-stock/export')
+  @RequireExportPermission()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Export low stock alert report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -410,6 +439,7 @@ export class ReportController {
   }
 
   @Post('inventory/movements/export')
+  @RequireExportPermission()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Export movements summary report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -424,6 +454,7 @@ export class ReportController {
   }
 
   @Post('inventory/financial/export')
+  @RequireExportPermission()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Export financial report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -438,6 +469,7 @@ export class ReportController {
   }
 
   @Post('inventory/turnover/export')
+  @RequireExportPermission()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Export inventory turnover report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -452,6 +484,7 @@ export class ReportController {
   }
 
   @Post('sales/export')
+  @RequireExportPermission()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Export sales report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -466,6 +499,7 @@ export class ReportController {
   }
 
   @Post('sales/by-product/export')
+  @RequireExportPermission()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Export sales by product report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -480,6 +514,7 @@ export class ReportController {
   }
 
   @Post('sales/by-warehouse/export')
+  @RequireExportPermission()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Export sales by warehouse report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -494,6 +529,7 @@ export class ReportController {
   }
 
   @Post('returns/export')
+  @RequireExportPermission()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Export returns report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -508,6 +544,7 @@ export class ReportController {
   }
 
   @Post('returns/by-type/export')
+  @RequireExportPermission()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Export returns by type report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
@@ -522,6 +559,7 @@ export class ReportController {
   }
 
   @Post('returns/by-product/export')
+  @RequireExportPermission()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Export returns by product report' })
   @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })

@@ -3,17 +3,26 @@
 
 import { ViewReportUseCase } from '@application/reportUseCases';
 import { Test, TestingModule } from '@nestjs/testing';
-import { IReportViewResult, ReportViewService } from '@report/domain/services';
+import { IReportViewResult, ReportViewService, ReportCacheService } from '@report/domain/services';
 import { REPORT_TYPES } from '@report/domain/valueObjects';
 
 describe('ViewReportUseCase', () => {
   let useCase: ViewReportUseCase;
   let mockReportViewService: jest.Mocked<ReportViewService>;
+  let mockReportCacheService: jest.Mocked<ReportCacheService>;
 
   beforeEach(async () => {
     mockReportViewService = {
       viewReport: jest.fn(),
     } as unknown as jest.Mocked<ReportViewService>;
+
+    mockReportCacheService = {
+      isCacheable: jest.fn().mockReturnValue(false),
+      generateKey: jest.fn(),
+      get: jest.fn().mockResolvedValue(null),
+      set: jest.fn().mockResolvedValue(undefined),
+      getTtlForView: jest.fn().mockReturnValue(3600),
+    } as unknown as jest.Mocked<ReportCacheService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -21,6 +30,10 @@ describe('ViewReportUseCase', () => {
         {
           provide: ReportViewService,
           useValue: mockReportViewService,
+        },
+        {
+          provide: ReportCacheService,
+          useValue: mockReportCacheService,
         },
       ],
     }).compile();
