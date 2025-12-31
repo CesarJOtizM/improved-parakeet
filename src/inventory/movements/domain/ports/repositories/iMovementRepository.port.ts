@@ -4,6 +4,7 @@ import {
 } from '@infrastructure/database/utils/queryOptimizer';
 import { Movement } from '@movement/domain/entities/movement.entity';
 import { MovementLine } from '@movement/domain/entities/movementLine.entity';
+import { IPrismaSpecification } from '@shared/domain/specifications';
 import { IReadRepository, IWriteRepository } from '@shared/ports/repositories';
 
 /**
@@ -18,6 +19,11 @@ export interface IMovementRepository extends IReadRepository<Movement>, IWriteRe
   findByProduct(productId: string, orgId: string): Promise<Movement[]>;
   findDraftMovements(orgId: string): Promise<Movement[]>;
   findPostedMovements(orgId: string): Promise<Movement[]>;
+  findBySpecification(
+    spec: IPrismaSpecification<Movement>,
+    orgId: string,
+    options?: IPaginationOptions
+  ): Promise<IPaginatedResult<Movement>>;
   // Lazy loading methods (optional for performance optimization)
   findByIdWithoutLines?(id: string, orgId: string): Promise<Movement | null>;
   loadLines?(movementId: string, orgId: string): Promise<MovementLine[]>;

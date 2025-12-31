@@ -1,10 +1,18 @@
+import { QueryPagination } from '@infrastructure/database/utils/queryOptimizer';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { AuditAction } from '@shared/audit/domain/valueObjects/auditAction.valueObject';
-import { EntityType } from '@shared/audit/domain/valueObjects/entityType.valueObject';
-import { DomainError, ok, Result } from '@shared/domain/result';
+import {
+  AuditLogByActionSpecification,
+  AuditLogByDateRangeSpecification,
+  AuditLogByEntityIdSpecification,
+  AuditLogByEntityTypeSpecification,
+  AuditLogByUserSpecification,
+} from '@shared/audit/domain/specifications';
+import { DomainError, Result, ok } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
+import type { AuditLog } from '@shared/audit/domain/entities/auditLog.entity';
 import type { IAuditLogRepository } from '@shared/audit/domain/repositories/auditLogRepository.interface';
+import type { IPrismaSpecification } from '@shared/domain/specifications';
 
 export interface IGetAuditLogsRequest {
   orgId: string;
@@ -57,54 +65,60 @@ export class GetAuditLogsUseCase {
 
     const page = request.page || 1;
     const limit = request.limit || 50;
-    const offset = (page - 1) * limit;
+    const { skip, take } = QueryPagination.fromPage(page, limit);
 
-    // Build filters
-    const filters: {
-      entityType?: EntityType;
-      entityId?: string;
-      action?: AuditAction;
-      performedBy?: string;
-      startDate?: Date;
-      endDate?: Date;
-    } = {};
+    // Compose specifications based on filters
+    const specifications: IPrismaSpecification<AuditLog>[] = [];
 
     if (request.entityType) {
-      filters.entityType = EntityType.create(request.entityType as EntityType['props']['value']);
+      specifications.push(new AuditLogByEntityTypeSpecification(request.entityType));
     }
 
     if (request.entityId) {
-      filters.entityId = request.entityId;
+      specifications.push(new AuditLogByEntityIdSpecification(request.entityId));
     }
 
     if (request.action) {
-      filters.action = AuditAction.create(request.action as AuditAction['props']['value']);
+      specifications.push(new AuditLogByActionSpecification(request.action));
     }
 
     if (request.performedBy) {
-      filters.performedBy = request.performedBy;
+      specifications.push(new AuditLogByUserSpecification(request.performedBy));
     }
 
-    if (request.startDate) {
-      filters.startDate = request.startDate;
+    if (request.startDate && request.endDate) {
+      specifications.push(new AuditLogByDateRangeSpecification(request.startDate, request.endDate));
     }
 
-    if (request.endDate) {
-      filters.endDate = request.endDate;
+    // Combine all specifications with AND logic
+    let result;
+    if (specifications.length > 0) {
+      const finalSpec = specifications.reduce<IPrismaSpecification<AuditLog>>(
+        (acc, spec) => acc.and(spec) as IPrismaSpecification<AuditLog>,
+        specifications[0]
+      );
+      result = await this.auditRepository.findBySpecification(finalSpec, request.orgId, {
+        skip,
+        take,
+      });
+    } else {
+      // Fallback to findAll for backward compatibility
+      const allAuditLogs = await this.auditRepository.findAll(request.orgId);
+      const total = allAuditLogs.length;
+      const paginatedAuditLogs = allAuditLogs.slice(skip, skip + take);
+      result = {
+        data: paginatedAuditLogs,
+        total,
+        hasMore: skip + take < total,
+      };
     }
 
-    // Get audit logs and count
-    const [auditLogs, total] = await Promise.all([
-      this.auditRepository.findByFilters(request.orgId, filters, limit, offset),
-      this.auditRepository.countByFilters(request.orgId, filters),
-    ]);
-
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(result.total / limit);
 
     return ok({
       success: true,
       message: 'Audit logs retrieved successfully',
-      data: auditLogs.map(log => ({
+      data: result.data.map(log => ({
         id: log.id,
         orgId: log.orgId || null,
         entityType: log.entityType.getValue(),
@@ -123,7 +137,7 @@ export class GetAuditLogsUseCase {
       pagination: {
         page,
         limit,
-        total,
+        total: result.total,
         totalPages,
         hasNext: page < totalPages,
         hasPrev: page > 1,

@@ -107,11 +107,34 @@ export class UpdateProductUseCase {
       }
 
       if (request.status !== undefined) {
+        // Use aggregate method to check if status can be changed
+        if (!product.canChangeStatus(request.status)) {
+          return err(
+            new BusinessRuleError(
+              'Cannot change status of a discontinued product',
+              'STATUS_CHANGE_ERROR',
+              {
+                productId: product.id,
+                orgId: request.orgId,
+              }
+            )
+          );
+        }
         updateProps.status = ProductStatus.create(request.status);
       }
 
       if (request.costMethod !== undefined) {
-        // Validate cost method change using business rules
+        // Check if cost method can be changed (pure check)
+        if (!product.canChangeCostMethod()) {
+          return err(
+            new BusinessRuleError('Cost method cannot be changed', 'COST_METHOD_CHANGE_ERROR', {
+              productId: product.id,
+              orgId: request.orgId,
+            })
+          );
+        }
+
+        // Validate cost method change using business rules (async check)
         const validation = await ProductBusinessRulesService.validateCostMethodChange(
           product.id,
           request.orgId,
@@ -130,11 +153,11 @@ export class UpdateProductUseCase {
         updateProps.costMethod = CostMethod.create(request.costMethod);
       }
 
-      // Update product
-      product.update(updateProps);
+      // Update product (returns new instance)
+      const updatedProduct = product.update(updateProps);
 
       // Save product
-      const savedProduct = await this.productRepository.save(product);
+      const savedProduct = await this.productRepository.save(updatedProduct);
 
       // Dispatch domain events
       savedProduct.markEventsForDispatch();

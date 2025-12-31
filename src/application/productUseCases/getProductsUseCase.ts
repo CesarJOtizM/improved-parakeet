@@ -1,10 +1,14 @@
+import { QueryPagination } from '@infrastructure/database/utils/queryOptimizer';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ProductByStatusSpecification } from '@product/domain/specifications';
 import { ProductMapper } from '@product/mappers';
 import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
 import type { IProductData } from './createProductUseCase';
+import type { Product } from '@product/domain/entities/product.entity';
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
+import type { IPrismaSpecification } from '@shared/domain/specifications';
 
 export interface IGetProductsRequest {
   orgId: string;
@@ -37,31 +41,66 @@ export class GetProductsUseCase {
 
     const page = request.page || 1;
     const limit = request.limit || 10;
-    const skip = (page - 1) * limit;
+    const { skip, take } = QueryPagination.fromPage(page, limit);
 
-    // Get products based on filters
-    let products;
+    // Compose specifications based on filters
+    const specifications: IPrismaSpecification<Product>[] = [];
+
     if (request.status) {
-      products = await this.productRepository.findByStatus(request.status, request.orgId);
-    } else {
-      products = await this.productRepository.findAll(request.orgId);
+      const statusSpec = new ProductByStatusSpecification(
+        request.status as 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED'
+      );
+      specifications.push(statusSpec);
     }
 
-    // Apply search filter if provided
-    if (request.search) {
-      const searchLower = request.search.toLowerCase();
-      products = products.filter(
-        product =>
-          product.name.getValue().toLowerCase().includes(searchLower) ||
-          product.sku.getValue().toLowerCase().includes(searchLower) ||
-          product.description?.toLowerCase().includes(searchLower)
+    // Combine all specifications with AND logic
+    let finalSpec: IPrismaSpecification<Product> | undefined;
+    if (specifications.length > 0) {
+      finalSpec = specifications.reduce<IPrismaSpecification<Product>>(
+        (acc, spec) => acc.and(spec) as IPrismaSpecification<Product>,
+        specifications[0]
       );
     }
 
-    // Apply sorting
+    // For now, if no specifications, we'll use findAll
+    // In a future improvement, we could create an AlwaysTrueSpecification
+    let result;
+    if (finalSpec) {
+      result = await this.productRepository.findBySpecification(
+        finalSpec as IPrismaSpecification<Product>,
+        request.orgId,
+        { skip, take }
+      );
+    } else {
+      // Fallback to findAll for backward compatibility
+      const allProducts = await this.productRepository.findAll(request.orgId);
+      const total = allProducts.length;
+      const paginatedProducts = allProducts.slice(skip, skip + take);
+
+      // Apply search filter if provided (in-memory filter for now)
+      let filteredProducts = paginatedProducts;
+      if (request.search) {
+        const searchLower = request.search.toLowerCase();
+        filteredProducts = paginatedProducts.filter(
+          product =>
+            product.name.getValue().toLowerCase().includes(searchLower) ||
+            product.sku.getValue().toLowerCase().includes(searchLower) ||
+            product.description?.toLowerCase().includes(searchLower)
+        );
+      }
+
+      result = {
+        data: filteredProducts,
+        total,
+        hasMore: skip + take < total,
+      };
+    }
+
+    // Apply sorting (in-memory for now, could be moved to Prisma orderBy)
+    let sortedProducts = result.data;
     if (request.sortBy) {
       const sortOrder = request.sortOrder || 'asc';
-      products.sort((a, b) => {
+      sortedProducts = [...result.data].sort((a, b) => {
         let aValue: string | number;
         let bValue: string | number;
 
@@ -93,20 +132,17 @@ export class GetProductsUseCase {
       });
     }
 
-    // Apply pagination
-    const total = products.length;
-    const paginatedProducts = products.slice(skip, skip + limit);
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(result.total / limit);
 
     // Use mapper to convert entities to response DTOs
     return ok({
       success: true,
       message: 'Products retrieved successfully',
-      data: ProductMapper.toResponseDataList(paginatedProducts),
+      data: ProductMapper.toResponseDataList(sortedProducts),
       pagination: {
         page,
         limit,
-        total,
+        total: result.total,
         totalPages,
         hasNext: page < totalPages,
         hasPrev: page > 1,

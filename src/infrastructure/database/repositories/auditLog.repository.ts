@@ -1,10 +1,15 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
+import {
+  IPaginatedResult,
+  IPaginationOptions,
+} from '@infrastructure/database/utils/queryOptimizer';
 import { Injectable, Logger } from '@nestjs/common';
 import { AuditLog } from '@shared/audit/domain/entities/auditLog.entity';
 import { IAuditLogRepository } from '@shared/audit/domain/repositories/auditLogRepository.interface';
 import { AuditAction } from '@shared/audit/domain/valueObjects/auditAction.valueObject';
 import { AuditMetadata } from '@shared/audit/domain/valueObjects/auditMetadata.valueObject';
 import { EntityType } from '@shared/audit/domain/valueObjects/entityType.valueObject';
+import { IPrismaSpecification } from '@shared/domain/specifications';
 
 @Injectable()
 export class PrismaAuditLogRepository implements IAuditLogRepository {
@@ -326,6 +331,41 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
       return await this.prisma.auditLog.count({ where });
     } catch (error) {
       this.logger.error('Error counting audit logs by filters', { orgId, filters, error });
+      throw error;
+    }
+  }
+
+  async findBySpecification(
+    spec: IPrismaSpecification<AuditLog>,
+    orgId: string,
+    options?: IPaginationOptions
+  ): Promise<IPaginatedResult<AuditLog>> {
+    try {
+      const where = spec.toPrismaWhere(orgId);
+      const skip = options?.skip;
+      const take = options?.take;
+
+      const [auditLogsData, total] = await Promise.all([
+        this.prisma.auditLog.findMany({
+          where,
+          skip,
+          take,
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.auditLog.count({ where }),
+      ]);
+
+      const auditLogs = auditLogsData.map((data: Parameters<typeof this.toDomain>[0]) =>
+        this.toDomain(data)
+      );
+
+      return {
+        data: auditLogs,
+        total,
+        hasMore: skip !== undefined && take !== undefined ? skip + take < total : false,
+      };
+    } catch (error) {
+      this.logger.error('Error finding audit logs by specification', { orgId, error });
       throw error;
     }
   }

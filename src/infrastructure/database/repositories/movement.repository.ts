@@ -11,6 +11,7 @@ import { IMovementRepository } from '@movement/domain/repositories/movementRepos
 import { MovementStatus } from '@movement/domain/valueObjects/movementStatus.valueObject';
 import { MovementType } from '@movement/domain/valueObjects/movementType.valueObject';
 import { Injectable, Logger } from '@nestjs/common';
+import { IPrismaSpecification } from '@shared/domain/specifications';
 import { pipe } from '@shared/utils/functional';
 
 @Injectable()
@@ -619,9 +620,48 @@ export class PrismaMovementRepository implements IMovementRepository {
         createdBy: movementData.createdBy,
       },
       movementData.id,
-      movementData.orgId
+      movementData.orgId,
+      [] // No lines for this method
     );
 
     return movement;
+  }
+
+  async findBySpecification(
+    spec: IPrismaSpecification<Movement>,
+    orgId: string,
+    options?: IPaginationOptions
+  ): Promise<IPaginatedResult<Movement>> {
+    try {
+      const where = spec.toPrismaWhere(orgId);
+      const skip = options?.skip;
+      const take = options?.take;
+
+      const [movementsData, total] = await Promise.all([
+        this.prisma.movement.findMany({
+          where,
+          skip,
+          take,
+          include: { lines: true },
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.movement.count({ where }),
+      ]);
+
+      const movements = movementsData.map(movementData => this.mapToEntity(movementData));
+
+      return {
+        data: movements,
+        total,
+        hasMore: skip !== undefined && take !== undefined ? skip + take < total : false,
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error finding movements by specification: ${error.message}`);
+      } else {
+        this.logger.error(`Error finding movements by specification: ${error}`);
+      }
+      throw error;
+    }
   }
 }

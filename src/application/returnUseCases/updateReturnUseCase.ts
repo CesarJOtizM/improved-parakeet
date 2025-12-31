@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Return } from '@returns/domain/entities/return.entity';
 import { ReturnReason } from '@returns/domain/valueObjects/returnReason.valueObject';
 import {
   BusinessRuleError,
@@ -54,8 +55,9 @@ export class UpdateReturnUseCase {
       updateProps.note = request.note;
     }
 
+    let updatedReturnEntity: Return;
     try {
-      returnEntity.update(updateProps);
+      updatedReturnEntity = returnEntity.update(updateProps);
     } catch (error) {
       return err(
         new BusinessRuleError(error instanceof Error ? error.message : 'Failed to update return')
@@ -63,7 +65,7 @@ export class UpdateReturnUseCase {
     }
 
     // Save return
-    const updatedReturn = await this.returnRepository.save(returnEntity);
+    const updatedReturn = await this.returnRepository.save(updatedReturnEntity);
 
     // Dispatch domain events
     updatedReturn.markEventsForDispatch();

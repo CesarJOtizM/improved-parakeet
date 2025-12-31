@@ -146,16 +146,29 @@ export class Return extends AggregateRoot<IReturnProps> {
     this.addDomainEvent(event);
   }
 
-  public update(props: Partial<IReturnProps>): void {
+  public update(props: Partial<IReturnProps>): Return {
     // Cannot update return when status is CONFIRMED or CANCELLED
     if (this.props.status.isConfirmed() || this.props.status.isCancelled()) {
       throw new Error('Cannot update return when status is CONFIRMED or CANCELLED');
     }
 
-    if (props.reason !== undefined) this.props.reason = props.reason;
-    if (props.note !== undefined) this.props.note = props.note;
+    const updatedProps: IReturnProps = {
+      returnNumber: this.props.returnNumber,
+      status: this.props.status,
+      type: this.props.type,
+      reason: props.reason !== undefined ? props.reason : this.props.reason,
+      warehouseId: this.props.warehouseId,
+      saleId: this.props.saleId,
+      sourceMovementId: this.props.sourceMovementId,
+      returnMovementId: this.props.returnMovementId,
+      note: props.note !== undefined ? props.note : this.props.note,
+      confirmedAt: this.props.confirmedAt,
+      cancelledAt: this.props.cancelledAt,
+      createdBy: this.props.createdBy,
+    };
 
-    this.updateTimestamp();
+    // Create new instance preserving lines
+    return Return.reconstitute(updatedProps, this.id, this.orgId!, [...this.lines]);
   }
 
   public getTotalAmount(): Money | null {

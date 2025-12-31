@@ -1,4 +1,9 @@
+import {
+  IPaginatedResult,
+  IPaginationOptions,
+} from '@infrastructure/database/utils/queryOptimizer';
 import { Product } from '@product/domain/entities/product.entity';
+import { IPrismaSpecification } from '@shared/domain/specifications';
 import { IReadRepository, IWriteRepository } from '@shared/ports/repositories';
 
 /**
@@ -12,4 +17,9 @@ export interface IProductRepository extends IReadRepository<Product>, IWriteRepo
   findByWarehouse(warehouseId: string, orgId: string): Promise<Product[]>;
   findLowStock(orgId: string): Promise<Product[]>;
   existsBySku(sku: string, orgId: string): Promise<boolean>;
+  findBySpecification(
+    spec: IPrismaSpecification<Product>,
+    orgId: string,
+    options?: IPaginationOptions
+  ): Promise<IPaginatedResult<Product>>;
 }

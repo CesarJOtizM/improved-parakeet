@@ -123,19 +123,33 @@ export class Sale extends AggregateRoot<ISaleProps> {
     this.addDomainEvent(event);
   }
 
-  public update(props: Partial<ISaleProps>): void {
+  public update(props: Partial<ISaleProps>): Sale {
     // Cannot update sale when status is CONFIRMED or CANCELLED
     if (this.props.status.isConfirmed() || this.props.status.isCancelled()) {
       throw new Error('Cannot update sale when status is CONFIRMED or CANCELLED');
     }
 
-    if (props.customerReference !== undefined)
-      this.props.customerReference = props.customerReference;
-    if (props.externalReference !== undefined)
-      this.props.externalReference = props.externalReference;
-    if (props.note !== undefined) this.props.note = props.note;
+    const updatedProps: ISaleProps = {
+      saleNumber: this.props.saleNumber,
+      status: this.props.status,
+      warehouseId: this.props.warehouseId,
+      customerReference:
+        props.customerReference !== undefined
+          ? props.customerReference
+          : this.props.customerReference,
+      externalReference:
+        props.externalReference !== undefined
+          ? props.externalReference
+          : this.props.externalReference,
+      note: props.note !== undefined ? props.note : this.props.note,
+      confirmedAt: this.props.confirmedAt,
+      cancelledAt: this.props.cancelledAt,
+      createdBy: this.props.createdBy,
+      movementId: this.props.movementId,
+    };
 
-    this.updateTimestamp();
+    // Create new instance preserving lines
+    return Sale.reconstitute(updatedProps, this.id, this.orgId!, [...this.lines]);
   }
 
   public getTotalAmount(): Money {

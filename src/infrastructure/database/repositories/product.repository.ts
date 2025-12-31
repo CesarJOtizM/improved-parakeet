@@ -1,4 +1,8 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
+import {
+  IPaginatedResult,
+  IPaginationOptions,
+} from '@infrastructure/database/utils/queryOptimizer';
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { Product } from '@product/domain/entities/product.entity';
 import { IProductRepository } from '@product/domain/repositories/productRepository.interface';
@@ -7,6 +11,7 @@ import { ProductName } from '@product/domain/valueObjects/productName.valueObjec
 import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
 import { SKU } from '@product/domain/valueObjects/sku.valueObject';
 import { UnitValueObject } from '@product/domain/valueObjects/unit.valueObject';
+import { IPrismaSpecification } from '@shared/domain/specifications';
 import { cacheEntity, getCachedEntity, invalidateEntityCache } from '@shared/infrastructure/cache';
 
 import type { ICacheService } from '@shared/ports/cache';
@@ -465,6 +470,59 @@ export class PrismaProductRepository implements IProductRepository {
         this.logger.error(`Error checking SKU existence: ${error.message}`);
       } else {
         this.logger.error(`Error checking SKU existence: ${error}`);
+      }
+      throw error;
+    }
+  }
+
+  async findBySpecification(
+    spec: IPrismaSpecification<Product>,
+    orgId: string,
+    options?: IPaginationOptions
+  ): Promise<IPaginatedResult<Product>> {
+    try {
+      const where = spec.toPrismaWhere(orgId);
+      const skip = options?.skip;
+      const take = options?.take;
+
+      const [productsData, total] = await Promise.all([
+        this.prisma.product.findMany({
+          where,
+          skip,
+          take,
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.product.count({ where }),
+      ]);
+
+      const products = productsData.map(productData =>
+        Product.reconstitute(
+          {
+            sku: SKU.reconstitute(productData.sku),
+            name: ProductName.reconstitute(productData.name),
+            description: productData.description || undefined,
+            unit: UnitValueObject.create(productData.unit, productData.unit, 0),
+            barcode: productData.barcode || undefined,
+            brand: productData.brand || undefined,
+            model: productData.model || undefined,
+            status: ProductStatus.create(productData.isActive ? 'ACTIVE' : 'INACTIVE'),
+            costMethod: CostMethod.create((productData.costMethod as 'AVG' | 'FIFO') || 'AVG'),
+          },
+          productData.id,
+          productData.orgId
+        )
+      );
+
+      return {
+        data: products,
+        total,
+        hasMore: skip !== undefined && take !== undefined ? skip + take < total : false,
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error finding products by specification: ${error.message}`);
+      } else {
+        this.logger.error(`Error finding products by specification: ${error}`);
       }
       throw error;
     }

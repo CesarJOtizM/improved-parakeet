@@ -1,6 +1,11 @@
+import {
+  IPaginatedResult,
+  IPaginationOptions,
+} from '@infrastructure/database/utils/queryOptimizer';
 import { AuditLog } from '@shared/audit/domain/entities/auditLog.entity';
 import { AuditAction } from '@shared/audit/domain/valueObjects/auditAction.valueObject';
 import { EntityType } from '@shared/audit/domain/valueObjects/entityType.valueObject';
+import { IPrismaSpecification } from '@shared/domain/specifications';
 import { IReadRepository } from '@shared/ports/repositories';
 
 /**
@@ -55,4 +60,9 @@ export interface IAuditLogRepository extends IReadRepository<AuditLog> {
       endDate?: Date;
     }
   ): Promise<number>;
+  findBySpecification(
+    spec: IPrismaSpecification<AuditLog>,
+    orgId: string,
+    options?: IPaginationOptions
+  ): Promise<IPaginatedResult<AuditLog>>;
 }

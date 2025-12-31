@@ -746,20 +746,20 @@ to do - not necessary for now
   - [x] Optimización de memoria y CPU
   - [x] Implementar lazy loading para entidades pesadas
 
-- [ ] **Mejoras de Arquitectura y Programación Funcional (Fase 6)**
-  - [ ] **Inmutabilidad Completa en Entidades**
-    - [ ] Refactorizar métodos `update()` en entidades para retornar nuevas instancias
-    - [ ] Implementar técnicas de inmutabilidad en Product, Movement, Sale, Return
-    - [ ] Actualizar casos de uso para trabajar con entidades inmutables
-    - [ ] Tests de regresión para validar comportamiento
-    - [ ] Documentar patrón de inmutabilidad en guía de desarrollo
+- [x] **Mejoras de Arquitectura y Programación Funcional (Fase 6)**
+  - [x] **Inmutabilidad Completa en Entidades**
+    - [x] Refactorizar métodos `update()` en entidades para retornar nuevas instancias
+    - [x] Implementar técnicas de inmutabilidad en Product, Movement, Sale, Return
+    - [x] Actualizar casos de uso para trabajar con entidades inmutables
+    - [x] Tests de regresión para validar comportamiento
+    - [x] Documentar patrón de inmutabilidad en guía de desarrollo
   
-  - [ ] **Specification Pattern para Queries Complejas**
-    - [ ] Crear base `ISpecification<T>` en `src/shared/domain/specifications/`
-    - [ ] Implementar especificaciones para queries de reportes
-    - [ ] Refactorizar repositorios para usar specifications
-    - [ ] Tests unitarios para specifications
-    - [ ] Documentar uso del patrón
+  - [x] **Specification Pattern para Queries Complejas**
+    - [x] Crear base `ISpecification<T>` en `src/shared/domain/specifications/`
+    - [x] Implementar especificaciones para queries de reportes
+    - [x] Refactorizar repositorios para usar specifications
+    - [x] Tests unitarios para specifications
+    - [x] Documentar uso del patrón
   
   - [x] **Funciones Puras en Domain Services**
     - [x] Convertir Domain Services estáticos a funciones puras exportadas
@@ -775,12 +775,12 @@ to do - not necessary for now
     - [x] Tests unitarios para utilidades funcionales
     - [x] Documentar patrones de composición
   
-  - [ ] **Mover Invariantes a Agregados**
-    - [ ] Identificar invariantes críticos en servicios de dominio
-    - [ ] Mover validaciones a métodos de agregados
-    - [ ] Refactorizar Product, Movement, Transfer para encapsular invariantes
-    - [ ] Tests de regresión para validar comportamiento
-    - [ ] Documentar principios de encapsulación de invariantes
+  - [x] **Mover Invariantes a Agregados**
+    - [x] Identificar invariantes críticos en servicios de dominio
+    - [x] Mover validaciones a métodos de agregados
+    - [x] Refactorizar Product, Movement, Transfer para encapsular invariantes
+    - [x] Tests de regresión para validar comportamiento
+    - [x] Documentar principios de encapsulación de invariantes
 
 - [ ] **Testing Completo del Sistema**
   - [ ] Tests unitarios con Jest (mínimo 90% coverage)
@@ -1835,7 +1835,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - [x] **Fase 4**: Sistema de ventas y devoluciones ✅ **COMPLETADA (100%)**
 - [x] **Fase 4.5**: Mejoras de arquitectura ✅ **COMPLETADA (100%)** - Result monad (55/55 casos de uso), ports (24 interfaces), mappers (4 mappers, 48 tests)
 - [x] **Fase 5**: Sistema de reportes e importaciones ✅ **COMPLETADA (~95%)** - Reportes completos (149 tests), Importaciones completas (dominio, use cases, endpoints, flujo Preview/Execute, 100 tests de integración/E2E pasando), falta solo colección Postman
-- [ ] **Fase 6**: Testing, optimización y despliegue (incluye refactoring funcional)
+- [ ] **Fase 6**: Testing, optimización y despliegue (incluye refactoring funcional) - **Mejoras de arquitectura completadas**: Inmutabilidad (Product, Movement, Sale, Return, Transfer), Specification Pattern (ISpecification, IPrismaSpecification, especificaciones de dominio), Invariantes en agregados (Product, Movement, Transfer)
 
 ### **Colecciones de Postman Completadas**
 

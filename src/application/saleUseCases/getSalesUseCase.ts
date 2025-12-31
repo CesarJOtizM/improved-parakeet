@@ -1,11 +1,18 @@
+import { QueryPagination } from '@infrastructure/database/utils/queryOptimizer';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Sale } from '@sale/domain/entities/sale.entity';
+import {
+  SaleByDateRangeSpecification,
+  SaleByStatusSpecification,
+  SaleByWarehouseSpecification,
+} from '@sale/domain/specifications';
 import { SaleMapper } from '@sale/mappers';
 import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
 import type { ISaleData } from './createSaleUseCase';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
+import type { IPrismaSpecification } from '@shared/domain/specifications';
 
 export interface IGetSalesRequest {
   orgId: string;
@@ -42,51 +49,53 @@ export class GetSalesUseCase {
 
     const page = request.page || 1;
     const limit = request.limit || 10;
-    const skip = (page - 1) * limit;
+    const { skip, take } = QueryPagination.fromPage(page, limit);
 
-    // Determine if we should include lines (default: true for backward compatibility)
-    const includeLines = request.includeLines !== false;
+    // Compose specifications based on filters
+    const specifications: IPrismaSpecification<Sale>[] = [];
 
-    // Get sales based on filters
-    // Use lazy loading methods if includeLines is false and repository supports it
-    let sales;
-    if (!includeLines && this.saleRepository.findAllWithoutLines) {
-      // Use lazy loading for list operations
-      const paginationResult = await this.saleRepository.findAllWithoutLines(request.orgId, {
+    if (request.warehouseId) {
+      specifications.push(new SaleByWarehouseSpecification(request.warehouseId));
+    }
+
+    if (request.status) {
+      specifications.push(
+        new SaleByStatusSpecification(request.status as 'DRAFT' | 'CONFIRMED' | 'CANCELLED')
+      );
+    }
+
+    if (request.startDate && request.endDate) {
+      specifications.push(new SaleByDateRangeSpecification(request.startDate, request.endDate));
+    }
+
+    // Combine all specifications with AND logic
+    let result;
+    if (specifications.length > 0) {
+      const finalSpec = specifications.reduce<IPrismaSpecification<Sale>>(
+        (acc, spec) => acc.and(spec) as IPrismaSpecification<Sale>,
+        specifications[0]
+      );
+      result = await this.saleRepository.findBySpecification(finalSpec, request.orgId, {
         skip,
-        take: limit,
+        take,
       });
-      sales = paginationResult.data;
     } else {
-      // Use regular methods that include lines
-      if (request.warehouseId) {
-        sales = await this.saleRepository.findByWarehouse(request.warehouseId, request.orgId);
-      } else if (request.status) {
-        sales = await this.saleRepository.findByStatus(request.status, request.orgId);
-      } else if (request.startDate && request.endDate) {
-        sales = await this.saleRepository.findByDateRange(
-          request.startDate,
-          request.endDate,
-          request.orgId
-        );
-      } else {
-        sales = await this.saleRepository.findAll(request.orgId);
-      }
+      // Fallback to findAll for backward compatibility
+      const allSales = await this.saleRepository.findAll(request.orgId);
+      const total = allSales.length;
+      const paginatedSales = allSales.slice(skip, skip + take);
+      result = {
+        data: paginatedSales,
+        total,
+        hasMore: skip + take < total,
+      };
     }
 
-    // Apply additional filters
-    if (request.warehouseId && sales.length > 0) {
-      sales = sales.filter((s: Sale) => s.warehouseId === request.warehouseId);
-    }
-
-    if (request.status && sales.length > 0) {
-      sales = sales.filter((s: Sale) => s.status.getValue() === request.status);
-    }
-
-    // Apply sorting
+    // Apply sorting (in-memory for now, could be moved to Prisma orderBy)
+    let sortedSales = result.data;
     if (request.sortBy) {
       const sortOrder = request.sortOrder || 'asc';
-      sales.sort((a: Sale, b: Sale) => {
+      sortedSales = [...result.data].sort((a: Sale, b: Sale) => {
         let aValue: string | number;
         let bValue: string | number;
 
@@ -118,20 +127,17 @@ export class GetSalesUseCase {
       });
     }
 
-    // Apply pagination
-    const total = sales.length;
-    const paginatedSales = sales.slice(skip, skip + limit);
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(result.total / limit);
 
     // Use mapper to convert entities to response DTOs
     return ok({
       success: true,
       message: 'Sales retrieved successfully',
-      data: SaleMapper.toResponseDataList(paginatedSales),
+      data: SaleMapper.toResponseDataList(sortedSales),
       pagination: {
         page,
         limit,
-        total,
+        total: result.total,
         totalPages,
         hasNext: page < totalPages,
         hasPrev: page > 1,

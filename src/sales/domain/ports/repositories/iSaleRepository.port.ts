@@ -4,6 +4,7 @@ import {
 } from '@infrastructure/database/utils/queryOptimizer';
 import { Sale } from '@sale/domain/entities/sale.entity';
 import { SaleLine } from '@sale/domain/entities/saleLine.entity';
+import { IPrismaSpecification } from '@shared/domain/specifications';
 import { IReadRepository, IWriteRepository } from '@shared/ports/repositories';
 
 /**
@@ -17,6 +18,11 @@ export interface ISaleRepository extends IReadRepository<Sale>, IWriteRepository
   findByDateRange(startDate: Date, endDate: Date, orgId: string): Promise<Sale[]>;
   getLastSaleNumberForYear(year: number, orgId: string): Promise<string | null>;
   findByMovementId(movementId: string, orgId: string): Promise<Sale | null>;
+  findBySpecification(
+    spec: IPrismaSpecification<Sale>,
+    orgId: string,
+    options?: IPaginationOptions
+  ): Promise<IPaginatedResult<Sale>>;
   // Lazy loading methods (optional for performance optimization)
   findByIdWithoutLines?(id: string, orgId: string): Promise<Sale | null>;
   loadLines?(saleId: string, orgId: string): Promise<SaleLine[]>;

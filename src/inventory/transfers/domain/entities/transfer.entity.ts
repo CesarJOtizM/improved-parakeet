@@ -32,13 +32,64 @@ export class Transfer extends AggregateRoot<ITransferProps> {
     return transfer;
   }
 
-  public static reconstitute(props: ITransferProps, id: string, orgId: string): Transfer {
-    return new Transfer(props, id, orgId);
+  public static reconstitute(
+    props: ITransferProps,
+    id: string,
+    orgId: string,
+    lines: TransferLine[] = []
+  ): Transfer {
+    const transfer = new Transfer(props, id, orgId);
+    transfer._lines = lines;
+    return transfer;
+  }
+
+  /**
+   * Checks if lines can be added to this transfer
+   */
+  public canAddLine(): boolean {
+    return this.props.status.isDraft();
+  }
+
+  /**
+   * Checks if lines can be removed from this transfer
+   */
+  public canRemoveLine(): boolean {
+    return this.props.status.isDraft();
+  }
+
+  /**
+   * Checks if the transfer can be confirmed
+   */
+  public canConfirm(): boolean {
+    if (!this.props.status.canConfirm()) {
+      return false;
+    }
+    // Transfer must have at least one line before confirmation
+    if (this._lines.length === 0) {
+      return false;
+    }
+    // All lines must have valid quantities (positive)
+    for (const line of this._lines) {
+      if (!line.quantity.isPositive()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Checks if the transfer can be updated
+   */
+  public canUpdate(): boolean {
+    return (
+      !this.props.status.isReceived() &&
+      !this.props.status.isRejected() &&
+      !this.props.status.isCanceled()
+    );
   }
 
   public addLine(line: TransferLine): void {
-    // Lines can only be added when status is DRAFT
-    if (!this.props.status.isDraft()) {
+    if (!this.canAddLine()) {
       throw new Error('Lines can only be added when transfer status is DRAFT');
     }
 
@@ -52,8 +103,7 @@ export class Transfer extends AggregateRoot<ITransferProps> {
   }
 
   public removeLine(lineId: string): void {
-    // Lines can only be removed when status is DRAFT
-    if (!this.props.status.isDraft()) {
+    if (!this.canRemoveLine()) {
       throw new Error('Lines can only be removed when transfer status is DRAFT');
     }
 
@@ -67,21 +117,14 @@ export class Transfer extends AggregateRoot<ITransferProps> {
   }
 
   public confirm(): void {
-    // Validate status can be confirmed
-    if (!this.props.status.canConfirm()) {
-      throw new Error('Transfer cannot be confirmed');
-    }
-
-    // Transfer must have at least one line before confirmation
-    if (this._lines.length === 0) {
-      throw new Error('Transfer must have at least one line before confirmation');
-    }
-
-    // All lines must have valid quantities (positive)
-    for (const line of this._lines) {
-      if (!line.quantity.isPositive()) {
-        throw new Error('All lines must have positive quantities');
+    if (!this.canConfirm()) {
+      if (!this.props.status.canConfirm()) {
+        throw new Error('Transfer cannot be confirmed');
       }
+      if (this._lines.length === 0) {
+        throw new Error('Transfer must have at least one line before confirmation');
+      }
+      throw new Error('All lines must have positive quantities');
     }
 
     this.props.status = TransferStatus.create('IN_TRANSIT');
@@ -140,19 +183,23 @@ export class Transfer extends AggregateRoot<ITransferProps> {
     this.updateTimestamp();
   }
 
-  public update(props: Partial<ITransferProps>): void {
-    // Cannot update transfer when status is RECEIVED, REJECTED, or CANCELED
-    if (
-      this.props.status.isReceived() ||
-      this.props.status.isRejected() ||
-      this.props.status.isCanceled()
-    ) {
+  public update(props: Partial<ITransferProps>): Transfer {
+    if (!this.canUpdate()) {
       throw new Error('Cannot update transfer when status is RECEIVED, REJECTED, or CANCELED');
     }
 
-    if (props.note !== undefined) this.props.note = props.note;
+    const updatedProps: ITransferProps = {
+      fromWarehouseId: this.props.fromWarehouseId,
+      toWarehouseId: this.props.toWarehouseId,
+      status: this.props.status,
+      createdBy: this.props.createdBy,
+      note: props.note !== undefined ? props.note : this.props.note,
+      initiatedAt: this.props.initiatedAt,
+      receivedAt: this.props.receivedAt,
+    };
 
-    this.updateTimestamp();
+    // Create new instance preserving lines
+    return Transfer.reconstitute(updatedProps, this.id, this.orgId!, [...this._lines]);
   }
 
   public getTotalQuantity(): number {

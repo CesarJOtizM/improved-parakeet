@@ -13,6 +13,8 @@ import { SaleStatus } from '@sale/domain/valueObjects/saleStatus.valueObject';
 import { pipe } from '@shared/utils/functional';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
+import type { IPrismaSpecification } from '@shared/domain/specifications';
+
 @Injectable()
 export class PrismaSaleRepository implements ISaleRepository {
   private readonly logger = new Logger(PrismaSaleRepository.name);
@@ -578,5 +580,43 @@ export class PrismaSaleRepository implements ISaleRepository {
     );
 
     return sale;
+  }
+
+  async findBySpecification(
+    spec: IPrismaSpecification<Sale>,
+    orgId: string,
+    options?: IPaginationOptions
+  ): Promise<IPaginatedResult<Sale>> {
+    try {
+      const where = spec.toPrismaWhere(orgId);
+      const skip = options?.skip;
+      const take = options?.take;
+
+      const [salesData, total] = await Promise.all([
+        this.prisma.sale.findMany({
+          where,
+          skip,
+          take,
+          include: { lines: true },
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.sale.count({ where }),
+      ]);
+
+      const sales = salesData.map(saleData => this.mapToEntity(saleData));
+
+      return {
+        data: sales,
+        total,
+        hasMore: skip !== undefined && take !== undefined ? skip + take < total : false,
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error finding sales by specification: ${error.message}`);
+      } else {
+        this.logger.error(`Error finding sales by specification: ${error}`);
+      }
+      throw error;
+    }
   }
 }

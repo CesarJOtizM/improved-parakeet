@@ -54,9 +54,9 @@ export class PostMovementUseCase {
       return err(new NotFoundError('Movement not found'));
     }
 
-    // Validate movement can be posted
-    if (!movement.status.canPost()) {
-      return err(new BusinessRuleError('Movement cannot be posted in its current status'));
+    // Validate movement can be posted using aggregate method
+    if (!movement.canPost()) {
+      return err(new BusinessRuleError('Movement cannot be posted'));
     }
 
     // Validate stock availability for output movements

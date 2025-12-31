@@ -34,30 +34,94 @@ export class Product extends AggregateRoot<IProductProps> {
     return new Product(props, id, orgId);
   }
 
-  public update(props: Partial<IProductProps>): void {
-    if (props.name !== undefined) this.props.name = props.name;
-    if (props.description !== undefined) this.props.description = props.description;
-    if (props.unit !== undefined) this.props.unit = props.unit;
-    if (props.barcode !== undefined) this.props.barcode = props.barcode;
-    if (props.brand !== undefined) this.props.brand = props.brand;
-    if (props.model !== undefined) this.props.model = props.model;
-    if (props.status !== undefined) this.props.status = props.status;
-    if (props.costMethod !== undefined) this.props.costMethod = props.costMethod;
-
-    this.updateTimestamp();
-    this.addDomainEvent(new ProductUpdatedEvent(this));
+  /**
+   * Checks if the product can change to the given status
+   * DISCONTINUED status is final and cannot be changed
+   */
+  public canChangeStatus(_newStatus: string): boolean {
+    // DISCONTINUED status is final
+    if (this.props.status.getValue() === 'DISCONTINUED') {
+      return false;
+    }
+    return true;
   }
 
-  public activate(): void {
-    this.props.status = ProductStatus.create('ACTIVE');
-    this.updateTimestamp();
-    this.addDomainEvent(new ProductUpdatedEvent(this));
+  /**
+   * Checks if the cost method can be changed
+   * This is a pure check - async validation (e.g., checking for posted movements)
+   * should be done in the use case before calling this method
+   */
+  public canChangeCostMethod(): boolean {
+    // Pure check - always returns true
+    // Async validation (e.g., checking for posted movements) should be done in use case
+    return true;
   }
 
-  public deactivate(): void {
-    this.props.status = ProductStatus.create('INACTIVE');
-    this.updateTimestamp();
-    this.addDomainEvent(new ProductUpdatedEvent(this));
+  /**
+   * Validates that the product is active for operations
+   * Throws an error if the product is not active
+   */
+  public validateActiveForOperation(): void {
+    if (!this.isActive) {
+      throw new Error('Product must be active to perform this operation');
+    }
+    if (!this.props.status.isActive()) {
+      throw new Error('Product status must be ACTIVE to perform this operation');
+    }
+  }
+
+  public update(props: Partial<IProductProps>): Product {
+    // Validate status change if status is being updated
+    if (props.status !== undefined) {
+      const newStatus = props.status.getValue();
+      if (!this.canChangeStatus(newStatus)) {
+        throw new Error('Cannot change status of a discontinued product');
+      }
+    }
+
+    // Create new props with updated values
+    const updatedProps: IProductProps = {
+      sku: props.sku !== undefined ? props.sku : this.props.sku,
+      name: props.name !== undefined ? props.name : this.props.name,
+      description: props.description !== undefined ? props.description : this.props.description,
+      unit: props.unit !== undefined ? props.unit : this.props.unit,
+      barcode: props.barcode !== undefined ? props.barcode : this.props.barcode,
+      brand: props.brand !== undefined ? props.brand : this.props.brand,
+      model: props.model !== undefined ? props.model : this.props.model,
+      status: props.status !== undefined ? props.status : this.props.status,
+      costMethod: props.costMethod !== undefined ? props.costMethod : this.props.costMethod,
+    };
+
+    // Create new instance using reconstitute
+    const updatedProduct = Product.reconstitute(updatedProps, this.id, this.orgId!);
+    updatedProduct.addDomainEvent(new ProductUpdatedEvent(updatedProduct));
+    return updatedProduct;
+  }
+
+  public activate(): Product {
+    if (!this.canChangeStatus('ACTIVE')) {
+      throw new Error('Cannot change status of a discontinued product');
+    }
+    const updatedProps: IProductProps = {
+      ...this.props,
+      status: ProductStatus.create('ACTIVE'),
+    };
+    const activatedProduct = Product.reconstitute(updatedProps, this.id, this.orgId!);
+    activatedProduct.addDomainEvent(new ProductUpdatedEvent(activatedProduct));
+    return activatedProduct;
+  }
+
+  public deactivate(): Product {
+    if (!this.canChangeStatus('INACTIVE')) {
+      throw new Error('Cannot change status of a discontinued product');
+    }
+    const updatedProps: IProductProps = {
+      ...this.props,
+      status: ProductStatus.create('INACTIVE'),
+    };
+    const deactivatedProduct = Product.reconstitute(updatedProps, this.id, this.orgId!);
+    deactivatedProduct.addDomainEvent(new ProductUpdatedEvent(deactivatedProduct));
+    return deactivatedProduct;
   }
 
   // Getters

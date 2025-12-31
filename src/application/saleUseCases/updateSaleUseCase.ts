@@ -36,15 +36,15 @@ export class UpdateSaleUseCase {
       return err(new NotFoundError(`Sale with ID ${request.id} not found`));
     }
 
-    // Update sale
-    sale.update({
+    // Update sale (returns new instance)
+    const updatedSale = sale.update({
       customerReference: request.customerReference,
       externalReference: request.externalReference,
       note: request.note,
     });
 
     // Save sale
-    const updatedSale = await this.saleRepository.save(sale);
+    const savedSale = await this.saleRepository.save(updatedSale);
 
     // Dispatch domain events
     updatedSale.markEventsForDispatch();
@@ -52,30 +52,30 @@ export class UpdateSaleUseCase {
     updatedSale.clearEvents();
 
     this.logger.log('Sale updated successfully', {
-      saleId: updatedSale.id,
-      saleNumber: updatedSale.saleNumber.getValue(),
+      saleId: savedSale.id,
+      saleNumber: savedSale.saleNumber.getValue(),
     });
 
-    const totalAmount = updatedSale.getTotalAmount();
+    const totalAmount = savedSale.getTotalAmount();
 
     return ok({
       success: true,
       message: 'Sale updated successfully',
       data: {
-        id: updatedSale.id,
-        saleNumber: updatedSale.saleNumber.getValue(),
-        status: updatedSale.status.getValue(),
-        warehouseId: updatedSale.warehouseId,
-        customerReference: updatedSale.customerReference,
-        externalReference: updatedSale.externalReference,
-        note: updatedSale.note,
-        confirmedAt: updatedSale.confirmedAt,
-        cancelledAt: updatedSale.cancelledAt,
-        movementId: updatedSale.movementId,
-        createdBy: updatedSale.createdBy,
-        orgId: updatedSale.orgId,
-        createdAt: updatedSale.createdAt,
-        updatedAt: updatedSale.updatedAt,
+        id: savedSale.id,
+        saleNumber: savedSale.saleNumber.getValue(),
+        status: savedSale.status.getValue(),
+        warehouseId: savedSale.warehouseId,
+        customerReference: savedSale.customerReference,
+        externalReference: savedSale.externalReference,
+        note: savedSale.note,
+        confirmedAt: savedSale.confirmedAt,
+        cancelledAt: savedSale.cancelledAt,
+        movementId: savedSale.movementId,
+        createdBy: savedSale.createdBy,
+        orgId: savedSale.orgId,
+        createdAt: savedSale.createdAt,
+        updatedAt: savedSale.updatedAt,
         totalAmount: totalAmount.getAmount(),
         currency: totalAmount.getCurrency(),
       },

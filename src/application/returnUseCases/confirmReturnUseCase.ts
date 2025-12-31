@@ -102,9 +102,9 @@ export class ConfirmReturnUseCase {
     // Save movement
     const savedMovement = await this.movementRepository.save(movement);
 
-    // Post movement (this will trigger stock update and emit MovementPostedEvent)
-    savedMovement.post();
-    const postedMovement = await this.movementRepository.save(savedMovement);
+    // Post movement (returns new instance, triggers stock update and emits MovementPostedEvent)
+    const postedMovementInstance = savedMovement.post();
+    const postedMovement = await this.movementRepository.save(postedMovementInstance);
 
     // Confirm return with returnMovementId
     returnEntity.confirm(postedMovement.id);
