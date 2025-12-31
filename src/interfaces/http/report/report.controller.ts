@@ -1,5 +1,6 @@
 import {
   ViewReportUseCase,
+  StreamReportUseCase,
   ExportReportUseCase,
   GetReportsUseCase,
 } from '@application/reportUseCases';
@@ -11,6 +12,7 @@ import {
   Post,
   Body,
   Query,
+  Param,
   HttpCode,
   HttpStatus,
   Logger,
@@ -41,6 +43,7 @@ export class ReportController {
 
   constructor(
     private readonly viewReportUseCase: ViewReportUseCase,
+    private readonly streamReportUseCase: StreamReportUseCase,
     private readonly exportReportUseCase: ExportReportUseCase,
     private readonly getReportsUseCase: GetReportsUseCase
   ) {}
@@ -374,6 +377,144 @@ export class ReportController {
     return resultToHttpResponse(result);
   }
 
+  @Get('returns/by-sale/:saleId/view')
+  @RequireReportPermission(REPORT_TYPES.RETURNS_BY_SALE)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'View returns by sale report' })
+  @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Report generated successfully',
+    type: ViewReportResponseDto,
+  })
+  async viewReturnsBySale(
+    @Query() query: ViewReportQueryDto,
+    @Param('saleId') saleId: string,
+    @Headers('X-Organization-ID') orgId: string,
+    @Headers('X-User-ID') userId: string
+  ): Promise<ViewReportResponseDto> {
+    this.logger.log('Viewing returns by sale report', { orgId, saleId });
+    const parameters = {
+      ...this.mapQueryToParameters(query),
+      saleId,
+    };
+    const result = await this.viewReportUseCase.execute({
+      type: REPORT_TYPES.RETURNS_BY_SALE,
+      parameters,
+      orgId,
+      viewedBy: userId || 'system',
+    });
+    return resultToHttpResponse(result);
+  }
+
+  @Get('returns/customer/view')
+  @RequireReportPermission(REPORT_TYPES.RETURNS_CUSTOMER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'View customer returns report' })
+  @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Report generated successfully',
+    type: ViewReportResponseDto,
+  })
+  async viewCustomerReturns(
+    @Query() query: ViewReportQueryDto,
+    @Headers('X-Organization-ID') orgId: string,
+    @Headers('X-User-ID') userId: string
+  ): Promise<ViewReportResponseDto> {
+    this.logger.log('Viewing customer returns report', { orgId });
+    const result = await this.viewReportUseCase.execute({
+      type: REPORT_TYPES.RETURNS_CUSTOMER,
+      parameters: this.mapQueryToParameters(query),
+      orgId,
+      viewedBy: userId || 'system',
+    });
+    return resultToHttpResponse(result);
+  }
+
+  @Get('returns/supplier/view')
+  @RequireReportPermission(REPORT_TYPES.RETURNS_SUPPLIER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'View supplier returns report' })
+  @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Report generated successfully',
+    type: ViewReportResponseDto,
+  })
+  async viewSupplierReturns(
+    @Query() query: ViewReportQueryDto,
+    @Headers('X-Organization-ID') orgId: string,
+    @Headers('X-User-ID') userId: string
+  ): Promise<ViewReportResponseDto> {
+    this.logger.log('Viewing supplier returns report', { orgId });
+    const result = await this.viewReportUseCase.execute({
+      type: REPORT_TYPES.RETURNS_SUPPLIER,
+      parameters: this.mapQueryToParameters(query),
+      orgId,
+      viewedBy: userId || 'system',
+    });
+    return resultToHttpResponse(result);
+  }
+
+  // ============================================================
+  // STREAMING ENDPOINTS (GET - Returns NDJSON stream)
+  // ============================================================
+
+  @Get('inventory/available/stream')
+  @RequireReportPermission(REPORT_TYPES.AVAILABLE_INVENTORY)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Stream available inventory report (NDJSON)' })
+  @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Report streamed successfully (NDJSON format)',
+  })
+  async streamAvailableInventory(
+    @Query() query: ViewReportQueryDto,
+    @Headers('X-Organization-ID') orgId: string,
+    @Res() res: Response
+  ): Promise<void> {
+    this.logger.log('Streaming available inventory report', { orgId });
+    await this.handleStream(REPORT_TYPES.AVAILABLE_INVENTORY, query, orgId, res);
+  }
+
+  @Get('sales/view/stream')
+  @RequireReportPermission(REPORT_TYPES.SALES)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Stream sales report (NDJSON)' })
+  @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Report streamed successfully (NDJSON format)',
+  })
+  async streamSales(
+    @Query() query: ViewReportQueryDto,
+    @Headers('X-Organization-ID') orgId: string,
+    @Res() res: Response
+  ): Promise<void> {
+    this.logger.log('Streaming sales report', { orgId });
+    await this.handleStream(REPORT_TYPES.SALES, query, orgId, res);
+  }
+
+  @Get('returns/view/stream')
+  @RequireReportPermission(REPORT_TYPES.RETURNS)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Stream returns report (NDJSON)' })
+  @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Report streamed successfully (NDJSON format)',
+  })
+  async streamReturns(
+    @Query() query: ViewReportQueryDto,
+    @Headers('X-Organization-ID') orgId: string,
+    @Res() res: Response
+  ): Promise<void> {
+    this.logger.log('Streaming returns report', { orgId });
+    await this.handleStream(REPORT_TYPES.RETURNS, query, orgId, res);
+  }
+
   // ============================================================
   // EXPORT ENDPOINTS (POST - Returns file directly)
   // ============================================================
@@ -674,5 +815,64 @@ export class ReportController {
       return {};
     }
     return this.mapQueryToParameters(dto);
+  }
+
+  private async handleStream(
+    type: string,
+    query: ViewReportQueryDto,
+    orgId: string,
+    res: Response
+  ): Promise<void> {
+    try {
+      // Set headers for streaming
+      res.setHeader('Content-Type', 'application/x-ndjson');
+      res.setHeader('Transfer-Encoding', 'chunked');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+
+      // Create stream
+      const stream = this.streamReportUseCase.execute({
+        type,
+        parameters: this.mapQueryToParameters(query),
+        orgId,
+      });
+
+      // Stream data in chunks
+      for await (const batch of stream) {
+        // Check if client disconnected
+        if (res.closed) {
+          this.logger.log('Client disconnected, stopping stream', { type, orgId });
+          break;
+        }
+
+        // Write each item in the batch as a JSON line
+        for (const item of batch) {
+          res.write(JSON.stringify(item) + '\n');
+        }
+      }
+
+      res.end();
+      this.logger.log('Stream completed successfully', { type, orgId });
+    } catch (error) {
+      this.logger.error('Error streaming report', {
+        type,
+        orgId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
+      // Try to send error as JSON line if connection is still open
+      if (!res.closed) {
+        try {
+          res.write(
+            JSON.stringify({
+              error: true,
+              message: error instanceof Error ? error.message : 'Failed to stream report',
+            }) + '\n'
+          );
+          res.end();
+        } catch {
+          // Connection already closed, ignore
+        }
+      }
+    }
   }
 }

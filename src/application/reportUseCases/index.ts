@@ -1,6 +1,9 @@
 export { ViewReportUseCase } from './viewReportUseCase';
 export type { IViewReportRequest, IViewReportResponse } from './viewReportUseCase';
 
+export { StreamReportUseCase } from './streamReportUseCase';
+export type { IStreamReportRequest } from './streamReportUseCase';
+
 export { ExportReportUseCase } from './exportReportUseCase';
 export type { IExportReportRequest, IExportReportResponse } from './exportReportUseCase';
 

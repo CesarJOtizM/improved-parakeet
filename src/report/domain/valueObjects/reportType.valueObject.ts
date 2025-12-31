@@ -17,6 +17,9 @@ export const REPORT_TYPES = {
   RETURNS: 'RETURNS',
   RETURNS_BY_TYPE: 'RETURNS_BY_TYPE',
   RETURNS_BY_PRODUCT: 'RETURNS_BY_PRODUCT',
+  RETURNS_BY_SALE: 'RETURNS_BY_SALE',
+  RETURNS_CUSTOMER: 'RETURNS_CUSTOMER',
+  RETURNS_SUPPLIER: 'RETURNS_SUPPLIER',
 } as const;
 
 export type ReportTypeValue = (typeof REPORT_TYPES)[keyof typeof REPORT_TYPES];
@@ -88,7 +91,10 @@ export class ReportType extends ValueObject<IReportTypeProps> {
     return (
       this.props.value === REPORT_TYPES.RETURNS ||
       this.props.value === REPORT_TYPES.RETURNS_BY_TYPE ||
-      this.props.value === REPORT_TYPES.RETURNS_BY_PRODUCT
+      this.props.value === REPORT_TYPES.RETURNS_BY_PRODUCT ||
+      this.props.value === REPORT_TYPES.RETURNS_BY_SALE ||
+      this.props.value === REPORT_TYPES.RETURNS_CUSTOMER ||
+      this.props.value === REPORT_TYPES.RETURNS_SUPPLIER
     );
   }
 }

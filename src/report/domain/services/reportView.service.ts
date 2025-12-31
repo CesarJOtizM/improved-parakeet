@@ -595,6 +595,105 @@ export class ReportViewService {
           { key: 'period', header: 'Period', type: 'string' },
         ];
 
+      case REPORT_TYPES.RETURNS_BY_SALE:
+        return [
+          { key: 'returnDate', header: 'Date', type: 'date', sortable: true },
+          {
+            key: 'returnNumber',
+            header: 'Return #',
+            type: 'string',
+            sortable: true,
+            filterable: true,
+          },
+          { key: 'type', header: 'Type', type: 'string', sortable: true, filterable: true },
+          { key: 'status', header: 'Status', type: 'string', sortable: true, filterable: true },
+          {
+            key: 'warehouseName',
+            header: 'Warehouse',
+            type: 'string',
+            sortable: true,
+            filterable: true,
+          },
+          { key: 'totalItems', header: 'Items', type: 'number', sortable: true, align: 'right' },
+          {
+            key: 'totalValue',
+            header: 'Total Value',
+            type: 'currency',
+            sortable: true,
+            align: 'right',
+          },
+          { key: 'reason', header: 'Reason', type: 'string', filterable: true },
+          { key: 'createdBy', header: 'Created By', type: 'string', filterable: true },
+        ];
+
+      case REPORT_TYPES.RETURNS_CUSTOMER:
+        return [
+          { key: 'returnDate', header: 'Date', type: 'date', sortable: true },
+          {
+            key: 'returnNumber',
+            header: 'Return #',
+            type: 'string',
+            sortable: true,
+            filterable: true,
+          },
+          { key: 'status', header: 'Status', type: 'string', sortable: true, filterable: true },
+          {
+            key: 'warehouseName',
+            header: 'Warehouse',
+            type: 'string',
+            sortable: true,
+            filterable: true,
+          },
+          { key: 'saleId', header: 'Sale ID', type: 'string', sortable: true, filterable: true },
+          { key: 'totalItems', header: 'Items', type: 'number', sortable: true, align: 'right' },
+          {
+            key: 'totalValue',
+            header: 'Total Value',
+            type: 'currency',
+            sortable: true,
+            align: 'right',
+          },
+          { key: 'reason', header: 'Reason', type: 'string', filterable: true },
+          { key: 'createdBy', header: 'Created By', type: 'string', filterable: true },
+        ];
+
+      case REPORT_TYPES.RETURNS_SUPPLIER:
+        return [
+          { key: 'returnDate', header: 'Date', type: 'date', sortable: true },
+          {
+            key: 'returnNumber',
+            header: 'Return #',
+            type: 'string',
+            sortable: true,
+            filterable: true,
+          },
+          { key: 'status', header: 'Status', type: 'string', sortable: true, filterable: true },
+          {
+            key: 'warehouseName',
+            header: 'Warehouse',
+            type: 'string',
+            sortable: true,
+            filterable: true,
+          },
+          {
+            key: 'sourceMovementId',
+            header: 'Movement ID',
+            type: 'string',
+            sortable: true,
+            filterable: true,
+          },
+          { key: 'totalItems', header: 'Items', type: 'number', sortable: true, align: 'right' },
+          {
+            key: 'totalValue',
+            header: 'Total Value',
+            type: 'currency',
+            sortable: true,
+            align: 'right',
+          },
+          { key: 'reason', header: 'Reason', type: 'string', filterable: true },
+          { key: 'createdBy', header: 'Created By', type: 'string', filterable: true },
+        ];
+
       default:
         return [];
     }
@@ -618,6 +717,9 @@ export class ReportViewService {
       [REPORT_TYPES.RETURNS]: 'Returns Report',
       [REPORT_TYPES.RETURNS_BY_TYPE]: 'Returns by Type Report',
       [REPORT_TYPES.RETURNS_BY_PRODUCT]: 'Returns by Product Report',
+      [REPORT_TYPES.RETURNS_BY_SALE]: 'Returns by Sale Report',
+      [REPORT_TYPES.RETURNS_CUSTOMER]: 'Customer Returns Report',
+      [REPORT_TYPES.RETURNS_SUPPLIER]: 'Supplier Returns Report',
     };
     return titles[type] || 'Report';
   }
@@ -721,6 +823,27 @@ export class ReportViewService {
           totalProducts: data.length,
           totalQuantityReturned: this.sumField(data, 'totalQuantityReturned'),
           totalValueReturned: this.sumField(data, 'totalValueReturned'),
+        };
+
+      case REPORT_TYPES.RETURNS_BY_SALE:
+        return {
+          totalReturns: data.length,
+          totalItems: this.sumField(data, 'totalItems'),
+          totalValue: this.sumField(data, 'totalValue'),
+        };
+
+      case REPORT_TYPES.RETURNS_CUSTOMER:
+        return {
+          totalReturns: data.length,
+          totalItems: this.sumField(data, 'totalItems'),
+          totalValue: this.sumField(data, 'totalValue'),
+        };
+
+      case REPORT_TYPES.RETURNS_SUPPLIER:
+        return {
+          totalReturns: data.length,
+          totalItems: this.sumField(data, 'totalItems'),
+          totalValue: this.sumField(data, 'totalValue'),
         };
 
       default:

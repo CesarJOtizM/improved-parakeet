@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { IReportParametersInput, REPORT_TYPES, ReportTypeValue } from '../valueObjects';
 
@@ -261,8 +261,37 @@ export class ReportGenerationService {
         return this.generateReturnsByTypeReport(parameters, orgId);
       case REPORT_TYPES.RETURNS_BY_PRODUCT:
         return this.generateReturnsByProductReport(parameters, orgId);
+      case REPORT_TYPES.RETURNS_BY_SALE:
+        return this.generateReturnsBySaleReport(parameters, orgId);
+      case REPORT_TYPES.RETURNS_CUSTOMER:
+        return this.generateCustomerReturnsReport(parameters, orgId);
+      case REPORT_TYPES.RETURNS_SUPPLIER:
+        return this.generateSupplierReturnsReport(parameters, orgId);
       default:
         throw new Error(`Unknown report type: ${type}`);
+    }
+  }
+
+  /**
+   * Generate report stream for large datasets
+   * Yields data in batches to avoid memory issues
+   */
+  public async *generateReportStream(
+    type: ReportTypeValue,
+    parameters: IReportParametersInput,
+    orgId: string,
+    batchSize: number = 100
+  ): AsyncGenerator<unknown[], void, unknown> {
+    this.logger.log('Generating report stream', { type, orgId, batchSize });
+
+    // Generate the full report
+    const result = await this.generateReport(type, parameters, orgId);
+    const data = result.data as unknown[];
+
+    // Yield data in batches
+    for (let i = 0; i < data.length; i += batchSize) {
+      const batch = data.slice(i, i + batchSize);
+      yield batch;
     }
   }
 
@@ -1334,6 +1363,122 @@ export class ReportGenerationService {
     }
 
     return this.createResult(data, REPORT_TYPES.RETURNS_BY_PRODUCT, parameters, orgId);
+  }
+
+  /**
+   * 14. Returns by Sale Report
+   * Returns for a specific sale
+   */
+  public async generateReturnsBySaleReport(
+    parameters: IReportParametersInput,
+    orgId: string
+  ): Promise<IReportGenerationResult<IReturnsReportItem>> {
+    this.logger.log('Generating returns by sale report', { orgId, saleId: parameters.saleId });
+
+    if (!parameters.saleId) {
+      throw new Error('Sale ID is required for returns by sale report');
+    }
+
+    // Validate sale exists
+    const sale = await this.saleRepository.findById(parameters.saleId, orgId);
+    if (!sale) {
+      throw new Error(`Sale with ID ${parameters.saleId} not found`);
+    }
+
+    // Find returns by sale ID
+    const returns = await this.returnRepository.findBySaleId(parameters.saleId, orgId);
+
+    const warehouses = await this.warehouseRepository.findAll(orgId);
+    const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
+
+    const data: IReturnsReportItem[] = [];
+
+    for (const returnEntity of returns) {
+      let returnItems = 0;
+      let returnValue = 0;
+
+      for (const line of returnEntity.getLines()) {
+        returnItems += line.quantity.getNumericValue();
+        if (line.originalSalePrice) {
+          returnValue += line.quantity.getNumericValue() * line.originalSalePrice.getAmount();
+        } else if (line.originalUnitCost) {
+          returnValue += line.quantity.getNumericValue() * line.originalUnitCost.getAmount();
+        }
+      }
+
+      data.push({
+        returnId: returnEntity.id,
+        returnNumber: returnEntity.returnNumber.getValue(),
+        type: returnEntity.type.getValue() as 'CUSTOMER' | 'SUPPLIER',
+        status: returnEntity.status.getValue(),
+        warehouseId: returnEntity.warehouseId,
+        warehouseName: warehouseMap.get(returnEntity.warehouseId) || 'Unknown',
+        saleId: returnEntity.saleId,
+        sourceMovementId: returnEntity.sourceMovementId,
+        totalItems: returnItems,
+        totalValue: returnValue,
+        reason: returnEntity.reason.getValue() ?? undefined,
+        currency: 'COP',
+        returnDate: returnEntity.createdAt,
+        createdBy: returnEntity.createdBy,
+      });
+    }
+
+    return this.createResult(data, REPORT_TYPES.RETURNS_BY_SALE, parameters, orgId);
+  }
+
+  /**
+   * 15. Customer Returns Report
+   * Returns filtered by type CUSTOMER
+   */
+  public async generateCustomerReturnsReport(
+    parameters: IReportParametersInput,
+    orgId: string
+  ): Promise<IReportGenerationResult<IReturnsReportItem>> {
+    this.logger.log('Generating customer returns report', { orgId });
+
+    // Use generateReturnsReport with CUSTOMER filter
+    const customerParameters: IReportParametersInput = {
+      ...parameters,
+      returnType: 'CUSTOMER',
+    };
+
+    const result = await this.generateReturnsReport(customerParameters, orgId);
+
+    return {
+      ...result,
+      metadata: {
+        ...result.metadata,
+        reportType: REPORT_TYPES.RETURNS_CUSTOMER,
+      },
+    };
+  }
+
+  /**
+   * 16. Supplier Returns Report
+   * Returns filtered by type SUPPLIER
+   */
+  public async generateSupplierReturnsReport(
+    parameters: IReportParametersInput,
+    orgId: string
+  ): Promise<IReportGenerationResult<IReturnsReportItem>> {
+    this.logger.log('Generating supplier returns report', { orgId });
+
+    // Use generateReturnsReport with SUPPLIER filter
+    const supplierParameters: IReportParametersInput = {
+      ...parameters,
+      returnType: 'SUPPLIER',
+    };
+
+    const result = await this.generateReturnsReport(supplierParameters, orgId);
+
+    return {
+      ...result,
+      metadata: {
+        ...result.metadata,
+        reportType: REPORT_TYPES.RETURNS_SUPPLIER,
+      },
+    };
   }
 
   // Helper methods

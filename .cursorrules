@@ -928,6 +928,31 @@ describe('CreateOrganizationUseCase', () => {
 17. ❌ DO NOT inject `DomainEventDispatcher` class directly - use `@Inject('DomainEventDispatcher')` with `IDomainEventDispatcher` interface
 18. ❌ DO NOT put tests in `src/` folder - tests go in `test/` following the same structure
 
+## 🔍 Code Quality Verification
+
+**ALWAYS verify code quality before considering work complete**. Run these commands in order:
+
+1. **Format code**: `bun run format` (or `npm run format`)
+   - Ensures consistent code formatting across the project
+   - Auto-fixes formatting issues
+
+2. **Lint code**: `bun run lint` (or `npm run lint`)
+   - Checks for code style violations and potential bugs
+   - Auto-fixes fixable issues
+   - Must pass with zero errors before proceeding
+
+3. **Build project**: `bun run build` (or `npm run build`)
+   - Verifies TypeScript compilation
+   - Ensures no type errors
+   - Must pass successfully before considering work complete
+
+**Workflow**:
+```bash
+bun run format && bun run lint && bun run build
+```
+
+If any command fails, fix the issues before proceeding. Do not skip these verification steps.
+
 ## ✅ Checklist for New Features
 
 When creating a new feature, follow this order:
@@ -975,6 +1000,11 @@ When creating a new feature, follow this order:
    - [ ] Use `result.isOk()`, `result.isErr()`, and `result.match()` for assertions
    - [ ] Mock use cases to return `ok(...)` or `err(...)` in controller tests
    - [ ] E2E tests for endpoint
+
+8. **Code Quality Verification**:
+   - [ ] Run `bun run format` - Code formatting passes
+   - [ ] Run `bun run lint` - Linter passes with zero errors
+   - [ ] Run `bun run build` - TypeScript compilation succeeds
 
 ## 📚 References
 

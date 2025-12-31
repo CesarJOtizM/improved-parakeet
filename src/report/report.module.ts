@@ -3,6 +3,7 @@ import {
   ExportReportUseCase,
   GetReportTemplatesUseCase,
   GetReportsUseCase,
+  StreamReportUseCase,
   UpdateReportTemplateUseCase,
   ViewReportUseCase,
 } from '@application/reportUseCases';
@@ -17,9 +18,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import {
   ExportService,
+  ReportCacheService,
   ReportGenerationService,
   ReportViewService,
-  ReportCacheService,
 } from './domain/services';
 import { ReportLoggingInterceptor } from './interceptors/reportLogging.interceptor';
 
@@ -74,6 +75,7 @@ import { ReportLoggingInterceptor } from './interceptors/reportLogging.intercept
     ReportLoggingInterceptor,
     // Use Cases
     ViewReportUseCase,
+    StreamReportUseCase,
     ExportReportUseCase,
     CreateReportTemplateUseCase,
     UpdateReportTemplateUseCase,
@@ -87,6 +89,7 @@ import { ReportLoggingInterceptor } from './interceptors/reportLogging.intercept
     ReportViewService,
     ExportService,
     ViewReportUseCase,
+    StreamReportUseCase,
     ExportReportUseCase,
     CreateReportTemplateUseCase,
     UpdateReportTemplateUseCase,
