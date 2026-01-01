@@ -1,0 +1,244 @@
+import { GetProductsUseCase } from '@application/productUseCases/getProductsUseCase';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { Product } from '@product/domain/entities/product.entity';
+import { ProductMapper } from '@product/mappers';
+
+import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
+
+describe('GetProductsUseCase', () => {
+  const mockOrgId = 'test-org-id';
+
+  let useCase: GetProductsUseCase;
+  let mockProductRepository: jest.Mocked<IProductRepository>;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    mockProductRepository = {
+      save: jest.fn(),
+      findById: jest.fn(),
+      findAll: jest.fn(),
+      findBySpecification: jest.fn(),
+      exists: jest.fn(),
+      delete: jest.fn(),
+      findBySku: jest.fn(),
+      findByCategory: jest.fn(),
+      findByStatus: jest.fn(),
+      findByWarehouse: jest.fn(),
+      findLowStock: jest.fn(),
+      existsBySku: jest.fn(),
+    } as jest.Mocked<IProductRepository>;
+
+    useCase = new GetProductsUseCase(mockProductRepository);
+  });
+
+  describe('execute', () => {
+    const createMockProduct = (sku: string, name: string) => {
+      const props = ProductMapper.toDomainProps({
+        sku,
+        name,
+        unit: { code: 'UNIT', name: 'Unit', precision: 0 },
+      }).unwrap();
+      return Product.create(props, mockOrgId);
+    };
+
+    it('Given: valid request When: getting products Then: should return paginated products', async () => {
+      // Arrange
+      const mockProducts = [
+        createMockProduct('PROD-001', 'Product 1'),
+        createMockProduct('PROD-002', 'Product 2'),
+      ];
+
+      mockProductRepository.findAll.mockResolvedValue(mockProducts);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.message).toBe('Products retrieved successfully');
+          expect(value.data).toHaveLength(2);
+          expect(value.pagination).toBeDefined();
+          expect(value.pagination.page).toBe(1);
+          expect(value.pagination.limit).toBe(10);
+          expect(value.pagination.total).toBe(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+      expect(mockProductRepository.findAll).toHaveBeenCalledWith(mockOrgId);
+    });
+
+    it('Given: request with status filter When: getting products Then: should return filtered products', async () => {
+      // Arrange
+      const mockProducts = [createMockProduct('PROD-001', 'Product 1')];
+
+      mockProductRepository.findBySpecification.mockResolvedValue({
+        data: mockProducts,
+        total: 1,
+        hasMore: false,
+      });
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        status: 'ACTIVE',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data).toHaveLength(1);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+      expect(mockProductRepository.findBySpecification).toHaveBeenCalled();
+    });
+
+    it('Given: request with search filter When: getting products Then: should return filtered products', async () => {
+      // Arrange
+      const mockProducts = [
+        createMockProduct('PROD-001', 'Test Product'),
+        createMockProduct('PROD-002', 'Other Product'),
+      ];
+
+      mockProductRepository.findAll.mockResolvedValue(mockProducts);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        search: 'Test',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data.length).toBeGreaterThan(0);
+          expect(value.data[0].name).toContain('Test');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: request with sortBy When: getting products Then: should return sorted products', async () => {
+      // Arrange
+      const mockProducts = [
+        createMockProduct('PROD-002', 'Product B'),
+        createMockProduct('PROD-001', 'Product A'),
+      ];
+
+      mockProductRepository.findAll.mockResolvedValue(mockProducts);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'name',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data.length).toBe(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: empty products list When: getting products Then: should return empty paginated result', async () => {
+      // Arrange
+      mockProductRepository.findAll.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data).toHaveLength(0);
+          expect(value.pagination.total).toBe(0);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: request with pagination When: getting products Then: should return correct pagination', async () => {
+      // Arrange
+      const mockProducts = Array.from({ length: 25 }, (_, i) =>
+        createMockProduct(`PROD-${String(i + 1).padStart(3, '0')}`, `Product ${i + 1}`)
+      );
+
+      mockProductRepository.findAll.mockResolvedValue(mockProducts);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 2,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.pagination.page).toBe(2);
+          expect(value.pagination.limit).toBe(10);
+          expect(value.pagination.total).toBe(25);
+          expect(value.pagination.totalPages).toBe(3);
+          expect(value.pagination.hasNext).toBe(true);
+          expect(value.pagination.hasPrev).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+  });
+});

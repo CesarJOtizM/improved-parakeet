@@ -786,6 +786,7 @@ to do - not necessary for now
   - [ ] Tests unitarios con Jest (mínimo 90% coverage)
   - [ ] Tests de integración para todos los dominios
   - [ ] Tests de aceptación para casos de uso
+  - [ ] Tests de e2e
   - [ ] Tests de performance y carga
   - [ ] Tests de seguridad y permisos
   

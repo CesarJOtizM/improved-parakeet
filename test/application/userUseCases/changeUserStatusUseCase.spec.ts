@@ -58,8 +58,8 @@ describe('ChangeUserStatusUseCase', () => {
       dispatchEvents: jest.fn(),
       markAndDispatch: jest.fn(),
     } as any;
-    mockEventDispatcher.dispatchEvents.mockResolvedValue(undefined);
-    mockEventDispatcher.markAndDispatch.mockResolvedValue(undefined);
+    mockEventDispatcher.dispatchEvents.mockResolvedValue(undefined as never);
+    mockEventDispatcher.markAndDispatch.mockResolvedValue(undefined as never);
 
     useCase = new ChangeUserStatusUseCase(
       mockUserRepository,
