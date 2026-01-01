@@ -13,6 +13,7 @@ import {
   ValidationError,
 } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
+import * as bcrypt from 'bcrypt';
 
 import type { IOrganizationRepository } from '@organization/domain/repositories';
 
@@ -134,7 +135,6 @@ export class CreateOrganizationUseCase {
     // Create admin user if provided
     let adminUserData: { email: string; username: string } | undefined;
     if (request.adminUser) {
-      const bcrypt = await import('bcrypt');
       const passwordHash = await bcrypt.hash(request.adminUser.password, 12);
 
       const adminUser = await this.prisma.user.create({
