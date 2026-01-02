@@ -293,5 +293,84 @@ describe('CreateMovementUseCase', () => {
         }
       );
     });
+
+    it('Given: empty lines array When: creating movement Then: should create movement without lines', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+
+      const requestWithEmptyLines = {
+        ...validRequest,
+        lines: [],
+      };
+
+      const movementProps = MovementMapper.toDomainProps(requestWithEmptyLines);
+      const movementWithId = Movement.reconstitute(movementProps, mockMovementId, mockOrgId, []);
+
+      mockMovementRepository.save.mockResolvedValue(movementWithId);
+
+      // Act
+      const result = await useCase.execute(requestWithEmptyLines);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data.lines).toHaveLength(0);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: multiple products in lines When: creating movement Then: should validate all products exist', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      const mockProduct1 = createMockProduct();
+      const secondProductId = 'product-456';
+
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+      mockProductRepository.findById
+        .mockResolvedValueOnce(mockProduct1) // First call for first product
+        .mockResolvedValueOnce(null); // Second call for non-existent product
+
+      const requestWithMultipleProducts = {
+        ...validRequest,
+        lines: [
+          {
+            productId: mockProductId,
+            locationId: mockLocationId,
+            quantity: 10,
+            unitCost: 100,
+            currency: 'COP',
+          },
+          {
+            productId: secondProductId,
+            locationId: mockLocationId,
+            quantity: 5,
+            unitCost: 200,
+            currency: 'COP',
+          },
+        ],
+      };
+
+      // Act
+      const result = await useCase.execute(requestWithMultipleProducts);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(NotFoundError);
+          expect(error.message).toContain('Product not found');
+        }
+      );
+      expect(mockMovementRepository.save).not.toHaveBeenCalled();
+    });
   });
 });

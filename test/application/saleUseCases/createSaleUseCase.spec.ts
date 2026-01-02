@@ -176,5 +176,90 @@ describe('CreateSaleUseCase', () => {
         }
       );
     });
+
+    it('Given: sale with empty lines When: creating sale Then: should create sale without lines', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+
+      const mockSaleNumber = SaleNumber.create(2025, 1);
+      jest
+        .spyOn(SaleNumberGenerationService, 'generateNextSaleNumber')
+        .mockResolvedValue(mockSaleNumber);
+
+      const requestWithEmptyLines = {
+        ...validRequest,
+        lines: [],
+      };
+
+      const saleProps = SaleMapper.toDomainProps(requestWithEmptyLines, mockSaleNumber);
+      const saleWithId = Sale.reconstitute(saleProps, mockSaleId, mockOrgId);
+
+      mockSaleRepository.save.mockResolvedValue(saleWithId);
+
+      // Act
+      const result = await useCase.execute(requestWithEmptyLines);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sale with multiple lines When: creating sale Then: should create sale with all lines', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+
+      const mockSaleNumber = SaleNumber.create(2025, 1);
+      jest
+        .spyOn(SaleNumberGenerationService, 'generateNextSaleNumber')
+        .mockResolvedValue(mockSaleNumber);
+
+      const requestWithMultipleLines = {
+        ...validRequest,
+        lines: [
+          {
+            productId: mockProductId,
+            locationId: mockLocationId,
+            quantity: 10,
+            salePrice: 100,
+            currency: 'COP',
+          },
+          {
+            productId: 'product-456',
+            locationId: mockLocationId,
+            quantity: 5,
+            salePrice: 200,
+            currency: 'COP',
+          },
+        ],
+      };
+
+      const saleProps = SaleMapper.toDomainProps(requestWithMultipleLines, mockSaleNumber);
+      const saleWithId = Sale.reconstitute(saleProps, mockSaleId, mockOrgId);
+
+      mockSaleRepository.save.mockResolvedValue(saleWithId);
+
+      // Act
+      const result = await useCase.execute(requestWithMultipleLines);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

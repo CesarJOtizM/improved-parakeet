@@ -215,5 +215,139 @@ describe('InitiateTransferUseCase', () => {
       );
       expect(mockTransferRepository.save).not.toHaveBeenCalled();
     });
+
+    it('Given: non-existent product When: initiating transfer Then: should return ValidationError', async () => {
+      // Arrange
+      const mockFromWarehouse = createMockWarehouse();
+      jest.spyOn(TransferValidationService, 'validateTransferCreation').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+      jest.spyOn(TransferValidationService, 'validateTransferLines').mockResolvedValue({
+        isValid: false,
+        errors: ['Product not found'],
+      });
+
+      mockWarehouseRepository.findById.mockResolvedValue(mockFromWarehouse);
+      mockProductRepository.findById.mockResolvedValue(null);
+
+      // Act
+      const result = await useCase.execute(validRequest);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+        }
+      );
+      expect(mockTransferRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('Given: insufficient stock When: initiating transfer Then: should return BusinessRuleError', async () => {
+      // Arrange
+      const mockFromWarehouse = createMockWarehouse();
+      const mockProduct = createMockProduct();
+
+      jest.spyOn(TransferValidationService, 'validateTransferCreation').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+      jest.spyOn(TransferValidationService, 'validateTransferLines').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+      jest.spyOn(TransferValidationService, 'validateStockAvailability').mockResolvedValue({
+        isValid: false,
+        errors: ['Insufficient stock available'],
+      });
+
+      mockWarehouseRepository.findById.mockResolvedValue(mockFromWarehouse);
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(5, 0)); // Less than requested 10
+
+      // Act
+      const result = await useCase.execute(validRequest);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error.message).toContain('stock');
+        }
+      );
+      expect(mockTransferRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('Given: empty lines array When: initiating transfer Then: should return ValidationError', async () => {
+      // Arrange
+      const requestWithEmptyLines = {
+        ...validRequest,
+        lines: [],
+      };
+
+      jest.spyOn(TransferValidationService, 'validateTransferCreation').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+      jest.spyOn(TransferValidationService, 'validateTransferLines').mockResolvedValue({
+        isValid: false,
+        errors: ['Transfer must have at least one line'],
+      });
+
+      // Act
+      const result = await useCase.execute(requestWithEmptyLines);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+        }
+      );
+    });
+
+    it('Given: zero quantity in line When: initiating transfer Then: should throw error during line creation', async () => {
+      // Arrange
+      const requestWithZeroQuantity = {
+        ...validRequest,
+        lines: [
+          {
+            productId: mockProductId,
+            quantity: 0,
+          },
+        ],
+      };
+
+      const mockFromWarehouse = createMockWarehouse();
+      const mockProduct = createMockProduct();
+
+      jest.spyOn(TransferValidationService, 'validateTransferCreation').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+      jest.spyOn(TransferValidationService, 'validateTransferLines').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+
+      mockWarehouseRepository.findById.mockResolvedValue(mockFromWarehouse);
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      // Act & Assert
+      // The error is thrown during TransferLine.create, which happens before validation
+      await expect(useCase.execute(requestWithZeroQuantity)).rejects.toThrow(
+        'Quantity must be positive'
+      );
+    });
   });
 });

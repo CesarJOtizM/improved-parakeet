@@ -177,5 +177,168 @@ describe('CreateReturnUseCase', () => {
         }
       );
     });
+
+    it('Given: supplier return without sourceMovementId When: creating return Then: should return ValidationError', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+
+      const supplierReturnRequest = {
+        type: 'RETURN_SUPPLIER' as const,
+        warehouseId: mockWarehouseId,
+        sourceMovementId: undefined,
+        reason: 'DEFECTIVE',
+        lines: [
+          {
+            productId: 'product-123',
+            locationId: 'location-123',
+            quantity: 5,
+            originalUnitCost: 50,
+            currency: 'COP',
+          },
+        ],
+        createdBy: mockUserId,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(
+        supplierReturnRequest as unknown as typeof supplierReturnRequest & { orgId: string }
+      );
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+          expect(error.message).toContain('Source movement ID is required');
+        }
+      );
+    });
+
+    it('Given: customer return without originalSalePrice When: creating return Then: should return ValidationError', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+
+      jest
+        .spyOn(ReturnNumberGenerationService, 'generateNextReturnNumber')
+        .mockResolvedValue(ReturnNumber.create(2025, 1));
+
+      const requestWithoutPrice = {
+        ...validCustomerReturnRequest,
+        lines: [
+          {
+            productId: 'product-123',
+            locationId: 'location-123',
+            quantity: 5,
+            originalSalePrice: undefined,
+            currency: 'COP',
+          },
+        ],
+      };
+
+      // Act
+      const result = await useCase.execute(
+        requestWithoutPrice as unknown as typeof requestWithoutPrice & { orgId: string }
+      );
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+          expect(error.message).toContain('Original sale price is required');
+        }
+      );
+    });
+
+    it('Given: supplier return without originalUnitCost When: creating return Then: should return ValidationError', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+
+      jest
+        .spyOn(ReturnNumberGenerationService, 'generateNextReturnNumber')
+        .mockResolvedValue(ReturnNumber.create(2025, 1));
+
+      const supplierReturnRequest = {
+        type: 'RETURN_SUPPLIER' as const,
+        warehouseId: mockWarehouseId,
+        sourceMovementId: 'movement-123',
+        reason: 'DEFECTIVE',
+        lines: [
+          {
+            productId: 'product-123',
+            locationId: 'location-123',
+            quantity: 5,
+            originalUnitCost: undefined,
+            currency: 'COP',
+          },
+        ],
+        createdBy: mockUserId,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(
+        supplierReturnRequest as unknown as typeof supplierReturnRequest & { orgId: string }
+      );
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+          expect(error.message).toContain('Original unit cost is required');
+        }
+      );
+    });
+
+    it('Given: return with empty lines When: creating return Then: should create return without lines', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+
+      jest
+        .spyOn(ReturnNumberGenerationService, 'generateNextReturnNumber')
+        .mockResolvedValue(ReturnNumber.create(2025, 1));
+
+      const requestWithEmptyLines = {
+        ...validCustomerReturnRequest,
+        lines: [],
+      };
+
+      const returnProps = ReturnMapper.toDomainProps(
+        requestWithEmptyLines,
+        ReturnNumber.create(2025, 1)
+      );
+      const returnWithId = Return.reconstitute(returnProps, mockReturnId, mockOrgId);
+
+      mockReturnRepository.save.mockResolvedValue(returnWithId);
+
+      // Act
+      const result = await useCase.execute(requestWithEmptyLines);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

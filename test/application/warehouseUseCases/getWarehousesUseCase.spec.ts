@@ -96,5 +96,59 @@ describe('GetWarehousesUseCase', () => {
       );
       expect(mockWarehouseRepository.findActive).toHaveBeenCalledWith(mockOrgId);
     });
+
+    it('Given: request with search filter When: getting warehouses Then: should return filtered warehouses', async () => {
+      // Arrange
+      const mockWarehouses = [createMockWarehouse()];
+      mockWarehouseRepository.findAll.mockResolvedValue(mockWarehouses);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        search: 'Test',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: empty warehouses list When: getting warehouses Then: should return empty paginated result', async () => {
+      // Arrange
+      mockWarehouseRepository.findAll.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data).toHaveLength(0);
+          expect(value.pagination.total).toBe(0);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

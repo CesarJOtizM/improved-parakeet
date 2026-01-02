@@ -116,5 +116,67 @@ describe('UpdateSaleUseCase', () => {
       );
       expect(mockSaleRepository.save).not.toHaveBeenCalled();
     });
+
+    it('Given: confirmed sale When: updating sale Then: should throw error', async () => {
+      // Arrange
+      const mockSale = createMockSale();
+      // Add a line to the sale so it can be confirmed
+      const saleLine = {
+        productId: 'product-123',
+        locationId: 'location-123',
+        quantity: 10,
+        salePrice: 100,
+        currency: 'COP',
+      };
+      const line = SaleMapper.createLineEntity(saleLine, mockOrgId);
+      mockSale.addLine(line);
+      // Confirm the sale
+      mockSale.confirm('movement-123');
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+
+      const request = {
+        id: mockSaleId,
+        orgId: mockOrgId,
+        note: 'Updated note',
+      };
+
+      // Act & Assert
+      // The sale.update() method throws an error when trying to update a confirmed sale
+      await expect(useCase.execute(request)).rejects.toThrow(
+        'Cannot update sale when status is CONFIRMED or CANCELLED'
+      );
+      expect(mockSaleRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('Given: sale with partial update When: updating sale Then: should update only provided fields', async () => {
+      // Arrange
+      const mockSale = createMockSale();
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+
+      const updatedSale = mockSale.update({
+        note: 'Updated note only',
+      });
+      mockSaleRepository.save.mockResolvedValue(updatedSale);
+
+      const request = {
+        id: mockSaleId,
+        orgId: mockOrgId,
+        note: 'Updated note only',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });
