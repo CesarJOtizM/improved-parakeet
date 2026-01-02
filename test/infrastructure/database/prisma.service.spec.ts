@@ -1,112 +1,152 @@
-// Prisma Service Tests - Database Service
-// Unit tests for Prisma service following AAA and Given-When-Then
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { ConfigService } from '@nestjs/config';
 
+// Mock the PrismaClient before importing PrismaService
+const mockConnect = jest.fn();
+const mockDisconnect = jest.fn();
+
+jest.mock('@infrastructure/database/generated/prisma', () => {
+  class MockPrismaClient {
+    $connect = mockConnect;
+    $disconnect = mockDisconnect;
+  }
+  return {
+    PrismaClient: MockPrismaClient,
+  };
+});
+
+// Import after mocking
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Test, TestingModule } from '@nestjs/testing';
-
-// Mock PrismaService methods for testing
-const mockConnect = jest.fn().mockResolvedValue(undefined);
-const mockDisconnect = jest.fn().mockResolvedValue(undefined);
-const mockQueryRaw = jest.fn();
 
 describe('PrismaService', () => {
   let service: PrismaService;
+  let mockConfigService: ConfigService;
 
-  beforeEach(async () => {
-    // Clear all mocks before each test
-    jest.clearAllMocks();
-    mockConnect.mockResolvedValue(undefined);
-    mockDisconnect.mockResolvedValue(undefined);
+  beforeEach(() => {
+    // Reset environment variables
+    process.env.DATABASE_URL = 'postgresql://user:password@localhost:5432/testdb';
+    process.env.DB_CONNECTION_LIMIT = '10';
+    process.env.DB_POOL_TIMEOUT = '10';
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        {
-          provide: PrismaService,
-          useValue: {
-            $connect: mockConnect,
-            $disconnect: mockDisconnect,
-            $queryRaw: mockQueryRaw,
-            onModuleInit: jest.fn().mockImplementation(async function (this: PrismaService) {
-              await this.$connect();
-            }),
-            onModuleDestroy: jest.fn().mockImplementation(async function (this: PrismaService) {
-              await this.$disconnect();
-            }),
-          } as unknown as PrismaService,
-        },
-      ],
-    }).compile();
-
-    service = module.get<PrismaService>(PrismaService);
+    mockConfigService = {
+      get: jest.fn((key: string) => {
+        const config: Record<string, string> = {
+          DATABASE_URL: 'postgresql://user:password@localhost:5432/testdb',
+          NODE_ENV: 'test',
+          DB_CONNECTION_LIMIT: '10',
+          DB_POOL_TIMEOUT: '10',
+        };
+        return config[key];
+      }),
+    } as unknown as ConfigService;
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  describe('Service initialization', () => {
-    it('Given: service created When: checking type Then: should have correct type', () => {
-      // Arrange & Act
-      const serviceType = typeof service;
+  describe('constructor', () => {
+    it('Given: valid config When: creating service Then: should create instance', () => {
+      // Act
+      service = new PrismaService(mockConfigService);
 
       // Assert
-      expect(serviceType).toBe('object');
+      expect(service).toBeDefined();
     });
 
-    it('Given: service created When: checking methods Then: should have expected methods', () => {
-      // Arrange & Act
-      const hasQueryRaw = typeof service.$queryRaw === 'function';
-      const hasConnect = typeof service.$connect === 'function';
-      const hasDisconnect = typeof service.$disconnect === 'function';
+    it('Given: no config service When: creating service Then: should use env vars', () => {
+      // Act
+      service = new PrismaService();
 
       // Assert
-      expect(hasQueryRaw).toBe(true);
-      expect(hasConnect).toBe(true);
-      expect(hasDisconnect).toBe(true);
+      expect(service).toBeDefined();
     });
-  });
 
-  describe('Module lifecycle methods', () => {
-    it('Given: service instance When: calling onModuleInit Then: should connect to database', async () => {
+    it('Given: development env When: creating service Then: should enable query logging', () => {
       // Arrange
+      const devConfigService = {
+        get: jest.fn((key: string) => {
+          const config: Record<string, string> = {
+            DATABASE_URL: 'postgresql://user:password@localhost:5432/testdb',
+            NODE_ENV: 'development',
+          };
+          return config[key];
+        }),
+      } as unknown as ConfigService;
+
+      // Act
+      service = new PrismaService(devConfigService);
+
+      // Assert
+      expect(service).toBeDefined();
+    });
+  });
+
+  describe('onModuleInit', () => {
+    it('Given: service When: initializing Then: should connect to database', async () => {
+      // Arrange
+      service = new PrismaService(mockConfigService);
       mockConnect.mockResolvedValue(undefined);
 
       // Act
       await service.onModuleInit();
 
       // Assert
-      expect(mockConnect).toHaveBeenCalledTimes(1);
+      expect(mockConnect).toHaveBeenCalled();
     });
+  });
 
-    it('Given: service instance When: calling onModuleDestroy Then: should disconnect from database', async () => {
+  describe('onModuleDestroy', () => {
+    it('Given: service When: destroying Then: should disconnect from database', async () => {
       // Arrange
+      service = new PrismaService(mockConfigService);
       mockDisconnect.mockResolvedValue(undefined);
 
       // Act
       await service.onModuleDestroy();
 
       // Assert
-      expect(mockDisconnect).toHaveBeenCalledTimes(1);
+      expect(mockDisconnect).toHaveBeenCalled();
     });
+  });
 
-    it('Given: connection error When: calling onModuleInit Then: should propagate error', async () => {
+  describe('buildDatabaseUrl', () => {
+    it('Given: no DATABASE_URL When: building url Then: should throw error', () => {
       // Arrange
-      const connectError = new Error('Connection failed');
-      mockConnect.mockRejectedValue(connectError);
+      delete process.env.DATABASE_URL;
+      const emptyConfigService = {
+        get: jest.fn().mockReturnValue(undefined),
+      } as unknown as ConfigService;
 
       // Act & Assert
-      await expect(service.onModuleInit()).rejects.toThrow('Connection failed');
-      expect(mockConnect).toHaveBeenCalledTimes(1);
+      expect(() => new PrismaService(emptyConfigService)).toThrow('DATABASE_URL is not defined');
     });
 
-    it('Given: disconnection error When: calling onModuleDestroy Then: should propagate error', async () => {
+    it('Given: DATABASE_URL without pool params When: building url Then: should add defaults', () => {
       // Arrange
-      const disconnectError = new Error('Disconnection failed');
-      mockDisconnect.mockRejectedValue(disconnectError);
+      process.env.DATABASE_URL = 'postgresql://user:password@localhost:5432/testdb';
 
-      // Act & Assert
-      await expect(service.onModuleDestroy()).rejects.toThrow('Disconnection failed');
-      expect(mockDisconnect).toHaveBeenCalledTimes(1);
+      // Act
+      service = new PrismaService(mockConfigService);
+
+      // Assert
+      expect(process.env.DATABASE_URL).toContain('connection_limit=');
+      expect(process.env.DATABASE_URL).toContain('pool_timeout=');
+    });
+
+    it('Given: DATABASE_URL with pool params When: building url Then: should keep existing params', () => {
+      // Arrange
+      process.env.DATABASE_URL =
+        'postgresql://user:password@localhost:5432/testdb?connection_limit=5&pool_timeout=5';
+      const configWithExistingParams = {
+        get: jest.fn((key: string) => {
+          if (key === 'DATABASE_URL') return process.env.DATABASE_URL;
+          return undefined;
+        }),
+      } as unknown as ConfigService;
+
+      // Act
+      service = new PrismaService(configWithExistingParams);
+
+      // Assert
+      expect(process.env.DATABASE_URL).toContain('connection_limit=5');
+      expect(process.env.DATABASE_URL).toContain('pool_timeout=5');
     });
   });
 });

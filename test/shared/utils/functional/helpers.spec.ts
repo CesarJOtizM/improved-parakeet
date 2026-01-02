@@ -1,41 +1,35 @@
-// Functional Helpers Tests
-// Unit tests for functional helper functions following AAA and Given-When-Then patterns
-
+import { describe, expect, it, jest } from '@jest/globals';
 import {
-  map,
+  constant,
+  every,
   filter,
-  reduce,
+  find,
+  flatMap,
   forEach,
-  tap,
   identity,
-  prop,
-  pick,
-  omit,
-} from '@shared/utils/functional';
+  map,
+  noop,
+  reduce,
+  some,
+} from '@shared/utils/functional/helpers';
 
 describe('Functional Helpers', () => {
   describe('map', () => {
-    it('Given: array and function When: mapping Then: should apply function to each element', () => {
+    it('Given: function and array When: mapping Then: should transform each element', () => {
       // Arrange
-      const numbers = [1, 2, 3, 4, 5];
       const double = (x: number) => x * 2;
+      const array = [1, 2, 3];
 
       // Act
-      const mapper = map(double);
-      const result = mapper(numbers);
+      const result = map(double)(array);
 
       // Assert
-      expect(result).toEqual([2, 4, 6, 8, 10]);
+      expect(result).toEqual([2, 4, 6]);
     });
 
     it('Given: empty array When: mapping Then: should return empty array', () => {
-      // Arrange
-      const numbers: number[] = [];
-      const double = (x: number) => x * 2;
-
       // Act
-      const mapper = map(double);
-      const result = mapper(numbers);
+      const result = map((x: number) => x * 2)([]);
 
       // Assert
       expect(result).toEqual([]);
@@ -43,27 +37,21 @@ describe('Functional Helpers', () => {
   });
 
   describe('filter', () => {
-    it('Given: array and predicate When: filtering Then: should return filtered array', () => {
+    it('Given: predicate and array When: filtering Then: should return matching elements', () => {
       // Arrange
-      const numbers = [1, 2, 3, 4, 5, 6];
       const isEven = (x: number) => x % 2 === 0;
+      const array = [1, 2, 3, 4, 5, 6];
 
       // Act
-      const filterer = filter(isEven);
-      const result = filterer(numbers);
+      const result = filter(isEven)(array);
 
       // Assert
       expect(result).toEqual([2, 4, 6]);
     });
 
-    it('Given: empty array When: filtering Then: should return empty array', () => {
-      // Arrange
-      const numbers: number[] = [];
-      const isEven = (x: number) => x % 2 === 0;
-
+    it('Given: no matching elements When: filtering Then: should return empty array', () => {
       // Act
-      const filterer = filter(isEven);
-      const result = filterer(numbers);
+      const result = filter((x: number) => x > 10)([1, 2, 3]);
 
       // Assert
       expect(result).toEqual([]);
@@ -71,141 +59,151 @@ describe('Functional Helpers', () => {
   });
 
   describe('reduce', () => {
-    it('Given: array, reducer and initial value When: reducing Then: should accumulate result', () => {
+    it('Given: reducer and initial value When: reducing Then: should accumulate result', () => {
       // Arrange
-      const numbers = [1, 2, 3, 4, 5];
       const sum = (acc: number, x: number) => acc + x;
+      const array = [1, 2, 3, 4];
 
       // Act
-      const reducer = reduce(sum, 0);
-      const result = reducer(numbers);
+      const result = reduce(sum, 0)(array);
 
       // Assert
-      expect(result).toBe(15);
+      expect(result).toBe(10);
     });
 
-    it('Given: array and reducer When: reducing without initial value Then: should use first element', () => {
-      // Arrange
-      const numbers = [1, 2, 3, 4, 5];
-      const sum = (acc: number, x: number) => acc + x;
-
+    it('Given: empty array When: reducing Then: should return initial value', () => {
       // Act
-      const reducer = reduce(sum, 0);
-      const result = reducer(numbers);
+      const result = reduce((acc: number, x: number) => acc + x, 100)([]);
 
       // Assert
-      expect(result).toBe(15);
+      expect(result).toBe(100);
     });
   });
 
-  describe('forEach', () => {
-    it('Given: array and function When: forEach Then: should execute function for each element', () => {
+  describe('flatMap', () => {
+    it('Given: function returning arrays When: flatMapping Then: should flatten result', () => {
       // Arrange
-      const numbers = [1, 2, 3];
-      const results: number[] = [];
-      const collect = (x: number) => {
-        results.push(x * 2);
-      };
+      const duplicate = (x: number) => [x, x];
+      const array = [1, 2, 3];
 
       // Act
-      const forEacher = forEach(collect);
-      forEacher(numbers);
+      const result = flatMap(duplicate)(array);
 
       // Assert
-      expect(results).toEqual([2, 4, 6]);
+      expect(result).toEqual([1, 1, 2, 2, 3, 3]);
     });
   });
 
-  describe('tap', () => {
-    it('Given: value and side effect function When: tapping Then: should return original value', () => {
+  describe('find', () => {
+    it('Given: predicate When: finding Then: should return first matching element', () => {
       // Arrange
-      const value = 42;
-      let sideEffectValue: number | undefined;
-      const sideEffect = (x: number) => {
-        sideEffectValue = x * 2;
-      };
+      const isGreaterThan5 = (x: number) => x > 5;
+      const array = [1, 3, 5, 7, 9];
 
       // Act
-      const tapper = tap(sideEffect);
-      const result = tapper(value);
+      const result = find(isGreaterThan5)(array);
 
       // Assert
-      expect(result).toBe(42);
-      expect(sideEffectValue).toBe(84);
+      expect(result).toBe(7);
+    });
+
+    it('Given: no matching element When: finding Then: should return undefined', () => {
+      // Act
+      const result = find((x: number) => x > 100)([1, 2, 3]);
+
+      // Assert
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('every', () => {
+    it('Given: all elements match When: checking every Then: should return true', () => {
+      // Arrange
+      const isPositive = (x: number) => x > 0;
+      const array = [1, 2, 3, 4, 5];
+
+      // Act
+      const result = every(isPositive)(array);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('Given: some elements dont match When: checking every Then: should return false', () => {
+      // Act
+      const result = every((x: number) => x > 0)([1, 2, -3, 4]);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('some', () => {
+    it('Given: some elements match When: checking some Then: should return true', () => {
+      // Arrange
+      const isNegative = (x: number) => x < 0;
+      const array = [1, 2, -3, 4];
+
+      // Act
+      const result = some(isNegative)(array);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('Given: no elements match When: checking some Then: should return false', () => {
+      // Act
+      const result = some((x: number) => x < 0)([1, 2, 3, 4]);
+
+      // Assert
+      expect(result).toBe(false);
     });
   });
 
   describe('identity', () => {
-    it('Given: any value When: applying identity Then: should return the value unchanged', () => {
-      // Arrange
-      const value = 42;
-
-      // Act
-      const result = identity(value);
-
-      // Assert
-      expect(result).toBe(42);
-    });
-
-    it('Given: object When: applying identity Then: should return the same object', () => {
-      // Arrange
-      const obj = { name: 'test', value: 42 };
-
-      // Act
-      const result = identity(obj);
-
-      // Assert
-      expect(result).toBe(obj);
-      expect(result).toEqual(obj);
+    it('Given: value When: calling identity Then: should return same value', () => {
+      // Act & Assert
+      expect(identity(42)).toBe(42);
+      expect(identity('hello')).toBe('hello');
+      expect(identity({ key: 'value' })).toEqual({ key: 'value' });
     });
   });
 
-  describe('prop', () => {
-    it('Given: object and key When: getting prop Then: should return property value', () => {
+  describe('constant', () => {
+    it('Given: value When: calling constant Then: should return function that always returns value', () => {
       // Arrange
-      const obj = { name: 'John', age: 30 };
+      const always42 = constant(42);
 
-      // Act
-      const getName = prop('name');
-      const getAge = prop('age');
-      const name = getName(obj);
-      const age = getAge(obj);
-
-      // Assert
-      expect(name).toBe('John');
-      expect(age).toBe(30);
+      // Act & Assert
+      expect(always42()).toBe(42);
+      expect(always42()).toBe(42);
     });
   });
 
-  describe('pick', () => {
-    it('Given: object and keys When: picking Then: should return object with only picked keys', () => {
-      // Arrange
-      const obj = { name: 'John', age: 30, city: 'NYC', country: 'USA' };
-
+  describe('noop', () => {
+    it('Given: noop When: calling Then: should return undefined', () => {
       // Act
-      const picker = pick<typeof obj, 'name' | 'age'>(['name', 'age']);
-      const result = picker(obj);
+      const result = noop();
 
       // Assert
-      expect(result).toEqual({ name: 'John', age: 30 });
-      expect(result).not.toHaveProperty('city');
-      expect(result).not.toHaveProperty('country');
+      expect(result).toBeUndefined();
     });
   });
 
-  describe('omit', () => {
-    it('Given: object and keys When: omitting Then: should return object without omitted keys', () => {
+  describe('forEach', () => {
+    it('Given: function and array When: forEach Then: should call function for each element', () => {
       // Arrange
-      const obj = { name: 'John', age: 30, city: 'NYC', country: 'USA' };
+      const mockFn = jest.fn();
+      const array = [1, 2, 3];
 
       // Act
-      const omiter = omit<typeof obj, 'city' | 'country'>(['city', 'country']);
-      const result = omiter(obj);
+      forEach(mockFn)(array);
 
       // Assert
-      expect(result).toEqual({ name: 'John', age: 30 });
-      expect(result).not.toHaveProperty('city');
-      expect(result).not.toHaveProperty('country');
+      expect(mockFn).toHaveBeenCalledTimes(3);
+      expect(mockFn).toHaveBeenCalledWith(1, 0, array);
+      expect(mockFn).toHaveBeenCalledWith(2, 1, array);
+      expect(mockFn).toHaveBeenCalledWith(3, 2, array);
     });
   });
 });

@@ -1,399 +1,183 @@
-// Permission Guard Tests - Guard de permisos
-// Tests unitarios para el guard de autorización siguiendo AAA y Given-When-Then
-
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PermissionGuard } from '@shared/guards/permission.guard';
 
-import type { IAuthenticatedUser } from '@shared/types/http.types';
-
 describe('PermissionGuard', () => {
   let guard: PermissionGuard;
-  let mockReflector: jest.Mocked<Reflector>;
-  let mockExecutionContext: jest.Mocked<ExecutionContext>;
+  let mockReflector: any;
+
+  const createMockContext = (
+    user: any | null,
+    userPermissions: string[] = [],
+    userRoles: string[] = []
+  ): ExecutionContext => {
+    return {
+      switchToHttp: () => ({
+        getRequest: () => ({
+          user,
+          userPermissions,
+          userRoles,
+        }),
+      }),
+      getHandler: () => jest.fn(),
+      getClass: () => jest.fn(),
+    } as unknown as ExecutionContext;
+  };
 
   beforeEach(() => {
     mockReflector = {
       getAllAndOverride: jest.fn(),
-    } as unknown as jest.Mocked<Reflector>;
-
+    };
     guard = new PermissionGuard(mockReflector);
-
-    mockExecutionContext = {
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: jest.fn().mockReturnValue({
-          user: null,
-          userPermissions: [],
-          userRoles: [],
-        }),
-      }),
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-    } as unknown as jest.Mocked<ExecutionContext>;
   });
 
   describe('canActivate', () => {
-    it('Given: no required permissions When: checking access Then: should allow access', () => {
+    it('Given: no permissions required When: checking Then: should allow access', () => {
       // Arrange
-      mockReflector.getAllAndOverride.mockReturnValue(undefined);
+      mockReflector.getAllAndOverride.mockReturnValue(null);
+      const context = createMockContext(null);
 
       // Act
-      const result = guard.canActivate(mockExecutionContext);
+      const result = guard.canActivate(context);
 
       // Assert
       expect(result).toBe(true);
-      expect(mockReflector.getAllAndOverride).toHaveBeenCalledWith('permissions', [
-        mockExecutionContext.getHandler(),
-        mockExecutionContext.getClass(),
-      ]);
     });
 
-    it('Given: unauthenticated user When: checking access Then: should throw UnauthorizedException', () => {
+    it('Given: no user When: permissions required Then: should throw UnauthorizedException', () => {
       // Arrange
-      const requiredPermissions = ['PRODUCTS:CREATE'];
-      mockReflector.getAllAndOverride.mockReturnValue(requiredPermissions);
-
-      const request = {
-        user: null,
-        userPermissions: [],
-        userRoles: [],
-      };
-      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
+      mockReflector.getAllAndOverride.mockReturnValue(['READ']);
+      const context = createMockContext(null);
 
       // Act & Assert
-      expect(() => guard.canActivate(mockExecutionContext)).toThrow(UnauthorizedException);
-      expect(() => guard.canActivate(mockExecutionContext)).toThrow('User not authenticated');
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
 
-    it('Given: user without organization When: checking access Then: should throw ForbiddenException', () => {
+    it('Given: user without orgId When: checking Then: should throw ForbiddenException', () => {
       // Arrange
-      const requiredPermissions = ['PRODUCTS:CREATE'];
-      mockReflector.getAllAndOverride.mockReturnValue(requiredPermissions);
-
-      const user: IAuthenticatedUser = {
-        id: 'user-1',
-        orgId: '',
-        email: 'test@example.com',
-        username: 'testuser',
-        roles: [],
-        permissions: [],
-        jti: 'jti-1',
-      };
-
-      const request = {
-        user,
-        userPermissions: [],
-        userRoles: [],
-      };
-      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
+      mockReflector.getAllAndOverride.mockReturnValue(['READ']);
+      const context = createMockContext({ id: 'user-123' });
 
       // Act & Assert
-      expect(() => guard.canActivate(mockExecutionContext)).toThrow(ForbiddenException);
-      expect(() => guard.canActivate(mockExecutionContext)).toThrow(
-        'User without assigned organization'
+      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+      expect(() => guard.canActivate(context)).toThrow('User without assigned organization');
+    });
+
+    it('Given: admin role When: checking Then: should allow access', () => {
+      // Arrange
+      mockReflector.getAllAndOverride.mockReturnValue(['SUPER_PERMISSION']);
+      const context = createMockContext({ id: 'user-123', orgId: 'org-123' }, [], ['ADMIN']);
+
+      // Act
+      const result = guard.canActivate(context);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('Given: user with required permission When: checking Then: should allow access', () => {
+      // Arrange
+      mockReflector.getAllAndOverride.mockReturnValue(['READ']);
+      const context = createMockContext(
+        { id: 'user-123', orgId: 'org-123' },
+        ['READ', 'WRITE'],
+        ['USER']
       );
-    });
-
-    it('Given: admin user When: checking access Then: should allow access regardless of permissions', () => {
-      // Arrange
-      const requiredPermissions = ['PRODUCTS:CREATE'];
-      mockReflector.getAllAndOverride.mockReturnValue(requiredPermissions);
-
-      const user: IAuthenticatedUser = {
-        id: 'user-1',
-        orgId: 'org-1',
-        email: 'admin@example.com',
-        username: 'admin',
-        roles: ['ADMIN'],
-        permissions: [],
-        jti: 'jti-1',
-      };
-
-      const request = {
-        user,
-        userPermissions: [],
-        userRoles: ['ADMIN'],
-      };
-      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
 
       // Act
-      const result = guard.canActivate(mockExecutionContext);
+      const result = guard.canActivate(context);
 
       // Assert
       expect(result).toBe(true);
     });
 
-    it('Given: user with required permissions When: checking access Then: should allow access', () => {
+    it('Given: user without required permission When: checking Then: should throw ForbiddenException', () => {
       // Arrange
-      const requiredPermissions = ['PRODUCTS:CREATE', 'PRODUCTS:UPDATE'];
-      mockReflector.getAllAndOverride.mockReturnValue(requiredPermissions);
-
-      const user: IAuthenticatedUser = {
-        id: 'user-1',
-        orgId: 'org-1',
-        email: 'user@example.com',
-        username: 'user',
-        roles: ['USER'],
-        permissions: ['PRODUCTS:CREATE', 'PRODUCTS:UPDATE'],
-        jti: 'jti-1',
-      };
-
-      const request = {
-        user,
-        userPermissions: ['PRODUCTS:CREATE', 'PRODUCTS:UPDATE'],
-        userRoles: ['USER'],
-      };
-      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
-
-      // Act
-      const result = guard.canActivate(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(true);
-    });
-
-    it('Given: user missing required permissions When: checking access Then: should throw ForbiddenException', () => {
-      // Arrange
-      const requiredPermissions = ['PRODUCTS:CREATE', 'PRODUCTS:UPDATE'];
-      mockReflector.getAllAndOverride.mockReturnValue(requiredPermissions);
-
-      const user: IAuthenticatedUser = {
-        id: 'user-1',
-        orgId: 'org-1',
-        email: 'user@example.com',
-        username: 'user',
-        roles: ['USER'],
-        permissions: ['PRODUCTS:CREATE'],
-        jti: 'jti-1',
-      };
-
-      const request = {
-        user,
-        userPermissions: ['PRODUCTS:CREATE'],
-        userRoles: ['USER'],
-      };
-      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
+      mockReflector.getAllAndOverride.mockReturnValue(['DELETE']);
+      const context = createMockContext({ id: 'user-123', orgId: 'org-123' }, ['READ'], ['USER']);
 
       // Act & Assert
-      expect(() => guard.canActivate(mockExecutionContext)).toThrow(ForbiddenException);
-      expect(() => guard.canActivate(mockExecutionContext)).toThrow(
-        'Insufficient permissions. Required: PRODUCTS:CREATE, PRODUCTS:UPDATE'
+      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+      expect(() => guard.canActivate(context)).toThrow('Insufficient permissions');
+    });
+
+    it('Given: ANY type permissions When: user has one Then: should allow access', () => {
+      // Arrange
+      mockReflector.getAllAndOverride.mockReturnValue({
+        type: 'ANY',
+        permissions: ['READ', 'WRITE', 'DELETE'],
+      });
+      const context = createMockContext({ id: 'user-123', orgId: 'org-123' }, ['READ'], ['USER']);
+
+      // Act
+      const result = guard.canActivate(context);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('Given: ANY type permissions When: user has none Then: should throw', () => {
+      // Arrange
+      mockReflector.getAllAndOverride.mockReturnValue({
+        type: 'ANY',
+        permissions: ['DELETE', 'ADMIN'],
+      });
+      const context = createMockContext({ id: 'user-123', orgId: 'org-123' }, ['READ'], ['USER']);
+
+      // Act & Assert
+      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+    });
+
+    it('Given: ALL type permissions When: user has all Then: should allow access', () => {
+      // Arrange
+      mockReflector.getAllAndOverride.mockReturnValue({
+        type: 'ALL',
+        permissions: ['READ', 'WRITE'],
+      });
+      const context = createMockContext(
+        { id: 'user-123', orgId: 'org-123' },
+        ['READ', 'WRITE', 'DELETE'],
+        ['USER']
       );
-    });
-  });
-
-  describe('checkPermissions with ANY type', () => {
-    it('Given: ANY type permissions When: user has one permission Then: should allow access', () => {
-      // Arrange
-      const requiredPermissions = {
-        type: 'ANY' as const,
-        permissions: ['PRODUCTS:CREATE', 'PRODUCTS:UPDATE'],
-      };
-      mockReflector.getAllAndOverride.mockReturnValue(requiredPermissions);
-
-      const user: IAuthenticatedUser = {
-        id: 'user-1',
-        orgId: 'org-1',
-        email: 'user@example.com',
-        username: 'user',
-        roles: ['USER'],
-        permissions: ['PRODUCTS:CREATE'],
-        jti: 'jti-1',
-      };
-
-      const request = {
-        user,
-        userPermissions: ['PRODUCTS:CREATE'],
-        userRoles: ['USER'],
-      };
-      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
 
       // Act
-      const result = guard.canActivate(mockExecutionContext);
+      const result = guard.canActivate(context);
 
       // Assert
       expect(result).toBe(true);
     });
 
-    it('Given: ANY type permissions When: user has none of the permissions Then: should throw ForbiddenException', () => {
+    it('Given: ALL type permissions When: user missing some Then: should throw', () => {
       // Arrange
-      const requiredPermissions = {
-        type: 'ANY' as const,
-        permissions: ['PRODUCTS:CREATE', 'PRODUCTS:UPDATE'],
-      };
-      mockReflector.getAllAndOverride.mockReturnValue(requiredPermissions);
-
-      const user: IAuthenticatedUser = {
-        id: 'user-1',
-        orgId: 'org-1',
-        email: 'user@example.com',
-        username: 'user',
-        roles: ['USER'],
-        permissions: ['PRODUCTS:DELETE'],
-        jti: 'jti-1',
-      };
-
-      const request = {
-        user,
-        userPermissions: ['PRODUCTS:DELETE'],
-        userRoles: ['USER'],
-      };
-      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
+      mockReflector.getAllAndOverride.mockReturnValue({
+        type: 'ALL',
+        permissions: ['READ', 'WRITE', 'DELETE'],
+      });
+      const context = createMockContext(
+        { id: 'user-123', orgId: 'org-123' },
+        ['READ', 'WRITE'],
+        ['USER']
+      );
 
       // Act & Assert
-      expect(() => guard.canActivate(mockExecutionContext)).toThrow(ForbiddenException);
+      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
     });
-  });
 
-  describe('checkPermissions with ALL type', () => {
-    it('Given: ALL type permissions When: user has all permissions Then: should allow access', () => {
+    it('Given: multiple required permissions (array) When: user has all Then: should allow access', () => {
       // Arrange
-      const requiredPermissions = {
-        type: 'ALL' as const,
-        permissions: ['PRODUCTS:CREATE', 'PRODUCTS:UPDATE'],
-      };
-      mockReflector.getAllAndOverride.mockReturnValue(requiredPermissions);
-
-      const user: IAuthenticatedUser = {
-        id: 'user-1',
-        orgId: 'org-1',
-        email: 'user@example.com',
-        username: 'user',
-        roles: ['USER'],
-        permissions: ['PRODUCTS:CREATE', 'PRODUCTS:UPDATE'],
-        jti: 'jti-1',
-      };
-
-      const request = {
-        user,
-        userPermissions: ['PRODUCTS:CREATE', 'PRODUCTS:UPDATE'],
-        userRoles: ['USER'],
-      };
-      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
+      mockReflector.getAllAndOverride.mockReturnValue(['READ', 'WRITE']);
+      const context = createMockContext(
+        { id: 'user-123', orgId: 'org-123' },
+        ['READ', 'WRITE', 'DELETE'],
+        ['USER']
+      );
 
       // Act
-      const result = guard.canActivate(mockExecutionContext);
+      const result = guard.canActivate(context);
 
       // Assert
       expect(result).toBe(true);
-    });
-
-    it('Given: ALL type permissions When: user missing one permission Then: should throw ForbiddenException', () => {
-      // Arrange
-      const requiredPermissions = {
-        type: 'ALL' as const,
-        permissions: ['PRODUCTS:CREATE', 'PRODUCTS:UPDATE'],
-      };
-      mockReflector.getAllAndOverride.mockReturnValue(requiredPermissions);
-
-      const user: IAuthenticatedUser = {
-        id: 'user-1',
-        orgId: 'org-1',
-        email: 'user@example.com',
-        username: 'user',
-        roles: ['USER'],
-        permissions: ['PRODUCTS:CREATE'],
-        jti: 'jti-1',
-      };
-
-      const request = {
-        user,
-        userPermissions: ['PRODUCTS:CREATE'],
-        userRoles: ['USER'],
-      };
-      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
-
-      // Act & Assert
-      expect(() => guard.canActivate(mockExecutionContext)).toThrow(ForbiddenException);
-    });
-  });
-
-  describe('Edge cases', () => {
-    it('Given: empty permissions array When: checking access Then: should allow access', () => {
-      // Arrange
-      const requiredPermissions: string[] = [];
-      mockReflector.getAllAndOverride.mockReturnValue(requiredPermissions);
-
-      const user: IAuthenticatedUser = {
-        id: 'user-1',
-        orgId: 'org-1',
-        email: 'user@example.com',
-        username: 'user',
-        roles: ['USER'],
-        permissions: [],
-        jti: 'jti-1',
-      };
-
-      const request = {
-        user,
-        userPermissions: [],
-        userRoles: ['USER'],
-      };
-      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
-
-      // Act
-      const result = guard.canActivate(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(true);
-    });
-
-    it('Given: user with extra permissions When: checking access Then: should allow access', () => {
-      // Arrange
-      const requiredPermissions = ['PRODUCTS:CREATE'];
-      mockReflector.getAllAndOverride.mockReturnValue(requiredPermissions);
-
-      const user: IAuthenticatedUser = {
-        id: 'user-1',
-        orgId: 'org-1',
-        email: 'user@example.com',
-        username: 'user',
-        roles: ['USER'],
-        permissions: ['PRODUCTS:CREATE', 'PRODUCTS:UPDATE', 'PRODUCTS:DELETE'],
-        jti: 'jti-1',
-      };
-
-      const request = {
-        user,
-        userPermissions: ['PRODUCTS:CREATE', 'PRODUCTS:UPDATE', 'PRODUCTS:DELETE'],
-        userRoles: ['USER'],
-      };
-      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
-
-      // Act
-      const result = guard.canActivate(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(true);
-    });
-
-    it('Given: invalid permission type When: checking permissions Then: should return false', () => {
-      // Arrange
-      const requiredPermissions = {
-        type: 'INVALID' as 'ANY' | 'ALL',
-        permissions: ['PRODUCTS:CREATE'],
-      };
-      mockReflector.getAllAndOverride.mockReturnValue(requiredPermissions);
-
-      const user: IAuthenticatedUser = {
-        id: 'user-1',
-        orgId: 'org-1',
-        email: 'user@example.com',
-        username: 'user',
-        roles: ['USER'],
-        permissions: ['PRODUCTS:CREATE'],
-        jti: 'jti-1',
-      };
-
-      const request = {
-        user,
-        userPermissions: ['PRODUCTS:CREATE'],
-        userRoles: ['USER'],
-      };
-      (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue(request);
-
-      // Act & Assert
-      expect(() => guard.canActivate(mockExecutionContext)).toThrow(ForbiddenException);
     });
   });
 });

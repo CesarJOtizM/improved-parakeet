@@ -1,104 +1,69 @@
-// Pipe Function Tests
-// Unit tests for the pipe function following AAA and Given-When-Then patterns
-
-import { pipe } from '@shared/utils/functional';
+import { describe, expect, it } from '@jest/globals';
+import { pipe } from '@shared/utils/functional/pipe';
 
 describe('pipe', () => {
-  describe('Basic composition', () => {
-    it('Given: single function When: piping Then: should return the function unchanged', () => {
-      // Arrange
-      const addOne = (x: number) => x + 1;
+  it('Given: two functions When: piping Then: should execute left to right', () => {
+    // Arrange
+    const double = (x: number) => x * 2;
+    const addOne = (x: number) => x + 1;
+    const piped = pipe(double, addOne);
 
-      // Act
-      const piped = pipe(addOne);
+    // Act
+    const result = piped(5);
 
-      // Assert
-      expect(piped(5)).toBe(6);
-    });
-
-    it('Given: two functions When: piping Then: should compose left to right', () => {
-      // Arrange
-      const addOne = (x: number) => x + 1;
-      const multiplyByTwo = (x: number) => x * 2;
-
-      // Act
-      const piped = pipe(addOne, multiplyByTwo);
-
-      // Assert
-      expect(piped(5)).toBe(12); // (5 + 1) * 2 = 12
-    });
-
-    it('Given: three functions When: piping Then: should compose left to right', () => {
-      // Arrange
-      const addOne = (x: number) => x + 1;
-      const multiplyByTwo = (x: number) => x * 2;
-      const subtractThree = (x: number) => x - 3;
-
-      // Act
-      const piped = pipe(addOne, multiplyByTwo, subtractThree);
-
-      // Assert
-      expect(piped(5)).toBe(9); // ((5 + 1) * 2) - 3 = 9
-    });
-
-    it('Given: empty arguments When: piping Then: should return identity function', () => {
-      // Arrange
-      const value = 42;
-
-      // Act
-      const piped = pipe();
-
-      // Assert
-      expect(piped(value)).toBe(value);
-    });
+    // Assert
+    // double(5) = 10, then addOne(10) = 11
+    expect(result).toBe(11);
   });
 
-  describe('Type safety', () => {
-    it('Given: functions with different types When: piping Then: should handle type transformations', () => {
-      // Arrange
-      const toString = (x: number) => x.toString();
-      const toUpperCase = (x: string) => x.toUpperCase();
-      const addExclamation = (x: string) => x + '!';
+  it('Given: three functions When: piping Then: should execute left to right', () => {
+    // Arrange
+    const addOne = (x: number) => x + 1;
+    const double = (x: number) => x * 2;
+    const triple = (x: number) => x * 3;
+    const piped = pipe(addOne, double, triple);
 
-      // Act
-      const piped = pipe(toString, toUpperCase, addExclamation);
+    // Act
+    const result = piped(1);
 
-      // Assert
-      expect(piped(42)).toBe('42!');
-    });
+    // Assert
+    // addOne(1) = 2, double(2) = 4, triple(4) = 12
+    expect(result).toBe(12);
   });
 
-  describe('Complex scenarios', () => {
-    it('Given: array operations When: piping Then: should compose transformations', () => {
-      // Arrange
-      const numbers = [1, 2, 3, 4, 5];
-      const double = (x: number) => x * 2;
-      const filterEven = (arr: number[]) => arr.filter(x => x % 2 === 0);
-      const sum = (arr: number[]) => arr.reduce((acc, x) => acc + x, 0);
+  it('Given: single function When: piping Then: should return same function', () => {
+    // Arrange
+    const double = (x: number) => x * 2;
+    const piped = pipe(double);
 
-      // Act
-      const piped = pipe((arr: number[]) => arr.map(double), filterEven, sum);
+    // Act
+    const result = piped(5);
 
-      // Assert
-      // [1,2,3,4,5] -> [2,4,6,8,10] -> [2,4,6,8,10] (all even) -> 30
-      expect(piped(numbers)).toBe(30);
-    });
+    // Assert
+    expect(result).toBe(10);
+  });
 
-    it('Given: object transformations When: piping Then: should compose object operations', () => {
-      // Arrange
-      const obj = { name: 'john', age: 30 };
-      const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
-      const addYear = (age: number) => age + 1;
-      const transform = (obj: { name: string; age: number }) => ({
-        name: capitalize(obj.name),
-        age: addYear(obj.age),
-      });
+  it('Given: no functions When: piping Then: should return identity', () => {
+    // Arrange
+    const piped = pipe();
 
-      // Act
-      const piped = pipe(transform);
+    // Act
+    const result = piped(42);
 
-      // Assert
-      expect(piped(obj)).toEqual({ name: 'John', age: 31 });
-    });
+    // Assert
+    expect(result).toBe(42);
+  });
+
+  it('Given: string transformation functions When: piping Then: should work correctly', () => {
+    // Arrange
+    const toUpper = (s: string) => s.toUpperCase();
+    const addExclaim = (s: string) => s + '!';
+    const piped = pipe(toUpper, addExclaim);
+
+    // Act
+    const result = piped('hello');
+
+    // Assert
+    expect(result).toBe('HELLO!');
   });
 });
