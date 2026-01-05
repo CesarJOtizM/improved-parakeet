@@ -10,6 +10,7 @@ import { ReportType } from '@report/domain/valueObjects/reportType.valueObject';
 
 describe('GetReportsUseCase', () => {
   let useCase: GetReportsUseCase;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockReportRepository: any;
 
   const createMockReport = (id: string, type: string, status: string, generatedBy: string) => {
@@ -17,7 +18,9 @@ describe('GetReportsUseCase', () => {
       id,
       type: ReportType.create(type),
       status: ReportStatus.create(status),
-      parameters: ReportParameters.create({ startDate: new Date(), endDate: new Date() }),
+      parameters: ReportParameters.create({
+        dateRange: { startDate: new Date(), endDate: new Date() },
+      }),
       generatedBy,
       generatedAt: new Date(),
       orgId: 'org-123',

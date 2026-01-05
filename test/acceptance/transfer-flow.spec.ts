@@ -71,10 +71,8 @@ describeIf(!!process.env.DATABASE_URL)('Transfer Flow Acceptance Test', () => {
         data: {
           productId: testProductId,
           warehouseId: testFromWarehouseId,
-          locationId: testFromLocationId,
           quantity: 100,
-          averageCost: 50,
-          currency: 'COP',
+          unitCost: 50,
           orgId: testOrgId,
         },
       });
@@ -127,10 +125,8 @@ describeIf(!!process.env.DATABASE_URL)('Transfer Flow Acceptance Test', () => {
         data: {
           productId: testProductId,
           warehouseId: testFromWarehouseId,
-          locationId: testFromLocationId,
           quantity: 5, // Less than transfer quantity
-          averageCost: 50,
-          currency: 'COP',
+          unitCost: 50,
           orgId: testOrgId,
         },
       });
@@ -169,10 +165,8 @@ describeIf(!!process.env.DATABASE_URL)('Transfer Flow Acceptance Test', () => {
         data: {
           productId: testProductId,
           warehouseId: testFromWarehouseId,
-          locationId: testFromLocationId,
           quantity: 100,
-          averageCost: 50,
-          currency: 'COP',
+          unitCost: 50,
           orgId: testOrgId,
         },
       });
@@ -226,7 +220,7 @@ describeIf(!!process.env.DATABASE_URL)('Transfer Flow Acceptance Test', () => {
         passwordHash: 'hashed',
         firstName: 'Test',
         lastName: 'User',
-        status: 'ACTIVE',
+        isActive: true,
         orgId: testOrgId,
       },
     });
@@ -266,28 +260,9 @@ describeIf(!!process.env.DATABASE_URL)('Transfer Flow Acceptance Test', () => {
       }
     );
 
-    // Create locations
-    const fromLocation = await prisma.location.create({
-      data: {
-        code: 'LOC-FROM-001',
-        name: 'From Location',
-        warehouseId: testFromWarehouseId,
-        isDefault: true,
-        orgId: testOrgId,
-      },
-    });
-    testFromLocationId = fromLocation.id;
-
-    const toLocation = await prisma.location.create({
-      data: {
-        code: 'LOC-TO-001',
-        name: 'To Location',
-        warehouseId: testToWarehouseId,
-        isDefault: true,
-        orgId: testOrgId,
-      },
-    });
-    testToLocationId = toLocation.id;
+    // Set location IDs (locations are optional in the schema)
+    testFromLocationId = 'loc-from-001';
+    testToLocationId = 'loc-to-001';
 
     // Create product
     const productResult = await createProductUseCase.execute({
@@ -327,9 +302,6 @@ describeIf(!!process.env.DATABASE_URL)('Transfer Flow Acceptance Test', () => {
         where: { orgId: testOrgId },
       });
       await prisma.product.deleteMany({
-        where: { orgId: testOrgId },
-      });
-      await prisma.location.deleteMany({
         where: { orgId: testOrgId },
       });
       await prisma.warehouse.deleteMany({

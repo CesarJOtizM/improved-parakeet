@@ -1,12 +1,49 @@
-# 📦 Sistema de Inventarios Multi-Tenant
-
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" />
 </p>
+
+<h1 align="center">📦 Sistema de Inventarios Multi-Tenant</h1>
 
 <p align="center">
   Sistema de gestión de inventarios multi-tenant construido con <strong>NestJS</strong>, siguiendo principios de <strong>Domain-Driven Design (DDD)</strong>, <strong>Arquitectura Hexagonal</strong> y <strong>Screaming Architecture</strong>.
 </p>
+
+<p align="center">
+  <a href="#"><img src="https://img.shields.io/badge/version-0.0.1-blue.svg" alt="Version" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg" alt="Node Version" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/bun-%3E%3D1.0.0-orange.svg" alt="Bun Version" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/NestJS-11+-red.svg" alt="NestJS" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/PostgreSQL-15+-blue.svg" alt="PostgreSQL" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/Prisma-7+-purple.svg" alt="Prisma" /></a>
+</p>
+
+<p align="center">
+  <a href="#"><img src="https://img.shields.io/badge/tests-1948%20passing-success.svg" alt="Tests Passing" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/coverage-48.6%25-yellow.svg" alt="Coverage" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/build-passing-success.svg" alt="Build Status" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-blue.svg" alt="TypeScript Strict" /></a>
+</p>
+
+---
+
+## 📋 Tabla de Contenidos
+
+- [Descripción](#-descripción)
+- [Características](#-características-principales)
+- [Quick Start](#-quick-start)
+- [Instalación](#-instalación-y-configuración)
+- [Configuración](#%EF%B8%8F-configuración)
+- [Uso](#-uso)
+- [API Documentation](#-api-documentation)
+- [Arquitectura](#%EF%B8%8F-arquitectura)
+- [Testing](#-testing)
+- [Roadmap](#-roadmap)
+- [Contribución](#-contribución)
+- [Licencia](#-licencia)
+- [Autor](#-autor)
+
+---
 
 ## 📋 Descripción
 
@@ -14,296 +51,725 @@ Sistema de inventarios diseñado para optimizar el control, registro y gestión 
 
 ### 🎯 Objetivos
 
-- **Control de inventario en tiempo real** en múltiples bodegas y organizaciones
-- **Trazabilidad completa** de todos los movimientos de inventario
-- **Reducción de pérdidas** por quiebres de stock o sobre-inventario
-- **Soporte para toma de decisiones** mediante reportes confiables
-- **Escalabilidad** para crecer hasta 50+ bodegas y 100,000+ productos
+| Objetivo                   | Descripción                                                                  |
+| -------------------------- | ---------------------------------------------------------------------------- |
+| **Control en tiempo real** | Visibilidad instantánea del inventario en múltiples bodegas y organizaciones |
+| **Trazabilidad completa**  | Registro detallado de todos los movimientos de inventario                    |
+| **Reducción de pérdidas**  | Alertas automáticas de stock bajo/máximo para prevenir quiebres              |
+| **Soporte a decisiones**   | Reportes confiables en múltiples formatos (PDF, Excel, CSV)                  |
+| **Escalabilidad**          | Diseñado para 50+ bodegas y 100,000+ productos                               |
 
-## 🏗️ Arquitectura
+---
 
-El proyecto sigue una arquitectura moderna y escalable:
+## ✨ Características Principales
 
-### **Arquitectura Hexagonal (Ports & Adapters)**
-- **Dominio**: Lógica de negocio pura, sin dependencias externas
-- **Aplicación**: Casos de uso que orquestan el dominio
-- **Infraestructura**: Adaptadores de salida (Prisma, Redis, etc.)
-- **Interfaces**: Adaptadores de entrada (HTTP controllers, DTOs)
+### 🔐 Autenticación y Autorización
 
-### **Domain-Driven Design (DDD)**
-- **Bounded Contexts**: Separación clara entre dominios (Auth, Inventory, Reports)
-- **Aggregates**: Agregados con raíces bien definidas y reglas de consistencia
-- **Value Objects**: Objetos inmutables que representan conceptos del dominio
-- **Domain Services**: Servicios que encapsulan lógica de negocio compleja
-- **Repository Pattern**: Abstracción de la persistencia de datos
-
-### **Screaming Architecture**
-La estructura de carpetas "grita" el dominio del negocio:
-- `inventory/` es el dominio principal que domina la estructura
-- Carpetas como `products/`, `warehouses/`, `movements/` son claras y explícitas
-- La jerarquía refleja la importancia del dominio de inventarios
-
-## 🚀 Características Principales
-
-### ✅ Autenticación y Autorización
-- **Autenticación JWT** con refresh tokens
+- **JWT Authentication** con access tokens (15 min) y refresh tokens (7 días)
 - **Sistema RBAC** (Role-Based Access Control) con permisos granulares
 - **Roles predefinidos**: ADMIN, SUPERVISOR, WAREHOUSE_OPERATOR, CONSULTANT, IMPORT_OPERATOR
 - **Roles personalizados**: Cada organización puede crear roles con permisos específicos
 - **Multi-tenancy**: Aislamiento completo de datos por organización
-- **Rate limiting** y blacklisting de tokens
+- **Rate limiting** y blacklisting de tokens con Redis
 
-### ✅ Gestión de Inventario
-- **Productos**: Gestión completa con SKU único, categorías, unidades de medida
+### 📦 Gestión de Inventario
+
+- **Productos**: SKU único, categorías, unidades de medida, códigos de barras
 - **Bodegas y Ubicaciones**: Gestión de múltiples bodegas con ubicaciones internas
-- **Movimientos**: Registro de entradas, salidas y ajustes con validación de stock
-- **Transferencias**: Transferencias entre bodegas con estados (DRAFT, IN_TRANSIT, RECEIVED, etc.)
-- **Valorización**: Cálculo automático de costos mediante Promedio Ponderado Móvil (PPM)
-- **Alertas de stock**: Notificaciones automáticas de stock bajo/máximo
+- **Movimientos**: Entradas, salidas y ajustes con validación de stock
+- **Transferencias**: Entre bodegas con estados (DRAFT, IN_TRANSIT, RECEIVED, REJECTED, CANCELLED)
+- **Valorización**: Promedio Ponderado Móvil (PPM) automático
+- **Alertas de stock**: Notificaciones de stock bajo/máximo
 
-### ✅ Reportes e Importaciones
-- **Reportes de inventario**: Disponible, histórico, valorización
+### 💰 Ventas y Devoluciones
+
+- **Ventas**: Creación, confirmación, cancelación con generación automática de movimientos
+- **Numeración automática**: SALE-YYYY-NNN / RETURN-YYYY-NNN
+- **Devoluciones**: De clientes y a proveedores con validación de cantidades
+- **Integración**: Generación automática de movimientos de inventario
+
+### 📊 Reportes e Importaciones
+
+- **Reportes**: Inventario, histórico, valorización, stock bajo
 - **Exportación**: PDF, Excel, CSV
-- **Importación masiva**: Carga de productos desde Excel/CSV con validación
-- **Auditoría completa**: Registro de todas las operaciones con trazabilidad
+- **Importación masiva**: Productos, movimientos, bodegas desde Excel/CSV
+- **Flujo Preview/Execute**: Validación previa antes de importar
+- **Auditoría**: Registro completo de operaciones
 
-### ✅ Personalización
-- **Branding por organización**: Logos, colores, fuentes personalizadas
-- **Configuraciones**: Timezone, moneda, formato de fecha por organización
+### 🎨 Personalización
+
+- **Branding por organización**: Logos, colores, fuentes
+- **Configuraciones**: Timezone, moneda, formato de fecha
 - **Preferencias de usuario**: Configuraciones individuales
 
-## 📁 Estructura del Proyecto
+---
 
+## 🚀 Quick Start
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/your-username/improved-parakeet.git
+cd improved-parakeet
+
+# Instalar dependencias (Bun recomendado)
+bun install
+
+# Configurar variables de entorno
+cp example.env .env
+
+# Levantar servicios con Docker
+bun run docker:up
+
+# Ejecutar migraciones y seeds
+bun run db:migrate
+bun run db:seed
+
+# Iniciar en modo desarrollo
+bun run dev
+
+# 🎉 Abre http://localhost:3000/api para ver la documentación
 ```
-src/
-├── inventory/          # 🎯 Dominio principal (Screaming Architecture)
-│   ├── products/      # Productos
-│   ├── warehouses/    # Bodegas
-│   ├── movements/     # Movimientos de inventario
-│   ├── transfers/     # Transferencias entre bodegas
-│   └── stock/         # Control de stock
-├── authentication/    # 🔐 Autenticación y autorización
-│   ├── users/         # Gestión de usuarios
-│   ├── roles/         # Roles y permisos
-│   ├── sessions/      # Sesiones y tokens
-│   └── security/      # Guards, interceptors, decorators
-├── organization/      # 🏢 Multi-tenancy y organización
-├── application/       # 🚀 Casos de uso
-├── infrastructure/    # 🔌 Adaptadores de salida
-│   ├── database/      # Prisma + PostgreSQL
-│   └── externalServices/ # Servicios externos
-├── interfaces/        # 🌐 Adaptadores de entrada (HTTP)
-├── shared/            # 🛠️ Utilidades compartidas
-└── healthCheck/       # ❤️ Health checks
-```
 
-## 🛠️ Stack Tecnológico
-
-- **Runtime**: Node.js 18+ con TypeScript (strict mode)
-- **Framework**: NestJS 11+
-- **Base de Datos**: PostgreSQL 15+ con Prisma ORM
-- **Caché**: Redis (para sesiones y datos frecuentes)
-- **Autenticación**: JWT con Passport
-- **Validación**: class-validator + class-transformer
-- **Testing**: Jest + Supertest
-- **Documentación**: Swagger/OpenAPI
+---
 
 ## 📦 Instalación y Configuración
 
 ### Prerrequisitos
 
-- Node.js 18+ y npm/yarn
-- PostgreSQL 15+
-- Redis (opcional, para sesiones)
-- Docker y Docker Compose (opcional, para desarrollo)
+| Herramienta | Versión | Requerido                         |
+| ----------- | ------- | --------------------------------- |
+| Node.js     | 18+     | ✅                                |
+| Bun         | 1.0+    | ⭐ Recomendado                    |
+| PostgreSQL  | 15+     | ✅                                |
+| Redis       | 7+      | ⚠️ Opcional (para sesiones/caché) |
+| Docker      | 20+     | ⚠️ Opcional (para desarrollo)     |
 
-### Instalación
+### Instalación Paso a Paso
+
+#### 1. Clonar el Repositorio
 
 ```bash
-# Clonar el repositorio
-git clone <repository-url>
+git clone https://github.com/your-username/improved-parakeet.git
 cd improved-parakeet
-
-# Instalar dependencias
-yarn install
-
-# Configurar variables de entorno
-cp .env.example .env
-# Editar .env con tus configuraciones
 ```
 
-### Configuración de Base de Datos
+#### 2. Instalar Dependencias
+
+```bash
+# Con Bun (recomendado - más rápido)
+bun install
+
+# Con npm
+npm install
+
+# Con yarn
+yarn install
+```
+
+#### 3. Configurar Variables de Entorno
+
+```bash
+# Copiar el archivo de ejemplo
+cp example.env .env
+
+# Editar con tu editor favorito
+nano .env  # o vim, code, etc.
+```
+
+#### 4. Configurar Base de Datos
+
+**Para Desarrollo (Dev):**
+
+En desarrollo, solo se levanta Redis como contenedor. La base de datos debe estar desplegada externamente y se configura mediante un query string en la variable `DATABASE_URL`.
+
+```bash
+# Configurar DATABASE_URL en .env con tu conexión externa
+# Ejemplo con query string completo:
+DATABASE_URL=postgresql://user:password@host:5432/database?schema=public&connection_limit=10&pool_timeout=10
+
+# Levantar solo Redis y la aplicación
+bun run docker:dev
+
+# Verificar que están corriendo
+docker ps
+```
+
+**Para Producción:**
+
+En producción, la base de datos está desplegada externamente (en un admin de DB). Solo se levanta Redis como contenedor.
+
+```bash
+# Configurar DATABASE_URL en .env con tu conexión externa
+# Ejemplo con query string completo:
+DATABASE_URL=postgresql://user:password@host:5432/database?schema=public&connection_limit=10&pool_timeout=10
+
+# Levantar solo Redis y la aplicación
+docker-compose -f docker-compose.prod.yml up -d
+
+# Verificar que están corriendo
+docker ps
+```
+
+**Base de Datos Local (Alternativa)**
+
+```bash
+# Crear base de datos manualmente
+createdb inventory_system
+
+# Actualizar DATABASE_URL en .env
+DATABASE_URL=postgresql://user:password@localhost:5432/inventory_system?schema=public
+```
+
+#### 5. Ejecutar Migraciones
 
 ```bash
 # Generar cliente Prisma
-yarn run db:generate
+bun run db:generate
 
 # Ejecutar migraciones
-yarn run db:migrate
+bun run db:migrate
 
 # Poblar con datos de prueba (opcional)
-yarn run db:seed
-
-# Abrir Prisma Studio (interfaz visual)
-yarn run db:studio
+bun run db:seed
 ```
 
-## 🚀 Ejecución
-
-### Desarrollo
+#### 6. Iniciar el Servidor
 
 ```bash
-# Modo desarrollo (watch)
-yarn run dev
-
-# Modo desarrollo con tsx
-yarn run dev:tsx
+# Modo desarrollo (con hot reload)
+bun run dev
 
 # Modo debug
-yarn run debug
+bun run debug
+
+# Modo producción
+bun run build && bun run prod
 ```
 
-### Producción
+---
+
+## ⚙️ Configuración
+
+### Variables de Entorno Principales
+
+```env
+# 🔧 General
+NODE_ENV=development
+PORT=3000
+
+# 🗄️ Base de Datos
+DATABASE_URL=postgresql://user:password@localhost:5432/inventory_system
+
+# 📦 Redis (Opcional)
+REDIS_URL=redis://localhost:6379
+
+# 🔐 JWT
+JWT_SECRET=your-super-secret-key-change-in-production
+JWT_REFRESH_SECRET=your-refresh-secret-key-change-in-production
+JWT_ACCESS_TOKEN_EXPIRES_IN=900      # 15 minutos
+JWT_REFRESH_TOKEN_EXPIRES_IN=604800  # 7 días
+
+# 🛡️ Seguridad
+BCRYPT_SALT_ROUNDS=12
+RATE_LIMIT_MAX_REQUESTS_PER_IP=100
+
+# 📚 Swagger
+SWAGGER_ENABLED=true
+SWAGGER_PATH=api
+```
+
+<details>
+<summary>📋 Ver todas las variables de entorno</summary>
+
+Consulta el archivo `example.env` para una lista completa de variables configurables, incluyendo:
+
+- Configuración de Rate Limiting
+- Logging y Monitoreo
+- SMTP para correos
+- Almacenamiento (S3, local)
+- Configuraciones multi-tenant
+
+</details>
+
+---
+
+## 🎮 Uso
+
+### Scripts Disponibles
 
 ```bash
-# Compilar
-yarn run build
+# 🚀 Desarrollo
+bun run dev              # Modo desarrollo con watch
+bun run dev:tsx          # Modo desarrollo con tsx
+bun run debug            # Modo debug con inspector
 
-# Ejecutar
-yarn run prod
+# 🏗️ Build y Producción
+bun run build            # Compilar TypeScript
+bun run prod             # Ejecutar en producción
+
+# 🗄️ Base de Datos
+bun run db:generate      # Generar cliente Prisma
+bun run db:migrate       # Ejecutar migraciones
+bun run db:migrate:deploy # Migrar en producción
+bun run db:studio        # Abrir Prisma Studio
+bun run db:seed          # Poblar con datos de prueba
+bun run db:reset         # Resetear base de datos
+
+# 🧪 Testing
+bun run test             # Tests unitarios
+bun run test:watch       # Tests en modo watch
+bun run test:cov         # Tests con cobertura
+bun run test:e2e         # Tests end-to-end
+
+# ✨ Calidad de Código
+bun run lint             # Ejecutar ESLint y corregir
+bun run lint:check       # Verificar sin corregir
+bun run format           # Formatear con Prettier
+bun run format:check     # Verificar formato
+
+# 🐳 Docker
+bun run docker:up        # Levantar servicios
+bun run docker:down      # Detener servicios
+bun run docker:logs      # Ver logs
+bun run docker:dev       # Ambiente de desarrollo completo
 ```
 
-### Docker
+### Ejemplo de Uso de la API
 
 ```bash
-# Levantar servicios (PostgreSQL, Redis)
-yarn run docker:up
+# 1. Login
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@example.com", "password": "password123"}'
 
-# Ver logs
-yarn run docker:logs
+# Respuesta:
+# { "accessToken": "eyJ...", "refreshToken": "eyJ..." }
 
-# Detener servicios
-yarn run docker:down
+# 2. Crear un producto
+curl -X POST http://localhost:3000/products \
+  -H "Authorization: Bearer eyJ..." \
+  -H "X-Organization-ID: org-uuid" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sku": "PROD-001",
+    "name": "Producto de Ejemplo",
+    "unit": { "code": "UNIT", "name": "Unidad", "precision": 0 },
+    "costMethod": "AVG"
+  }'
+
+# 3. Listar productos
+curl http://localhost:3000/products \
+  -H "Authorization: Bearer eyJ..." \
+  -H "X-Organization-ID: org-uuid"
 ```
+
+---
+
+## 📚 API Documentation
+
+### Endpoints Principales
+
+| Módulo         | Endpoint                   | Descripción            |
+| -------------- | -------------------------- | ---------------------- |
+| **Auth**       | `POST /auth/login`         | Iniciar sesión         |
+|                | `POST /auth/refresh`       | Renovar token          |
+|                | `POST /auth/logout`        | Cerrar sesión          |
+| **Users**      | `GET /users`               | Listar usuarios        |
+|                | `POST /users`              | Crear usuario          |
+|                | `POST /users/:id/roles`    | Asignar rol            |
+| **Products**   | `GET /products`            | Listar productos       |
+|                | `POST /products`           | Crear producto         |
+|                | `PUT /products/:id`        | Actualizar producto    |
+| **Warehouses** | `GET /warehouses`          | Listar bodegas         |
+|                | `POST /warehouses`         | Crear bodega           |
+| **Movements**  | `GET /movements`           | Listar movimientos     |
+|                | `POST /movements`          | Crear movimiento       |
+|                | `POST /movements/:id/post` | Confirmar movimiento   |
+| **Transfers**  | `GET /transfers`           | Listar transferencias  |
+|                | `POST /transfers`          | Iniciar transferencia  |
+| **Sales**      | `GET /sales`               | Listar ventas          |
+|                | `POST /sales`              | Crear venta            |
+|                | `POST /sales/:id/confirm`  | Confirmar venta        |
+| **Returns**    | `GET /returns`             | Listar devoluciones    |
+|                | `POST /returns`            | Crear devolución       |
+| **Reports**    | `GET /reports`             | Generar reportes       |
+| **Imports**    | `POST /imports/preview`    | Preview de importación |
+|                | `POST /imports/execute`    | Ejecutar importación   |
+
+### Documentación Interactiva
+
+Cuando el servidor está corriendo, accede a:
+
+- **Swagger UI**: [http://localhost:3000/api](http://localhost:3000/api)
+- **OpenAPI JSON**: [http://localhost:3000/api-json](http://localhost:3000/api-json)
+
+### Colecciones de Postman
+
+Las colecciones de Postman están disponibles en `docs/postman/`:
+
+- `auth.collection.json` - Autenticación
+- `inventory.collection.json` - Inventario
+- `sales.collection.json` - Ventas
+- `returns.collection.json` - Devoluciones
+- `reports.collection.json` - Reportes
+
+---
+
+## 🏗️ Arquitectura
+
+### Diagrama de Arquitectura Hexagonal
+
+```mermaid
+flowchart TB
+    subgraph Interfaces["🌐 INTERFACES (HTTP)"]
+        Controllers
+        DTOs
+        Guards
+        Interceptors
+        Decorators
+    end
+
+    subgraph Application["🚀 APPLICATION"]
+        UseCases[Use Cases]
+        AppServices[Application Services]
+    end
+
+    subgraph Domain["💎 DOMAIN"]
+        Entities
+        ValueObjects[Value Objects]
+        Aggregates
+        DomainEvents[Domain Events]
+        DomainServices[Domain Services]
+        Ports[Repository Interfaces]
+    end
+
+    subgraph Infrastructure["🔌 INFRASTRUCTURE"]
+        PrismaRepos[Prisma Repositories]
+        Redis
+        ExternalServices[External Services]
+    end
+
+    Interfaces --> Application
+    Application --> Domain
+    Infrastructure --> Domain
+
+    style Interfaces fill:#3b82f6,color:#fff
+    style Application fill:#10b981,color:#fff
+    style Domain fill:#f59e0b,color:#fff
+    style Infrastructure fill:#8b5cf6,color:#fff
+```
+
+### Flujo de una Petición HTTP
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Controller
+    participant UseCase
+    participant Domain
+    participant Repository
+    participant Database
+
+    Client->>Controller: HTTP Request
+    Controller->>Controller: Validate DTO
+    Controller->>UseCase: Execute(request)
+    UseCase->>Domain: Business Logic
+    Domain->>Repository: Save/Query
+    Repository->>Database: SQL Query
+    Database-->>Repository: Result
+    Repository-->>Domain: Entity
+    Domain-->>UseCase: Result<T, Error>
+    UseCase-->>Controller: Response DTO
+    Controller-->>Client: HTTP Response
+```
+
+### Bounded Contexts (DDD)
+
+```mermaid
+graph TB
+    subgraph Core["🎯 CORE DOMAIN"]
+        Inventory["📦 Inventory<br/>Products, Warehouses<br/>Movements, Transfers"]
+    end
+
+    subgraph Supporting["💼 SUPPORTING DOMAINS"]
+        Sales["💰 Sales<br/>Orders, Invoices"]
+        Returns["🔄 Returns<br/>Customer & Supplier"]
+        Reports["📊 Reports<br/>Analytics, Exports"]
+        Imports["📥 Imports<br/>Bulk Operations"]
+    end
+
+    subgraph Generic["🔧 GENERIC SUBDOMAINS"]
+        Auth["🔐 Authentication<br/>Users, Roles, Sessions"]
+        Org["🏢 Organization<br/>Multi-tenancy"]
+    end
+
+    Sales --> Inventory
+    Returns --> Sales
+    Returns --> Inventory
+    Reports --> Inventory
+    Reports --> Sales
+    Imports --> Inventory
+    Auth --> Org
+
+    style Core fill:#f59e0b,color:#fff
+    style Supporting fill:#3b82f6,color:#fff
+    style Generic fill:#6b7280,color:#fff
+```
+
+### Estructura del Proyecto (Screaming Architecture)
+
+```
+src/
+├── inventory/          # 🎯 Dominio principal (Screaming Architecture)
+│   ├── products/       # Productos
+│   │   ├── domain/     # Entidades, Value Objects, Ports
+│   │   ├── dto/        # DTOs para capa HTTP
+│   │   └── mappers/    # Conversores DTO ↔ Domain
+│   ├── warehouses/     # Bodegas
+│   ├── movements/      # Movimientos de inventario
+│   ├── transfers/      # Transferencias entre bodegas
+│   └── stock/          # Control de stock
+├── sales/              # 💰 Dominio de ventas
+├── returns/            # 🔄 Dominio de devoluciones
+├── authentication/     # 🔐 Autenticación y autorización
+├── organization/       # 🏢 Multi-tenancy
+├── report/             # 📊 Reportes
+├── import/             # 📥 Importaciones
+├── application/        # 🚀 Casos de uso
+├── infrastructure/     # 🔌 Adaptadores de salida (Prisma, Redis)
+├── interfaces/         # 🌐 Adaptadores de entrada (HTTP)
+├── shared/             # 🛠️ Utilidades compartidas
+└── healthCheck/        # ❤️ Health checks
+```
+
+### Modelo de Entidades
+
+```mermaid
+erDiagram
+    Organization ||--o{ User : has
+    Organization ||--o{ Product : owns
+    Organization ||--o{ Warehouse : owns
+    Organization ||--o{ Sale : owns
+
+    Product ||--o{ MovementLine : "appears in"
+    Product ||--o{ SaleLine : "sold in"
+
+    Warehouse ||--o{ Location : contains
+    Warehouse ||--o{ Movement : receives
+
+    Movement ||--o{ MovementLine : contains
+    Movement }o--|| Warehouse : "belongs to"
+
+    Sale ||--o{ SaleLine : contains
+    Sale ||--o{ Return : "may have"
+
+    Transfer ||--o{ TransferLine : contains
+    Transfer }o--|| Warehouse : "from/to"
+
+    User }o--o{ Role : has
+    Role }o--o{ Permission : grants
+```
+
+### Patrones Implementados
+
+| Patrón             | Implementación                  | Ubicación                       |
+| ------------------ | ------------------------------- | ------------------------------- |
+| **Result Monad**   | `Result<T, DomainError>`        | `@shared/domain/result`         |
+| **Ports**          | Repository + Service interfaces | `{domain}/domain/ports/`        |
+| **Mappers**        | DTO ↔ Domain conversion         | `{domain}/mappers/`             |
+| **Domain Events**  | `IDomainEventDispatcher`        | `@shared/domain/events`         |
+| **Aggregate Root** | Base entity class               | `@shared/domain/base`           |
+| **Value Objects**  | Immutable domain concepts       | `{domain}/domain/valueObjects/` |
+| **Specification**  | Business rules                  | `@shared/domain/specifications` |
+
+---
 
 ## 🧪 Testing
 
+### Estadísticas de Tests
+
+| Tipo            | Archivos | Tests | Estado     |
+| --------------- | -------- | ----- | ---------- |
+| **Unitarios**   | 68+      | 1948+ | ✅ Passing |
+| **Integración** | 12+      | 100+  | ✅ Passing |
+| **E2E**         | 11+      | 50+   | ✅ Passing |
+| **Total**       | 91+      | 2100+ | ✅         |
+
+### Ejecutar Tests
+
 ```bash
 # Tests unitarios
-yarn run test
-
-# Tests en modo watch
-yarn run test:watch
+bun run test
 
 # Tests con cobertura
-yarn run test:cov
+bun run test:cov
 
 # Tests E2E
-yarn run test:e2e
+bun run test:e2e
+
+# Tests en modo watch
+bun run test:watch
 ```
 
-## 📚 Documentación
+### Estructura de Tests
 
-- **Documentación de API**: Disponible en `/api` cuando el servidor está corriendo (Swagger)
-- **Plan de Trabajo**: Ver `docs/work_plan.md`
-- **Requerimientos**: Ver `docs/Requirement.md`
-- **Modelo de Datos**: Ver `docs/data_model.md`
-- **Estructura de Tests**: Ver `docs/testing-structure.md`
+```
+test/
+├── application/           # Tests de casos de uso
+│   ├── authUseCases/
+│   ├── productUseCases/
+│   ├── saleUseCases/
+│   └── ...
+├── domain/                # Tests de dominio
+│   ├── entities/
+│   ├── valueObjects/
+│   └── services/
+├── infrastructure/        # Tests de infraestructura
+│   └── repositories/
+├── integration/           # Tests de integración
+│   ├── rbac.integration.spec.ts
+│   ├── movements.integration.spec.ts
+│   └── ...
+└── e2e/                   # Tests end-to-end
+    ├── authentication.e2e-spec.ts
+    ├── products.e2e-spec.ts
+    └── ...
+```
 
-## 🔐 Seguridad
-
-- **Autenticación**: JWT con tokens de acceso (15 min) y refresh (7 días)
-- **Autorización**: Permisos granulares por módulo y acción
-- **Multi-tenancy**: Aislamiento completo de datos por organización
-- **Rate Limiting**: Protección contra abuso por IP y usuario
-- **Auditoría**: Registro completo de todas las operaciones
-- **Validación**: Sanitización y validación de entrada en todos los endpoints
-
-## 📊 Estado del Proyecto
-
-### ✅ Completado
-
-- ✅ Arquitectura base (Hexagonal + DDD + Screaming Architecture)
-- ✅ Sistema de autenticación completo con JWT
-- ✅ Sistema RBAC con roles predefinidos y personalizados
-- ✅ Gestión de usuarios y permisos
-- ✅ Estructura base del dominio de inventario
-- ✅ Multi-tenancy implementado
-- ✅ Tests unitarios y E2E para autenticación
-
-### ⏳ En Progreso
-
-- ⏳ Casos de uso y APIs REST de inventario
-- ⏳ Sistema de reportes
-- ⏳ Importaciones masivas
-
-### 📋 Pendiente
-
-- 📋 Personalización de marca
-- 📋 Optimización y despliegue
-- 📋 Documentación completa de API
+---
 
 ## 🤝 Contribución
 
-Este es un proyecto privado. Para contribuir:
+¡Las contribuciones son bienvenidas! Por favor, sigue estas guías para contribuir al proyecto.
 
-1. Crear una rama desde `dev`: `git checkout -b feature/nueva-funcionalidad`
-2. Realizar cambios siguiendo las convenciones del proyecto
-3. Ejecutar tests: `yarn run test`
-4. Verificar linting: `yarn run lint:check`
-5. Crear un Pull Request hacia `dev`
+### Flujo de Trabajo
+
+1. **Fork** el repositorio
+2. **Crea** una rama desde `dev`:
+   ```bash
+   git checkout dev
+   git pull origin dev
+   git checkout -b feature/nueva-funcionalidad
+   ```
+3. **Desarrolla** tu funcionalidad siguiendo las convenciones
+4. **Ejecuta** los tests:
+   ```bash
+   bun run test
+   bun run lint
+   bun run format
+   bun run build
+   ```
+5. **Commit** usando conventional commits:
+   ```bash
+   git commit -m "feat(inventory): add stock alert notifications"
+   ```
+6. **Push** y crea un Pull Request hacia `dev`
 
 ### Convenciones de Código
 
-- **Idioma**: Todo el código debe estar en inglés (variables, funciones, mensajes)
-- **Naming**: camelCase para variables/funciones, PascalCase para clases
-- **Imports**: Usar path aliases definidos en `tsconfig.json`
-- **Testing**: Tests con patrón Given-When-Then
-- Ver `.cursorrules` para más detalles
+| Aspecto                 | Convención                                           |
+| ----------------------- | ---------------------------------------------------- |
+| **Idioma del código**   | Inglés (variables, funciones, mensajes, comentarios) |
+| **Variables/Funciones** | camelCase                                            |
+| **Clases**              | PascalCase                                           |
+| **Interfaces**          | `I` + PascalCase (ej: `IProductRepository`)          |
+| **Archivos**            | camelCase.ts                                         |
+| **Carpetas**            | camelCase                                            |
+| **Tests**               | `Given-When-Then` pattern                            |
+| **Imports**             | Path aliases (`@src/*`, `@inventory/*`, etc.)        |
 
-## 📝 Scripts Disponibles
+### Conventional Commits
 
 ```bash
-# Desarrollo
-yarn run dev              # Modo desarrollo con watch
-yarn run dev:tsx          # Modo desarrollo con tsx
-yarn run debug            # Modo debug
-
-# Base de Datos
-yarn run db:generate      # Generar cliente Prisma
-yarn run db:migrate       # Ejecutar migraciones
-yarn run db:studio        # Abrir Prisma Studio
-yarn run db:seed          # Poblar con datos de prueba
-yarn run db:reset         # Resetear base de datos
-
-# Testing
-yarn run test             # Tests unitarios
-yarn run test:watch       # Tests en modo watch
-yarn run test:cov         # Tests con cobertura
-yarn run test:e2e         # Tests E2E
-
-# Calidad de Código
-yarn run lint             # Ejecutar ESLint
-yarn run lint:check       # Verificar sin corregir
-yarn run format           # Formatear con Prettier
-yarn run format:check     # Verificar formato
-
-# Docker
-yarn run docker:up        # Levantar servicios
-yarn run docker:down      # Detener servicios
-yarn run docker:logs      # Ver logs
+feat(scope): add new feature
+fix(scope): fix bug
+docs(scope): update documentation
+style(scope): formatting, missing semi colons
+refactor(scope): code restructuring
+test(scope): add/update tests
+chore(scope): maintenance tasks
 ```
+
+### Checklist para PRs
+
+- [ ] Código sigue las convenciones del proyecto
+- [ ] Tests escritos y pasando
+- [ ] Linter sin errores (`bun run lint`)
+- [ ] Build exitoso (`bun run build`)
+- [ ] Documentación actualizada si es necesario
+- [ ] Swagger actualizado para nuevos endpoints
+
+### Recursos
+
+- [Documentación de NestJS](https://docs.nestjs.com/)
+- [Prisma Documentation](https://www.prisma.io/docs/)
+- [Domain-Driven Design Reference](https://www.domainlanguage.com/ddd/)
+- [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/)
+
+---
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
+Este proyecto está bajo la **Licencia MIT**. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+
+```
+MIT License
+
+Copyright (c) 2025 Cesar Javier Ortiz Montero
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+---
 
 ## 👥 Autor
 
-**Cesar Javier Ortiz Montero**
+<p align="center">
+  <strong>Cesar Javier Ortiz Montero</strong>
+</p>
+
+<p align="center">
+  <a href="mailto:your-email@example.com">📧 Email</a> •
+  <a href="https://github.com/your-username">🐙 GitHub</a> •
+  <a href="https://linkedin.com/in/your-profile">💼 LinkedIn</a>
+</p>
+
+---
+
+## 📚 Documentación Adicional
+
+| Documento                                                | Descripción                        |
+| -------------------------------------------------------- | ---------------------------------- |
+| [Plan de Trabajo](docs/work_plan.md)                     | Roadmap detallado del proyecto     |
+| [Requerimientos](docs/Requirement.md)                    | Especificación de requerimientos   |
+| [Modelo de Datos](docs/data_model.md)                    | Estructura de la base de datos     |
+| [Guía de Testing](docs/testing-structure.md)             | Estructura y convenciones de tests |
+| [Result Monad Guide](docs/result-monad-guide.md)         | Guía del patrón Result<T, E>       |
+| [Documentación Técnica](docs/technical-documentation.md) | Arquitectura y patrones            |
+| [Colección Postman](docs/postman/)                       | Colecciones y documentación de API |
 
 ---
 
 <p align="center">
-  Construido con ❤️ usando <a href="https://nestjs.com">NestJS</a>
+  <sub>Construido con ❤️ usando <a href="https://nestjs.com">NestJS</a> | Powered by <a href="https://bun.sh">Bun</a></sub>
+</p>
+
+<p align="center">
+  <sub>⭐ Si este proyecto te es útil, considera darle una estrella en GitHub ⭐</sub>
 </p>

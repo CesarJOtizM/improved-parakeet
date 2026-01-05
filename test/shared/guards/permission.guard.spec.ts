@@ -1,14 +1,21 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import { PermissionGuard } from '@shared/guards/permission.guard';
+
+interface IMockUser {
+  id: string;
+  orgId?: string;
+  permissions?: string[];
+  roles?: string[];
+}
 
 describe('PermissionGuard', () => {
   let guard: PermissionGuard;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockReflector: any;
 
   const createMockContext = (
-    user: any | null,
+    user: IMockUser | null,
     userPermissions: string[] = [],
     userRoles: string[] = []
   ): ExecutionContext => {

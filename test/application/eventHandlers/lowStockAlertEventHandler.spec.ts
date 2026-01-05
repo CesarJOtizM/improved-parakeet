@@ -33,7 +33,7 @@ describe('LowStockAlertEventHandler', () => {
         createMockQuantity(5),
         createMockQuantity(10),
         createMockQuantity(15),
-        'WARNING',
+        'LOW',
         'org-123',
         new Date()
       );
@@ -45,7 +45,7 @@ describe('LowStockAlertEventHandler', () => {
       expect(loggerSpy).toHaveBeenCalledWith('Handling LowStockAlert event', {
         productId: 'product-123',
         warehouseId: 'warehouse-789',
-        severity: 'WARNING',
+        severity: 'LOW',
         currentStock: 5,
       });
 
@@ -55,14 +55,14 @@ describe('LowStockAlertEventHandler', () => {
         currentStock: expect.any(Object),
         minQuantity: expect.any(Object),
         safetyStock: expect.any(Object),
-        severity: 'WARNING',
+        severity: 'LOW',
         orgId: 'org-123',
       });
 
       expect(loggerSpy).toHaveBeenCalledWith('Low stock alert notification sent successfully', {
         productId: 'product-123',
         warehouseId: 'warehouse-789',
-        severity: 'WARNING',
+        severity: 'LOW',
       });
     });
 

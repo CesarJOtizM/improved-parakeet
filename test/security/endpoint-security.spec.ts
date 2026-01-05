@@ -216,7 +216,7 @@ describeIf(!!process.env.DATABASE_URL)('Endpoint Security Tests', () => {
         passwordHash: 'hashed',
         firstName: 'Admin',
         lastName: 'One',
-        status: 'ACTIVE',
+        isActive: true,
         orgId: testOrgId1,
       },
     });
@@ -228,7 +228,7 @@ describeIf(!!process.env.DATABASE_URL)('Endpoint Security Tests', () => {
         passwordHash: 'hashed',
         firstName: 'Admin',
         lastName: 'Two',
-        status: 'ACTIVE',
+        isActive: true,
         orgId: testOrgId2,
       },
     });
@@ -245,7 +245,8 @@ describeIf(!!process.env.DATABASE_URL)('Endpoint Security Tests', () => {
       },
     });
 
-    const product2 = await prismaService.product.create({
+    // Create product for org 2 (for isolation tests)
+    await prismaService.product.create({
       data: {
         sku: 'PROD-ORG2-001',
         name: 'Org 2 Product',
@@ -255,7 +256,6 @@ describeIf(!!process.env.DATABASE_URL)('Endpoint Security Tests', () => {
         costMethod: 'AVG',
       },
     });
-    productId2 = product2.id;
 
     // Login to get tokens
     const loginResponse1 = await request(app.getHttpServer())

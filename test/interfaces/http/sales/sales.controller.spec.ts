@@ -116,7 +116,7 @@ describe('SalesController', () => {
       expect(result.isOk()).toBe(true);
       const value = result.unwrap();
       expect(value.success).toBe(true);
-      expect(value.data.items).toHaveLength(1);
+      expect(value.data).toHaveLength(1);
     });
   });
 
@@ -294,7 +294,7 @@ describe('SalesController', () => {
 
       // Assert
       expect(result.success).toBe(true);
-      expect(result.data.items).toHaveLength(1);
+      expect(result.data).toHaveLength(1);
     });
   });
 });

@@ -4,8 +4,8 @@ import { GlobalExceptionFilter } from '@shared/filters/globalExceptionFilter';
 
 describe('GlobalExceptionFilter', () => {
   let filter: GlobalExceptionFilter;
-  let mockResponse: any;
-  let mockRequest: any;
+  let mockResponse: { status: jest.Mock; json: jest.Mock };
+  let mockRequest: { url: string; method: string };
   let mockHost: ArgumentsHost;
 
   beforeEach(() => {

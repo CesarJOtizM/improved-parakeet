@@ -153,7 +153,7 @@ describeIf(!!process.env.DATABASE_URL)('Products Performance Tests', () => {
         passwordHash: 'hashed',
         firstName: 'Admin',
         lastName: 'User',
-        status: 'ACTIVE',
+        isActive: true,
         orgId: testOrgId,
       },
     });

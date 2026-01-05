@@ -8,7 +8,7 @@ services:
       - '3000:3000'
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://inventory_user:inventory_password@postgres:5432/inventory_system?schema=public
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=redis://redis:6379
       - BUN_ENV=development
     volumes:
@@ -16,8 +16,6 @@ services:
       - /app/node_modules
       - /app/bun.lockb
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
@@ -26,26 +24,6 @@ services:
     stdin_open: true
     tty: true
     restart: unless-stopped
-
-  postgres:
-    image: postgres:15-alpine
-    container_name: inventory_postgres_dev
-    environment:
-      POSTGRES_DB: inventory_system
-      POSTGRES_USER: inventory_user
-      POSTGRES_PASSWORD: inventory_password
-    ports:
-      - '5432:5432'
-    volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
-      - ./docker/postgres/init:/docker-entrypoint-initdb.d
-    networks:
-      - inventory_network
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U inventory_user -d inventory_system']
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -63,7 +41,6 @@ services:
       retries: 5
 
 volumes:
-  postgres_dev_data:
   redis_dev_data:
 
 networks:

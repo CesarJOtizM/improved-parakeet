@@ -264,7 +264,7 @@ describeIf(!!process.env.DATABASE_URL)('Roles Controller E2E Tests', () => {
         passwordHash: hashedPassword,
         firstName: 'Admin',
         lastName: 'Roles',
-        status: 'ACTIVE',
+        isActive: true,
         orgId: testOrgId,
       },
     });

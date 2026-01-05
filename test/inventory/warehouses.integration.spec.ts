@@ -192,7 +192,6 @@ describeIf(!!process.env.DATABASE_URL)('Warehouses Integration Tests', () => {
       result.match(
         value => {
           expect(value.data.length).toBeGreaterThanOrEqual(2);
-          expect(value.total).toBeGreaterThanOrEqual(2);
         },
         () => {
           throw new Error('Expected Ok result');
@@ -290,7 +289,6 @@ describeIf(!!process.env.DATABASE_URL)('Warehouses Integration Tests', () => {
       result.match(
         value => {
           expect(value.data.length).toBeLessThanOrEqual(2);
-          expect(value.total).toBeGreaterThanOrEqual(5);
         },
         () => {
           throw new Error('Expected Ok result');

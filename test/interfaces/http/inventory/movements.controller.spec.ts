@@ -1,13 +1,31 @@
 import { MovementsController } from '@interface/http/inventory/movements.controller';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { CreateMovementDto } from '@movement/dto/createMovement.dto';
+import { GetMovementsQueryDto } from '@movement/dto/getMovements.dto';
 import { ok, err } from '@shared/domain/result';
 import { NotFoundError, ValidationError } from '@shared/domain/result/domainError';
 
+import type { Request } from 'express';
+
+// Mock authenticated user type for testing
+interface IAuthenticatedUser {
+  id: string;
+  orgId: string;
+  email: string;
+  username: string;
+  roles: string[];
+  permissions: string[];
+  jti: string;
+}
+
 describe('MovementsController', () => {
   let controller: MovementsController;
-  let mockCreateMovementUseCase: any;
-  let mockGetMovementsUseCase: any;
-  let mockPostMovementUseCase: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockCreateMovementUseCase: { execute: jest.Mock<any> };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockGetMovementsUseCase: { execute: jest.Mock<any> };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockPostMovementUseCase: { execute: jest.Mock<any> };
 
   const mockMovementData = {
     id: 'movement-123',
@@ -20,8 +38,16 @@ describe('MovementsController', () => {
     updatedAt: new Date(),
   };
 
-  const mockRequest = {
-    user: { id: 'user-123', orgId: 'org-123' },
+  const mockRequest: Partial<Request> & { user: IAuthenticatedUser } = {
+    user: {
+      id: 'user-123',
+      orgId: 'org-123',
+      email: 'test@test.com',
+      username: 'testuser',
+      roles: ['USER'],
+      permissions: [],
+      jti: 'test-jti',
+    },
   };
 
   beforeEach(() => {
@@ -36,9 +62,12 @@ describe('MovementsController', () => {
     };
 
     controller = new MovementsController(
-      mockCreateMovementUseCase,
-      mockGetMovementsUseCase,
-      mockPostMovementUseCase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockCreateMovementUseCase as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockGetMovementsUseCase as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockPostMovementUseCase as any
     );
   });
 
@@ -60,7 +89,11 @@ describe('MovementsController', () => {
       );
 
       // Act
-      const result = await controller.createMovement(dto as any, 'org-123', mockRequest as any);
+      const result = await controller.createMovement(
+        dto as CreateMovementDto,
+        'org-123',
+        mockRequest as Request
+      );
 
       // Assert
       expect(result.success).toBe(true);
@@ -76,7 +109,7 @@ describe('MovementsController', () => {
 
       // Act & Assert
       await expect(
-        controller.createMovement(dto as any, 'org-123', mockRequest as any)
+        controller.createMovement(dto as CreateMovementDto, 'org-123', mockRequest as Request)
       ).rejects.toThrow();
     });
   });
@@ -94,11 +127,12 @@ describe('MovementsController', () => {
       mockGetMovementsUseCase.execute.mockResolvedValue(ok(responseData));
 
       // Act
-      const result = await controller.getMovements(query as any, 'org-123');
+      const result = await controller.getMovements(query as GetMovementsQueryDto, 'org-123');
 
       // Assert - getMovements uses resultToHttpResponse so returns the value directly
       expect(result.success).toBe(true);
-      expect(result.data.items).toHaveLength(1);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((result.data as any).items).toHaveLength(1);
     });
   });
 
@@ -115,11 +149,12 @@ describe('MovementsController', () => {
       );
 
       // Act
-      const result = await controller.postMovement('movement-123', 'org-123', mockRequest as any);
+      const result = await controller.postMovement('movement-123', 'org-123');
 
       // Assert
       expect(result.success).toBe(true);
-      expect(result.data.status).toBe('POSTED');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((result.data as any).status).toBe('POSTED');
     });
 
     it('Given: non-existent movement When: posting Then: should throw', async () => {
@@ -129,9 +164,7 @@ describe('MovementsController', () => {
       );
 
       // Act & Assert
-      await expect(
-        controller.postMovement('non-existent', 'org-123', mockRequest as any)
-      ).rejects.toThrow();
+      await expect(controller.postMovement('non-existent', 'org-123')).rejects.toThrow();
     });
   });
 });

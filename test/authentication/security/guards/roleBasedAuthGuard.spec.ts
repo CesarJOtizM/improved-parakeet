@@ -1,17 +1,22 @@
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 
 describe('RoleBasedAuthGuard', () => {
   let guard: RoleBasedAuthGuard;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockReflector: any;
 
   const createMockExecutionContext = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     user: any | null,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     params: any = {},
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     query: any = {},
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     body: any = {},
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     headers: any = {}
   ): ExecutionContext => {
     return {

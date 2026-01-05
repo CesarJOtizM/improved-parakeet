@@ -188,8 +188,6 @@
 
 ## 📦 FASE 3: Dominio de Inventarios
 
-
-
 ### **Semana 7: Dominio de Productos y Bodegas**
 
 - [x] **Estructura Base del Dominio de Productos** ✅ **COMPLETADO**
@@ -438,6 +436,7 @@
 Esta fase se ejecuta **antes de iniciar la Fase 5 (Reportes)** para mejorar la base arquitectónica y facilitar el desarrollo de funcionalidades futuras.
 
 #### **Objetivo**
+
 Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional identificadas en la evaluación de arquitectura, priorizando mejoras de alto impacto y bajo riesgo que no retrasen el MVP.
 
 #### **Mejoras a Implementar (Alta Prioridad - Antes de Reportes)**
@@ -488,6 +487,7 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
   - [x] **Resultado**: 4 mappers creados (ProductMapper, MovementMapper, SaleMapper, ReturnMapper), 8 use cases refactorizados, 48 nuevos tests, 1483 tests pasando
 
 #### **Criterios de Éxito**
+
 - ✅ Result monad implementado y usado en **TODOS los 55 casos de uso** (100% migrado)
 - ✅ DomainEventDispatcher abstraído sin romper funcionalidad existente
 - ✅ **Estructura de ports documentada y aplicada** (COMPLETADO: 24 interfaces en `ports/` con re-exports para compatibilidad)
@@ -496,6 +496,7 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
 - ✅ No se retrasa el inicio de Fase 5
 
 #### **Tiempo Estimado**
+
 - **Duración**: 2-3 días de desarrollo
 - **Ubicación**: Entre Semana 11 y Semana 12 (antes de iniciar Reportes)
 
@@ -593,7 +594,7 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
 
 - [x] **Implementación de Adaptadores de Reportes**
   - [x] HTTP Controllers para vistas (preview) y exportación con NestJS
-  - [x] Flujo de trabajo: 
+  - [x] Flujo de trabajo:
     - [x] Paso 1: Generar/Vista de reporte (retorna datos JSON para preview)
     - [x] Paso 2: Exportación del reporte generado (PDF/Excel/CSV/JSON)
   - [x] Middleware de permisos para reportes sensibles ✅ **COMPLETADO**
@@ -616,7 +617,7 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
     - [x] Aplicado en ReportController
 
 - [x] **API REST de Reportes e Importaciones** (Endpoints base implementados)
-  - [x] **Vistas de Reportes (Preview)**: 
+  - [x] **Vistas de Reportes (Preview)**:
     - [x] GET /reports/inventory/available/view - Vista de reporte de inventario disponible (JSON)
       - [x] Filtros: warehouseId, category, includeInactive, locationId
     - [x] GET /reports/inventory/movement-history/view - Vista de histórico de movimientos (JSON)
@@ -674,9 +675,9 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
         - [x] Métricas: Cantidad devuelta, valor devuelto, tasa de devolución
     - [x] GET /reports/history - Historial de reportes generados (JSON)
   - [x] **Exportación de Reportes** (Implementado con servicio mock):
-    - [x] POST /reports/inventory/*/export - Exportar reportes de inventario (PDF/Excel/CSV/JSON)
-    - [x] POST /reports/sales/*/export - Exportar reportes de ventas (PDF/Excel/CSV/JSON)
-    - [x] POST /reports/returns/*/export - Exportar reportes de devoluciones (PDF/Excel/CSV/JSON)
+    - [x] POST /reports/inventory/\*/export - Exportar reportes de inventario (PDF/Excel/CSV/JSON)
+    - [x] POST /reports/sales/\*/export - Exportar reportes de ventas (PDF/Excel/CSV/JSON)
+    - [x] POST /reports/returns/\*/export - Exportar reportes de devoluciones (PDF/Excel/CSV/JSON)
     - [x] Document Generation Service (mock) para PDF y Excel
     - [x] Exportación nativa para CSV y JSON
   - [x] **Report Templates** (Gestión de plantillas):
@@ -753,28 +754,24 @@ to do - not necessary for now
     - [x] Actualizar casos de uso para trabajar con entidades inmutables
     - [x] Tests de regresión para validar comportamiento
     - [x] Documentar patrón de inmutabilidad en guía de desarrollo
-  
   - [x] **Specification Pattern para Queries Complejas**
     - [x] Crear base `ISpecification<T>` en `src/shared/domain/specifications/`
     - [x] Implementar especificaciones para queries de reportes
     - [x] Refactorizar repositorios para usar specifications
     - [x] Tests unitarios para specifications
     - [x] Documentar uso del patrón
-  
   - [x] **Funciones Puras en Domain Services**
     - [x] Convertir Domain Services estáticos a funciones puras exportadas
     - [x] Separar efectos secundarios (logging, eventos) de lógica pura
     - [x] Refactorizar: ProductBusinessRulesService, InventoryCalculationService, SaleCalculationService
     - [x] Tests unitarios mejorados (más fáciles de testear funciones puras)
     - [x] Documentar principios de funciones puras
-  
   - [x] **Utilidades de Composición Funcional**
     - [x] Crear `src/shared/utils/functional/` con `pipe()`, `compose()`, `curry()`
     - [x] Implementar helpers funcionales: `map`, `filter`, `reduce` con tipos
     - [x] Refactorizar código existente para usar composición
     - [x] Tests unitarios para utilidades funcionales
     - [x] Documentar patrones de composición
-  
   - [x] **Mover Invariantes a Agregados**
     - [x] Identificar invariantes críticos en servicios de dominio
     - [x] Mover validaciones a métodos de agregados
@@ -790,7 +787,6 @@ to do - not necessary for now
   - [x] Tests de e2e - Completados para sales, roles y audit controllers
   - [x] Tests de performance - Estructura y ejemplo implementados (products-performance.spec.ts)
   - [x] Tests de seguridad - Completados (endpoint-security.spec.ts, input-validation.spec.ts)
-  
 - [ ] **Testing de Postman**
   - [ ] Ejecutar todos los tests de Postman automáticamente
   - [ ] Validar cobertura de endpoints en todas las colecciones
@@ -807,19 +803,19 @@ to do - not necessary for now
   - [ ] Configuración de monitoreo y logs
   - [ ] Setup de health checks y métricas
 
-- [ ] **Documentación Técnica**
-  - [ ] Documentación de la arquitectura DDD y Hexagonal
+- [x] **Documentación Técnica**
+  - [x] Documentación de la arquitectura DDD y Hexagonal
   - [ ] API Guide with OpenAPI/Swagger
-  - [ ] Manual de desarrollo y contribución
+  - [x] Manual de desarrollo y contribución
   - [ ] Documentación de despliegue
   - [ ] Guía de uso de la colección de Postman
 
-- [ ] **Finalización de Postman**
-  - [ ] Consolidar todas las colecciones en una sola
-  - [ ] Crear documentación completa de endpoints
-  - [ ] Configurar entornos para diferentes ambientes
-  - [ ] Implementar tests de smoke para validación rápida
-  - [ ] Crear guía de usuario para testing con Postman
+- [x] **Finalización de Postman**
+  - [x] Consolidar todas las colecciones en una sola
+  - [x] Crear documentación completa de endpoints
+  - [x] Configurar entornos para diferentes ambientes
+  - [x] Implementar tests de smoke para validación rápida
+  - [x] Crear guía de usuario para testing con Postman
 
 ### **Semana 17: Finalización y Entrega**
 
@@ -1149,26 +1145,26 @@ inventory-system/
 
 ## 📅 Cronograma Detallado
 
-| Semana | Fase                   | Entregables                                | Responsable      |
-| ------ | ---------------------- | ------------------------------------------ | ---------------- |
-| 1      | Arquitectura Hexagonal | Setup del proyecto, estructura DDD         | DevOps + Backend |
-| 2      | Arquitectura Hexagonal | Dominios y entidades del core              | Backend          |
-| 3      | Arquitectura Hexagonal | Infraestructura y adaptadores              | Backend          |
-| 4      | Dominio de Auth        | Dominio de autenticación y casos de uso    | Backend          |
-| 5      | Dominio de Auth        | Dominio de usuarios y RBAC                 | Backend          |
-| 6      | Dominio de Auth        | Adaptadores y API de autenticación         | Backend          |
-| 7      | Dominio de Inventarios | Dominio de productos y bodegas             | Backend          |
-| 8      | Dominio de Inventarios | Dominio de movimientos y transferencias    | Backend          |
-| 9      | Dominio de Inventarios | Reglas de negocio y casos de uso           | Backend          |
-| 10     | Dominio de Ventas      | Dominio de ventas                          | Backend          |
-| 11     | Dominio de Ventas      | Dominio de devoluciones y adaptadores       | Backend          |
-| 11.5   | Mejoras de Arquitectura | Result monad, ports, abstracciones        | Backend          |
-| 12     | Dominio de Reportes    | Dominio de reportes e importaciones        | Backend          |
-| 13     | Dominio de Reportes    | Adaptadores y API de reportes              | Backend          |
-| 14     | Personalización        | Dominio de personalización y configuración | Backend          |
-| 15     | Testing y Optimización | Testing completo y optimización            | Backend          |
-| 16     | Despliegue             | Despliegue y documentación técnica         | DevOps + Backend |
-| 17     | Finalización           | Finalización del MVP y entrega             | Equipo completo  |
+| Semana | Fase                    | Entregables                                | Responsable      |
+| ------ | ----------------------- | ------------------------------------------ | ---------------- |
+| 1      | Arquitectura Hexagonal  | Setup del proyecto, estructura DDD         | DevOps + Backend |
+| 2      | Arquitectura Hexagonal  | Dominios y entidades del core              | Backend          |
+| 3      | Arquitectura Hexagonal  | Infraestructura y adaptadores              | Backend          |
+| 4      | Dominio de Auth         | Dominio de autenticación y casos de uso    | Backend          |
+| 5      | Dominio de Auth         | Dominio de usuarios y RBAC                 | Backend          |
+| 6      | Dominio de Auth         | Adaptadores y API de autenticación         | Backend          |
+| 7      | Dominio de Inventarios  | Dominio de productos y bodegas             | Backend          |
+| 8      | Dominio de Inventarios  | Dominio de movimientos y transferencias    | Backend          |
+| 9      | Dominio de Inventarios  | Reglas de negocio y casos de uso           | Backend          |
+| 10     | Dominio de Ventas       | Dominio de ventas                          | Backend          |
+| 11     | Dominio de Ventas       | Dominio de devoluciones y adaptadores      | Backend          |
+| 11.5   | Mejoras de Arquitectura | Result monad, ports, abstracciones         | Backend          |
+| 12     | Dominio de Reportes     | Dominio de reportes e importaciones        | Backend          |
+| 13     | Dominio de Reportes     | Adaptadores y API de reportes              | Backend          |
+| 14     | Personalización         | Dominio de personalización y configuración | Backend          |
+| 15     | Testing y Optimización  | Testing completo y optimización            | Backend          |
+| 16     | Despliegue              | Despliegue y documentación técnica         | DevOps + Backend |
+| 17     | Finalización            | Finalización del MVP y entrega             | Equipo completo  |
 
 ---
 
@@ -1442,6 +1438,7 @@ inventory-system/
 El sistema implementa una arquitectura de roles en dos niveles:
 
 #### **Roles de Sistema (sin orgId)**
+
 - **SYSTEM_ADMIN**: Rol de sistema que trasciende organizaciones
   - Puede crear nuevas organizaciones
   - Acceso total al sistema completo
@@ -1449,6 +1446,7 @@ El sistema implementa una arquitectura de roles en dos niveles:
   - Se usa para operaciones administrativas globales
 
 #### **Roles de Organización (con orgId)**
+
 - **ADMIN**: Administrador máximo dentro de una organización
   - **Acceso total** a todos los módulos y permisos de su organización
   - **Gestión completa** de usuarios, roles y permisos dentro de la organización
@@ -1534,11 +1532,13 @@ export class ProductsController {
 #### **Guards de Autorización** ✅ **IMPLEMENTADO**
 
 **PermissionGuard**: Valida permisos específicos
+
 - Verifica que el usuario tenga los permisos requeridos
 - El rol `ADMIN` tiene acceso automático a todos los permisos dentro de su organización
 - Implementado en: `src/shared/guards/permission.guard.ts`
 
 **RoleBasedAuthGuard**: Valida roles específicos
+
 - Soporta verificación de roles de sistema (`SYSTEM_ADMIN`) y de organización (`ADMIN`)
 - Opciones configurables:
   - `allowSuperAdmin`: Permite acceso a `SYSTEM_ADMIN` (rol de sistema)
@@ -1547,6 +1547,7 @@ export class ProductsController {
 - Implementado en: `src/authentication/security/guards/roleBasedAuthGuard.ts`
 
 **JwtAuthGuard**: Valida autenticación JWT
+
 - Verifica y decodifica tokens JWT
 - Soporta blacklisting de tokens
 - Rate limiting por IP/usuario
@@ -1626,20 +1627,24 @@ export class ProductsController {
 #### **Guards y Decoradores Implementados**
 
 ✅ **JwtAuthGuard** (`src/authentication/security/guards/jwtAuthGuard.ts`)
+
 - Validación y decodificación de tokens JWT
 - Soporte para blacklisting de tokens
 - Rate limiting por IP/usuario
 
 ✅ **RoleBasedAuthGuard** (`src/authentication/security/guards/roleBasedAuthGuard.ts`)
+
 - Validación de roles de sistema (`SYSTEM_ADMIN`) y de organización (`ADMIN`)
 - Opciones configurables: `allowSuperAdmin`, `allowOrganizationAdmin`, `checkOrganization`
 - Métodos: `isSuperAdmin()`, `isOrganizationAdmin()`
 
 ✅ **PermissionGuard** (`src/shared/guards/permission.guard.ts`)
+
 - Validación de permisos específicos
 - El rol `ADMIN` tiene acceso automático a todos los permisos
 
 ✅ **Decoradores** (`src/authentication/security/decorators/roleBasedAuth.decorator.ts`)
+
 - `@RequireRoles([roles])`: Requerir roles específicos
 - `@AllowSuperAdmin()`: Permitir acceso a SYSTEM_ADMIN
 - `@AllowOrganizationAdmin()`: Permitir acceso a ADMIN
@@ -1649,6 +1654,7 @@ export class ProductsController {
 #### **Protección de Endpoints**
 
 ✅ **Creación de Organizaciones**
+
 - Endpoint protegido: `POST /organizations`
 - Solo usuarios con rol `SYSTEM_ADMIN` pueden crear organizaciones
 - Implementado en: `src/organization/organization.controller.ts`
@@ -1656,6 +1662,7 @@ export class ProductsController {
 #### **Sistema de Roles Predefinidos y Personalizados** ✅ **COMPLETADO**
 
 ✅ **Arquitectura Híbrida de Roles**
+
 - **Roles Predefinidos (Maestros Globales):**
   - Se crean una sola vez en el sistema (no por organización)
   - `isSystem = true`, `orgId = null`
@@ -1672,6 +1679,7 @@ export class ProductsController {
   - Implementado en: `src/application/roleUseCases/` y `src/interfaces/http/routes/roles.controller.ts`
 
 ✅ **AuthSeed** (`src/infrastructure/database/prisma/seeds/auth.seed.ts`)
+
 - Crea roles predefinidos una sola vez (no por organización):
   - `ADMIN`: Todos los permisos
   - `SUPERVISOR`: Permisos amplios (sin gestión de usuarios)
@@ -1680,6 +1688,7 @@ export class ProductsController {
   - `IMPORT_OPERATOR`: Solo importaciones
 
 ✅ **Endpoints de Gestión de Roles** (`src/interfaces/http/routes/roles.controller.ts`)
+
 - `POST /roles` - Crear rol personalizado (requiere ROLES:CREATE)
 - `GET /roles` - Listar roles disponibles (sistema + personalizados) (requiere ROLES:READ)
 - `GET /roles/:id` - Obtener rol por ID (requiere ROLES:READ)
@@ -1688,6 +1697,7 @@ export class ProductsController {
 - `POST /roles/:id/permissions` - Asignar permisos a rol (requiere ROLES:UPDATE)
 
 ✅ **Validaciones Implementadas**
+
 - Los roles de sistema no se pueden modificar ni eliminar
 - Los roles personalizados solo pueden ser gestionados por ADMIN de la organización
 - No se pueden eliminar roles asignados a usuarios
@@ -1705,24 +1715,28 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 #### **Cambios en Base de Datos**
 
 ✅ **Schema de Prisma Actualizado**
+
 - Campo `isSystem Boolean @default(false)` agregado a `Role`
 - Campo `orgId` hecho opcional (`String?`) para permitir roles de sistema
 - Índice agregado: `@@index([isSystem])`
 - Constraint único actualizado: `@@unique([name, orgId])` (permite null en orgId)
 
 ✅ **Migración Creada**
+
 - `20251223125735_add_role_system/migration.sql`
 - Agrega columna `isSystem` y hace `orgId` nullable
 
 #### **Cambios en Dominio**
 
 ✅ **Entidad Role Actualizada** (`src/authentication/domain/entities/role.entity.ts`)
+
 - Propiedad `isSystem` agregada a `IRoleProps`
 - Validaciones: roles de sistema no pueden tener `orgId`, roles personalizados deben tenerlo
 - Método `isSystemRole()` agregado
 - Prevención de modificación de `isSystem` después de creación
 
 ✅ **Repositorio Actualizado** (`src/infrastructure/database/repositories/role.repository.ts`)
+
 - Métodos nuevos:
   - `findSystemRoles()`: Busca roles predefinidos
   - `findCustomRoles(orgId)`: Busca roles personalizados de una organización
@@ -1730,12 +1744,14 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - Métodos existentes actualizados para manejar `orgId` opcional
 
 ✅ **Servicios de Dominio Actualizados**
+
 - `RoleAssignmentService`: Validaciones para roles de sistema vs personalizados
 - `AuthorizationService`: Sin cambios (trabaja con nombres de roles)
 
 #### **Cambios en Aplicación**
 
 ✅ **Casos de Uso Creados** (`src/application/roleUseCases/`)
+
 - `CreateRoleUseCase`: Crear roles personalizados
 - `GetRolesUseCase`: Listar roles disponibles
 - `GetRoleUseCase`: Obtener rol por ID
@@ -1744,29 +1760,34 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 - `AssignPermissionsToRoleUseCase`: Asignar permisos a roles
 
 ✅ **Casos de Uso Existentes Actualizados**
+
 - `AssignRoleToUserUseCase`: Actualizado para buscar roles globales
 - `CreateOrganizationUseCase`: Actualizado para buscar rol ADMIN del sistema
 
 #### **Cambios en Interfaces**
 
 ✅ **DTOs Creados** (`src/authentication/dto/`)
+
 - `CreateRoleDto`, `CreateRoleResponseDto`
 - `UpdateRoleDto`, `UpdateRoleResponseDto`
 - `AssignPermissionsToRoleDto`, `AssignPermissionsToRoleResponseDto`
 - `GetRolesResponseDto`, `GetRoleResponseDto`
 
 ✅ **Controlador Creado** (`src/interfaces/http/routes/roles.controller.ts`)
+
 - Endpoints CRUD completos para roles
 - Endpoint para asignar permisos
 - Protección con guards y decoradores de permisos
 
 ✅ **Constantes Actualizadas** (`src/shared/constants/security.constants.ts`)
+
 - Permisos de roles agregados: `ROLES_CREATE`, `ROLES_READ`, `ROLES_UPDATE`, `ROLES_DELETE`
 - Roles predefinidos sincronizados con el seed
 
 #### **Documentación Actualizada**
 
 ✅ **Postman Collection** (`docs/postman/postman_collection.json`)
+
 - Endpoints de Roles agregados/actualizados:
   - `GET /roles` - Listar roles disponibles
   - `GET /roles/:id` - Obtener rol por ID
@@ -1776,10 +1797,12 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
   - `POST /roles/:id/permissions` - Asignar permisos a rol
 
 ✅ **Requirement.md**
+
 - Sección de Actores actualizada con roles predefinidos y personalizados
 - Descripción de gestión de usuarios y permisos ampliada
 
 ✅ **work_plan.md**
+
 - Documentación completa de la implementación
 - Arquitectura híbrida documentada
 
@@ -1897,18 +1920,18 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 
 #### **✅ Estructura Base del Dominio de Inventario - Productos y Bodegas (Completada)**
 
-- **Entidades de Dominio**: 
+- **Entidades de Dominio**:
   - ✅ Product (AggregateRoot con value objects y eventos)
   - ✅ Warehouse (AggregateRoot con value objects y eventos)
   - ✅ Location (AggregateRoot con value objects y eventos)
   - ✅ Movement (AggregateRoot con value objects y eventos)
   - ✅ Transfer (AggregateRoot con value objects y eventos, reglas de consistencia)
-- **Value Objects**: 
+- **Value Objects**:
   - ✅ Productos: SKU, ProductName, ProductStatus, CostMethod, UnitValueObject, Price
   - ✅ Bodegas: WarehouseCode, LocationCode, Address
   - ✅ Movimientos: Quantity, MovementType, MovementStatus
   - ✅ Transferencias: TransferStatus, TransferDirection
-- **Domain Services**: 
+- **Domain Services**:
   - ✅ ProductValidationService, PricingService
   - ✅ ProductBusinessRulesService (reglas de negocio: SKU único, eliminación, transiciones de estado, cambio de método de costo)
   - ✅ WarehouseAssignmentService
@@ -1916,60 +1939,60 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
   - ✅ InventoryCalculationService, StockValidationService
   - ✅ TransferValidationService (validación de bodegas, líneas, stock, ubicaciones)
   - ✅ TransferWorkflowService (gestión de workflow y transiciones de estado)
-- **Domain Events**: 
+- **Domain Events**:
   - ✅ ProductCreated, ProductUpdated
   - ✅ WarehouseCreated, LocationAdded
   - ✅ MovementPosted, StockUpdated, PPMRecalculated, MovementVoided
   - ✅ TransferInitiated, TransferReceived, TransferRejected
-- **Event Handlers**: 
+- **Event Handlers**:
   - ✅ ProductCreatedEventHandler, ProductUpdatedEventHandler (auditoría automática)
   - ✅ WarehouseCreatedEventHandler, LocationAddedEventHandler (auditoría automática)
   - ✅ InventoryModule con registro de handlers en DomainEventBus
-- **Repository Interfaces**: 
+- **Repository Interfaces**:
   - ✅ IProductRepository, ICategoryRepository
   - ✅ IWarehouseRepository, ILocationRepository
   - ✅ IMovementRepository
   - ✅ ITransferRepository
-- **Test Factories**: 
+- **Test Factories**:
   - ✅ ProductFactory, WarehouseFactory, LocationFactory (con métodos create, createWith, createMany)
   - ✅ BaseFactory (utilidades base para factories)
-- **Tests Unitarios**: 
+- **Tests Unitarios**:
   - ✅ ProductValidationService (actualizado con validateSkuUniquenessOrThrow)
   - ✅ ProductBusinessRulesService (tests completos)
   - ✅ PricingService (tests completos)
   - ✅ WarehouseAssignmentService (tests completos)
   - ✅ WarehouseBusinessRulesService (tests completos)
-- **Casos de Uso (Application Layer)**: 
+- **Casos de Uso (Application Layer)**:
   - ✅ Productos: CreateProductUseCase, GetProductsUseCase, GetProductByIdUseCase, UpdateProductUseCase
   - ✅ Bodegas: CreateWarehouseUseCase, GetWarehousesUseCase
   - ✅ Movimientos: CreateMovementUseCase, GetMovementsUseCase, PostMovementUseCase
   - ✅ Transferencias: InitiateTransferUseCase, GetTransfersUseCase
-- **DTOs (Data Transfer Objects)**: 
+- **DTOs (Data Transfer Objects)**:
   - ✅ Productos: CreateProductDto, UpdateProductDto, GetProductsQueryDto, GetProductResponseDto
   - ✅ Bodegas: CreateWarehouseDto, GetWarehousesQueryDto, GetWarehouseResponseDto
   - ✅ Movimientos: CreateMovementDto, GetMovementsQueryDto, GetMovementResponseDto
   - ✅ Transferencias: InitiateTransferDto, GetTransfersQueryDto, GetTransferResponseDto
-- **Controllers HTTP (Interfaces Layer)**: 
+- **Controllers HTTP (Interfaces Layer)**:
   - ✅ ProductsController (GET /products, GET /products/:id, POST /products, PUT /products/:id)
   - ✅ WarehousesController (GET /warehouses, POST /warehouses)
   - ✅ MovementsController (GET /movements, POST /movements, POST /movements/:id/post)
   - ✅ TransfersController (GET /transfers, POST /transfers)
-- **Módulos**: 
+- **Módulos**:
   - ✅ InventoryHttpModule creado y registrado
   - ✅ InventoryModule actualizado con todos los use cases
-- **Características Implementadas**: 
+- **Características Implementadas**:
   - ✅ Guards de autenticación y autorización (JwtAuthGuard, RoleBasedAuthGuard)
   - ✅ Interceptor de auditoría (AuditInterceptor)
   - ✅ Documentación Swagger completa
   - ✅ Validación de permisos por módulo
   - ✅ Paginación y filtros avanzados
   - ✅ Extracción de orgId desde headers
-- **Completado**: 
+- **Completado**:
   - ✅ Tests E2E para controllers de inventario (products, warehouses, movements, transfers)
   - ✅ Colección de Postman actualizada con todos los endpoints
   - ✅ Todos los use cases implementados
   - ✅ Todos los controllers con validación y documentación Swagger
-- **Completado**: 
+- **Completado**:
   - ✅ Repositorios implementados (Prisma) - ProductRepository, WarehouseRepository, MovementRepository, TransferRepository
   - ✅ Esquema de Prisma actualizado con modelos Transfer y TransferLine
   - ✅ Campos faltantes agregados a Movement y MovementLine
@@ -2029,7 +2052,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
 
 #### **✅ Completado - Semana 12 (Dominio de Importaciones)**
 
-- **Dominio de Importaciones**: 
+- **Dominio de Importaciones**:
   - ✅ ImportBatch (AggregateRoot) e ImportRow (entidades) implementadas
   - ✅ Value Objects: ImportType, ImportStatus, ValidationResult (inmutables)
   - ✅ Domain Services: ImportValidationService, ImportProcessingService, ImportTemplateService, ImportErrorReportService

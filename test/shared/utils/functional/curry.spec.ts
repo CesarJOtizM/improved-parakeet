@@ -20,8 +20,8 @@ describe('curry', () => {
     const add = (a: number, b: number) => a + b;
     const curriedAdd = curry(add);
 
-    // Act
-    const result = curriedAdd(5, 3);
+    // Act - curry returns a function that takes one arg at a time
+    const result = curriedAdd(5)(3);
 
     // Assert
     expect(result).toBe(8);
@@ -46,8 +46,8 @@ describe('curry', () => {
     const getValue = () => 42;
     const curriedGetValue = curry(getValue);
 
-    // Act
-    const result = curriedGetValue();
+    // Act - for zero-arg functions, the curried result IS the value
+    const result = curriedGetValue;
 
     // Assert
     expect(result).toBe(42);

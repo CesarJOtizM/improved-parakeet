@@ -9,7 +9,11 @@ import { UnitValueObject } from '@product/domain/valueObjects/unit.valueObject';
 
 describe('PrismaProductRepository', () => {
   let repository: PrismaProductRepository;
-  let mockPrismaService: any;
+
+  let mockPrismaService: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    product: Record<string, jest.Mock<any>>;
+  };
 
   const mockProductData = {
     id: 'product-123',
@@ -41,7 +45,8 @@ describe('PrismaProductRepository', () => {
     };
 
     // Create repository without cache service for simpler testing
-    repository = new PrismaProductRepository(mockPrismaService, undefined);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    repository = new PrismaProductRepository(mockPrismaService as any, undefined);
   });
 
   describe('findById', () => {

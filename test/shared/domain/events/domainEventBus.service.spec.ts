@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { DomainEvent } from '@shared/domain/events/domainEvent.base';
-import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
+import { DomainEventBus, IDomainEventHandler } from '@shared/domain/events/domainEventBus.service';
+
+// Helper to create mock handlers with correct typing
+const createMockHandler = (): IDomainEventHandler<DomainEvent> => ({
+  handle: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+});
 
 class TestEvent extends DomainEvent {
   private readonly _occurredOn = new Date();
@@ -44,7 +49,7 @@ describe('DomainEventBus', () => {
   describe('registerHandler', () => {
     it('Given: handler When: registering Then: should add handler to bus', () => {
       // Arrange
-      const handler = { handle: jest.fn() };
+      const handler = createMockHandler();
 
       // Act
       eventBus.registerHandler('TestEvent', handler);
@@ -57,8 +62,8 @@ describe('DomainEventBus', () => {
 
     it('Given: multiple handlers When: registering for same event Then: should add all handlers', () => {
       // Arrange
-      const handler1 = { handle: jest.fn() };
-      const handler2 = { handle: jest.fn() };
+      const handler1 = createMockHandler();
+      const handler2 = createMockHandler();
 
       // Act
       eventBus.registerHandler('TestEvent', handler1);
@@ -81,7 +86,7 @@ describe('DomainEventBus', () => {
 
     it('Given: handler registered When: publishing event Then: should call handler', async () => {
       // Arrange
-      const handler = { handle: jest.fn().mockResolvedValue(undefined) };
+      const handler = createMockHandler();
       eventBus.registerHandler('TestEvent', handler);
       const event = new TestEvent('test data');
 
@@ -94,8 +99,8 @@ describe('DomainEventBus', () => {
 
     it('Given: multiple handlers When: publishing event Then: should call all handlers', async () => {
       // Arrange
-      const handler1 = { handle: jest.fn().mockResolvedValue(undefined) };
-      const handler2 = { handle: jest.fn().mockResolvedValue(undefined) };
+      const handler1 = createMockHandler();
+      const handler2 = createMockHandler();
       eventBus.registerHandler('TestEvent', handler1);
       eventBus.registerHandler('TestEvent', handler2);
       const event = new TestEvent('test data');
@@ -110,8 +115,10 @@ describe('DomainEventBus', () => {
 
     it('Given: handler throws When: publishing event Then: should not throw but log error', async () => {
       // Arrange
-      const failingHandler = { handle: jest.fn().mockRejectedValue(new Error('Handler failed')) };
-      const successHandler = { handle: jest.fn().mockResolvedValue(undefined) };
+      const failingHandler: IDomainEventHandler<DomainEvent> = {
+        handle: jest.fn<() => Promise<void>>().mockRejectedValue(new Error('Handler failed')),
+      };
+      const successHandler = createMockHandler();
       eventBus.registerHandler('TestEvent', failingHandler);
       eventBus.registerHandler('TestEvent', successHandler);
       const event = new TestEvent('test data');
@@ -125,8 +132,8 @@ describe('DomainEventBus', () => {
   describe('publishAll', () => {
     it('Given: multiple events When: publishing all Then: should publish each event', async () => {
       // Arrange
-      const testHandler = { handle: jest.fn().mockResolvedValue(undefined) };
-      const anotherHandler = { handle: jest.fn().mockResolvedValue(undefined) };
+      const testHandler = createMockHandler();
+      const anotherHandler = createMockHandler();
       eventBus.registerHandler('TestEvent', testHandler);
       eventBus.registerHandler('AnotherEvent', anotherHandler);
 
@@ -158,8 +165,8 @@ describe('DomainEventBus', () => {
 
     it('Given: handlers registered When: getting handlers Then: should return all handlers', () => {
       // Arrange
-      const handler1 = { handle: jest.fn() };
-      const handler2 = { handle: jest.fn() };
+      const handler1 = createMockHandler();
+      const handler2 = createMockHandler();
       eventBus.registerHandler('TestEvent', handler1);
       eventBus.registerHandler('TestEvent', handler2);
 

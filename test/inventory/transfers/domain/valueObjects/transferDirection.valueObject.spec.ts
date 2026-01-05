@@ -25,6 +25,7 @@ describe('TransferDirection', () => {
 
     it('Given: invalid value When: creating Then: should throw error', () => {
       // Act & Assert
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(() => TransferDirection.create('INVALID' as any)).toThrow(
         'Invalid transfer direction: INVALID'
       );

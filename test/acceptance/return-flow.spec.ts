@@ -9,12 +9,13 @@ import { CreateSaleUseCase } from '@application/saleUseCases/createSaleUseCase';
 import { CreateWarehouseUseCase } from '@application/warehouseUseCases/createWarehouseUseCase';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { PrismaMovementRepository } from '@infrastructure/database/repositories/movement.repository';
-import { PrismaReturnRepository } from '@infrastructure/database/repositories/return.repository';
 import { InventoryModule } from '@inventory/inventory.module';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReturnsModule } from '@returns/returns.module';
 import { SalesModule } from '@sales/sales.module';
+
+import type { IReturnRepository } from '@returns/domain/ports/repositories';
 
 const describeIf = (condition: boolean) => (condition ? describe : describe.skip);
 
@@ -37,7 +38,7 @@ describeIf(!!process.env.DATABASE_URL)('Return Flow Acceptance Test', () => {
   let confirmSaleUseCase: ConfirmSaleUseCase;
   let createProductUseCase: CreateProductUseCase;
   let createWarehouseUseCase: CreateWarehouseUseCase;
-  let returnRepository: PrismaReturnRepository;
+  let returnRepository: IReturnRepository;
   let movementRepository: PrismaMovementRepository;
 
   const testOrgId = 'test-org-return-acceptance';
@@ -59,7 +60,7 @@ describeIf(!!process.env.DATABASE_URL)('Return Flow Acceptance Test', () => {
     confirmSaleUseCase = module.get<ConfirmSaleUseCase>(ConfirmSaleUseCase);
     createProductUseCase = module.get<CreateProductUseCase>(CreateProductUseCase);
     createWarehouseUseCase = module.get<CreateWarehouseUseCase>(CreateWarehouseUseCase);
-    returnRepository = module.get<PrismaReturnRepository>('ReturnRepository');
+    returnRepository = module.get<IReturnRepository>('ReturnRepository');
     movementRepository = module.get<PrismaMovementRepository>('MovementRepository');
 
     await cleanupTestData();
@@ -85,10 +86,8 @@ describeIf(!!process.env.DATABASE_URL)('Return Flow Acceptance Test', () => {
         data: {
           productId: testProductId,
           warehouseId: testWarehouseId,
-          locationId: testLocationId,
           quantity: 100,
-          averageCost: 50,
-          currency: 'COP',
+          unitCost: 50,
           orgId: testOrgId,
         },
       });
@@ -198,7 +197,6 @@ describeIf(!!process.env.DATABASE_URL)('Return Flow Acceptance Test', () => {
         where: {
           productId: testProductId,
           warehouseId: testWarehouseId,
-          locationId: testLocationId,
           orgId: testOrgId,
         },
       });
@@ -213,10 +211,8 @@ describeIf(!!process.env.DATABASE_URL)('Return Flow Acceptance Test', () => {
         data: {
           productId: testProductId,
           warehouseId: testWarehouseId,
-          locationId: testLocationId,
           quantity: 100,
-          averageCost: 50,
-          currency: 'COP',
+          unitCost: 50,
           orgId: testOrgId,
         },
       });
@@ -320,7 +316,7 @@ describeIf(!!process.env.DATABASE_URL)('Return Flow Acceptance Test', () => {
         passwordHash: 'hashed',
         firstName: 'Test',
         lastName: 'User',
-        status: 'ACTIVE',
+        isActive: true,
         orgId: testOrgId,
       },
     });
@@ -343,17 +339,8 @@ describeIf(!!process.env.DATABASE_URL)('Return Flow Acceptance Test', () => {
       }
     );
 
-    // Create location
-    const location = await prisma.location.create({
-      data: {
-        code: 'LOC-RETURN-001',
-        name: 'Location 1',
-        warehouseId: testWarehouseId,
-        isDefault: true,
-        orgId: testOrgId,
-      },
-    });
-    testLocationId = location.id;
+    // Set location ID (locations are optional in the schema)
+    testLocationId = 'loc-return-001';
 
     // Create product
     const productResult = await createProductUseCase.execute({
@@ -405,9 +392,6 @@ describeIf(!!process.env.DATABASE_URL)('Return Flow Acceptance Test', () => {
         where: { orgId: testOrgId },
       });
       await prisma.product.deleteMany({
-        where: { orgId: testOrgId },
-      });
-      await prisma.location.deleteMany({
         where: { orgId: testOrgId },
       });
       await prisma.warehouse.deleteMany({

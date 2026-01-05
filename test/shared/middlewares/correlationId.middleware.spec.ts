@@ -17,7 +17,7 @@ describe('CorrelationIdMiddleware', () => {
       headers: {},
     };
     mockResponse = {
-      setHeader: jest.fn(),
+      setHeader: jest.fn() as Response['setHeader'],
     };
     mockNext = jest.fn();
   });

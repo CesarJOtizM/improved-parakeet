@@ -108,7 +108,9 @@ La colección utiliza las siguientes variables que debes configurar:
 La sección de Reports incluye endpoints para generar, visualizar y exportar reportes del sistema.
 
 #### Inventory Reports - View
+
 Endpoints GET que retornan datos JSON para visualización en frontend:
+
 - **GET** `/reports/inventory/available/view` - Vista de inventario disponible
 - **GET** `/reports/inventory/movement-history/view` - Histórico de movimientos
 - **GET** `/reports/inventory/valuation/view` - Valorización de inventario (PPM)
@@ -118,11 +120,13 @@ Endpoints GET que retornan datos JSON para visualización en frontend:
 - **GET** `/reports/inventory/turnover/view` - Rotación de inventario
 
 #### Sales Reports - View
+
 - **GET** `/reports/sales/view` - Reporte de ventas
 - **GET** `/reports/sales/by-product/view` - Ventas por producto
 - **GET** `/reports/sales/by-warehouse/view` - Ventas por bodega
 
 #### Returns Reports - View
+
 - **GET** `/reports/returns/view` - Reporte de devoluciones
 - **GET** `/reports/returns/by-type/view` - Devoluciones por tipo
 - **GET** `/reports/returns/by-product/view` - Devoluciones por producto
@@ -131,13 +135,17 @@ Endpoints GET que retornan datos JSON para visualización en frontend:
 - **GET** `/reports/returns/supplier/view` - Devoluciones a proveedor
 
 #### Stream Endpoints (NDJSON)
+
 Endpoints GET que retornan datos en formato NDJSON (Newline Delimited JSON) para grandes volúmenes:
+
 - **GET** `/reports/inventory/available/stream` - Stream de inventario disponible
 - **GET** `/reports/sales/view/stream` - Stream de ventas
 - **GET** `/reports/returns/view/stream` - Stream de devoluciones
 
 #### Export Endpoints
+
 Endpoints POST que retornan archivos en diferentes formatos (PDF, Excel, CSV):
+
 - **POST** `/reports/inventory/available/export` - Exportar inventario disponible
 - **POST** `/reports/inventory/movement-history/export` - Exportar histórico
 - **POST** `/reports/inventory/valuation/export` - Exportar valorización
@@ -153,9 +161,11 @@ Endpoints POST que retornan archivos en diferentes formatos (PDF, Excel, CSV):
 - **POST** `/reports/returns/by-product/export` - Exportar devoluciones por producto
 
 #### Report History
+
 - **GET** `/reports/history` - Historial de ejecución de reportes (filtros: type, status, generatedBy, dateRange)
 
 **Parámetros comunes para View endpoints:**
+
 - `dateRange[startDate]` / `dateRange[endDate]`: Rango de fechas
 - `warehouseId`: Filtrar por bodega
 - `productId`: Filtrar por producto
@@ -164,6 +174,7 @@ Endpoints POST que retornan archivos en diferentes formatos (PDF, Excel, CSV):
 - `groupBy`: Agrupar resultados (DAY, WEEK, MONTH, PRODUCT, WAREHOUSE, etc.)
 
 **Body para Export endpoints:**
+
 ```json
 {
   "format": "EXCEL",
@@ -188,20 +199,24 @@ Endpoints POST que retornan archivos en diferentes formatos (PDF, Excel, CSV):
 La sección de Imports incluye endpoints para importaciones masivas de datos.
 
 #### Import Operations
+
 - **POST** `/imports/preview` - Previsualizar y validar archivo sin persistir
 - **POST** `/imports/execute` - Ejecutar importación completa (validate + create + process)
 - **POST** `/imports` - Crear batch de importación
 
 #### Import Batch Management
+
 - **POST** `/imports/:id/validate` - Validar batch de importación con archivo
 - **POST** `/imports/:id/process` - Procesar batch validado
 - **GET** `/imports/:id/status` - Obtener estado del batch
 
 #### Import Templates & Reports
+
 - **GET** `/imports/templates/:type` - Descargar plantilla de importación (format: csv o xlsx)
 - **GET** `/imports/:id/errors` - Descargar reporte de errores (format: csv o xlsx)
 
 **Tipos de importación soportados:**
+
 - `PRODUCTS` - Importación de productos
 - `MOVEMENTS` - Importación de movimientos
 - `WAREHOUSES` - Importación de bodegas
@@ -209,6 +224,7 @@ La sección de Imports incluye endpoints para importaciones masivas de datos.
 - `TRANSFERS` - Importación de transferencias
 
 **Estados de batch:**
+
 - `PENDING` - Batch creado, pendiente de validación
 - `VALIDATING` - En proceso de validación
 - `VALIDATED` - Validado, listo para procesar
@@ -217,6 +233,7 @@ La sección de Imports incluye endpoints para importaciones masivas de datos.
 - `FAILED` - Importación fallida
 
 **Ejemplo de uso:**
+
 1. Descargar plantilla: `GET /imports/templates/PRODUCTS?format=csv`
 2. Llenar plantilla con datos
 3. Previsualizar: `POST /imports/preview` (con archivo adjunto)
@@ -226,21 +243,42 @@ La sección de Imports incluye endpoints para importaciones masivas de datos.
 
 ## 🚀 Instalación y Uso
 
-### 1. Importar la Colección
+### 1. Importar la Colección Principal
 
 1. Abre Postman
 2. Haz clic en "Import" en la esquina superior izquierda
 3. Selecciona el archivo `postman_collection.json`
 4. La colección se importará automáticamente
 
-### 2. Configurar Variables de Entorno
+### 2. Importar Colección de Smoke Tests (Opcional pero Recomendado)
 
-La colección incluye variables predefinidas que debes configurar:
+1. Repite el proceso anterior
+2. Selecciona el archivo `smoke-tests.postman_collection.json`
+3. Esta colección contiene tests rápidos para validación después de despliegues
 
-- **baseUrl**: URL base de tu API (por defecto: `http://localhost:3000`)
-- **accessToken**: Token de acceso JWT (se obtiene al hacer login)
-- **refreshToken**: Token de refresco JWT (se obtiene al hacer login)
-- **organizationId**: ID de la organización (se obtiene después de la autenticación)
+### 3. Importar Entornos de Postman
+
+Para facilitar el cambio entre diferentes ambientes (Local, Staging, Production):
+
+1. Haz clic en "Environments" en el panel izquierdo (o usa el ícono de engranaje)
+2. Haz clic en "Import"
+3. Importa los siguientes archivos desde `environments/`:
+   - `local.environment.json` - Para desarrollo local
+   - `staging.environment.json` - Para ambiente de staging
+   - `production.environment.json` - Para producción
+4. Selecciona el entorno deseado desde el selector en la esquina superior derecha
+
+### 4. Configurar Variables de Entorno
+
+Cada entorno ya tiene variables predefinidas. Solo necesitas actualizar:
+
+- **baseUrl**: URL base de tu API
+  - Local: `http://localhost:3000`
+  - Staging: `https://staging-api.inventory.com`
+  - Production: `https://api.inventory.com`
+- **organizationId**: ID de tu organización
+- **accessToken**: Se actualiza automáticamente al hacer login
+- **refreshToken**: Se actualiza automáticamente al hacer login
 
 ### 3. Flujo de Autenticación
 
@@ -326,17 +364,20 @@ La colección incluye scripts de test automático que:
 La colección incluye scripts especiales para testing masivo:
 
 #### Bulk Import Testing
+
 - **Bulk Import Products Script**: Ejecuta múltiples importaciones secuencialmente
 - Configura diferentes tipos de importación automáticamente
 - Valida estados y extrae métricas de importación
 - Úsalo con Collection Runner para probar todos los tipos de importación
 
 #### Export Validation Scripts
+
 - **Test All Export Formats**: Prueba todos los formatos (PDF, EXCEL, CSV) para un reporte
 - Valida Content-Type y Content-Disposition headers
 - Verifica tamaño mínimo de archivos
 
 #### Stream Testing Scripts
+
 - **Test Stream with Large Dataset**: Valida streams NDJSON con grandes volúmenes
 - Verifica formato de cada línea JSON
 - Valida performance (tiempo de respuesta < 30s)
@@ -356,6 +397,36 @@ Para soporte técnico o preguntas sobre la API:
 - Revisa la documentación Swagger
 - Consulta los logs del servidor
 - Verifica la configuración de variables en Postman
+
+## 🧪 Smoke Tests
+
+La colección de **Smoke Tests** (`smoke-tests.postman_collection.json`) contiene tests rápidos para validar que los endpoints críticos funcionen correctamente.
+
+### Endpoints Incluidos en Smoke Tests
+
+- ✅ Health Check
+- ✅ Login
+- ✅ Refresh Token
+- ✅ Get Products
+- ✅ Get Warehouses
+- ✅ Get Reports
+
+### Cómo Usar Smoke Tests
+
+1. Importa la colección `smoke-tests.postman_collection.json`
+2. Selecciona el entorno correcto (Local, Staging, o Production)
+3. Ejecuta la colección completa usando Collection Runner
+4. Revisa los resultados - todos los tests deben pasar
+
+**Recomendación**: Ejecuta smoke tests después de cada despliegue o cambio importante.
+
+Para más detalles, consulta la [Guía de Usuario](USER_GUIDE.md#usar-smoke-tests).
+
+## 📚 Documentación Adicional
+
+- **[Guía de Usuario Completa](USER_GUIDE.md)**: Guía paso a paso para usar Postman con este sistema
+- **[Documentación Técnica](../technical-documentation.md)**: Documentación completa de todos los módulos
+- **Swagger UI**: `http://localhost:3000/api` (cuando el servidor está corriendo)
 
 ## 🔄 Actualizaciones
 

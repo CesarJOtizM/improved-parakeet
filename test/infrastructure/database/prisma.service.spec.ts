@@ -1,6 +1,3 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { ConfigService } from '@nestjs/config';
-
 // Mock the PrismaClient before importing PrismaService
 const mockConnect = jest.fn();
 const mockDisconnect = jest.fn();
@@ -15,8 +12,11 @@ jest.mock('@infrastructure/database/generated/prisma', () => {
   };
 });
 
-// Import after mocking
+// Import after mocking - internal imports first
 import { PrismaService } from '@infrastructure/database/prisma.service';
+// External imports
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { ConfigService } from '@nestjs/config';
 
 describe('PrismaService', () => {
   let service: PrismaService;
@@ -82,7 +82,7 @@ describe('PrismaService', () => {
     it('Given: service When: initializing Then: should connect to database', async () => {
       // Arrange
       service = new PrismaService(mockConfigService);
-      mockConnect.mockResolvedValue(undefined);
+      mockConnect.mockResolvedValue(undefined as never);
 
       // Act
       await service.onModuleInit();
@@ -96,7 +96,7 @@ describe('PrismaService', () => {
     it('Given: service When: destroying Then: should disconnect from database', async () => {
       // Arrange
       service = new PrismaService(mockConfigService);
-      mockDisconnect.mockResolvedValue(undefined);
+      mockDisconnect.mockResolvedValue(undefined as never);
 
       // Act
       await service.onModuleDestroy();

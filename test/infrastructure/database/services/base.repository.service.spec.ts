@@ -24,14 +24,8 @@ class TestRepositoryService extends BaseRepositoryService<ITestEntity> {
 describe('BaseRepositoryService', () => {
   let service: TestRepositoryService;
   let mockPrisma: jest.Mocked<PrismaService>;
-  let mockModel: {
-    create: jest.Mock;
-    findFirst: jest.Mock;
-    findMany: jest.Mock;
-    update: jest.Mock;
-    delete: jest.Mock;
-    count: jest.Mock;
-  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockModel: Record<string, jest.Mock<any>>;
   let mockLogger: { log: jest.Mock; error: jest.Mock };
 
   const mockOrgId = 'org-123';
@@ -42,7 +36,7 @@ describe('BaseRepositoryService', () => {
     orgId: mockOrgId,
     createdAt: new Date(),
     updatedAt: new Date(),
-    deletedAt: null,
+    deletedAt: undefined,
   };
 
   beforeEach(() => {
@@ -72,11 +66,12 @@ describe('BaseRepositoryService', () => {
   describe('create', () => {
     it('Given: valid entity data When: creating entity Then: should create and return entity with orgId', async () => {
       // Arrange
-      const data = { name: 'New Entity', description: 'New Description' };
+      const data = { name: 'New Entity', description: 'New Description', orgId: mockOrgId };
       mockModel.create.mockResolvedValue({ ...mockEntity, ...data });
 
       // Act
-      const result = await service.create(data, mockOrgId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await service.create(data as any, mockOrgId);
 
       // Assert
       expect(mockModel.create).toHaveBeenCalledWith({
@@ -88,12 +83,13 @@ describe('BaseRepositoryService', () => {
 
     it('Given: database error When: creating entity Then: should log error and throw', async () => {
       // Arrange
-      const data = { name: 'New Entity' };
+      const data = { name: 'New Entity', orgId: mockOrgId };
       const error = new Error('Database error');
       mockModel.create.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(service.create(data, mockOrgId)).rejects.toThrow('Database error');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect(service.create(data as any, mockOrgId)).rejects.toThrow('Database error');
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('Error creating testModel:'),
         error
@@ -529,7 +525,7 @@ describe('BaseRepositoryService', () => {
       const entities = [mockEntity];
       mockModel.findMany.mockResolvedValue(entities);
       mockModel.count.mockResolvedValue(1);
-      const filters = { orderBy: { name: 'asc' }, orgId: mockOrgId };
+      const filters = { orderBy: { name: 'asc' as const }, orgId: mockOrgId };
 
       // Act
       const result = await service.findWithFilters(mockOrgId, filters);
@@ -586,7 +582,7 @@ describe('BaseRepositoryService', () => {
       // Arrange
       const error = new Error('Database error');
       mockModel.findMany.mockRejectedValue(error);
-      const filters = { orgId: mockOrgId };
+      const filters = {};
 
       // Act & Assert
       await expect(service.findWithFilters(mockOrgId, filters)).rejects.toThrow('Database error');

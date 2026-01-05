@@ -7,6 +7,7 @@ import { ValidationError } from '@shared/domain/result/domainError';
 
 describe('StreamReportUseCase', () => {
   let useCase: StreamReportUseCase;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockReportGenerationService: any;
 
   beforeEach(() => {
@@ -40,7 +41,7 @@ describe('StreamReportUseCase', () => {
 
       const request: IStreamReportRequest = {
         type: 'VALUATION',
-        parameters: { startDate: new Date(), endDate: new Date() },
+        parameters: { dateRange: { startDate: new Date(), endDate: new Date() } },
         orgId: 'org-123',
       };
 
@@ -66,7 +67,7 @@ describe('StreamReportUseCase', () => {
       // Arrange
       const request: IStreamReportRequest = {
         type: 'INVALID_TYPE',
-        parameters: { startDate: new Date(), endDate: new Date() },
+        parameters: { dateRange: { startDate: new Date(), endDate: new Date() } },
         orgId: 'org-123',
       };
 
@@ -85,7 +86,7 @@ describe('StreamReportUseCase', () => {
 
       const request: IStreamReportRequest = {
         type: 'VALUATION',
-        parameters: { startDate: new Date(), endDate: new Date() },
+        parameters: { dateRange: { startDate: new Date(), endDate: new Date() } },
         orgId: 'org-123',
       };
 
@@ -103,7 +104,7 @@ describe('StreamReportUseCase', () => {
 
       const request: IStreamReportRequest = {
         type: 'MOVEMENTS',
-        parameters: { startDate: new Date(), endDate: new Date() },
+        parameters: { dateRange: { startDate: new Date(), endDate: new Date() } },
         orgId: 'org-123',
       };
 

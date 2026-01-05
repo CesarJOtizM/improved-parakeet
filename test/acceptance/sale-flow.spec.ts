@@ -77,10 +77,8 @@ describeIf(!!process.env.DATABASE_URL)('Sale Flow Acceptance Test', () => {
         data: {
           productId: testProductId,
           warehouseId: testWarehouseId,
-          locationId: testLocationId,
           quantity: 100,
-          averageCost: 50,
-          currency: 'COP',
+          unitCost: 50,
           orgId: testOrgId,
         },
       });
@@ -154,7 +152,6 @@ describeIf(!!process.env.DATABASE_URL)('Sale Flow Acceptance Test', () => {
         where: {
           productId: testProductId,
           warehouseId: testWarehouseId,
-          locationId: testLocationId,
           orgId: testOrgId,
         },
       });
@@ -168,10 +165,8 @@ describeIf(!!process.env.DATABASE_URL)('Sale Flow Acceptance Test', () => {
         data: {
           productId: testProductId,
           warehouseId: testWarehouseId,
-          locationId: testLocationId,
           quantity: 5, // Less than sale quantity
-          averageCost: 50,
-          currency: 'COP',
+          unitCost: 50,
           orgId: testOrgId,
         },
       });
@@ -241,7 +236,7 @@ describeIf(!!process.env.DATABASE_URL)('Sale Flow Acceptance Test', () => {
         passwordHash: 'hashed',
         firstName: 'Test',
         lastName: 'User',
-        status: 'ACTIVE',
+        isActive: true,
         orgId: testOrgId,
       },
     });
@@ -264,17 +259,8 @@ describeIf(!!process.env.DATABASE_URL)('Sale Flow Acceptance Test', () => {
       }
     );
 
-    // Create location
-    const location = await prisma.location.create({
-      data: {
-        code: 'LOC-SALE-001',
-        name: 'Location 1',
-        warehouseId: testWarehouseId,
-        isDefault: true,
-        orgId: testOrgId,
-      },
-    });
-    testLocationId = location.id;
+    // Set location ID (locations are optional in the schema)
+    testLocationId = 'loc-sale-001';
 
     // Create product
     const productResult = await createProductUseCase.execute({
@@ -320,9 +306,6 @@ describeIf(!!process.env.DATABASE_URL)('Sale Flow Acceptance Test', () => {
         where: { orgId: testOrgId },
       });
       await prisma.product.deleteMany({
-        where: { orgId: testOrgId },
-      });
-      await prisma.location.deleteMany({
         where: { orgId: testOrgId },
       });
       await prisma.warehouse.deleteMany({

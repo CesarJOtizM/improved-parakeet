@@ -7,9 +7,13 @@ import { ValidationError } from '@shared/domain/result/domainError';
 
 describe('ExportReportUseCase', () => {
   let useCase: ExportReportUseCase;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockExportService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockReportRepository: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockEventDispatcher: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockReportCacheService: any;
 
   beforeEach(() => {
@@ -22,7 +26,7 @@ describe('ExportReportUseCase', () => {
     };
 
     mockEventDispatcher = {
-      dispatchEvents: jest.fn().mockResolvedValue(undefined),
+      dispatchEvents: jest.fn().mockResolvedValue(undefined as never),
     };
 
     mockReportCacheService = {
@@ -55,7 +59,7 @@ describe('ExportReportUseCase', () => {
       const request: IExportReportRequest = {
         type: 'VALUATION',
         format: 'PDF',
-        parameters: { startDate: new Date(), endDate: new Date() },
+        parameters: { dateRange: { startDate: new Date(), endDate: new Date() } },
         orgId: 'org-123',
         exportedBy: 'user-123',
       };
@@ -85,7 +89,7 @@ describe('ExportReportUseCase', () => {
       const request: IExportReportRequest = {
         type: 'VALUATION',
         format: 'PDF',
-        parameters: { startDate: new Date(), endDate: new Date() },
+        parameters: { dateRange: { startDate: new Date(), endDate: new Date() } },
         orgId: 'org-123',
         exportedBy: 'user-123',
       };
@@ -105,7 +109,7 @@ describe('ExportReportUseCase', () => {
       const request: IExportReportRequest = {
         type: 'INVALID_TYPE',
         format: 'PDF',
-        parameters: { startDate: new Date(), endDate: new Date() },
+        parameters: { dateRange: { startDate: new Date(), endDate: new Date() } },
         orgId: 'org-123',
         exportedBy: 'user-123',
       };
@@ -131,7 +135,7 @@ describe('ExportReportUseCase', () => {
       const request: IExportReportRequest = {
         type: 'VALUATION',
         format: 'INVALID_FORMAT',
-        parameters: { startDate: new Date(), endDate: new Date() },
+        parameters: { dateRange: { startDate: new Date(), endDate: new Date() } },
         orgId: 'org-123',
         exportedBy: 'user-123',
       };
@@ -177,7 +181,7 @@ describe('ExportReportUseCase', () => {
       const request: IExportReportRequest = {
         type: 'VALUATION',
         format: 'PDF',
-        parameters: { startDate: new Date(), endDate: new Date() },
+        parameters: { dateRange: { startDate: new Date(), endDate: new Date() } },
         orgId: 'org-123',
         exportedBy: 'user-123',
         saveMetadata: true,
@@ -201,7 +205,7 @@ describe('ExportReportUseCase', () => {
       const request: IExportReportRequest = {
         type: 'VALUATION',
         format: 'PDF',
-        parameters: { startDate: new Date(), endDate: new Date() },
+        parameters: { dateRange: { startDate: new Date(), endDate: new Date() } },
         orgId: 'org-123',
         exportedBy: 'user-123',
       };

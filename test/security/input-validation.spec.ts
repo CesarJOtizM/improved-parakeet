@@ -269,7 +269,7 @@ describeIf(!!process.env.DATABASE_URL)('Input Validation Security Tests', () => 
         passwordHash: 'hashed',
         firstName: 'Admin',
         lastName: 'User',
-        status: 'ACTIVE',
+        isActive: true,
         orgId: testOrgId,
       },
     });

@@ -81,7 +81,7 @@ describeIf(!!process.env.DATABASE_URL)('Product Creation Acceptance Flow', () =>
 
       // Assert - Step 1: Product created successfully
       expect(createResult.isOk()).toBe(true);
-      let productId: string;
+      let productId = '';
       createResult.match(
         value => {
           expect(value.success).toBe(true);
@@ -158,7 +158,7 @@ describeIf(!!process.env.DATABASE_URL)('Product Creation Acceptance Flow', () =>
         passwordHash: 'hashed',
         firstName: 'Test',
         lastName: 'User',
-        status: 'ACTIVE',
+        isActive: true,
         orgId: testOrgId,
       },
     });
@@ -175,16 +175,8 @@ describeIf(!!process.env.DATABASE_URL)('Product Creation Acceptance Flow', () =>
     });
     testWarehouseId = warehouse.id;
 
-    // Create location
-    const location = await prisma.location.create({
-      data: {
-        name: 'Test Location',
-        code: 'LOC-001',
-        warehouseId: warehouse.id,
-        orgId: testOrgId,
-      },
-    });
-    testLocationId = location.id;
+    // Set location ID (locations are optional in the schema)
+    testLocationId = 'loc-001';
   }
 
   async function cleanupTestData() {
@@ -203,9 +195,6 @@ describeIf(!!process.env.DATABASE_URL)('Product Creation Acceptance Flow', () =>
         where: { orgId: testOrgId },
       });
       await prisma.product.deleteMany({
-        where: { orgId: testOrgId },
-      });
-      await prisma.location.deleteMany({
         where: { orgId: testOrgId },
       });
       await prisma.warehouse.deleteMany({

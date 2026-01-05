@@ -5,6 +5,7 @@ import { UnauthorizedException } from '@nestjs/common';
 
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockTokenBlacklistService: any;
 
   const validPayload: IJwtPayloadWithExp = {
@@ -91,6 +92,7 @@ describe('JwtStrategy', () => {
       const payloadWithoutRoles = { ...validPayload, roles: undefined };
 
       // Act
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await strategy.validate(payloadWithoutRoles as any);
 
       // Assert
@@ -103,6 +105,7 @@ describe('JwtStrategy', () => {
       const payloadWithoutPermissions = { ...validPayload, permissions: undefined };
 
       // Act
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await strategy.validate(payloadWithoutPermissions as any);
 
       // Assert

@@ -215,7 +215,7 @@ describeIf(!!process.env.DATABASE_URL)('Audit Controller E2E Tests', () => {
         passwordHash: hashedPassword,
         firstName: 'Admin',
         lastName: 'Audit',
-        status: 'ACTIVE',
+        isActive: true,
         orgId: testOrgId,
       },
     });

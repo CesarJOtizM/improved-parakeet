@@ -20,12 +20,13 @@ class TestEvent extends DomainEvent {
 
 describe('DomainEventDispatcher', () => {
   let dispatcher: DomainEventDispatcher;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockEventBus: any;
 
   beforeEach(() => {
     mockEventBus = {
-      publish: jest.fn().mockResolvedValue(undefined),
-      publishAll: jest.fn().mockResolvedValue(undefined),
+      publish: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      publishAll: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
     };
     dispatcher = new DomainEventDispatcher(mockEventBus);
   });

@@ -10,7 +10,9 @@ import { ConflictError, NotFoundError, ValidationError } from '@shared/domain/re
 
 describe('UpdateReportTemplateUseCase', () => {
   let useCase: UpdateReportTemplateUseCase;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockReportTemplateRepository: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockEventDispatcher: any;
 
   const createMockTemplate = (id: string, name: string, isActive: boolean = true) => {
@@ -19,7 +21,9 @@ describe('UpdateReportTemplateUseCase', () => {
       name,
       description: 'Test description',
       type: ReportType.create('VALUATION'),
-      defaultParameters: ReportParameters.create({ startDate: new Date(), endDate: new Date() }),
+      defaultParameters: ReportParameters.create({
+        dateRange: { startDate: new Date(), endDate: new Date() },
+      }),
       isActive,
       orgId: 'org-123',
       createdAt: new Date(),
@@ -44,7 +48,7 @@ describe('UpdateReportTemplateUseCase', () => {
     };
 
     mockEventDispatcher = {
-      dispatchEvents: jest.fn().mockResolvedValue(undefined),
+      dispatchEvents: jest.fn().mockResolvedValue(undefined as never),
     };
 
     useCase = new UpdateReportTemplateUseCase(mockReportTemplateRepository, mockEventDispatcher);

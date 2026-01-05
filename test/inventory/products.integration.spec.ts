@@ -126,7 +126,7 @@ describeIf(!!process.env.DATABASE_URL)('Products Integration Tests', () => {
 
       // Act
       const result = await updateProductUseCase.execute({
-        id: testProductId,
+        productId: testProductId,
         ...updateData,
         orgId: testOrgId,
       });
@@ -158,7 +158,7 @@ describeIf(!!process.env.DATABASE_URL)('Products Integration Tests', () => {
 
       // Act
       const result = await updateProductUseCase.execute({
-        id: testProductId,
+        productId: testProductId,
         ...updateData,
         orgId: testOrgId,
       });
@@ -200,7 +200,7 @@ describeIf(!!process.env.DATABASE_URL)('Products Integration Tests', () => {
         passwordHash: 'hashed',
         firstName: 'Test',
         lastName: 'User',
-        status: 'ACTIVE',
+        isActive: true,
         orgId: testOrgId,
       },
     });

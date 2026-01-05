@@ -3,14 +3,14 @@ import { StructuredLoggerService } from '@shared/services/structuredLogger.servi
 
 describe('StructuredLoggerService', () => {
   let service: StructuredLoggerService;
-  let consoleSpy: jest.SpyInstance;
+  let consoleSpy: ReturnType<typeof jest.spyOn>;
 
   beforeEach(() => {
     service = new StructuredLoggerService();
-    consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-    jest.spyOn(console, 'error').mockImplementation();
-    jest.spyOn(console, 'warn').mockImplementation();
-    jest.spyOn(console, 'debug').mockImplementation();
+    consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    jest.spyOn(console, 'debug').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -71,6 +71,7 @@ describe('StructuredLoggerService', () => {
         user: { id: 'user-123', orgId: 'org-123' },
         method: 'GET',
         path: '/api/test',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
 
       // Act
