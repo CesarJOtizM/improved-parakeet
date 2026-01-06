@@ -1,35 +1,40 @@
-# Docker Compose para infraestructura básica (sin aplicación)
-# Usar para: CI/CD, testing, o cuando solo necesites la infraestructura
-
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: inventory_postgres
-    environment:
-      POSTGRES_DB: inventory_system
-      POSTGRES_USER: inventory_user
-      POSTGRES_PASSWORD: inventory_password
+  app:
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+      args:
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
+    container_name: inventory_app_dev
     ports:
-      - '5432:5432'
+      - '3000:3000'
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - BUN_ENV=development
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+      - .:/app
+      - /app/node_modules
+    user: '${USER_ID:-1000}:${GROUP_ID:-1000}'
+    depends_on:
+      redis:
+        condition: service_healthy
     networks:
       - inventory_network
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U inventory_user -d inventory_system']
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    # Optimizaciones para desarrollo con Bun
+    stdin_open: true
+    tty: true
     restart: unless-stopped
 
   redis:
     image: redis:7-alpine
-    container_name: inventory_redis
+    container_name: inventory_redis_dev
     ports:
       - '6379:6379'
     volumes:
-      - redis_data:/data
+      - redis_dev_data:/data
     networks:
       - inventory_network
     healthcheck:
@@ -37,11 +42,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
 
 volumes:
-  postgres_data:
-  redis_data:
+  redis_dev_data:
 
 networks:
   inventory_network:
