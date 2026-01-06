@@ -1,23 +1,43 @@
-// Prisma Service - Servicio de base de datos
-// Maneja la conexión y operaciones de Prisma
-
 import { PrismaClient } from '@infrastructure/database/generated/prisma';
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
+  private pool: Pool | null = null;
 
   constructor(configService?: ConfigService) {
     // Set DATABASE_URL environment variable for Prisma
     const databaseUrl = PrismaService.buildDatabaseUrl(configService);
     process.env.DATABASE_URL = databaseUrl;
 
+    // Parse database URL to extract connection parameters
+    const url = new URL(databaseUrl);
+
+    // Create PostgreSQL adapter for Prisma 7.2.0
+    // Prisma 7.2.0 requires an adapter when using custom output path
+    // Configure SSL for Supabase and other cloud providers
+    const pool = new Pool({
+      connectionString: databaseUrl,
+      ssl:
+        url.hostname.includes('supabase') || url.hostname.includes('amazonaws.com')
+          ? { rejectUnauthorized: false }
+          : undefined,
+    });
+    const adapter = new PrismaPg(pool);
+
+    // Call super() before accessing 'this'
     super({
+      adapter,
       log:
         configService?.get('NODE_ENV') === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
+
+    // Assign pool after super() call
+    this.pool = pool;
   }
 
   async onModuleInit() {
@@ -27,6 +47,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   async onModuleDestroy() {
     await this.$disconnect();
+    if (this.pool) {
+      await this.pool.end();
+    }
     this.logger.log('Database connection closed');
   }
 
