@@ -1,6 +1,6 @@
 import { CreateOrganizationUseCase } from '@application/organizationUseCases/createOrganizationUseCase';
-import { AuthSeed } from '@infrastructure/database/prisma/seeds/auth.seed';
-import { InventorySeed } from '@infrastructure/database/prisma/seeds/inventory.seed';
+import { AuthSeed } from '@infrastructure/database/prisma/seeds/auth';
+import { InventorySeed } from '@infrastructure/database/prisma/seeds/inventory';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Organization } from '@organization/domain/entities/organization.entity';

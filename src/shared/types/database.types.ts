@@ -193,7 +193,7 @@ export interface IQueryResult<T> {
 export interface ISeedResult {
   roles: IRole[];
   permissions: IPermission[];
-  adminUser: IUser;
+  adminUser?: IUser | null; // Optional, system admin is created separately
 }
 
 export interface IInventorySeedResult {

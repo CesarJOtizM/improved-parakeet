@@ -1,5 +1,5 @@
-import { AuthSeed } from '@infrastructure/database/prisma/seeds/auth.seed';
-import { InventorySeed } from '@infrastructure/database/prisma/seeds/inventory.seed';
+import { AuthSeed } from '@infrastructure/database/prisma/seeds/auth';
+import { InventorySeed } from '@infrastructure/database/prisma/seeds/inventory';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Organization } from '@organization/domain/entities/organization.entity';
@@ -13,6 +13,7 @@ import {
   ValidationError,
 } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
+import { IRole } from '@shared/types/database.types';
 import * as bcrypt from 'bcrypt';
 
 import type { IOrganizationRepository } from '@organization/domain/repositories';
@@ -126,7 +127,7 @@ export class CreateOrganizationUseCase {
 
     // Create roles and permissions (system roles are created once, not per org)
     const authSeed = new AuthSeed(this.prisma);
-    const authResult = await authSeed.seed(savedOrg.id);
+    const authResult = await authSeed.seed();
     this.logger.log('System roles and permissions initialized', {
       rolesCount: authResult.roles.length,
       permissionsCount: authResult.permissions.length,
@@ -150,7 +151,7 @@ export class CreateOrganizationUseCase {
       });
 
       // Find ADMIN system role
-      const adminRole = authResult.roles.find(r => r.name === 'ADMIN');
+      const adminRole = authResult.roles.find((r: IRole) => r.name === 'ADMIN');
       if (!adminRole) {
         return err(
           new BusinessRuleError('ADMIN role not found. Please ensure system roles are initialized.')
