@@ -7,6 +7,7 @@ import {
   UpdateReportTemplateUseCase,
   ViewReportUseCase,
 } from '@application/reportUseCases';
+import { AuthenticationModule } from '@auth/authentication.module';
 import { PrismaModule } from '@infrastructure/database/prisma.module';
 import { PrismaReportRepository } from '@infrastructure/database/repositories/report.repository';
 import { PrismaReportTemplateRepository } from '@infrastructure/database/repositories/reportTemplate.repository';
@@ -31,6 +32,7 @@ import { ReportLoggingInterceptor } from './interceptors/reportLogging.intercept
 
 @Module({
   imports: [
+    AuthenticationModule, // Import AuthenticationModule to access DomainEventDispatcher
     PrismaModule,
     ConfigModule,
     CacheModule.registerAsync({

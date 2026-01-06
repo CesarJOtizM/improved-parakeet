@@ -1,11 +1,14 @@
+import { AuthenticationModule } from '@auth/authentication.module';
 import { Module } from '@nestjs/common';
 import { ReturnsModule } from '@returns/returns.module';
 
 import { ReturnsController } from './returns.controller';
 
 @Module({
-  imports: [ReturnsModule],
+  imports: [
+    AuthenticationModule, // Import AuthenticationModule to access JwtAuthGuard, JwtService, etc.
+    ReturnsModule,
+  ],
   controllers: [ReturnsController],
-  exports: [ReturnsController],
 })
 export class ReturnsHttpModule {}

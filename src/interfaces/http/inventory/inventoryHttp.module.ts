@@ -8,7 +8,10 @@ import { TransfersController } from './transfers.controller';
 import { WarehousesController } from './warehouses.controller';
 
 @Module({
-  imports: [AuthenticationModule, InventoryModule],
+  imports: [
+    AuthenticationModule, // Import AuthenticationModule to access DomainEventDispatcher and DomainEventBus
+    InventoryModule,
+  ],
   controllers: [ProductsController, WarehousesController, MovementsController, TransfersController],
 })
 export class InventoryHttpModule {}

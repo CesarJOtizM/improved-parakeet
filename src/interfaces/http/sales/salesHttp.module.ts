@@ -10,7 +10,11 @@ import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
 import { SalesController } from './sales.controller';
 
 @Module({
-  imports: [AuthenticationModule, SalesModule, ReturnsModule],
+  imports: [
+    AuthenticationModule, // Import AuthenticationModule to access DomainEventDispatcher and DomainEventBus
+    SalesModule,
+    ReturnsModule,
+  ],
   controllers: [SalesController],
   providers: [SaleCreatedEventHandler, SaleConfirmedEventHandler, SaleCancelledEventHandler],
 })

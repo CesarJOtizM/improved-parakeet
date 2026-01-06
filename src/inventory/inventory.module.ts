@@ -23,9 +23,11 @@ import { CreateWarehouseUseCase } from '@application/warehouseUseCases/createWar
 import { GetWarehousesUseCase } from '@application/warehouseUseCases/getWarehousesUseCase';
 import { AuthenticationModule } from '@auth/authentication.module';
 import {
+  PrismaLocationRepository,
   PrismaMovementRepository,
   PrismaProductRepository,
   PrismaReorderRuleRepository,
+  PrismaStockRepository,
   PrismaTransferRepository,
   PrismaWarehouseRepository,
 } from '@infrastructure/database/repositories';
@@ -35,12 +37,14 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { OrganizationModule } from '@organization/organization.module';
 import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
 import { FunctionalCacheService } from '@shared/infrastructure/cache';
 
 @Module({
   imports: [
-    AuthenticationModule, // Import to get access to DomainEventBus and EmailService
+    AuthenticationModule, // Import AuthenticationModule to access DomainEventDispatcher and DomainEventBus
+    OrganizationModule, // Import OrganizationModule to access OrganizationRepository
     ScheduleModule.forRoot(), // Import for scheduled jobs
     ConfigModule,
     CacheModule.registerAsync({
@@ -81,6 +85,14 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     {
       provide: 'ReorderRuleRepository',
       useClass: PrismaReorderRuleRepository,
+    },
+    {
+      provide: 'StockRepository',
+      useClass: PrismaStockRepository,
+    },
+    {
+      provide: 'LocationRepository',
+      useClass: PrismaLocationRepository,
     },
     // Product Use Cases
     CreateProductUseCase,
@@ -140,6 +152,8 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     'ProductRepository',
     'WarehouseRepository',
     'MovementRepository',
+    'StockRepository',
+    'LocationRepository',
   ],
 })
 export class InventoryModule implements OnModuleInit {

@@ -1,14 +1,13 @@
+import { NotificationService } from '@infrastructure/externalServices/notificationService';
 import { Injectable, Logger } from '@nestjs/common';
 import { IDomainEventHandler } from '@shared/domain/events/domainEventBus.service';
 import { LowStockAlertEvent } from '@stock/domain/events/lowStockAlert.event';
-
-import type { INotificationService } from '@infrastructure/externalServices/notificationService.interface';
 
 @Injectable()
 export class LowStockAlertEventHandler implements IDomainEventHandler<LowStockAlertEvent> {
   private readonly logger = new Logger(LowStockAlertEventHandler.name);
 
-  constructor(private readonly notificationService: INotificationService) {}
+  constructor(private readonly notificationService: NotificationService) {}
 
   async handle(event: LowStockAlertEvent): Promise<void> {
     this.logger.log('Handling LowStockAlert event', {

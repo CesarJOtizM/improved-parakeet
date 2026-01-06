@@ -212,6 +212,8 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     DomainEventBus,
     'DomainEventDispatcher',
     EmailService,
+    // Export repositories for cross-module access (e.g., InventoryModule event handlers)
+    'AuditLogRepository',
   ],
 })
 export class AuthenticationModule implements OnModuleInit {

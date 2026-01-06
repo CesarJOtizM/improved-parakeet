@@ -1,14 +1,13 @@
+import { NotificationService } from '@infrastructure/externalServices/notificationService';
 import { Injectable, Logger } from '@nestjs/common';
 import { IDomainEventHandler } from '@shared/domain/events/domainEventBus.service';
 import { StockThresholdExceededEvent } from '@stock/domain/events/stockThresholdExceeded.event';
-
-import type { INotificationService } from '@infrastructure/externalServices/notificationService.interface';
 
 @Injectable()
 export class StockThresholdExceededEventHandler implements IDomainEventHandler<StockThresholdExceededEvent> {
   private readonly logger = new Logger(StockThresholdExceededEventHandler.name);
 
-  constructor(private readonly notificationService: INotificationService) {}
+  constructor(private readonly notificationService: NotificationService) {}
 
   async handle(event: StockThresholdExceededEvent): Promise<void> {
     this.logger.log('Handling StockThresholdExceeded event', {

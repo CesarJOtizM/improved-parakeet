@@ -7,12 +7,16 @@ import { GetSaleMovementUseCase } from '@application/saleUseCases/getSaleMovemen
 import { GetSalesUseCase } from '@application/saleUseCases/getSalesUseCase';
 import { RemoveSaleLineUseCase } from '@application/saleUseCases/removeSaleLineUseCase';
 import { UpdateSaleUseCase } from '@application/saleUseCases/updateSaleUseCase';
+import { AuthenticationModule } from '@auth/authentication.module';
 import { PrismaSaleRepository } from '@infrastructure/database/repositories/sale.repository';
 import { InventoryModule } from '@inventory/inventory.module';
 import { Module } from '@nestjs/common';
 
 @Module({
-  imports: [InventoryModule], // Import InventoryModule to access MovementRepository, StockRepository, ProductRepository, WarehouseRepository
+  imports: [
+    AuthenticationModule, // Import AuthenticationModule to access DomainEventDispatcher
+    InventoryModule, // Import InventoryModule to access MovementRepository, StockRepository, ProductRepository, WarehouseRepository
+  ],
   providers: [
     // Repository
     {
@@ -41,6 +45,8 @@ import { Module } from '@nestjs/common';
     AddSaleLineUseCase,
     RemoveSaleLineUseCase,
     GetSaleMovementUseCase,
+    // Export repository for cross-module access (e.g., ReturnsModule)
+    'SaleRepository',
   ],
 })
 export class SalesModule {}

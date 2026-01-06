@@ -6,7 +6,10 @@ import { Module } from '@nestjs/common';
 import { OrganizationController } from '@organization/organization.controller';
 
 @Module({
-  imports: [PrismaModule, AuthenticationModule],
+  imports: [
+    PrismaModule,
+    AuthenticationModule, // Import AuthenticationModule to access DomainEventDispatcher
+  ],
   controllers: [OrganizationController],
   providers: [
     CreateOrganizationUseCase,

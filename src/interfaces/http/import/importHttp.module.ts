@@ -8,16 +8,19 @@ import {
   ProcessImportUseCase,
   ValidateImportUseCase,
 } from '@application/importUseCases';
+import { AuthenticationModule } from '@auth/authentication.module';
 import { PrismaModule } from '@infrastructure/database/prisma.module';
 import { PrismaImportBatchRepository } from '@infrastructure/database/repositories/prismaImportBatchRepository';
 import { FileParsingService } from '@infrastructure/externalServices/fileParsingService';
 import { Module } from '@nestjs/common';
-import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 
 import { ImportController } from './import.controller';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [
+    PrismaModule,
+    AuthenticationModule, // Import AuthenticationModule to access DomainEventDispatcher
+  ],
   controllers: [ImportController],
   providers: [
     // Repository
@@ -29,11 +32,6 @@ import { ImportController } from './import.controller';
     {
       provide: 'FileParsingService',
       useClass: FileParsingService,
-    },
-    // Domain Event Dispatcher
-    {
-      provide: 'DomainEventDispatcher',
-      useClass: DomainEventDispatcher,
     },
     // Use Cases
     CreateImportBatchUseCase,

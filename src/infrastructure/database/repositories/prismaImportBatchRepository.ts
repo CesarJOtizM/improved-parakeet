@@ -18,8 +18,8 @@ export class PrismaImportBatchRepository implements IImportBatchRepository {
   private readonly logger = new Logger(PrismaImportBatchRepository.name);
   private readonly prisma: PrismaClient;
 
-  constructor(prismaService: PrismaService) {
-    this.prisma = prismaService as unknown as PrismaClient;
+  constructor(private readonly prismaService: PrismaService) {
+    this.prisma = this.prismaService as unknown as PrismaClient;
   }
 
   async save(batch: ImportBatch): Promise<ImportBatch> {
