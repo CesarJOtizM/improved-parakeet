@@ -7,10 +7,10 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   AuthenticationError,
   DomainError,
-  err,
-  ok,
   RateLimitError,
   Result,
+  err,
+  ok,
 } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 

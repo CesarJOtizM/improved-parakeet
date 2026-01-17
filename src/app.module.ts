@@ -13,6 +13,8 @@ import { OrganizationModule } from '@organization/organization.module';
 import { SecurityMiddleware } from '@shared/middleware';
 import { CorrelationIdMiddleware } from '@shared/middlewares/correlationId.middleware';
 
+import { TenantMiddleware } from './interfaces/http/middlewares/tenant.middleware';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -35,11 +37,9 @@ import { CorrelationIdMiddleware } from '@shared/middlewares/correlationId.middl
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    // Correlation ID must be first to ensure it's available for all requests
     consumer.apply(CorrelationIdMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
-
     consumer.apply(ClientIpMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
-
     consumer.apply(SecurityMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
+    consumer.apply(TenantMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }

@@ -112,14 +112,23 @@ Las siguientes variables se actualizan automáticamente cuando ejecutas requests
    ```
 4. Asegúrate de que el header `X-Organization-ID` tenga el valor correcto
 5. Haz clic en **"Send"**
-6. Si es exitoso, verás los tokens en la respuesta:
+6. Si es exitoso, verás los tokens en la respuesta (formato estándar de la API):
    ```json
    {
-     "accessToken": "eyJhbGci...",
-     "refreshToken": "eyJhbGci...",
-     "user": { ... }
+     "success": true,
+     "message": "Login successful",
+     "data": {
+       "accessToken": "eyJhbGci...",
+       "refreshToken": "eyJhbGci...",
+       "user": { ... },
+       "accessTokenExpiresAt": "2024-12-31T23:59:59.000Z",
+       "refreshTokenExpiresAt": "2025-01-31T23:59:59.000Z",
+       "sessionId": "session-id"
+     },
+     "timestamp": "2024-01-01T00:00:00.000Z"
    }
    ```
+   **Nota**: Los tokens se guardan automáticamente en las variables de la colección desde `data.accessToken` y `data.refreshToken`.
 
 ### Paso 2: Verificar Tokens Guardados
 

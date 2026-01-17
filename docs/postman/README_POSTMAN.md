@@ -283,10 +283,11 @@ Cada entorno ya tiene variables predefinidas. Solo necesitas actualizar:
 ### 3. Flujo de Autenticación
 
 1. **Ejecuta el endpoint de Login** con tus credenciales
-2. **Copia el `accessToken`** de la respuesta
-3. **Pega el token** en la variable `accessToken` de la colección
-4. **Copia el `refreshToken`** de la respuesta
-5. **Pega el token** en la variable `refreshToken` de la colección
+2. **Los tokens se guardan automáticamente** en las variables de la colección
+3. **Formato de respuesta**: La API retorna un objeto con `success`, `message`, `data` y `timestamp`
+   - Los tokens están en `data.accessToken` y `data.refreshToken`
+   - Los scripts de Postman extraen automáticamente estos valores
+4. **Si necesitas copiar manualmente**: Accede a `data.accessToken` y `data.refreshToken` en la respuesta
 
 ### 4. Usar Endpoints Protegidos
 

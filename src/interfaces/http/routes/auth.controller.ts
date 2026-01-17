@@ -85,13 +85,20 @@ export class AuthController {
     @Body() loginRequest: ILoginRequest,
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
-    @OrgId() orgId: string
+    @OrgId() orgId: string,
+    @Req() req: Request
   ): Promise<ILoginResponse> {
-    this.logger.log(`Login attempt from IP: ${ipAddress} for org: ${orgId}`);
+    // Log both the decorator value and the middleware value for debugging
+    this.logger.log(
+      `Login attempt from IP: ${ipAddress} - Decorator orgId: ${orgId} - Middleware req.orgId: ${req.orgId}`
+    );
+
+    // Use req.orgId from middleware if available (it's validated), otherwise fallback to decorator
+    const finalOrgId = req.orgId || orgId;
 
     const request: ILoginRequest = {
       ...loginRequest,
-      orgId,
+      orgId: finalOrgId, // Use the validated orgId from middleware
       ipAddress,
       userAgent,
     };

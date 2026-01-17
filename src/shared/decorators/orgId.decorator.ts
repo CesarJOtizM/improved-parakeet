@@ -39,6 +39,12 @@ export const OrgId = createParamDecorator(
   async (_data: unknown, ctx: ExecutionContext): Promise<string> => {
     const request = ctx.switchToHttp().getRequest();
 
+    // 0. First, check if TenantMiddleware already set req.orgId (highest priority)
+    // This ensures we use the validated orgId from the middleware
+    if (request.orgId) {
+      return request.orgId;
+    }
+
     // 1. Desde el header X-Organization-ID
     const orgIdFromHeader = request.headers['x-organization-id'];
     if (orgIdFromHeader) {
@@ -62,6 +68,33 @@ export const OrgId = createParamDecorator(
         }
       }
       return orgSlugFromHeader;
+    }
+
+    // 2.5. Check body for orgId (body parser has run by now)
+    // If it's a slug, try to resolve it to ID
+    if (request.body && request.body.orgId) {
+      const bodyOrgId = request.body.orgId;
+      // Try to resolve if it looks like a slug (not a UUID)
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        bodyOrgId
+      );
+      if (!isUUID) {
+        // It's likely a slug, try to resolve it to ID
+        const orgRepository = await getOrganizationRepository(ctx);
+        if (orgRepository) {
+          try {
+            const organization = await orgRepository.findBySlug(bodyOrgId);
+            if (organization && organization.isActive) {
+              // Return the resolved ID, not the slug
+              return organization.id;
+            }
+          } catch (_error) {
+            // If error occurs, fall back to using slug as orgId
+            // This maintains backward compatibility
+          }
+        }
+      }
+      return bodyOrgId;
     }
 
     // 3. Intentar obtener orgId del subdominio

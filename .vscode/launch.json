@@ -5,15 +5,16 @@
       "name": "Debug NestJS",
       "type": "node",
       "request": "launch",
+      "runtimeExecutable": "tsx",
+      "runtimeArgs": ["watch", "--inspect"],
       "program": "${workspaceFolder}/src/main.ts",
-      "runtimeArgs": ["-r", "ts-node/register", "-r", "tsconfig-paths/register"],
       "env": {
         "NODE_ENV": "development"
       },
       "console": "integratedTerminal",
       "restart": true,
       "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"]
+      "skipFiles": ["<node_internals>/**"]
     },
     {
       "name": "Debug Tests",
