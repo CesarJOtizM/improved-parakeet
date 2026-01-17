@@ -1,4 +1,3 @@
-import { AuthSeed } from '@infrastructure/database/prisma/seeds/auth';
 import { InventorySeed } from '@infrastructure/database/prisma/seeds/inventory';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
@@ -7,13 +6,12 @@ import {
   BusinessRuleError,
   ConflictError,
   DomainError,
-  err,
-  ok,
   Result,
   ValidationError,
+  err,
+  ok,
 } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
-import { IRole } from '@shared/types/database.types';
 import * as bcrypt from 'bcrypt';
 
 import type { IOrganizationRepository } from '@organization/domain/repositories';
@@ -42,14 +40,13 @@ export interface IOrganizationData {
   domain?: string;
   isActive: boolean;
   createdAt: Date;
-}
-
-export interface ICreateOrganizationResponse extends IApiResponseSuccess<IOrganizationData> {
   adminUser?: {
     email: string;
     username: string;
   };
 }
+
+export type ICreateOrganizationResponse = IApiResponseSuccess<IOrganizationData>;
 
 @Injectable()
 export class CreateOrganizationUseCase {
@@ -117,21 +114,13 @@ export class CreateOrganizationUseCase {
       request.slug
     );
 
-    const savedOrg = await this.organizationRepository.save(
+    const savedOrg = await this.organizationRepository.create(
       organization,
       request.slug,
       request.domain
     );
 
     this.logger.log('Organization created', { organizationId: savedOrg.id });
-
-    // Create roles and permissions (system roles are created once, not per org)
-    const authSeed = new AuthSeed(this.prisma);
-    const authResult = await authSeed.seed();
-    this.logger.log('System roles and permissions initialized', {
-      rolesCount: authResult.roles.length,
-      permissionsCount: authResult.permissions.length,
-    });
 
     // Create admin user if provided
     let adminUserData: { email: string; username: string } | undefined;
@@ -150,11 +139,19 @@ export class CreateOrganizationUseCase {
         },
       });
 
-      // Find ADMIN system role
-      const adminRole = authResult.roles.find((r: IRole) => r.name === 'ADMIN');
+      // Find ADMIN system role (master data - should already exist)
+      const adminRole = await this.prisma.role.findFirst({
+        where: {
+          name: 'ADMIN',
+          orgId: null,
+        },
+      });
+
       if (!adminRole) {
         return err(
-          new BusinessRuleError('ADMIN role not found. Please ensure system roles are initialized.')
+          new BusinessRuleError(
+            'ADMIN role not found. Please ensure system roles are initialized before creating organizations.'
+          )
         );
       }
 
@@ -197,9 +194,9 @@ export class CreateOrganizationUseCase {
         domain: request.domain,
         isActive: savedOrg.isActive,
         createdAt: orgData?.createdAt || new Date(),
+        ...(adminUserData && { adminUser: adminUserData }),
       },
       timestamp: new Date().toISOString(),
-      ...(adminUserData && { adminUser: adminUserData }),
     });
   }
 }

@@ -7,7 +7,6 @@ import {
 import { LoginUseCase } from '@application/authUseCases/loginUseCase';
 import { LogoutUseCase } from '@application/authUseCases/logoutUseCase';
 import { RefreshTokenUseCase } from '@application/authUseCases/refreshTokenUseCase';
-import { RegisterUserUseCase } from '@application/authUseCases/registerUserUseCase';
 import { RequestPasswordResetUseCase } from '@application/authUseCases/requestPasswordResetUseCase';
 import { ResetPasswordUseCase } from '@application/authUseCases/resetPasswordUseCase';
 import { VerifyOtpUseCase } from '@application/authUseCases/verifyOtpUseCase';
@@ -56,7 +55,6 @@ import { EmailService } from '@infrastructure/externalServices';
 import { AuditController } from '@interface/http/audit/audit.controller';
 import { AuthController } from '@interface/http/routes/auth.controller';
 import { PasswordResetController } from '@interface/http/routes/passwordReset.controller';
-import { RegisterController } from '@interface/http/routes/register.controller';
 import { RolesController } from '@interface/http/routes/roles.controller';
 import { UsersController } from '@interface/http/routes/users.controller';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -101,7 +99,6 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
   ],
   controllers: [
     AuthController,
-    RegisterController,
     PasswordResetController,
     UsersController,
     RolesController,
@@ -139,7 +136,6 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     LoginUseCase,
     LogoutUseCase,
     RefreshTokenUseCase,
-    RegisterUserUseCase,
     RequestPasswordResetUseCase,
     VerifyOtpUseCase,
     ResetPasswordUseCase,

@@ -1,20 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class AdminUserDataDto {
-  @ApiProperty({
-    description: 'Admin user email',
-    example: 'admin@company.com',
-  })
-  email!: string;
-
-  @ApiProperty({
-    description: 'Admin user username',
-    example: 'admin',
-  })
-  username!: string;
-}
-
-export class OrganizationDataDto {
+export class UpdateOrganizationDataDto {
   @ApiProperty({
     description: 'Organization ID',
     example: 'clx1234567890abcdef',
@@ -47,35 +33,28 @@ export class OrganizationDataDto {
   isActive!: boolean;
 
   @ApiProperty({
-    description: 'Organization creation date',
+    description: 'Organization last update date',
     example: '2024-12-20T10:00:00.000Z',
   })
-  createdAt!: Date;
-
-  @ApiProperty({
-    description: 'Admin user information (if created)',
-    type: AdminUserDataDto,
-    required: false,
-  })
-  adminUser?: AdminUserDataDto;
+  updatedAt!: Date;
 }
 
-export class CreateOrganizationResponseDto {
+export class UpdateOrganizationResponseDto {
   @ApiProperty({
-    description: 'Indicates if the creation was successful',
+    description: 'Indicates if the update was successful',
     example: true,
   })
   success!: boolean;
 
   @ApiProperty({
-    description: 'Created organization information',
-    type: OrganizationDataDto,
+    description: 'Updated organization information',
+    type: UpdateOrganizationDataDto,
   })
-  data!: OrganizationDataDto;
+  data!: UpdateOrganizationDataDto;
 
   @ApiProperty({
-    description: 'Informative message about the creation result',
-    example: 'Organization created successfully',
+    description: 'Informative message about the update result',
+    example: 'Organization updated successfully',
   })
   message!: string;
 

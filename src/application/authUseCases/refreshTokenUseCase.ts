@@ -2,7 +2,7 @@ import { IJwtPayloadWithExp, JwtService } from '@auth/domain/services/jwtService
 import { RateLimitService } from '@auth/domain/services/rateLimitService';
 import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { DomainError, err, ok, RateLimitError, Result, TokenError } from '@shared/domain/result';
+import { DomainError, RateLimitError, Result, TokenError, err, ok } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISessionRepository, IUserRepository } from '@auth/domain/repositories';

@@ -5,8 +5,6 @@ export * from './createRole.dto';
 export * from './createUser.dto';
 export * from './getRolesResponse.dto';
 export * from './getUsers.dto';
-export * from './registerUser.dto';
-export * from './registerUserResponse.dto';
 export * from './requestPasswordReset.dto';
 export * from './resetPassword.dto';
 export * from './updateRole.dto';

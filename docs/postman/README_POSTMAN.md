@@ -62,10 +62,6 @@ La colección utiliza las siguientes variables que debes configurar:
 - **POST** `/auth/refresh` - Refrescar token de acceso
 - **POST** `/auth/logout-all` - Cerrar todas las sesiones activas
 
-### 👤 User Registration
-
-- **POST** `/register` - Registrar nuevo usuario
-
 ### 🔑 Password Reset
 
 - **POST** `/password-reset/request` - Solicitar recuperación de contraseña

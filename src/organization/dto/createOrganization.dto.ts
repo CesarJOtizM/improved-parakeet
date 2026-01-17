@@ -100,13 +100,13 @@ export class CreateOrganizationDto {
 
   @ApiProperty({
     description: 'Organization domain (optional, for subdomain routing)',
-    example: 'miempresa.tudominio.com',
+    example: 'demo.example.com',
     required: false,
   })
   @IsOptional()
   @IsString({ message: 'Domain must be a string' })
-  @Matches(/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.[a-zA-Z]{2,}$/, {
-    message: 'Domain must be a valid domain name',
+  @Matches(/^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/, {
+    message: 'Domain must be a valid domain name (e.g., demo.example.com)',
   })
   domain?: string;
 

@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
+import { DomainError, NotFoundError, Result, err, ok } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IAuditLogRepository } from '@shared/audit/domain/repositories/auditLogRepository.interface';

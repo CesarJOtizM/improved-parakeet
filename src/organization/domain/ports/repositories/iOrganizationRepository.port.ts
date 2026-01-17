@@ -14,5 +14,6 @@ export interface IOrganizationRepository
   existsBySlug(slug: string): Promise<boolean>;
   existsByDomain(domain: string): Promise<boolean>;
   countActiveOrganizations(): Promise<number>;
-  save(organization: Organization, slug?: string, domain?: string): Promise<Organization>;
+  create(organization: Organization, slug: string, domain?: string): Promise<Organization>;
+  update(organization: Organization, slug?: string, domain?: string): Promise<Organization>;
 }

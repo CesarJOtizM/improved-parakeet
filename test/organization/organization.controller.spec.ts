@@ -8,6 +8,7 @@ describe('OrganizationController', () => {
   let controller: OrganizationController;
   let mockCreateOrganizationUseCase: any;
   let mockGetOrganizationByIdUseCase: any;
+  let mockUpdateOrganizationUseCase: any;
 
   const mockOrganizationData = {
     id: 'org-123',
@@ -23,9 +24,11 @@ describe('OrganizationController', () => {
   beforeEach(() => {
     mockCreateOrganizationUseCase = { execute: jest.fn() };
     mockGetOrganizationByIdUseCase = { execute: jest.fn() };
+    mockUpdateOrganizationUseCase = { execute: jest.fn() };
     controller = new OrganizationController(
       mockCreateOrganizationUseCase,
-      mockGetOrganizationByIdUseCase
+      mockGetOrganizationByIdUseCase,
+      mockUpdateOrganizationUseCase
     );
   });
 

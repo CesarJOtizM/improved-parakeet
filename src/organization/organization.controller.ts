@@ -1,5 +1,6 @@
 import { CreateOrganizationUseCase } from '@application/organizationUseCases/createOrganizationUseCase';
 import { GetOrganizationByIdUseCase } from '@application/organizationUseCases/getOrganizationByIdUseCase';
+import { UpdateOrganizationUseCase } from '@application/organizationUseCases/updateOrganizationUseCase';
 import { RequireRoles } from '@auth/security/decorators/roleBasedAuth.decorator';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
@@ -12,6 +13,7 @@ import {
   Logger,
   Param,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -19,6 +21,8 @@ import {
   CreateOrganizationDto,
   CreateOrganizationResponseDto,
   GetOrganizationResponseDto,
+  UpdateOrganizationDto,
+  UpdateOrganizationResponseDto,
 } from '@organization/dto';
 import { SYSTEM_ROLES } from '@shared/constants/security.constants';
 import { resultToHttpResponse } from '@shared/utils/resultToHttp';
@@ -30,7 +34,8 @@ export class OrganizationController {
 
   constructor(
     private readonly createOrganizationUseCase: CreateOrganizationUseCase,
-    private readonly getOrganizationByIdUseCase: GetOrganizationByIdUseCase
+    private readonly getOrganizationByIdUseCase: GetOrganizationByIdUseCase,
+    private readonly updateOrganizationUseCase: UpdateOrganizationUseCase
   ) {}
 
   @Post()
@@ -145,6 +150,66 @@ export class OrganizationController {
     const response = resultToHttpResponse(result);
 
     this.logger.log('Organization retrieved successfully', {
+      organizationId: response.data.id,
+      slug: response.data.slug,
+    });
+
+    return response;
+  }
+
+  @Put(':id')
+  @UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+  @RequireRoles([SYSTEM_ROLES.SYSTEM_ADMIN], { checkOrganization: false })
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Update organization',
+    description:
+      'Update an existing organization. Only super-admins can update organizations. All fields are optional.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Organization ID (CUID)',
+    example: 'clx1234567890abcdef',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Organization updated successfully',
+    type: UpdateOrganizationResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Organization not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data or slug/domain already exists',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions. Only super-admins can update organizations.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'User authentication required',
+  })
+  async updateOrganization(
+    @Param('id') id: string,
+    @Body() updateOrganizationDto: UpdateOrganizationDto
+  ): Promise<UpdateOrganizationResponseDto> {
+    this.logger.log('Updating organization request', {
+      organizationId: id,
+      fields: Object.keys(updateOrganizationDto),
+    });
+
+    const result = await this.updateOrganizationUseCase.execute({
+      id,
+      ...updateOrganizationDto,
+    });
+
+    const response = resultToHttpResponse(result);
+
+    this.logger.log('Organization updated successfully', {
       organizationId: response.data.id,
       slug: response.data.slug,
     });

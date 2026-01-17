@@ -170,74 +170,96 @@ export class OrganizationRepository implements IOrganizationRepository {
     }
   }
 
-  async save(organization: Organization, slug?: string, domain?: string): Promise<Organization> {
+  async create(organization: Organization, slug: string, domain?: string): Promise<Organization> {
     try {
+      if (!slug) {
+        throw new Error('Slug is required when creating a new organization');
+      }
+
+      const newOrg = await this.prisma.organization.create({
+        data: {
+          name: organization.name,
+          slug: slug,
+          domain: domain,
+          isActive: organization.isActive,
+        },
+      });
+
+      this.logger.log('Organization created', { organizationId: newOrg.id, slug });
+
+      return Organization.reconstitute(
+        {
+          name: newOrg.name,
+          taxId: undefined, // Does not exist in current schema
+          settings: {},
+          timezone: 'UTC',
+          currency: 'USD',
+          dateFormat: 'YYYY-MM-DD',
+          isActive: newOrg.isActive,
+        },
+        newOrg.id,
+        newOrg.id
+      );
+    } catch (error) {
+      this.logger.error('Error creating organization', {
+        slug,
+        error,
+      });
+      throw error;
+    }
+  }
+
+  async update(organization: Organization, slug?: string, domain?: string): Promise<Organization> {
+    try {
+      if (!organization.id) {
+        throw new Error('Organization ID is required for update');
+      }
+
       const organizationData: {
-        name: string;
+        name?: string;
         slug?: string;
         domain?: string;
-        isActive: boolean;
-      } = {
-        name: organization.name,
-        isActive: organization.isActive,
-      };
+        isActive?: boolean;
+      } = {};
+
+      if (organization.name) {
+        organizationData.name = organization.name;
+      }
 
       if (slug) {
         organizationData.slug = slug;
       }
 
-      if (domain) {
+      if (domain !== undefined) {
         organizationData.domain = domain;
       }
 
-      if (organization.id) {
-        // Update existing organization
-        const updatedOrg = await this.prisma.organization.update({
-          where: { id: organization.id },
-          data: organizationData,
-        });
-        return Organization.reconstitute(
-          {
-            name: updatedOrg.name,
-            taxId: undefined,
-            settings: {},
-            timezone: 'UTC',
-            currency: 'USD',
-            dateFormat: 'YYYY-MM-DD',
-            isActive: updatedOrg.isActive,
-          },
-          updatedOrg.id,
-          updatedOrg.id
-        );
-      } else {
-        // Create new organization
-        if (!slug) {
-          throw new Error('Slug is required when creating a new organization');
-        }
-        const newOrg = await this.prisma.organization.create({
-          data: {
-            name: organizationData.name,
-            slug: slug,
-            domain: organizationData.domain,
-            isActive: organizationData.isActive,
-          },
-        });
-        return Organization.reconstitute(
-          {
-            name: newOrg.name,
-            taxId: undefined, // Does not exist in current schema
-            settings: {},
-            timezone: 'UTC',
-            currency: 'USD',
-            dateFormat: 'YYYY-MM-DD',
-            isActive: newOrg.isActive,
-          },
-          newOrg.id,
-          newOrg.id
-        );
+      if (organization.isActive !== undefined) {
+        organizationData.isActive = organization.isActive;
       }
+
+      const updatedOrg = await this.prisma.organization.update({
+        where: { id: organization.id },
+        data: organizationData,
+      });
+
+      this.logger.log('Organization updated', { organizationId: updatedOrg.id });
+
+      return Organization.reconstitute(
+        {
+          name: updatedOrg.name,
+          taxId: undefined,
+          settings: {},
+          timezone: 'UTC',
+          currency: 'USD',
+          dateFormat: 'YYYY-MM-DD',
+          isActive: updatedOrg.isActive,
+        },
+        updatedOrg.id,
+        updatedOrg.id
+      );
     } catch (error) {
-      this.logger.error('Error saving organization', {
+      this.logger.error('Error updating organization', {
         organizationId: organization.id,
         error,
       });

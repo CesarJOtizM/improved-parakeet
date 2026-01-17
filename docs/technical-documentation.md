@@ -685,7 +685,6 @@ await changeUserStatusUseCase.execute({
 | ----------------------------- | --------------------------- | ------------------------------------ |
 | `LoginUseCase`                | Autenticación de usuario    | `Result<LoginResponse, DomainError>` |
 | `RefreshTokenUseCase`         | Renovar token de acceso     | `Result<TokenResponse, DomainError>` |
-| `RegisterUserUseCase`         | Registro de nuevo usuario   | `Result<User, DomainError>`          |
 | `CreateUserUseCase`           | Crear usuario (admin)       | `Result<User, DomainError>`          |
 | `CreateRoleUseCase`           | Crear rol personalizado     | `Result<Role, DomainError>`          |
 | `AssignRoleToUserUseCase`     | Asignar rol a usuario       | `Result<void, DomainError>`          |
@@ -1484,7 +1483,6 @@ application/
 │   └── ...
 ├── authUseCases/
 │   ├── loginUseCase.ts
-│   ├── registerUserUseCase.ts
 │   └── ...
 └── eventHandlers/
     ├── productCreatedEventHandler.ts

@@ -30,7 +30,8 @@ describe('CreateOrganizationUseCase', () => {
     jest.clearAllMocks();
 
     mockOrganizationRepository = {
-      save: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
       findById: jest.fn(),
       findAll: jest.fn(),
       findBySpecification: jest.fn(),
@@ -125,7 +126,7 @@ describe('CreateOrganizationUseCase', () => {
         mockOrganizationId,
         mockOrgId
       );
-      mockOrganizationRepository.save.mockResolvedValue(organizationWithId);
+      mockOrganizationRepository.create.mockResolvedValue(organizationWithId);
 
       mockPrismaService.organization.findUnique.mockResolvedValue({
         id: mockOrganizationId,
@@ -155,7 +156,7 @@ describe('CreateOrganizationUseCase', () => {
         }
       );
       expect(mockOrganizationRepository.existsBySlug).toHaveBeenCalledWith(validRequest.slug);
-      expect(mockOrganizationRepository.save).toHaveBeenCalledTimes(1);
+      expect(mockOrganizationRepository.create).toHaveBeenCalledTimes(1);
     });
 
     it('Given: invalid slug format When: creating organization Then: should return ValidationError', async () => {
@@ -264,7 +265,7 @@ describe('CreateOrganizationUseCase', () => {
         mockOrganizationId,
         mockOrgId
       );
-      mockOrganizationRepository.save.mockResolvedValue(organizationWithId);
+      mockOrganizationRepository.create.mockResolvedValue(organizationWithId);
 
       mockPrismaService.organization.findUnique.mockResolvedValue({
         id: mockOrganizationId,
@@ -311,8 +312,8 @@ describe('CreateOrganizationUseCase', () => {
       result.match(
         value => {
           expect(value.success).toBe(true);
-          expect(value.adminUser).toBeDefined();
-          expect(value.adminUser?.email).toBe('admin@test.com');
+          expect(value.data.adminUser).toBeDefined();
+          expect(value.data.adminUser?.email).toBe('admin@test.com');
         },
         () => {
           throw new Error('Expected Ok result');

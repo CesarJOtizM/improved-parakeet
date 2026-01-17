@@ -201,28 +201,6 @@ describeIf(!!process.env.DATABASE_URL)('Input Validation Security Tests', () => 
   });
 
   describe('Format Validation', () => {
-    it('Given: invalid email format When: creating user Then: should return 400 Bad Request', async () => {
-      // Arrange
-      const invalidEmail = {
-        email: 'not-an-email',
-        username: 'testuser',
-        password: 'ValidPass123!',
-        firstName: 'Test',
-        lastName: 'User',
-        orgId: testOrgId,
-      };
-
-      // Act
-      const response = await request(app.getHttpServer())
-        .post('/auth/register')
-        .set('X-Organization-ID', testOrgId)
-        .send(invalidEmail)
-        .expect(400);
-
-      // Assert
-      expect(response.body.success).toBe(false);
-    });
-
     it('Given: invalid SKU format When: creating product Then: should return 400 Bad Request', async () => {
       // Arrange
       const invalidSku = {

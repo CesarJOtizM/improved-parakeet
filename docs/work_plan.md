@@ -447,7 +447,7 @@ Mejorar la adherencia a DDD, Arquitectura Hexagonal y Programación Funcional id
   - [x] Crear tipos de error de dominio: `DomainError`, `ValidationError`, `NotFoundError`, `ConflictError`, `BusinessRuleError`, `AuthenticationError`, `TokenError`, `RateLimitError`
   - [x] Crear utilidad `resultToHttpResponse()` para convertir Result a respuestas HTTP
   - [x] Refactorizar **TODOS los 55 casos de uso** para usar `Result` en lugar de excepciones:
-    - [x] Auth (7): login, logout, register, refreshToken, requestPasswordReset, resetPassword, verifyOtp
+    - [x] Auth (6): login, logout, refreshToken, requestPasswordReset, resetPassword, verifyOtp
     - [x] Roles (6): create, update, delete, get, getAll, assignPermissions
     - [x] Users (7): create, get, getAll, update, changeStatus, assignRole, removeRole
     - [x] Products (4): create, update, get, getAll
@@ -1907,7 +1907,7 @@ Se ha implementado un sistema híbrido de roles que combina roles predefinidos (
   - Endpoints CRUD completos para gestión de roles personalizados
   - Asignación de permisos a roles (sistema y personalizados)
 - **Domain Events**: UserCreated, UserLoggedIn, RoleAssigned, PermissionChanged, UserStatusChanged (handlers implementados)
-- **Casos de Uso**: Login, Logout, Refresh Token, Register, Password Reset, User Management completo
+- **Casos de Uso**: Login, Logout, Refresh Token, Password Reset, User Management completo
 - **Guards de Seguridad**: JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard, PermissionsGuard
 - **Decoradores**: @RequireRoles, @AllowSuperAdmin, @AllowOrganizationAdmin, @SuperAdminOnly, @OrganizationAdminOnly
 - **API REST**: Endpoints completos de autenticación y gestión de usuarios con Swagger
