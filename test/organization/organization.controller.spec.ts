@@ -7,6 +7,7 @@ import { ValidationError, ConflictError } from '@shared/domain/result/domainErro
 describe('OrganizationController', () => {
   let controller: OrganizationController;
   let mockCreateOrganizationUseCase: any;
+  let mockGetOrganizationByIdUseCase: any;
 
   const mockOrganizationData = {
     id: 'org-123',
@@ -21,7 +22,11 @@ describe('OrganizationController', () => {
 
   beforeEach(() => {
     mockCreateOrganizationUseCase = { execute: jest.fn() };
-    controller = new OrganizationController(mockCreateOrganizationUseCase);
+    mockGetOrganizationByIdUseCase = { execute: jest.fn() };
+    controller = new OrganizationController(
+      mockCreateOrganizationUseCase,
+      mockGetOrganizationByIdUseCase
+    );
   });
 
   describe('createOrganization', () => {

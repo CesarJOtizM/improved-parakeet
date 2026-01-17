@@ -103,7 +103,15 @@ describe('SalesController', () => {
       const query = { page: 1, limit: 10 };
       const responseData = {
         success: true,
-        data: { items: [mockSaleData], total: 1 },
+        data: [mockSaleData],
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 1,
+          totalPages: 1,
+          hasNext: false,
+          hasPrev: false,
+        },
         message: 'Sales retrieved',
         timestamp: new Date().toISOString(),
       };
@@ -283,7 +291,7 @@ describe('SalesController', () => {
       mockGetReturnsBySaleUseCase.execute.mockResolvedValue(
         ok({
           success: true,
-          data: { items: mockReturns, total: 1 },
+          data: mockReturns,
           message: 'Returns retrieved',
           timestamp: new Date().toISOString(),
         })

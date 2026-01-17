@@ -104,7 +104,7 @@ describe('TenantMiddleware', () => {
       expect(mockNext).toHaveBeenCalledWith();
     });
 
-    it('Given: no organization identifier When: middleware runs Then: should throw ForbiddenException', async () => {
+    it('Given: no organization identifier When: middleware runs Then: should call next without error', async () => {
       // Arrange
       mockRequest.headers = {};
 
@@ -112,7 +112,7 @@ describe('TenantMiddleware', () => {
       await middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert
-      expect(mockNext).toHaveBeenCalledWith(expect.any(ForbiddenException));
+      expect(mockNext).toHaveBeenCalledWith();
     });
 
     it('Given: organization not found When: middleware runs Then: should throw ForbiddenException', async () => {

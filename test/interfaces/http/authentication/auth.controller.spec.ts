@@ -4,7 +4,7 @@ import { LogoutUseCase } from '@application/authUseCases/logoutUseCase';
 import { RefreshTokenUseCase } from '@application/authUseCases/refreshTokenUseCase';
 import { AuthController } from '@interface/http/routes/auth.controller';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { AuthenticationError, err, ok, RateLimitError, TokenError } from '@shared/domain/result';
+import { AuthenticationError, RateLimitError, TokenError, err, ok } from '@shared/domain/result';
 
 describe('AuthController', () => {
   let authController: AuthController;
@@ -69,12 +69,17 @@ describe('AuthController', () => {
 
       mockLoginUseCase.execute.mockResolvedValue(ok(mockLoginData));
 
+      const mockReq = {
+        orgId: 'org-123',
+      } as any;
+
       // Act
       const result = await authController.login(
         loginRequest,
         '192.168.1.1',
         'Mozilla/5.0',
-        'org-123'
+        'org-123',
+        mockReq
       );
 
       // Assert
@@ -98,9 +103,13 @@ describe('AuthController', () => {
 
       mockLoginUseCase.execute.mockResolvedValue(err(new AuthenticationError('invalid_password')));
 
+      const mockReq = {
+        orgId: 'org-123',
+      } as any;
+
       // Act & Assert
       await expect(
-        authController.login(loginRequest, '192.168.1.1', 'Mozilla/5.0', 'org-123')
+        authController.login(loginRequest, '192.168.1.1', 'Mozilla/5.0', 'org-123', mockReq)
       ).rejects.toThrow('Authentication failed');
     });
 
@@ -116,9 +125,13 @@ describe('AuthController', () => {
         err(new RateLimitError('Too many login attempts. Please try again later.'))
       );
 
+      const mockReq = {
+        orgId: 'org-123',
+      } as any;
+
       // Act & Assert
       await expect(
-        authController.login(loginRequest, '192.168.1.1', 'Mozilla/5.0', 'org-123')
+        authController.login(loginRequest, '192.168.1.1', 'Mozilla/5.0', 'org-123', mockReq)
       ).rejects.toThrow('Too many login attempts');
     });
 
@@ -132,9 +145,13 @@ describe('AuthController', () => {
 
       mockLoginUseCase.execute.mockResolvedValue(err(new AuthenticationError('internal_error')));
 
+      const mockReq = {
+        orgId: 'org-123',
+      } as any;
+
       // Act & Assert
       await expect(
-        authController.login(loginRequest, '192.168.1.1', 'Mozilla/5.0', 'org-123')
+        authController.login(loginRequest, '192.168.1.1', 'Mozilla/5.0', 'org-123', mockReq)
       ).rejects.toThrow('Authentication failed');
     });
   });

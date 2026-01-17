@@ -46,8 +46,9 @@ describe('curry', () => {
     const getValue = () => 42;
     const curriedGetValue = curry(getValue);
 
-    // Act - for zero-arg functions, the curried result IS the value
-    const result = curriedGetValue;
+    // Act - for zero-arg functions, curry still returns a function that can be called
+    // TypeScript infers CurriedFunction<[], number> as number, but runtime it's a function
+    const result = (curriedGetValue as unknown as () => number)();
 
     // Assert
     expect(result).toBe(42);
