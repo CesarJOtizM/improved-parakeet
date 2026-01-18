@@ -41,6 +41,8 @@ export interface IProductResponseData {
   barcode?: string;
   brand?: string;
   model?: string;
+  price?: number;
+  currency?: string;
   status: string;
   costMethod: string;
   orgId: string;
@@ -112,6 +114,8 @@ export class ProductMapper {
       barcode: product.barcode,
       brand: product.brand,
       model: product.model,
+      price: product.price?.getAmount(),
+      currency: product.price?.getCurrency(),
       status: product.status.getValue(),
       costMethod: product.costMethod.getValue(),
       orgId: product.orgId!,

@@ -129,11 +129,14 @@ describe('AssignRoleToUserUseCase', () => {
 
     it('Given: valid user and role When: assigning role Then: should return success result', async () => {
       // Arrange
-      // Note: The use case currently uses user.roles as currentUserRoles (which is a bug)
-      // So we need the user to have ADMIN role for the test to pass
-      const user = createMockUser(['ADMIN']); // User with ADMIN role (needed due to use case bug)
+      const user = createMockUser([]); // User receiving the role
+      const assigningUser = createMockUser(['ADMIN']); // User making the assignment (needs ADMIN role)
       const role = createMockRole('SUPERVISOR');
-      mockUserRepository.findById.mockResolvedValue(user);
+
+      // Mock repository calls: first for the user receiving the role, then for the user assigning
+      mockUserRepository.findById
+        .mockResolvedValueOnce(user) // First call: user receiving the role
+        .mockResolvedValueOnce(assigningUser); // Second call: user making the assignment
       mockRoleRepository.findById.mockResolvedValue(role);
       mockPrismaService.userRole.findUnique.mockResolvedValue(null);
       mockPrismaService.userRole.create.mockResolvedValue({} as any);
@@ -159,6 +162,7 @@ describe('AssignRoleToUserUseCase', () => {
         () => fail('Should not return error')
       );
       expect(mockUserRepository.findById).toHaveBeenCalledWith(mockUserId, mockOrgId);
+      expect(mockUserRepository.findById).toHaveBeenCalledWith(mockAssignedBy, mockOrgId);
       expect(mockRoleRepository.findById).toHaveBeenCalledWith(mockRoleId);
       expect(mockPrismaService.userRole.create).toHaveBeenCalled();
     });
@@ -218,11 +222,14 @@ describe('AssignRoleToUserUseCase', () => {
 
     it('Given: user already has role When: assigning role Then: should return error result', async () => {
       // Arrange
-      // User needs ADMIN role for validation to pass (due to use case bug)
-      // Service validation happens before DB check, so it returns BusinessRuleError
-      const user = createMockUser(['ADMIN', 'SUPERVISOR']);
+      const user = createMockUser(['SUPERVISOR']); // User already has the role
+      const assigningUser = createMockUser(['ADMIN']); // User making the assignment
       const role = createMockRole('SUPERVISOR');
-      mockUserRepository.findById.mockResolvedValue(user);
+
+      // Mock repository calls: first for the user receiving the role, then for the user assigning
+      mockUserRepository.findById
+        .mockResolvedValueOnce(user) // First call: user receiving the role
+        .mockResolvedValueOnce(assigningUser); // Second call: user making the assignment
       mockRoleRepository.findById.mockResolvedValue(role);
 
       const request = {
@@ -248,9 +255,14 @@ describe('AssignRoleToUserUseCase', () => {
 
     it('Given: inactive role When: assigning role Then: should return error result', async () => {
       // Arrange
-      const user = createMockUser([]);
+      const user = createMockUser([]); // User receiving the role
+      const assigningUser = createMockUser(['ADMIN']); // User making the assignment
       const role = createMockRole('SUPERVISOR', false);
-      mockUserRepository.findById.mockResolvedValue(user);
+
+      // Mock repository calls: first for the user receiving the role, then for the user assigning
+      mockUserRepository.findById
+        .mockResolvedValueOnce(user) // First call: user receiving the role
+        .mockResolvedValueOnce(assigningUser); // Second call: user making the assignment
       mockRoleRepository.findById.mockResolvedValue(role);
 
       const request = {
@@ -271,6 +283,73 @@ describe('AssignRoleToUserUseCase', () => {
           expect(error).toBeInstanceOf(BusinessRuleError);
         }
       );
+    });
+
+    it('Given: assigning user not found When: assigning role Then: should return NotFoundError result', async () => {
+      // Arrange
+      const user = createMockUser([]); // User receiving the role
+      const role = createMockRole('SUPERVISOR');
+
+      // Mock repository calls: user exists, but assigning user does not
+      mockUserRepository.findById
+        .mockResolvedValueOnce(user) // First call: user receiving the role
+        .mockResolvedValueOnce(null); // Second call: user making the assignment (not found)
+      mockRoleRepository.findById.mockResolvedValue(role);
+
+      const request = {
+        userId: mockUserId,
+        roleId: mockRoleId,
+        orgId: mockOrgId,
+        assignedBy: mockAssignedBy,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(NotFoundError);
+          expect(error.message).toContain('User assigning the role not found');
+        }
+      );
+      expect(mockPrismaService.userRole.create).not.toHaveBeenCalled();
+    });
+
+    it('Given: assigning user without ADMIN role When: assigning role Then: should return BusinessRuleError', async () => {
+      // Arrange
+      const user = createMockUser([]); // User receiving the role
+      const assigningUser = createMockUser(['SUPERVISOR']); // User making the assignment (no ADMIN role)
+      const role = createMockRole('SUPERVISOR');
+
+      // Mock repository calls: first for the user receiving the role, then for the user assigning
+      mockUserRepository.findById
+        .mockResolvedValueOnce(user) // First call: user receiving the role
+        .mockResolvedValueOnce(assigningUser); // Second call: user making the assignment
+      mockRoleRepository.findById.mockResolvedValue(role);
+
+      const request = {
+        userId: mockUserId,
+        roleId: mockRoleId,
+        orgId: mockOrgId,
+        assignedBy: mockAssignedBy,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(BusinessRuleError);
+          expect(error.message).toContain('Insufficient permissions to assign roles');
+        }
+      );
+      expect(mockPrismaService.userRole.create).not.toHaveBeenCalled();
     });
   });
 });

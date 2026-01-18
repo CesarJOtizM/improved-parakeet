@@ -185,6 +185,7 @@ model Product {
   brand       String?
   model       String?
   price       Decimal? @db.Decimal(10, 2)
+  currency    String?  @default("COP")
   costMethod  String   @default("AVG") // AVG, FIFO
   isActive    Boolean  @default(true)
   orgId       String

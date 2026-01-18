@@ -4,12 +4,14 @@ import { Movement } from '@movement/domain/entities/movement.entity';
 import { MovementMapper } from '@movement/mappers';
 
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
+import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
 
 describe('GetMovementsUseCase', () => {
   const mockOrgId = 'test-org-id';
 
   let useCase: GetMovementsUseCase;
   let mockMovementRepository: jest.Mocked<IMovementRepository>;
+  let mockProductRepository: jest.Mocked<IProductRepository>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -30,7 +32,22 @@ describe('GetMovementsUseCase', () => {
       findPostedMovements: jest.fn(),
     } as jest.Mocked<IMovementRepository>;
 
-    useCase = new GetMovementsUseCase(mockMovementRepository);
+    mockProductRepository = {
+      save: jest.fn(),
+      findById: jest.fn(),
+      findAll: jest.fn(),
+      findBySpecification: jest.fn(),
+      exists: jest.fn(),
+      delete: jest.fn(),
+      findBySku: jest.fn(),
+      findByCategory: jest.fn(),
+      findByStatus: jest.fn(),
+      findByWarehouse: jest.fn(),
+      findLowStock: jest.fn(),
+      existsBySku: jest.fn(),
+    } as jest.Mocked<IProductRepository>;
+
+    useCase = new GetMovementsUseCase(mockMovementRepository, mockProductRepository);
   });
 
   describe('execute', () => {

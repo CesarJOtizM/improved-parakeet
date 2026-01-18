@@ -1,20 +1,22 @@
 import { RoleAssignedEvent } from '@auth/domain/events/roleAssigned.event';
 import { RoleAssignmentService } from '@auth/domain/services/roleAssignmentService';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import {
   BusinessRuleError,
   ConflictError,
   DomainError,
-  err,
   NotFoundError,
-  ok,
   Result,
+  err,
+  ok,
 } from '@shared/domain/result';
+import { invalidateEntityCache } from '@shared/infrastructure/cache';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IRoleRepository, IUserRepository } from '@auth/domain/repositories';
 import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
+import type { ICacheService } from '@shared/ports/cache';
 
 export interface IAssignRoleToUserRequest {
   userId: string;
@@ -41,7 +43,10 @@ export class AssignRoleToUserUseCase {
     @Inject('RoleRepository') private readonly roleRepository: IRoleRepository,
     private readonly prisma: PrismaService,
     @Inject('DomainEventDispatcher')
-    private readonly eventDispatcher: IDomainEventDispatcher
+    private readonly eventDispatcher: IDomainEventDispatcher,
+    @Inject('CacheService')
+    @Optional()
+    private readonly cacheService?: ICacheService
   ) {}
 
   async execute(
@@ -72,8 +77,14 @@ export class AssignRoleToUserUseCase {
       return err(new NotFoundError('Role not available for this organization'));
     }
 
-    // Get current user roles for validation
-    const currentUserRoles = user.roles || [];
+    // Get the user who is assigning the role (assignedBy) to get their roles for validation
+    const assigningUser = await this.userRepository.findById(request.assignedBy, request.orgId);
+    if (!assigningUser) {
+      return err(new NotFoundError('User assigning the role not found'));
+    }
+
+    // Get current user roles for validation (roles of the user making the assignment)
+    const currentUserRoles = assigningUser.roles || [];
 
     // Validate role assignment
     const validation = RoleAssignmentService.canAssignRole(
@@ -109,6 +120,11 @@ export class AssignRoleToUserUseCase {
         orgId: request.orgId,
       },
     });
+
+    // Invalidate user cache to ensure fresh data on next fetch
+    if (this.cacheService) {
+      await invalidateEntityCache(this.cacheService, 'user', request.userId, request.orgId);
+    }
 
     // Emit domain event
     const event = new RoleAssignedEvent(

@@ -312,13 +312,22 @@ describe('Database Types', () => {
   describe('Movement Types', () => {
     it('Given: MovementType When: checking values Then: should have correct movement types', () => {
       // Arrange & Act
-      const movementTypes: MovementType[] = ['IN', 'OUT', 'ADJUSTMENT', 'TRANSFER'];
+      const movementTypes: MovementType[] = [
+        'IN',
+        'OUT',
+        'ADJUST_IN',
+        'ADJUST_OUT',
+        'TRANSFER_IN',
+        'TRANSFER_OUT',
+      ];
 
       // Assert
       expect(movementTypes).toContain('IN');
       expect(movementTypes).toContain('OUT');
-      expect(movementTypes).toContain('ADJUSTMENT');
-      expect(movementTypes).toContain('TRANSFER');
+      expect(movementTypes).toContain('ADJUST_IN');
+      expect(movementTypes).toContain('ADJUST_OUT');
+      expect(movementTypes).toContain('TRANSFER_IN');
+      expect(movementTypes).toContain('TRANSFER_OUT');
     });
 
     it('Given: MovementStatus When: checking values Then: should have correct movement statuses', () => {

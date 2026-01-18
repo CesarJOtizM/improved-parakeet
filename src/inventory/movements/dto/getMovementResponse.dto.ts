@@ -7,6 +7,15 @@ export class MovementLineResponseDto {
   @ApiProperty({ description: 'Product ID', example: 'product-123' })
   productId!: string;
 
+  @ApiProperty({ description: 'Product SKU', example: 'PROD-010', required: false })
+  sku?: string;
+
+  @ApiProperty({ description: 'Product name', example: 'Producto Actualizado', required: false })
+  name?: string;
+
+  @ApiProperty({ description: 'Product price', example: 150.5, required: false })
+  price?: number;
+
   @ApiProperty({ description: 'Location ID', example: 'location-123' })
   locationId!: string;
 

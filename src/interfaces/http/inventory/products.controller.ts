@@ -29,11 +29,11 @@ import {
 } from '@nestjs/swagger';
 import {
   CreateProductDto,
-  UpdateProductDto,
+  CreateProductResponseDto,
+  GetProductResponseDto,
   GetProductsQueryDto,
   GetProductsResponseDto,
-  GetProductResponseDto,
-  CreateProductResponseDto,
+  UpdateProductDto,
   UpdateProductResponseDto,
 } from '@product/dto';
 import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
@@ -225,6 +225,8 @@ export class ProductsController {
       barcode: updateProductDto.barcode,
       brand: updateProductDto.brand,
       model: updateProductDto.model,
+      price: updateProductDto.price,
+      currency: updateProductDto.currency,
       status: updateProductDto.status,
       costMethod: updateProductDto.costMethod,
     };

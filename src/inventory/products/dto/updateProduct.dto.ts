@@ -2,9 +2,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsEnum,
+  IsNumber,
   IsOptional,
   IsString,
   MaxLength,
+  Min,
   MinLength,
   ValidateNested,
 } from 'class-validator';
@@ -96,4 +98,25 @@ export class UpdateProductDto {
     message: 'Cost method must be one of: AVG, FIFO',
   })
   costMethod?: 'AVG' | 'FIFO';
+
+  @ApiProperty({
+    description: 'Product price',
+    example: 150.5,
+    minimum: 0,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'Price must be a number' })
+  @Min(0, { message: 'Price must be greater than or equal to 0' })
+  price?: number;
+
+  @ApiProperty({
+    description: 'Currency code',
+    example: 'COP',
+    required: false,
+    default: 'COP',
+  })
+  @IsOptional()
+  @IsString({ message: 'Currency must be a string' })
+  currency?: string;
 }

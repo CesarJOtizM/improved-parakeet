@@ -1,6 +1,7 @@
 import { ProductCreatedEvent } from '@product/domain/events/productCreated.event';
 import { ProductUpdatedEvent } from '@product/domain/events/productUpdated.event';
 import { CostMethod } from '@product/domain/valueObjects/costMethod.valueObject';
+import { Price } from '@product/domain/valueObjects/price.valueObject';
 import { ProductName } from '@product/domain/valueObjects/productName.valueObject';
 import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
 import { SKU } from '@product/domain/valueObjects/sku.valueObject';
@@ -15,6 +16,7 @@ export interface IProductProps {
   barcode?: string;
   brand?: string;
   model?: string;
+  price?: Price;
   status: ProductStatus;
   costMethod: CostMethod;
 }
@@ -88,6 +90,7 @@ export class Product extends AggregateRoot<IProductProps> {
       barcode: props.barcode !== undefined ? props.barcode : this.props.barcode,
       brand: props.brand !== undefined ? props.brand : this.props.brand,
       model: props.model !== undefined ? props.model : this.props.model,
+      price: props.price !== undefined ? props.price : this.props.price,
       status: props.status !== undefined ? props.status : this.props.status,
       costMethod: props.costMethod !== undefined ? props.costMethod : this.props.costMethod,
     };
@@ -159,6 +162,10 @@ export class Product extends AggregateRoot<IProductProps> {
 
   get costMethod(): CostMethod {
     return this.props.costMethod;
+  }
+
+  get price(): Price | undefined {
+    return this.props.price;
   }
 
   get isActive(): boolean {

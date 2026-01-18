@@ -60,6 +60,20 @@ export class CreateWarehouseResponseDto {
   timestamp!: string;
 }
 
+export class GetWarehouseResponseDto {
+  @ApiProperty({ description: 'Success indicator', example: true })
+  success!: boolean;
+
+  @ApiProperty({ description: 'Response message', example: 'Warehouse retrieved successfully' })
+  message!: string;
+
+  @ApiProperty({ description: 'Warehouse data', type: WarehouseResponseDto })
+  data!: WarehouseResponseDto;
+
+  @ApiProperty({ description: 'Response timestamp', example: '2024-01-01T00:00:00.000Z' })
+  timestamp!: string;
+}
+
 export class GetWarehousesResponseDto {
   @ApiProperty({ description: 'Success indicator', example: true })
   success!: boolean;

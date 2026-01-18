@@ -69,6 +69,14 @@ export class MovementsSeed {
           currency: 'COP',
           orgId: organizationId,
         },
+        {
+          movementId: initialMovement.id,
+          productId: products[5].id, // Cable HDMI - necesario para ajuste de salida
+          quantity: 20,
+          unitCost: 8.0,
+          currency: 'COP',
+          orgId: organizationId,
+        },
       ],
     });
 
@@ -107,27 +115,58 @@ export class MovementsSeed {
       ],
     });
 
-    // Movimiento de ajuste
-    const adjustmentMovement = await this.prisma.movement.create({
+    // Movimiento de ajuste de salida (disminución de inventario)
+    const adjustmentOutMovement = await this.prisma.movement.create({
       data: {
-        type: 'ADJUSTMENT',
+        type: 'ADJUST_OUT',
         status: 'POSTED',
-        reference: 'ADJUSTMENT-001',
-        notes: 'Ajuste por inventario físico',
+        reference: 'ADJUST-OUT-001',
+        notes: 'Ajuste de salida por inventario físico',
         warehouseId: firstWarehouseId,
         createdBy: adminUser.id,
         orgId: organizationId,
       },
     });
 
-    // Líneas del movimiento de ajuste
+    // Líneas del movimiento de ajuste de salida
+    // Stock disponible: 20 (entrada inicial) - 5 (ajuste) = 15 ✅
     await this.prisma.movementLine.createMany({
       data: [
         {
-          movementId: adjustmentMovement.id,
+          movementId: adjustmentOutMovement.id,
           productId: products[5].id, // Cable HDMI
-          quantity: -5, // Ajuste negativo
+          quantity: 5, // Cantidad positiva (ADJUST_OUT significa salida)
+          // Stock final: 20 - 5 = 15 (no negativo)
           unitCost: 8.0,
+          currency: 'COP',
+          orgId: organizationId,
+        },
+      ],
+    });
+
+    // Movimiento de ajuste de entrada (aumento de inventario)
+    const adjustmentInMovement = await this.prisma.movement.create({
+      data: {
+        type: 'ADJUST_IN',
+        status: 'POSTED',
+        reference: 'ADJUST-IN-001',
+        notes: 'Ajuste de entrada por inventario físico',
+        warehouseId: firstWarehouseId,
+        createdBy: adminUser.id,
+        orgId: organizationId,
+      },
+    });
+
+    // Líneas del movimiento de ajuste de entrada
+    // Stock disponible: 25 (entrada inicial) + 3 (ajuste) = 28 ✅
+    await this.prisma.movementLine.createMany({
+      data: [
+        {
+          movementId: adjustmentInMovement.id,
+          productId: products[2].id, // Teclado
+          quantity: 3, // Cantidad positiva (ADJUST_IN significa entrada)
+          // Stock final: 25 + 3 = 28 (no negativo)
+          unitCost: 120.0,
           currency: 'COP',
           orgId: organizationId,
         },

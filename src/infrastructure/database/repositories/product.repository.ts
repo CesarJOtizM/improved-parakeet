@@ -7,6 +7,7 @@ import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { Product } from '@product/domain/entities/product.entity';
 import { IProductRepository } from '@product/domain/repositories/productRepository.interface';
 import { CostMethod } from '@product/domain/valueObjects/costMethod.valueObject';
+import { Price } from '@product/domain/valueObjects/price.valueObject';
 import { ProductName } from '@product/domain/valueObjects/productName.valueObject';
 import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
 import { SKU } from '@product/domain/valueObjects/sku.valueObject';
@@ -56,6 +57,15 @@ export class PrismaProductRepository implements IProductRepository {
           barcode: productData.barcode || undefined,
           brand: productData.brand || undefined,
           model: productData.model || undefined,
+          price: productData.price
+            ? Price.create(
+                typeof productData.price === 'number'
+                  ? productData.price
+                  : productData.price.toNumber(),
+                productData.currency || 'COP',
+                2
+              )
+            : undefined,
           status: ProductStatus.create(productData.isActive ? 'ACTIVE' : 'INACTIVE'),
           costMethod: CostMethod.create((productData.costMethod as 'AVG' | 'FIFO') || 'AVG'),
         },
@@ -95,6 +105,15 @@ export class PrismaProductRepository implements IProductRepository {
             barcode: productData.barcode || undefined,
             brand: productData.brand || undefined,
             model: productData.model || undefined,
+            price: productData.price
+              ? Price.create(
+                  typeof productData.price === 'number'
+                    ? productData.price
+                    : productData.price.toNumber(),
+                  'COP',
+                  2
+                )
+              : undefined,
             status: ProductStatus.create(productData.isActive ? 'ACTIVE' : 'INACTIVE'),
             costMethod: CostMethod.create((productData.costMethod as 'AVG' | 'FIFO') || 'AVG'),
           },
@@ -145,6 +164,8 @@ export class PrismaProductRepository implements IProductRepository {
         barcode: product.barcode || null,
         brand: product.brand || null,
         model: product.model || null,
+        price: product.price ? product.price.getAmount() : null,
+        currency: product.price ? product.price.getCurrency() : null,
         costMethod: product.costMethod.getValue(),
         isActive: product.status.getValue() === 'ACTIVE',
         orgId: product.orgId,
@@ -170,6 +191,15 @@ export class PrismaProductRepository implements IProductRepository {
               barcode: updatedProduct.barcode || undefined,
               brand: updatedProduct.brand || undefined,
               model: updatedProduct.model || undefined,
+              price: updatedProduct.price
+                ? Price.create(
+                    typeof updatedProduct.price === 'number'
+                      ? updatedProduct.price
+                      : updatedProduct.price.toNumber(),
+                    'COP',
+                    2
+                  )
+                : undefined,
               status: ProductStatus.create(updatedProduct.isActive ? 'ACTIVE' : 'INACTIVE'),
               costMethod: CostMethod.create((updatedProduct.costMethod as 'AVG' | 'FIFO') || 'AVG'),
             },
@@ -211,6 +241,15 @@ export class PrismaProductRepository implements IProductRepository {
           barcode: newProduct.barcode || undefined,
           brand: newProduct.brand || undefined,
           model: newProduct.model || undefined,
+          price: newProduct.price
+            ? Price.create(
+                typeof newProduct.price === 'number'
+                  ? newProduct.price
+                  : newProduct.price.toNumber(),
+                'COP',
+                2
+              )
+            : undefined,
           status: ProductStatus.create(newProduct.isActive ? 'ACTIVE' : 'INACTIVE'),
           costMethod: CostMethod.create((newProduct.costMethod as 'AVG' | 'FIFO') || 'AVG'),
         },
@@ -294,6 +333,15 @@ export class PrismaProductRepository implements IProductRepository {
           barcode: productData.barcode || undefined,
           brand: productData.brand || undefined,
           model: productData.model || undefined,
+          price: productData.price
+            ? Price.create(
+                typeof productData.price === 'number'
+                  ? productData.price
+                  : productData.price.toNumber(),
+                productData.currency || 'COP',
+                2
+              )
+            : undefined,
           status: ProductStatus.create(productData.isActive ? 'ACTIVE' : 'INACTIVE'),
           costMethod: CostMethod.create((productData.costMethod as 'AVG' | 'FIFO') || 'AVG'),
         },
@@ -333,6 +381,15 @@ export class PrismaProductRepository implements IProductRepository {
             barcode: productData.barcode || undefined,
             brand: productData.brand || undefined,
             model: productData.model || undefined,
+            price: productData.price
+              ? Price.create(
+                  typeof productData.price === 'number'
+                    ? productData.price
+                    : productData.price.toNumber(),
+                  'COP',
+                  2
+                )
+              : undefined,
             status: ProductStatus.create(productData.isActive ? 'ACTIVE' : 'INACTIVE'),
             costMethod: CostMethod.create((productData.costMethod as 'AVG' | 'FIFO') || 'AVG'),
           },
@@ -367,6 +424,15 @@ export class PrismaProductRepository implements IProductRepository {
             barcode: productData.barcode || undefined,
             brand: productData.brand || undefined,
             model: productData.model || undefined,
+            price: productData.price
+              ? Price.create(
+                  typeof productData.price === 'number'
+                    ? productData.price
+                    : productData.price.toNumber(),
+                  'COP',
+                  2
+                )
+              : undefined,
             status: ProductStatus.create(productData.isActive ? 'ACTIVE' : 'INACTIVE'),
             costMethod: CostMethod.create((productData.costMethod as 'AVG' | 'FIFO') || 'AVG'),
           },
@@ -402,6 +468,15 @@ export class PrismaProductRepository implements IProductRepository {
             barcode: stock.product.barcode || undefined,
             brand: stock.product.brand || undefined,
             model: stock.product.model || undefined,
+            price: stock.product.price
+              ? Price.create(
+                  typeof stock.product.price === 'number'
+                    ? stock.product.price
+                    : stock.product.price.toNumber(),
+                  'COP',
+                  2
+                )
+              : undefined,
             status: ProductStatus.create(stock.product.isActive ? 'ACTIVE' : 'INACTIVE'),
             costMethod: CostMethod.create((stock.product.costMethod as 'AVG' | 'FIFO') || 'AVG'),
           },
@@ -442,6 +517,15 @@ export class PrismaProductRepository implements IProductRepository {
             barcode: stock.product.barcode || undefined,
             brand: stock.product.brand || undefined,
             model: stock.product.model || undefined,
+            price: stock.product.price
+              ? Price.create(
+                  typeof stock.product.price === 'number'
+                    ? stock.product.price
+                    : stock.product.price.toNumber(),
+                  'COP',
+                  2
+                )
+              : undefined,
             status: ProductStatus.create(stock.product.isActive ? 'ACTIVE' : 'INACTIVE'),
             costMethod: CostMethod.create((stock.product.costMethod as 'AVG' | 'FIFO') || 'AVG'),
           },
@@ -505,6 +589,15 @@ export class PrismaProductRepository implements IProductRepository {
             barcode: productData.barcode || undefined,
             brand: productData.brand || undefined,
             model: productData.model || undefined,
+            price: productData.price
+              ? Price.create(
+                  typeof productData.price === 'number'
+                    ? productData.price
+                    : productData.price.toNumber(),
+                  'COP',
+                  2
+                )
+              : undefined,
             status: ProductStatus.create(productData.isActive ? 'ACTIVE' : 'INACTIVE'),
             costMethod: CostMethod.create((productData.costMethod as 'AVG' | 'FIFO') || 'AVG'),
           },

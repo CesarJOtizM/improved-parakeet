@@ -45,6 +45,8 @@ export interface IProductData {
   barcode?: string;
   brand?: string;
   model?: string;
+  price?: number;
+  currency?: string;
   status: string;
   costMethod: string;
   orgId: string;

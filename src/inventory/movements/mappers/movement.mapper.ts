@@ -31,11 +31,24 @@ export interface IMovementCreateInput {
 }
 
 /**
+ * Product information for movement lines
+ */
+export interface IProductInfo {
+  sku: string;
+  name: string;
+  price?: number;
+  currency?: string;
+}
+
+/**
  * Movement line DTO for response (output)
  */
 export interface IMovementLineResponseData {
   id: string;
   productId: string;
+  sku?: string;
+  name?: string;
+  price?: number;
   locationId: string;
   quantity: number;
   unitCost?: number;
@@ -137,12 +150,19 @@ export class MovementMapper {
    * Converts a MovementLine domain entity to a response DTO
    *
    * @param line - The MovementLine domain entity
+   * @param productInfo - Optional product information (sku, name, price)
    * @returns IMovementLineResponseData for API responses
    */
-  public static lineToResponseData(line: MovementLine): IMovementLineResponseData {
+  public static lineToResponseData(
+    line: MovementLine,
+    productInfo?: IProductInfo
+  ): IMovementLineResponseData {
     return {
       id: line.id,
       productId: line.productId,
+      sku: productInfo?.sku,
+      name: productInfo?.name,
+      price: productInfo?.price,
       locationId: line.locationId,
       quantity: line.quantity.getNumericValue(),
       unitCost: line.unitCost?.getAmount(),
@@ -156,9 +176,13 @@ export class MovementMapper {
    * Extracts values from all value objects
    *
    * @param movement - The Movement domain entity
+   * @param productInfoMap - Optional map of productId to product information
    * @returns IMovementResponseData for API responses
    */
-  public static toResponseData(movement: Movement): IMovementResponseData {
+  public static toResponseData(
+    movement: Movement,
+    productInfoMap?: Map<string, IProductInfo>
+  ): IMovementResponseData {
     return {
       id: movement.id,
       type: movement.type.getValue(),
@@ -172,7 +196,9 @@ export class MovementMapper {
       orgId: movement.orgId!,
       createdAt: movement.createdAt,
       updatedAt: movement.updatedAt,
-      lines: movement.getLines().map(line => MovementMapper.lineToResponseData(line)),
+      lines: movement
+        .getLines()
+        .map(line => MovementMapper.lineToResponseData(line, productInfoMap?.get(line.productId))),
     };
   }
 
@@ -180,9 +206,13 @@ export class MovementMapper {
    * Converts an array of Movement domain entities to response DTOs
    *
    * @param movements - Array of Movement domain entities
+   * @param productInfoMap - Optional map of productId to product information
    * @returns Array of IMovementResponseData for API responses
    */
-  public static toResponseDataList(movements: Movement[]): IMovementResponseData[] {
-    return movements.map(movement => MovementMapper.toResponseData(movement));
+  public static toResponseDataList(
+    movements: Movement[],
+    productInfoMap?: Map<string, IProductInfo>
+  ): IMovementResponseData[] {
+    return movements.map(movement => MovementMapper.toResponseData(movement, productInfoMap));
   }
 }

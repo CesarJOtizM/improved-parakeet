@@ -13,9 +13,12 @@ import { PrismaReportRepository } from '@infrastructure/database/repositories/re
 import { PrismaReportTemplateRepository } from '@infrastructure/database/repositories/reportTemplate.repository';
 import { DocumentGenerationService } from '@infrastructure/externalServices';
 import { ReportController, ReportTemplateController } from '@interface/http/report';
+import { InventoryModule } from '@inventory/inventory.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ReturnsModule } from '@returns/returns.module';
+import { SalesModule } from '@sales/sales.module';
 
 import {
   ExportService,
@@ -33,6 +36,9 @@ import { ReportLoggingInterceptor } from './interceptors/reportLogging.intercept
 @Module({
   imports: [
     AuthenticationModule, // Import AuthenticationModule to access DomainEventDispatcher
+    InventoryModule, // Import InventoryModule to access ProductRepository, WarehouseRepository, MovementRepository, StockRepository
+    SalesModule, // Import SalesModule to access SaleRepository
+    ReturnsModule, // Import ReturnsModule to access ReturnRepository
     PrismaModule,
     ConfigModule,
     CacheModule.registerAsync({

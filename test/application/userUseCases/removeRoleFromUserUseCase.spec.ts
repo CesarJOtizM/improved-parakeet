@@ -68,6 +68,7 @@ describe('RemoveRoleFromUserUseCase', () => {
     mockPrismaService = {
       userRole: {
         findUnique: jest.fn(),
+        findFirst: jest.fn(),
         delete: jest.fn(),
       } as any,
     } as jest.Mocked<PrismaService>;
@@ -125,12 +126,16 @@ describe('RemoveRoleFromUserUseCase', () => {
 
     it('Given: user with role When: removing role Then: should return success result', async () => {
       // Arrange
-      // User needs ADMIN role for validation to pass (due to use case bug)
-      const user = createMockUser(['ADMIN', 'SUPERVISOR', 'WAREHOUSE_OPERATOR']);
+      const user = createMockUser(['SUPERVISOR', 'WAREHOUSE_OPERATOR']); // User having the role
+      const removingUser = createMockUser(['ADMIN']); // User making the removal (needs ADMIN role)
       const role = createMockRole('SUPERVISOR');
-      mockUserRepository.findById.mockResolvedValue(user);
+
+      // Mock repository calls: first for the user having the role, then for the user removing
+      mockUserRepository.findById
+        .mockResolvedValueOnce(user) // First call: user having the role
+        .mockResolvedValueOnce(removingUser); // Second call: user making the removal
       mockRoleRepository.findById.mockResolvedValue(role);
-      mockPrismaService.userRole.findUnique.mockResolvedValue({} as any);
+      mockPrismaService.userRole.findFirst.mockResolvedValue({ id: 'assignment-123' } as any);
       mockPrismaService.userRole.delete.mockResolvedValue({} as any);
 
       const request = {
@@ -153,6 +158,9 @@ describe('RemoveRoleFromUserUseCase', () => {
         },
         () => fail('Should not return error')
       );
+      expect(mockUserRepository.findById).toHaveBeenCalledWith(mockUserId, mockOrgId);
+      expect(mockUserRepository.findById).toHaveBeenCalledWith(mockRemovedBy, mockOrgId);
+      expect(mockRoleRepository.findById).toHaveBeenCalledWith(mockRoleId);
       expect(mockPrismaService.userRole.delete).toHaveBeenCalled();
     });
 
@@ -210,11 +218,14 @@ describe('RemoveRoleFromUserUseCase', () => {
 
     it('Given: user does not have role When: removing role Then: should return BusinessRuleError result', async () => {
       // Arrange
-      // User needs ADMIN role for validation to pass (due to use case bug)
-      // Service validation happens before DB check, so it returns BusinessRuleError
-      const user = createMockUser(['ADMIN', 'WAREHOUSE_OPERATOR']);
+      const user = createMockUser(['WAREHOUSE_OPERATOR']); // User does not have the role
+      const removingUser = createMockUser(['ADMIN']); // User making the removal
       const role = createMockRole('SUPERVISOR');
-      mockUserRepository.findById.mockResolvedValue(user);
+
+      // Mock repository calls: first for the user having the role, then for the user removing
+      mockUserRepository.findById
+        .mockResolvedValueOnce(user) // First call: user having the role
+        .mockResolvedValueOnce(removingUser); // Second call: user making the removal
       mockRoleRepository.findById.mockResolvedValue(role);
 
       const request = {
@@ -241,8 +252,13 @@ describe('RemoveRoleFromUserUseCase', () => {
     it('Given: user with only one role When: removing role Then: should return BusinessRuleError result', async () => {
       // Arrange
       const user = createMockUser(['SUPERVISOR']); // Only one role
+      const removingUser = createMockUser(['ADMIN']); // User making the removal
       const role = createMockRole('SUPERVISOR');
-      mockUserRepository.findById.mockResolvedValue(user);
+
+      // Mock repository calls: first for the user having the role, then for the user removing
+      mockUserRepository.findById
+        .mockResolvedValueOnce(user) // First call: user having the role
+        .mockResolvedValueOnce(removingUser); // Second call: user making the removal
       mockRoleRepository.findById.mockResolvedValue(role);
 
       const request = {
@@ -263,6 +279,73 @@ describe('RemoveRoleFromUserUseCase', () => {
           expect(error).toBeInstanceOf(BusinessRuleError);
         }
       );
+    });
+
+    it('Given: removing user not found When: removing role Then: should return NotFoundError result', async () => {
+      // Arrange
+      const user = createMockUser(['SUPERVISOR']); // User having the role
+      const role = createMockRole('SUPERVISOR');
+
+      // Mock repository calls: user exists, but removing user does not
+      mockUserRepository.findById
+        .mockResolvedValueOnce(user) // First call: user having the role
+        .mockResolvedValueOnce(null); // Second call: user making the removal (not found)
+      mockRoleRepository.findById.mockResolvedValue(role);
+
+      const request = {
+        userId: mockUserId,
+        roleId: mockRoleId,
+        orgId: mockOrgId,
+        removedBy: mockRemovedBy,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(NotFoundError);
+          expect(error.message).toContain('User removing the role not found');
+        }
+      );
+      expect(mockPrismaService.userRole.delete).not.toHaveBeenCalled();
+    });
+
+    it('Given: removing user without ADMIN role When: removing role Then: should return BusinessRuleError', async () => {
+      // Arrange
+      const user = createMockUser(['SUPERVISOR']); // User having the role
+      const removingUser = createMockUser(['SUPERVISOR']); // User making the removal (no ADMIN role)
+      const role = createMockRole('SUPERVISOR');
+
+      // Mock repository calls: first for the user having the role, then for the user removing
+      mockUserRepository.findById
+        .mockResolvedValueOnce(user) // First call: user having the role
+        .mockResolvedValueOnce(removingUser); // Second call: user making the removal
+      mockRoleRepository.findById.mockResolvedValue(role);
+
+      const request = {
+        userId: mockUserId,
+        roleId: mockRoleId,
+        orgId: mockOrgId,
+        removedBy: mockRemovedBy,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => fail('Should not return success'),
+        error => {
+          expect(error).toBeInstanceOf(BusinessRuleError);
+          expect(error.message).toContain('Insufficient permissions to remove roles');
+        }
+      );
+      expect(mockPrismaService.userRole.delete).not.toHaveBeenCalled();
     });
   });
 });

@@ -118,7 +118,13 @@ export interface IMovementLine {
   orgId: string;
 }
 
-export type MovementType = 'IN' | 'OUT' | 'ADJUSTMENT' | 'TRANSFER';
+export type MovementType =
+  | 'IN'
+  | 'OUT'
+  | 'ADJUST_IN'
+  | 'ADJUST_OUT'
+  | 'TRANSFER_OUT'
+  | 'TRANSFER_IN';
 export type MovementStatus = 'DRAFT' | 'POSTED' | 'VOIDED' | 'CANCELLED';
 
 export interface IInventoryBalance {

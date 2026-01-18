@@ -1,17 +1,19 @@
 import { RoleAssignmentService } from '@auth/domain/services/roleAssignmentService';
 import { PrismaService } from '@infrastructure/database/prisma.service';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import {
   BusinessRuleError,
   DomainError,
-  err,
   NotFoundError,
-  ok,
   Result,
+  err,
+  ok,
 } from '@shared/domain/result';
+import { invalidateEntityCache } from '@shared/infrastructure/cache';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IRoleRepository, IUserRepository } from '@auth/domain/repositories';
+import type { ICacheService } from '@shared/ports/cache';
 
 export interface IRemoveRoleFromUserRequest {
   userId: string;
@@ -36,7 +38,10 @@ export class RemoveRoleFromUserUseCase {
   constructor(
     @Inject('UserRepository') private readonly userRepository: IUserRepository,
     @Inject('RoleRepository') private readonly roleRepository: IRoleRepository,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    @Inject('CacheService')
+    @Optional()
+    private readonly cacheService?: ICacheService
   ) {}
 
   async execute(
@@ -55,14 +60,26 @@ export class RemoveRoleFromUserUseCase {
       return err(new NotFoundError('User not found'));
     }
 
-    // Get role
-    const role = await this.roleRepository.findById(request.roleId, request.orgId);
+    // Get role (can be system or custom)
+    const role = await this.roleRepository.findById(request.roleId);
     if (!role) {
       return err(new NotFoundError('Role not found'));
     }
 
-    // Get current user roles for validation
-    const currentUserRoles = user.roles || [];
+    // Verify role is available for this organization
+    // System roles are available to all, custom roles only to their org
+    if (!role.isSystem && role.orgId !== request.orgId) {
+      return err(new NotFoundError('Role not available for this organization'));
+    }
+
+    // Get the user who is removing the role (removedBy) to get their roles for validation
+    const removingUser = await this.userRepository.findById(request.removedBy, request.orgId);
+    if (!removingUser) {
+      return err(new NotFoundError('User removing the role not found'));
+    }
+
+    // Get current user roles for validation (roles of the user making the removal)
+    const currentUserRoles = removingUser.roles || [];
 
     // Validate role removal
     const validation = RoleAssignmentService.canRemoveRole(
@@ -76,13 +93,12 @@ export class RemoveRoleFromUserUseCase {
     }
 
     // Check if user has this role
-    const existingAssignment = await this.prisma.userRole.findUnique({
+    // Use findFirst to handle both system and custom roles correctly
+    const existingAssignment = await this.prisma.userRole.findFirst({
       where: {
-        userId_roleId_orgId: {
-          userId: request.userId,
-          roleId: request.roleId,
-          orgId: request.orgId,
-        },
+        userId: request.userId,
+        roleId: request.roleId,
+        orgId: request.orgId,
       },
     });
 
@@ -93,13 +109,14 @@ export class RemoveRoleFromUserUseCase {
     // Remove role
     await this.prisma.userRole.delete({
       where: {
-        userId_roleId_orgId: {
-          userId: request.userId,
-          roleId: request.roleId,
-          orgId: request.orgId,
-        },
+        id: existingAssignment.id,
       },
     });
+
+    // Invalidate user cache to ensure fresh data on next fetch
+    if (this.cacheService) {
+      await invalidateEntityCache(this.cacheService, 'user', request.userId, request.orgId);
+    }
 
     this.logger.log('Role removed successfully', {
       userId: request.userId,

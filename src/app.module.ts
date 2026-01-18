@@ -10,6 +10,7 @@ import { SalesHttpModule } from '@interface/http/sales/salesHttp.module';
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { OrganizationModule } from '@organization/organization.module';
+import { ReportModule } from '@report/report.module';
 import { SecurityMiddleware } from '@shared/middleware';
 import { CorrelationIdMiddleware } from '@shared/middlewares/correlationId.middleware';
 
@@ -31,6 +32,7 @@ import { TenantMiddleware } from './interfaces/http/middlewares/tenant.middlewar
     SalesHttpModule,
     ReturnsHttpModule,
     ImportHttpModule,
+    ReportModule,
   ],
   controllers: [],
   providers: [],

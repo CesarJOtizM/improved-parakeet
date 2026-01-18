@@ -1,4 +1,5 @@
 import { CreateWarehouseUseCase } from '@application/warehouseUseCases/createWarehouseUseCase';
+import { GetWarehouseByIdUseCase } from '@application/warehouseUseCases/getWarehouseByIdUseCase';
 import { GetWarehousesUseCase } from '@application/warehouseUseCases/getWarehousesUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
@@ -9,13 +10,21 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  Param,
   Post,
   Query,
   Req,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
 import { OrgId } from '@shared/decorators/orgId.decorator';
 import { RequirePermissions } from '@shared/decorators/requirePermissions.decorator';
@@ -23,6 +32,7 @@ import { AuditInterceptor } from '@shared/interceptors/audit.interceptor';
 import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 import {
   CreateWarehouseDto,
+  GetWarehouseResponseDto,
   GetWarehousesQueryDto,
   GetWarehousesResponseDto,
   CreateWarehouseResponseDto,
@@ -41,7 +51,8 @@ export class WarehousesController {
 
   constructor(
     private readonly createWarehouseUseCase: CreateWarehouseUseCase,
-    private readonly getWarehousesUseCase: GetWarehousesUseCase
+    private readonly getWarehousesUseCase: GetWarehousesUseCase,
+    private readonly getWarehouseByIdUseCase: GetWarehouseByIdUseCase
   ) {}
 
   @Post()
@@ -130,6 +141,42 @@ export class WarehousesController {
     };
 
     const result = await this.getWarehousesUseCase.execute(request);
+    return resultToHttpResponse(result);
+  }
+
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.WAREHOUSES_READ)
+  @ApiOperation({
+    summary: 'Get warehouse by ID',
+    description: 'Get a specific warehouse by ID. Requires WAREHOUSES:READ permission.',
+  })
+  @ApiParam({ name: 'id', description: 'Warehouse ID', example: 'warehouse-123' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Warehouse retrieved successfully',
+    type: GetWarehouseResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Warehouse not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions',
+  })
+  async getWarehouseById(
+    @Param('id') warehouseId: string,
+    @OrgId() orgId: string
+  ): Promise<GetWarehouseResponseDto> {
+    this.logger.log('Getting warehouse by ID', { warehouseId, orgId });
+
+    const request = {
+      warehouseId,
+      orgId,
+    };
+
+    const result = await this.getWarehouseByIdUseCase.execute(request);
     return resultToHttpResponse(result);
   }
 }

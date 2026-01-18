@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ProductBusinessRulesService } from '@product/domain/services/productBusinessRules.service';
 import { CostMethod } from '@product/domain/valueObjects/costMethod.valueObject';
+import { Price } from '@product/domain/valueObjects/price.valueObject';
 import { ProductName } from '@product/domain/valueObjects/productName.valueObject';
 import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
 import { UnitValueObject } from '@product/domain/valueObjects/unit.valueObject';
@@ -33,6 +34,8 @@ export interface IUpdateProductRequest {
   barcode?: string;
   brand?: string;
   model?: string;
+  price?: number;
+  currency?: string;
   status?: 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED';
   costMethod?: 'AVG' | 'FIFO';
   orgId: string;
@@ -104,6 +107,12 @@ export class UpdateProductUseCase {
 
       if (request.model !== undefined) {
         updateProps.model = request.model;
+      }
+
+      if (request.price !== undefined) {
+        const currency = request.currency || 'COP';
+        const precision = 2; // Default precision for price
+        updateProps.price = Price.create(request.price, currency, precision);
       }
 
       if (request.status !== undefined) {
@@ -185,6 +194,8 @@ export class UpdateProductUseCase {
           barcode: savedProduct.barcode,
           brand: savedProduct.brand,
           model: savedProduct.model,
+          price: savedProduct.price?.getAmount(),
+          currency: savedProduct.price?.getCurrency(),
           status: savedProduct.status.getValue(),
           costMethod: savedProduct.costMethod.getValue(),
           orgId: savedProduct.orgId!,

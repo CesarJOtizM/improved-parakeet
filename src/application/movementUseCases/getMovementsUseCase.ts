@@ -7,13 +7,14 @@ import {
   MovementByTypeSpecification,
   MovementByWarehouseSpecification,
 } from '@movement/domain/specifications';
-import { MovementMapper } from '@movement/mappers';
+import { MovementMapper, type IProductInfo } from '@movement/mappers';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DomainError, Result, ok } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
 import type { IMovementData } from './createMovementUseCase';
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
+import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
 import type { IPrismaSpecification } from '@shared/domain/specifications';
 
 export interface IGetMovementsRequest {
@@ -38,7 +39,8 @@ export class GetMovementsUseCase {
   private readonly logger = new Logger(GetMovementsUseCase.name);
 
   constructor(
-    @Inject('MovementRepository') private readonly movementRepository: IMovementRepository
+    @Inject('MovementRepository') private readonly movementRepository: IMovementRepository,
+    @Inject('ProductRepository') private readonly productRepository: IProductRepository
   ) {}
 
   async execute(
@@ -147,11 +149,40 @@ export class GetMovementsUseCase {
 
     const totalPages = Math.ceil(result.total / limit);
 
-    // Use mapper to convert entities to response DTOs
+    // Collect unique product IDs from all movement lines
+    const productIds = new Set<string>();
+    for (const movement of sortedMovements) {
+      for (const line of movement.getLines()) {
+        productIds.add(line.productId);
+      }
+    }
+
+    // Fetch product information for all products in movements
+    const productInfoMap = new Map<string, IProductInfo>();
+    for (const productId of productIds) {
+      try {
+        const product = await this.productRepository.findById(productId, request.orgId);
+        if (product) {
+          productInfoMap.set(productId, {
+            sku: product.sku.getValue(),
+            name: product.name.getValue(),
+            price: product.price?.getAmount(),
+            currency: product.price?.getCurrency(),
+          });
+        }
+      } catch (error) {
+        // Log error but continue - product info is optional
+        this.logger.warn(`Failed to fetch product info for ${productId}`, {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
+    // Use mapper to convert entities to response DTOs with product information
     return ok({
       success: true,
       message: 'Movements retrieved successfully',
-      data: MovementMapper.toResponseDataList(sortedMovements),
+      data: MovementMapper.toResponseDataList(sortedMovements, productInfoMap),
       pagination: {
         page,
         limit,

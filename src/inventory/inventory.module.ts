@@ -20,6 +20,7 @@ import { UpdateProductUseCase } from '@application/productUseCases/updateProduct
 import { GetTransfersUseCase } from '@application/transferUseCases/getTransfersUseCase';
 import { InitiateTransferUseCase } from '@application/transferUseCases/initiateTransferUseCase';
 import { CreateWarehouseUseCase } from '@application/warehouseUseCases/createWarehouseUseCase';
+import { GetWarehouseByIdUseCase } from '@application/warehouseUseCases/getWarehouseByIdUseCase';
 import { GetWarehousesUseCase } from '@application/warehouseUseCases/getWarehousesUseCase';
 import { AuthenticationModule } from '@auth/authentication.module';
 import {
@@ -102,6 +103,7 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     // Warehouse Use Cases
     CreateWarehouseUseCase,
     GetWarehousesUseCase,
+    GetWarehouseByIdUseCase,
     // Movement Use Cases
     CreateMovementUseCase,
     GetMovementsUseCase,
@@ -143,6 +145,7 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     UpdateProductUseCase,
     CreateWarehouseUseCase,
     GetWarehousesUseCase,
+    GetWarehouseByIdUseCase,
     CreateMovementUseCase,
     GetMovementsUseCase,
     PostMovementUseCase,

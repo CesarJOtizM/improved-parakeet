@@ -50,6 +50,8 @@ import { SalesModule } from '@sales/sales.module';
     RemoveReturnLineUseCase,
     GetReturnsBySaleUseCase,
     GetReturnsByMovementUseCase,
+    // Export repository for cross-module access (e.g., ReportModule)
+    'ReturnRepository',
   ],
 })
 export class ReturnsModule {}
