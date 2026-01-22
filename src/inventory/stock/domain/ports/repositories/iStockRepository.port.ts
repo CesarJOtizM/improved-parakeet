@@ -13,6 +13,15 @@ export interface IStockData {
 }
 
 /**
+ * Stock query filters
+ */
+export interface IStockFilters {
+  warehouseId?: string;
+  productId?: string;
+  lowStock?: boolean; // Filter products below minimum quantity (from reorder rules)
+}
+
+/**
  * Stock repository port interface
  * Output port for stock persistence following Hexagonal Architecture
  */
@@ -70,4 +79,9 @@ export interface IStockRepository {
     quantity: Quantity,
     locationId?: string
   ): Promise<void>;
+
+  /**
+   * Gets all stock records with optional filters
+   */
+  findAll(orgId: string, filters?: IStockFilters): Promise<IStockData[]>;
 }

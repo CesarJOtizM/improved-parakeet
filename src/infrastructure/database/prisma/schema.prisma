@@ -222,6 +222,7 @@ model Warehouse {
 
   // Relations
   organization  Organization  @relation(fields: [orgId], references: [id])
+  locations     Location[]
   stock         Stock[]
   reorderRules  ReorderRule[]
   movements     Movement[]
@@ -234,11 +235,42 @@ model Warehouse {
   @@map("warehouses")
 }
 
+// Locations (sub-divisions within warehouses: aisles, shelves, bins, etc.)
+model Location {
+  id          String   @id @default(cuid())
+  code        String
+  name        String
+  description String?
+  type        String   @default("BIN") // ZONE, AISLE, RACK, SHELF, BIN
+  warehouseId String
+  parentId    String? // For hierarchical locations
+  isActive    Boolean  @default(true)
+  orgId       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  warehouse     Warehouse      @relation(fields: [warehouseId], references: [id])
+  parent        Location?      @relation("LocationHierarchy", fields: [parentId], references: [id])
+  children      Location[]     @relation("LocationHierarchy")
+  stock         Stock[]
+  movementLines MovementLine[]
+  saleLines     SaleLine[]
+  returnLines   ReturnLine[]
+
+  @@unique([code, warehouseId, orgId])
+  @@index([warehouseId, orgId])
+  @@index([parentId])
+  @@index([orgId, isActive])
+  @@map("locations")
+}
+
 // Stock
 model Stock {
   id          String  @id @default(cuid())
   productId   String
   warehouseId String
+  locationId  String? // Optional - for MVP warehouse is the location
   quantity    Int     @default(0)
   unitCost    Decimal @db.Decimal(10, 2)
   orgId       String
@@ -246,10 +278,12 @@ model Stock {
   // Relations
   product   Product   @relation(fields: [productId], references: [id])
   warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  location  Location? @relation(fields: [locationId], references: [id])
 
-  @@unique([productId, warehouseId, orgId])
+  @@unique([productId, warehouseId, locationId, orgId])
   @@index([orgId, warehouseId])
   @@index([orgId, productId])
+  @@index([locationId])
   @@map("stock")
 }
 
@@ -314,8 +348,9 @@ model MovementLine {
   orgId      String
 
   // Relations
-  movement Movement @relation(fields: [movementId], references: [id])
-  product  Product  @relation(fields: [productId], references: [id])
+  movement Movement  @relation(fields: [movementId], references: [id])
+  product  Product   @relation(fields: [productId], references: [id])
+  location Location? @relation(fields: [locationId], references: [id])
 
   @@map("movement_lines")
 }
@@ -395,7 +430,7 @@ model SaleLine {
   id         String   @id @default(cuid())
   saleId     String
   productId  String
-  locationId String
+  locationId String? // Optional - for MVP warehouse is the location
   quantity   Decimal  @db.Decimal(10, 6)
   salePrice  Decimal  @db.Decimal(10, 2)
   currency   String
@@ -405,11 +440,13 @@ model SaleLine {
   updatedAt  DateTime @updatedAt
 
   // Relations
-  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  sale     Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product  Product   @relation(fields: [productId], references: [id])
+  location Location? @relation(fields: [locationId], references: [id])
 
   @@index([saleId])
   @@index([productId, orgId])
+  @@index([locationId])
   @@map("sale_lines")
 }
 
@@ -455,7 +492,7 @@ model ReturnLine {
   id                String   @id @default(cuid())
   returnId          String
   productId         String
-  locationId        String
+  locationId        String? // Optional - for MVP warehouse is the location
   quantity          Decimal  @db.Decimal(10, 6)
   originalSalePrice Decimal? @db.Decimal(10, 2) // For customer returns
   originalUnitCost  Decimal? @db.Decimal(10, 2) // For supplier returns
@@ -466,11 +503,13 @@ model ReturnLine {
   updatedAt         DateTime @updatedAt
 
   // Relations
-  return  Return  @relation(fields: [returnId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  return   Return    @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  product  Product   @relation(fields: [productId], references: [id])
+  location Location? @relation(fields: [locationId], references: [id])
 
   @@index([returnId])
   @@index([productId, orgId])
+  @@index([locationId])
   @@map("return_lines")
 }
 

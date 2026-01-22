@@ -7,11 +7,13 @@ import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 export class InventoryIntegrationService {
   /**
-   * Generates a Movement entity from a confirmed Sale
+   * Generates a Movement entity from a Sale (DRAFT or CONFIRMED)
+   * For MVP: movement is generated before confirming the sale
    */
   public static generateMovementFromSale(sale: Sale): Movement {
-    if (!sale.status.isConfirmed()) {
-      throw new Error('Can only generate movement from confirmed sale');
+    // Accept DRAFT sales for MVP flow: generate movement -> post -> confirm sale
+    if (!sale.status.isDraft() && !sale.status.isConfirmed()) {
+      throw new Error('Can only generate movement from DRAFT or CONFIRMED sale');
     }
 
     // Create movement with type OUT and reason SALE

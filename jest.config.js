@@ -38,6 +38,8 @@ const config = {
     '^@transfer/(.*)$': '<rootDir>/src/inventory/transfers/$1',
     '^@stock$': '<rootDir>/src/inventory/stock',
     '^@stock/(.*)$': '<rootDir>/src/inventory/stock/$1',
+    '^@location$': '<rootDir>/src/inventory/locations',
+    '^@location/(.*)$': '<rootDir>/src/inventory/locations/$1',
     '^@sales$': '<rootDir>/src/sales',
     '^@sales/(.*)$': '<rootDir>/src/sales/$1',
     '^@sale$': '<rootDir>/src/sales',

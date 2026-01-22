@@ -17,8 +17,13 @@ import { CreateProductUseCase } from '@application/productUseCases/createProduct
 import { GetProductByIdUseCase } from '@application/productUseCases/getProductByIdUseCase';
 import { GetProductsUseCase } from '@application/productUseCases/getProductsUseCase';
 import { UpdateProductUseCase } from '@application/productUseCases/updateProductUseCase';
+import { GetStockUseCase } from '@application/stockUseCases/getStockUseCase';
+import { CancelTransferUseCase } from '@application/transferUseCases/cancelTransferUseCase';
+import { ConfirmTransferUseCase } from '@application/transferUseCases/confirmTransferUseCase';
 import { GetTransfersUseCase } from '@application/transferUseCases/getTransfersUseCase';
 import { InitiateTransferUseCase } from '@application/transferUseCases/initiateTransferUseCase';
+import { ReceiveTransferUseCase } from '@application/transferUseCases/receiveTransferUseCase';
+import { RejectTransferUseCase } from '@application/transferUseCases/rejectTransferUseCase';
 import { CreateWarehouseUseCase } from '@application/warehouseUseCases/createWarehouseUseCase';
 import { GetWarehouseByIdUseCase } from '@application/warehouseUseCases/getWarehouseByIdUseCase';
 import { GetWarehousesUseCase } from '@application/warehouseUseCases/getWarehousesUseCase';
@@ -108,9 +113,15 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     CreateMovementUseCase,
     GetMovementsUseCase,
     PostMovementUseCase,
+    // Stock Use Cases
+    GetStockUseCase,
     // Transfer Use Cases
     InitiateTransferUseCase,
     GetTransfersUseCase,
+    ConfirmTransferUseCase,
+    ReceiveTransferUseCase,
+    RejectTransferUseCase,
+    CancelTransferUseCase,
     // Event Handlers
     ProductCreatedEventHandler,
     ProductUpdatedEventHandler,
@@ -149,8 +160,13 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     CreateMovementUseCase,
     GetMovementsUseCase,
     PostMovementUseCase,
+    GetStockUseCase,
     InitiateTransferUseCase,
     GetTransfersUseCase,
+    ConfirmTransferUseCase,
+    ReceiveTransferUseCase,
+    RejectTransferUseCase,
+    CancelTransferUseCase,
     // Export repositories for cross-module access (e.g., SalesModule)
     'ProductRepository',
     'WarehouseRepository',

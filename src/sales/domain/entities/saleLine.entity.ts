@@ -5,7 +5,7 @@ import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 export interface ISaleLineProps {
   productId: string;
-  locationId: string;
+  locationId?: string; // Optional for MVP - warehouse is the location
   quantity: Quantity;
   salePrice: SalePrice;
   extra?: Record<string, unknown>;
@@ -41,9 +41,9 @@ export class SaleLine extends Entity<ISaleLineProps> {
       throw new Error('Product ID is required');
     }
 
-    // LocationId is required
-    if (!props.locationId || props.locationId.trim().length === 0) {
-      throw new Error('Location ID is required');
+    // LocationId validation - only if provided (optional for MVP)
+    if (props.locationId !== undefined && props.locationId.trim().length === 0) {
+      throw new Error('Location ID cannot be empty if provided');
     }
   }
 
@@ -73,7 +73,7 @@ export class SaleLine extends Entity<ISaleLineProps> {
     return this.props.productId;
   }
 
-  get locationId(): string {
+  get locationId(): string | undefined {
     return this.props.locationId;
   }
 

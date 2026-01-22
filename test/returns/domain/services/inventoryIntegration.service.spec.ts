@@ -158,7 +158,7 @@ describe('InventoryIntegrationService', () => {
       expect(movement.getLines()).toHaveLength(3);
     });
 
-    it('Given: a DRAFT customer return When: generating movement Then: should throw error', () => {
+    it('Given: a DRAFT customer return When: generating movement Then: should create movement', () => {
       // Arrange
       const returnEntity = Return.reconstitute(
         {
@@ -174,10 +174,13 @@ describe('InventoryIntegrationService', () => {
         mockOrgId
       );
 
-      // Act & Assert
-      expect(() =>
-        InventoryIntegrationService.generateMovementFromCustomerReturn(returnEntity)
-      ).toThrow('Can only generate movement from confirmed return');
+      // Act
+      const movement = InventoryIntegrationService.generateMovementFromCustomerReturn(returnEntity);
+
+      // Assert
+      expect(movement).toBeDefined();
+      expect(movement.status.getValue()).toBe('DRAFT');
+      expect(movement.reference).toBe('RETURN-2024-004');
     });
 
     it('Given: a supplier return When: generating customer movement Then: should throw error', () => {
@@ -287,7 +290,7 @@ describe('InventoryIntegrationService', () => {
       expect(movement.note).toBe('Supplier return RETURN-2024-011');
     });
 
-    it('Given: a DRAFT supplier return When: generating movement Then: should throw error', () => {
+    it('Given: a DRAFT supplier return When: generating movement Then: should create movement', () => {
       // Arrange
       const returnEntity = Return.reconstitute(
         {
@@ -303,10 +306,13 @@ describe('InventoryIntegrationService', () => {
         mockOrgId
       );
 
-      // Act & Assert
-      expect(() =>
-        InventoryIntegrationService.generateMovementFromSupplierReturn(returnEntity)
-      ).toThrow('Can only generate movement from confirmed return');
+      // Act
+      const movement = InventoryIntegrationService.generateMovementFromSupplierReturn(returnEntity);
+
+      // Assert
+      expect(movement).toBeDefined();
+      expect(movement.status.getValue()).toBe('DRAFT');
+      expect(movement.reference).toBe('RETURN-2024-012');
     });
 
     it('Given: a customer return When: generating supplier movement Then: should throw error', () => {

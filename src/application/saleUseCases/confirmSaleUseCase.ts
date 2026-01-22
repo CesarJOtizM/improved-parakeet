@@ -67,15 +67,18 @@ export class ConfirmSaleUseCase {
       return err(new BusinessRuleError(`Insufficient stock: ${stockValidation.errors.join(', ')}`));
     }
 
-    // Generate movement from sale
+    // Generate movement from sale (accepts DRAFT sales for MVP flow)
     const movement = InventoryIntegrationService.generateMovementFromSale(sale);
 
-    // Save movement
+    // Save movement in DRAFT state first
     const savedMovement = await this.movementRepository.save(movement);
 
-    // Post movement (returns new instance, triggers stock update and emits MovementPostedEvent)
+    // Post movement (returns new instance with events attached)
     const postedMovementInstance = savedMovement.post();
     const postedMovement = await this.movementRepository.save(postedMovementInstance);
+
+    // Dispatch movement domain events to update stock via MovementPostedEventHandler
+    await this.eventDispatcher.markAndDispatch(postedMovementInstance.domainEvents);
 
     // Confirm sale with movementId
     sale.confirm(postedMovement.id);

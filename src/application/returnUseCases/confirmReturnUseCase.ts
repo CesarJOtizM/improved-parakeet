@@ -91,7 +91,7 @@ export class ConfirmReturnUseCase {
       }
     }
 
-    // Generate movement from return
+    // Generate movement from return (accepts DRAFT returns for MVP flow)
     let movement;
     if (returnEntity.type.isCustomerReturn()) {
       movement = InventoryIntegrationService.generateMovementFromCustomerReturn(returnEntity);
@@ -99,12 +99,15 @@ export class ConfirmReturnUseCase {
       movement = InventoryIntegrationService.generateMovementFromSupplierReturn(returnEntity);
     }
 
-    // Save movement
+    // Save movement in DRAFT state first
     const savedMovement = await this.movementRepository.save(movement);
 
-    // Post movement (returns new instance, triggers stock update and emits MovementPostedEvent)
+    // Post movement (returns new instance with events attached)
     const postedMovementInstance = savedMovement.post();
     const postedMovement = await this.movementRepository.save(postedMovementInstance);
+
+    // Dispatch movement domain events to update stock via MovementPostedEventHandler
+    await this.eventDispatcher.markAndDispatch(postedMovementInstance.domainEvents);
 
     // Confirm return with returnMovementId
     returnEntity.confirm(postedMovement.id);

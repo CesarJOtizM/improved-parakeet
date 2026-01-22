@@ -81,16 +81,26 @@ export class StockSeed {
     ];
 
     for (const stockDataItem of stockData) {
-      await this.prisma.stock.upsert({
+      // Find existing stock record
+      const existing = await this.prisma.stock.findFirst({
         where: {
-          productId_warehouseId_orgId: {
-            productId: stockDataItem.productId,
-            warehouseId: stockDataItem.warehouseId,
-            orgId: stockDataItem.orgId,
-          },
+          productId: stockDataItem.productId,
+          warehouseId: stockDataItem.warehouseId,
+          orgId: stockDataItem.orgId,
+          locationId: null,
         },
-        update: {},
-        create: stockDataItem,
+      });
+
+      if (existing) {
+        // Already exists, skip
+        continue;
+      }
+
+      await this.prisma.stock.create({
+        data: {
+          ...stockDataItem,
+          locationId: null,
+        },
       });
     }
   }

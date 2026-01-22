@@ -12,6 +12,7 @@ import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 import { StockValidationService } from '@stock/domain/services/stockValidation.service';
 
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
+import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 import type { IStockRepository } from '@stock/domain/repositories/stockRepository.interface';
 
 export interface IPostMovementRequest {
@@ -39,7 +40,9 @@ export class PostMovementUseCase {
     @Inject('MovementRepository')
     private readonly movementRepository: IMovementRepository,
     @Inject('StockRepository')
-    private readonly stockRepository: IStockRepository
+    private readonly stockRepository: IStockRepository,
+    @Inject('DomainEventDispatcher')
+    private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(
@@ -67,11 +70,14 @@ export class PostMovementUseCase {
       }
     }
 
-    // Post the movement (this will emit MovementPostedEvent)
-    movement.post();
+    // Post the movement - this returns a new instance with the event attached
+    const postedMovement = movement.post();
 
-    // Save the movement
-    const savedMovement = await this.movementRepository.save(movement);
+    // Save the posted movement
+    const savedMovement = await this.movementRepository.save(postedMovement);
+
+    // Dispatch domain events to update stock via MovementPostedEventHandler
+    await this.eventDispatcher.markAndDispatch(postedMovement.domainEvents);
 
     this.logger.log('Movement posted successfully', {
       movementId: savedMovement.id,

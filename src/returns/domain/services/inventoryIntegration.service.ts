@@ -7,11 +7,13 @@ import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 export class InventoryIntegrationService {
   /**
-   * Generates a Movement entity from a confirmed customer return (IN movement)
+   * Generates a Movement entity from a customer return (DRAFT or CONFIRMED)
+   * For MVP: movement is generated before confirming the return
    */
   public static generateMovementFromCustomerReturn(returnEntity: Return): Movement {
-    if (!returnEntity.status.isConfirmed()) {
-      throw new Error('Can only generate movement from confirmed return');
+    // Accept DRAFT returns for MVP flow: generate movement -> post -> confirm return
+    if (!returnEntity.status.isDraft() && !returnEntity.status.isConfirmed()) {
+      throw new Error('Can only generate movement from DRAFT or CONFIRMED return');
     }
 
     if (!returnEntity.type.isCustomerReturn()) {
@@ -57,11 +59,13 @@ export class InventoryIntegrationService {
   }
 
   /**
-   * Generates a Movement entity from a confirmed supplier return (OUT movement)
+   * Generates a Movement entity from a supplier return (DRAFT or CONFIRMED)
+   * For MVP: movement is generated before confirming the return
    */
   public static generateMovementFromSupplierReturn(returnEntity: Return): Movement {
-    if (!returnEntity.status.isConfirmed()) {
-      throw new Error('Can only generate movement from confirmed return');
+    // Accept DRAFT returns for MVP flow: generate movement -> post -> confirm return
+    if (!returnEntity.status.isDraft() && !returnEntity.status.isConfirmed()) {
+      throw new Error('Can only generate movement from DRAFT or CONFIRMED return');
     }
 
     if (!returnEntity.type.isSupplierReturn()) {

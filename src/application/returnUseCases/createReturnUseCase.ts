@@ -25,7 +25,7 @@ export interface ICreateReturnRequest {
   note?: string;
   lines?: Array<{
     productId: string;
-    locationId: string;
+    locationId?: string; // Optional for MVP - warehouse is the location
     quantity: number;
     originalSalePrice?: number; // Required for customer returns
     originalUnitCost?: number; // Required for supplier returns
@@ -38,7 +38,7 @@ export interface ICreateReturnRequest {
 export interface IReturnLineData {
   id: string;
   productId: string;
-  locationId: string;
+  locationId?: string; // Optional for MVP - warehouse is the location
   quantity: number;
   originalSalePrice?: number;
   originalUnitCost?: number;

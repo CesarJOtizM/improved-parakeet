@@ -17,7 +17,7 @@ export class StockValidationService {
    */
   public static validateStockForOutput(
     productId: string,
-    locationId: string,
+    locationId: string | undefined, // Optional for MVP - warehouse is the location
     requestedQuantity: Quantity,
     currentStock: Quantity,
     pendingMovements: Movement[]

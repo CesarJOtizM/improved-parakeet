@@ -16,8 +16,12 @@ export class MovementLineResponseDto {
   @ApiProperty({ description: 'Product price', example: 150.5, required: false })
   price?: number;
 
-  @ApiProperty({ description: 'Location ID', example: 'location-123' })
-  locationId!: string;
+  @ApiProperty({
+    description: 'Location ID (optional for MVP, warehouse is the location)',
+    example: 'location-123',
+    required: false,
+  })
+  locationId?: string;
 
   @ApiProperty({ description: 'Quantity', example: 10 })
   quantity!: number;

@@ -82,7 +82,7 @@ export class PrismaSaleRepository implements ISaleRepository {
         return SaleLine.reconstitute(
           {
             productId: lineData.productId,
-            locationId: lineData.locationId,
+            locationId: lineData.locationId || undefined,
             quantity,
             salePrice,
             extra: lineData.extra as Record<string, unknown> | undefined,
@@ -440,7 +440,7 @@ export class PrismaSaleRepository implements ISaleRepository {
   private createSaleLine(lineData: {
     id: string;
     productId: string;
-    locationId: string;
+    locationId: string | null;
     quantity: number | string | { toNumber(): number };
     salePrice: number | string | { toNumber(): number };
     currency: string;
@@ -462,7 +462,7 @@ export class PrismaSaleRepository implements ISaleRepository {
     return SaleLine.reconstitute(
       {
         productId: lineData.productId,
-        locationId: lineData.locationId,
+        locationId: lineData.locationId || undefined,
         quantity,
         salePrice,
         extra: (lineData.extra as Record<string, unknown>) || undefined,
@@ -506,7 +506,7 @@ export class PrismaSaleRepository implements ISaleRepository {
     lines: Array<{
       id: string;
       productId: string;
-      locationId: string;
+      locationId: string | null;
       quantity: number | string | { toNumber(): number };
       salePrice: number | string | { toNumber(): number };
       currency: string;

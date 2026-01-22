@@ -10,7 +10,7 @@ import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
  */
 export interface ISaleLineCreateInput {
   productId: string;
-  locationId: string;
+  locationId?: string; // Optional for MVP - warehouse is the location
   quantity: number;
   salePrice: number;
   currency?: string;
@@ -35,7 +35,7 @@ export interface ISaleCreateInput {
 export interface ISaleLineResponseData {
   id: string;
   productId: string;
-  locationId: string;
+  locationId?: string; // Optional for MVP - warehouse is the location
   quantity: number;
   salePrice: number;
   currency: string;

@@ -3,7 +3,7 @@ import { Entity } from '@shared/domain/base/entity.base';
 
 export interface IMovementLineProps {
   productId: string;
-  locationId: string;
+  locationId?: string; // Optional for MVP - warehouse is the location
   quantity: Quantity;
   unitCost?: Money;
   currency: string;
@@ -78,7 +78,7 @@ export class MovementLine extends Entity<IMovementLineProps> {
     return this.props.productId;
   }
 
-  get locationId(): string {
+  get locationId(): string | undefined {
     return this.props.locationId;
   }
 

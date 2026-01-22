@@ -18,7 +18,7 @@ import type { IWarehouseRepository } from '@warehouse/domain/repositories/wareho
 
 export interface ICreateMovementLineRequest {
   productId: string;
-  locationId: string;
+  locationId?: string; // Optional for MVP - warehouse is the location
   quantity: number;
   unitCost?: number;
   currency?: string;
@@ -39,7 +39,7 @@ export interface ICreateMovementRequest {
 export interface IMovementLineData {
   id: string;
   productId: string;
-  locationId: string;
+  locationId?: string; // Optional for MVP - warehouse is the location
   quantity: number;
   unitCost?: number;
   currency: string;

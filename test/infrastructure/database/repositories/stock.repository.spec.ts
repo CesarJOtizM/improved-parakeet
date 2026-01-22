@@ -32,11 +32,10 @@ describe('PrismaStockRepository', () => {
   beforeEach(() => {
     mockPrismaService = {
       stock: {
-        findUnique: jest.fn(),
+        findFirst: jest.fn(),
         findMany: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
-        upsert: jest.fn(),
         delete: jest.fn(),
       },
     };
@@ -54,7 +53,7 @@ describe('PrismaStockRepository', () => {
   describe('getStockQuantity', () => {
     it('Given: stock exists When: getting quantity Then: should return quantity', async () => {
       // Arrange
-      mockPrismaService.stock.findUnique.mockResolvedValue(mockStockData);
+      mockPrismaService.stock.findFirst.mockResolvedValue(mockStockData);
       mockProductRepository.findById.mockResolvedValue(mockProduct);
 
       // Act
@@ -63,20 +62,19 @@ describe('PrismaStockRepository', () => {
       // Assert
       expect(result).not.toBeNull();
       expect(result.getNumericValue()).toBe(100);
-      expect(mockPrismaService.stock.findUnique).toHaveBeenCalledWith({
+      expect(mockPrismaService.stock.findFirst).toHaveBeenCalledWith({
         where: {
-          productId_warehouseId_orgId: {
-            productId: 'product-123',
-            warehouseId: 'warehouse-123',
-            orgId: 'org-123',
-          },
+          productId: 'product-123',
+          warehouseId: 'warehouse-123',
+          orgId: 'org-123',
+          locationId: null,
         },
       });
     });
 
     it('Given: stock does not exist When: getting quantity Then: should return zero quantity', async () => {
       // Arrange
-      mockPrismaService.stock.findUnique.mockResolvedValue(null);
+      mockPrismaService.stock.findFirst.mockResolvedValue(null);
       mockProductRepository.findById.mockResolvedValue(mockProduct);
 
       // Act
@@ -88,7 +86,7 @@ describe('PrismaStockRepository', () => {
 
     it('Given: database error When: getting quantity Then: should throw error', async () => {
       // Arrange
-      mockPrismaService.stock.findUnique.mockRejectedValue(new Error('Database error'));
+      mockPrismaService.stock.findFirst.mockRejectedValue(new Error('Database error'));
 
       // Act & Assert
       await expect(
@@ -102,7 +100,7 @@ describe('PrismaStockRepository', () => {
         mockPrismaService as unknown as PrismaService,
         undefined
       );
-      mockPrismaService.stock.findUnique.mockResolvedValue(mockStockData);
+      mockPrismaService.stock.findFirst.mockResolvedValue(mockStockData);
 
       // Act
       const result = await repoWithoutProductRepo.getStockQuantity(
@@ -119,7 +117,7 @@ describe('PrismaStockRepository', () => {
   describe('getStockWithCost', () => {
     it('Given: stock exists When: getting stock with cost Then: should return quantity and cost', async () => {
       // Arrange
-      mockPrismaService.stock.findUnique.mockResolvedValue(mockStockData);
+      mockPrismaService.stock.findFirst.mockResolvedValue(mockStockData);
       mockProductRepository.findById.mockResolvedValue(mockProduct);
 
       // Act
@@ -133,7 +131,7 @@ describe('PrismaStockRepository', () => {
 
     it('Given: stock does not exist When: getting stock with cost Then: should return null', async () => {
       // Arrange
-      mockPrismaService.stock.findUnique.mockResolvedValue(null);
+      mockPrismaService.stock.findFirst.mockResolvedValue(null);
 
       // Act
       const result = await repository.getStockWithCost('product-123', 'warehouse-123', 'org-123');
@@ -144,7 +142,7 @@ describe('PrismaStockRepository', () => {
 
     it('Given: stock with null unitCost When: getting stock Then: should return zero cost', async () => {
       // Arrange
-      mockPrismaService.stock.findUnique.mockResolvedValue({
+      mockPrismaService.stock.findFirst.mockResolvedValue({
         ...mockStockData,
         unitCost: null,
       });
@@ -162,7 +160,7 @@ describe('PrismaStockRepository', () => {
       const decimalCost = {
         toNumber: () => 30.75,
       };
-      mockPrismaService.stock.findUnique.mockResolvedValue({
+      mockPrismaService.stock.findFirst.mockResolvedValue({
         ...mockStockData,
         unitCost: decimalCost,
       });
@@ -177,7 +175,7 @@ describe('PrismaStockRepository', () => {
 
     it('Given: database error When: getting stock with cost Then: should throw error', async () => {
       // Arrange
-      mockPrismaService.stock.findUnique.mockRejectedValue(new Error('Connection error'));
+      mockPrismaService.stock.findFirst.mockRejectedValue(new Error('Connection error'));
 
       // Act & Assert
       await expect(
@@ -187,11 +185,12 @@ describe('PrismaStockRepository', () => {
   });
 
   describe('updateStock', () => {
-    it('Given: valid stock data When: updating stock Then: should upsert stock', async () => {
+    it('Given: valid stock data When: updating stock Then: should update stock', async () => {
       // Arrange
       const quantity = Quantity.create(150, 0);
       const cost = Money.create(30, 'COP', 2);
-      mockPrismaService.stock.upsert.mockResolvedValue({
+      mockPrismaService.stock.findFirst.mockResolvedValue(mockStockData);
+      mockPrismaService.stock.update.mockResolvedValue({
         ...mockStockData,
         quantity: 150,
         unitCost: 30,
@@ -201,22 +200,9 @@ describe('PrismaStockRepository', () => {
       await repository.updateStock('product-123', 'warehouse-123', 'org-123', quantity, cost);
 
       // Assert
-      expect(mockPrismaService.stock.upsert).toHaveBeenCalledWith({
-        where: {
-          productId_warehouseId_orgId: {
-            productId: 'product-123',
-            warehouseId: 'warehouse-123',
-            orgId: 'org-123',
-          },
-        },
-        create: {
-          productId: 'product-123',
-          warehouseId: 'warehouse-123',
-          orgId: 'org-123',
-          quantity: 150,
-          unitCost: 30,
-        },
-        update: {
+      expect(mockPrismaService.stock.update).toHaveBeenCalledWith({
+        where: { id: mockStockData.id },
+        data: {
           quantity: 150,
           unitCost: 30,
         },
@@ -227,7 +213,8 @@ describe('PrismaStockRepository', () => {
       // Arrange
       const quantity = Quantity.create(100, 0);
       const cost = Money.create(25, 'COP', 2);
-      mockPrismaService.stock.upsert.mockRejectedValue(new Error('Upsert failed'));
+      mockPrismaService.stock.findFirst.mockResolvedValue(mockStockData);
+      mockPrismaService.stock.update.mockRejectedValue(new Error('Upsert failed'));
 
       // Act & Assert
       await expect(
@@ -239,9 +226,9 @@ describe('PrismaStockRepository', () => {
   describe('incrementStock', () => {
     it('Given: existing stock When: incrementing Then: should add to current quantity', async () => {
       // Arrange
-      mockPrismaService.stock.findUnique.mockResolvedValue(mockStockData);
+      mockPrismaService.stock.findFirst.mockResolvedValue(mockStockData);
       mockProductRepository.findById.mockResolvedValue(mockProduct);
-      mockPrismaService.stock.upsert.mockResolvedValue({
+      mockPrismaService.stock.update.mockResolvedValue({
         ...mockStockData,
         quantity: 150,
       });
@@ -252,14 +239,14 @@ describe('PrismaStockRepository', () => {
       await repository.incrementStock('product-123', 'warehouse-123', 'org-123', incrementQuantity);
 
       // Assert
-      expect(mockPrismaService.stock.upsert).toHaveBeenCalled();
+      expect(mockPrismaService.stock.update).toHaveBeenCalled();
     });
 
     it('Given: no existing stock When: incrementing Then: should create new stock with zero cost', async () => {
       // Arrange
-      mockPrismaService.stock.findUnique.mockResolvedValue(null);
+      mockPrismaService.stock.findFirst.mockResolvedValue(null);
       mockProductRepository.findById.mockResolvedValue(mockProduct);
-      mockPrismaService.stock.upsert.mockResolvedValue({
+      mockPrismaService.stock.create.mockResolvedValue({
         ...mockStockData,
         quantity: 50,
         unitCost: 0,
@@ -271,12 +258,12 @@ describe('PrismaStockRepository', () => {
       await repository.incrementStock('product-123', 'warehouse-123', 'org-123', incrementQuantity);
 
       // Assert
-      expect(mockPrismaService.stock.upsert).toHaveBeenCalled();
+      expect(mockPrismaService.stock.create).toHaveBeenCalled();
     });
 
     it('Given: database error When: incrementing Then: should throw error', async () => {
       // Arrange
-      mockPrismaService.stock.findUnique.mockRejectedValue(new Error('Increment failed'));
+      mockPrismaService.stock.findFirst.mockRejectedValue(new Error('Increment failed'));
 
       const incrementQuantity = Quantity.create(50, 0);
 
@@ -290,9 +277,9 @@ describe('PrismaStockRepository', () => {
   describe('decrementStock', () => {
     it('Given: existing stock When: decrementing Then: should subtract from quantity', async () => {
       // Arrange
-      mockPrismaService.stock.findUnique.mockResolvedValue(mockStockData);
+      mockPrismaService.stock.findFirst.mockResolvedValue(mockStockData);
       mockProductRepository.findById.mockResolvedValue(mockProduct);
-      mockPrismaService.stock.upsert.mockResolvedValue({
+      mockPrismaService.stock.update.mockResolvedValue({
         ...mockStockData,
         quantity: 50,
       });
@@ -303,12 +290,12 @@ describe('PrismaStockRepository', () => {
       await repository.decrementStock('product-123', 'warehouse-123', 'org-123', decrementQuantity);
 
       // Assert
-      expect(mockPrismaService.stock.upsert).toHaveBeenCalled();
+      expect(mockPrismaService.stock.update).toHaveBeenCalled();
     });
 
     it('Given: no existing stock When: decrementing Then: should throw error', async () => {
       // Arrange
-      mockPrismaService.stock.findUnique.mockResolvedValue(null);
+      mockPrismaService.stock.findFirst.mockResolvedValue(null);
 
       const decrementQuantity = Quantity.create(50, 0);
 
@@ -320,7 +307,7 @@ describe('PrismaStockRepository', () => {
 
     it('Given: database error When: decrementing Then: should throw error', async () => {
       // Arrange
-      mockPrismaService.stock.findUnique.mockRejectedValue(new Error('Decrement failed'));
+      mockPrismaService.stock.findFirst.mockRejectedValue(new Error('Decrement failed'));
 
       const decrementQuantity = Quantity.create(50, 0);
 
@@ -335,7 +322,7 @@ describe('PrismaStockRepository', () => {
     it('Given: product not found When: getting precision Then: should return default 0', async () => {
       // Arrange
       mockProductRepository.findById.mockResolvedValue(null);
-      mockPrismaService.stock.findUnique.mockResolvedValue(null);
+      mockPrismaService.stock.findFirst.mockResolvedValue(null);
 
       // Act
       const result = await repository.getStockQuantity('product-123', 'warehouse-123', 'org-123');
@@ -347,7 +334,7 @@ describe('PrismaStockRepository', () => {
     it('Given: product repository throws error When: getting precision Then: should use default 0', async () => {
       // Arrange
       mockProductRepository.findById.mockRejectedValue(new Error('Product lookup failed'));
-      mockPrismaService.stock.findUnique.mockResolvedValue(mockStockData);
+      mockPrismaService.stock.findFirst.mockResolvedValue(mockStockData);
 
       // Act
       const result = await repository.getStockQuantity('product-123', 'warehouse-123', 'org-123');

@@ -16,6 +16,7 @@ describe('PostMovementUseCase', () => {
   let useCase: PostMovementUseCase;
   let mockMovementRepository: jest.Mocked<IMovementRepository>;
   let mockStockRepository: jest.Mocked<IStockRepository>;
+  let mockEventDispatcher: { markAndDispatch: jest.Mock; dispatchEvents: jest.Mock };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -44,7 +45,16 @@ describe('PostMovementUseCase', () => {
       decrementStock: jest.fn(),
     } as jest.Mocked<IStockRepository>;
 
-    useCase = new PostMovementUseCase(mockMovementRepository, mockStockRepository);
+    mockEventDispatcher = {
+      markAndDispatch: jest.fn().mockResolvedValue(undefined),
+      dispatchEvents: jest.fn().mockResolvedValue(undefined),
+    };
+
+    useCase = new PostMovementUseCase(
+      mockMovementRepository,
+      mockStockRepository,
+      mockEventDispatcher
+    );
   });
 
   describe('execute', () => {

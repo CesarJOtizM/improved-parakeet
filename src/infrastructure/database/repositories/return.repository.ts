@@ -430,7 +430,7 @@ export class PrismaReturnRepository implements IReturnRepository {
     lineData: {
       id: string;
       productId: string;
-      locationId: string;
+      locationId: string | null;
       quantity: number | string | { toNumber(): number };
       originalSalePrice: number | string | { toNumber(): number } | null;
       originalUnitCost: number | string | { toNumber(): number } | null;
@@ -468,7 +468,7 @@ export class PrismaReturnRepository implements IReturnRepository {
     return ReturnLine.reconstitute(
       {
         productId: lineData.productId,
-        locationId: lineData.locationId,
+        locationId: lineData.locationId || undefined,
         quantity,
         originalSalePrice,
         originalUnitCost,
@@ -516,7 +516,7 @@ export class PrismaReturnRepository implements IReturnRepository {
     lines: Array<{
       id: string;
       productId: string;
-      locationId: string;
+      locationId: string | null;
       quantity: number | string | { toNumber(): number };
       originalSalePrice: number | string | { toNumber(): number } | null;
       originalUnitCost: number | string | { toNumber(): number } | null;

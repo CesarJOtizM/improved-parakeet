@@ -19,7 +19,7 @@ import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDi
 export interface IAddSaleLineRequest {
   saleId: string;
   productId: string;
-  locationId: string;
+  locationId?: string;
   quantity: number;
   salePrice: number;
   currency?: string;
@@ -29,7 +29,7 @@ export interface IAddSaleLineRequest {
 export interface ISaleLineData {
   id: string;
   productId: string;
-  locationId: string;
+  locationId?: string;
   quantity: number;
   salePrice: number;
   currency: string;

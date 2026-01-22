@@ -79,7 +79,7 @@ export class PrismaMovementRepository implements IMovementRepository {
         return MovementLine.reconstitute(
           {
             productId: lineData.productId,
-            locationId: lineData.locationId || '',
+            locationId: lineData.locationId || undefined,
             quantity,
             unitCost,
             currency: lineData.currency,
@@ -498,7 +498,7 @@ export class PrismaMovementRepository implements IMovementRepository {
     return MovementLine.reconstitute(
       {
         productId: lineData.productId,
-        locationId: lineData.locationId || '',
+        locationId: lineData.locationId || undefined,
         quantity,
         unitCost,
         currency: lineData.currency,

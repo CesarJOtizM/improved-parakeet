@@ -21,12 +21,13 @@ export class CreateReturnLineDto {
   productId!: string;
 
   @ApiProperty({
-    description: 'Location ID',
+    description: 'Location ID (optional for MVP, warehouse is the location)',
     example: 'location-123',
+    required: false,
   })
+  @IsOptional()
   @IsString({ message: 'Location ID must be a string' })
-  @IsNotEmpty({ message: 'Location ID is required' })
-  locationId!: string;
+  locationId?: string;
 
   @ApiProperty({
     description: 'Quantity',

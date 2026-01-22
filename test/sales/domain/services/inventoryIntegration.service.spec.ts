@@ -139,7 +139,7 @@ describe('InventoryIntegrationService', () => {
       expect(movement.getLines()).toHaveLength(3);
     });
 
-    it('Given: a DRAFT sale When: generating movement Then: should throw error', () => {
+    it('Given: a DRAFT sale When: generating movement Then: should create movement', () => {
       // Arrange
       const sale = Sale.reconstitute(
         {
@@ -152,10 +152,13 @@ describe('InventoryIntegrationService', () => {
         mockOrgId
       );
 
-      // Act & Assert
-      expect(() => InventoryIntegrationService.generateMovementFromSale(sale)).toThrow(
-        'Can only generate movement from confirmed sale'
-      );
+      // Act
+      const movement = InventoryIntegrationService.generateMovementFromSale(sale);
+
+      // Assert
+      expect(movement).toBeDefined();
+      expect(movement.status.getValue()).toBe('DRAFT');
+      expect(movement.reference).toBe('SALE-2024-004');
     });
 
     it('Given: a CANCELLED sale When: generating movement Then: should throw error', () => {
@@ -174,7 +177,7 @@ describe('InventoryIntegrationService', () => {
 
       // Act & Assert
       expect(() => InventoryIntegrationService.generateMovementFromSale(sale)).toThrow(
-        'Can only generate movement from confirmed sale'
+        'Can only generate movement from DRAFT or CONFIRMED sale'
       );
     });
 

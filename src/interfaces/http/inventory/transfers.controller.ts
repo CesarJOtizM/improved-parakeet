@@ -1,5 +1,9 @@
+import { CancelTransferUseCase } from '@application/transferUseCases/cancelTransferUseCase';
+import { ConfirmTransferUseCase } from '@application/transferUseCases/confirmTransferUseCase';
 import { GetTransfersUseCase } from '@application/transferUseCases/getTransfersUseCase';
 import { InitiateTransferUseCase } from '@application/transferUseCases/initiateTransferUseCase';
+import { ReceiveTransferUseCase } from '@application/transferUseCases/receiveTransferUseCase';
+import { RejectTransferUseCase } from '@application/transferUseCases/rejectTransferUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
 import {
@@ -9,6 +13,7 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  Param,
   Post,
   Query,
   Req,
@@ -41,7 +46,11 @@ export class TransfersController {
 
   constructor(
     private readonly initiateTransferUseCase: InitiateTransferUseCase,
-    private readonly getTransfersUseCase: GetTransfersUseCase
+    private readonly getTransfersUseCase: GetTransfersUseCase,
+    private readonly confirmTransferUseCase: ConfirmTransferUseCase,
+    private readonly receiveTransferUseCase: ReceiveTransferUseCase,
+    private readonly rejectTransferUseCase: RejectTransferUseCase,
+    private readonly cancelTransferUseCase: CancelTransferUseCase
   ) {}
 
   @Post()
@@ -145,6 +154,131 @@ export class TransfersController {
     };
 
     const result = await this.getTransfersUseCase.execute(request);
+    return resultToHttpResponse(result);
+  }
+
+  @Post(':id/confirm')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.INVENTORY_TRANSFER)
+  @ApiOperation({
+    summary: 'Confirm transfer',
+    description:
+      'Confirm a transfer and create OUT movement from origin warehouse. Changes status from DRAFT to IN_TRANSIT. Requires INVENTORY:TRANSFER permission.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Transfer confirmed successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Transfer not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Transfer cannot be confirmed',
+  })
+  async confirmTransfer(@Param('id') id: string, @OrgId() orgId: string): Promise<unknown> {
+    this.logger.log('Confirming transfer', { transferId: id, orgId });
+
+    const result = await this.confirmTransferUseCase.execute({
+      transferId: id,
+      orgId,
+    });
+    return resultToHttpResponse(result);
+  }
+
+  @Post(':id/receive')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.INVENTORY_TRANSFER)
+  @ApiOperation({
+    summary: 'Receive transfer',
+    description:
+      'Receive a transfer and create IN movement at destination warehouse. Changes status from IN_TRANSIT to RECEIVED. Requires INVENTORY:TRANSFER permission.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Transfer received successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Transfer not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Transfer cannot be received',
+  })
+  async receiveTransfer(@Param('id') id: string, @OrgId() orgId: string): Promise<unknown> {
+    this.logger.log('Receiving transfer', { transferId: id, orgId });
+
+    const result = await this.receiveTransferUseCase.execute({
+      transferId: id,
+      orgId,
+    });
+    return resultToHttpResponse(result);
+  }
+
+  @Post(':id/reject')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.INVENTORY_TRANSFER)
+  @ApiOperation({
+    summary: 'Reject transfer',
+    description:
+      'Reject a transfer. Changes status from IN_TRANSIT to REJECTED. Note: Stock was already deducted from origin. Requires INVENTORY:TRANSFER permission.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Transfer rejected successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Transfer not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Transfer cannot be rejected',
+  })
+  async rejectTransfer(
+    @Param('id') id: string,
+    @OrgId() orgId: string,
+    @Body() body: { reason?: string }
+  ): Promise<unknown> {
+    this.logger.log('Rejecting transfer', { transferId: id, orgId, reason: body.reason });
+
+    const result = await this.rejectTransferUseCase.execute({
+      transferId: id,
+      orgId,
+      reason: body.reason,
+    });
+    return resultToHttpResponse(result);
+  }
+
+  @Post(':id/cancel')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.INVENTORY_TRANSFER)
+  @ApiOperation({
+    summary: 'Cancel transfer',
+    description:
+      'Cancel a transfer. Only DRAFT transfers can be canceled. Requires INVENTORY:TRANSFER permission.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Transfer canceled successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Transfer not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Transfer cannot be canceled',
+  })
+  async cancelTransfer(@Param('id') id: string, @OrgId() orgId: string): Promise<unknown> {
+    this.logger.log('Canceling transfer', { transferId: id, orgId });
+
+    const result = await this.cancelTransferUseCase.execute({
+      transferId: id,
+      orgId,
+    });
     return resultToHttpResponse(result);
   }
 }

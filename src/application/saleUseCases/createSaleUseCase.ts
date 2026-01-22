@@ -23,7 +23,7 @@ export interface ICreateSaleRequest {
   note?: string;
   lines?: Array<{
     productId: string;
-    locationId: string;
+    locationId?: string;
     quantity: number;
     salePrice: number;
     currency?: string;

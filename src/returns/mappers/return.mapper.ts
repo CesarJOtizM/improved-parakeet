@@ -13,7 +13,7 @@ import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
  */
 export interface IReturnLineCreateInput {
   productId: string;
-  locationId: string;
+  locationId?: string; // Optional for MVP - warehouse is the location
   quantity: number;
   originalSalePrice?: number; // Required for customer returns
   originalUnitCost?: number; // Required for supplier returns
@@ -41,7 +41,7 @@ export interface IReturnCreateInput {
 export interface IReturnLineResponseData {
   id: string;
   productId: string;
-  locationId: string;
+  locationId?: string; // Optional for MVP - warehouse is the location
   quantity: number;
   originalSalePrice?: number;
   originalUnitCost?: number;
