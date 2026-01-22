@@ -30,12 +30,12 @@ describe('GetWarehousesUseCase', () => {
   });
 
   describe('execute', () => {
-    const createMockWarehouse = () => {
+    const createMockWarehouse = (code = 'WH-001', name = 'Test Warehouse', isActive = true) => {
       return Warehouse.create(
         {
-          code: WarehouseCode.create('WH-001'),
-          name: 'Test Warehouse',
-          isActive: true,
+          code: WarehouseCode.create(code),
+          name,
+          isActive,
         },
         mockOrgId
       );
@@ -97,6 +97,37 @@ describe('GetWarehousesUseCase', () => {
       expect(mockWarehouseRepository.findActive).toHaveBeenCalledWith(mockOrgId);
     });
 
+    it('Given: request with isActive=false When: getting warehouses Then: should filter inactive warehouses', async () => {
+      // Arrange
+      const mockWarehouses = [
+        createMockWarehouse('WH-001', 'Active Warehouse', true),
+        createMockWarehouse('WH-002', 'Inactive Warehouse', false),
+      ];
+      mockWarehouseRepository.findAll.mockResolvedValue(mockWarehouses);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        isActive: false,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(1);
+          expect(value.data[0].isActive).toBe(false);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
     it('Given: request with search filter When: getting warehouses Then: should return filtered warehouses', async () => {
       // Arrange
       const mockWarehouses = [createMockWarehouse()];
@@ -117,6 +148,37 @@ describe('GetWarehousesUseCase', () => {
       result.match(
         value => {
           expect(value.success).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: request with sortBy code When: getting warehouses Then: should return sorted warehouses', async () => {
+      // Arrange
+      const mockWarehouses = [
+        createMockWarehouse('WH-002', 'Warehouse B'),
+        createMockWarehouse('WH-001', 'Warehouse A'),
+      ];
+      mockWarehouseRepository.findAll.mockResolvedValue(mockWarehouses);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'code',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
         },
         () => {
           throw new Error('Expected Ok result');

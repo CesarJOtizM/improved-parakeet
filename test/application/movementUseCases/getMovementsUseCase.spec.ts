@@ -1,7 +1,11 @@
 import { GetMovementsUseCase } from '@application/movementUseCases/getMovementsUseCase';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Movement } from '@movement/domain/entities/movement.entity';
+import { MovementStatus } from '@movement/domain/valueObjects/movementStatus.valueObject';
+import { MovementType } from '@movement/domain/valueObjects/movementType.valueObject';
 import { MovementMapper } from '@movement/mappers';
+import { Product } from '@product/domain/entities/product.entity';
+import { ProductMapper } from '@product/mappers';
 
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
@@ -59,6 +63,51 @@ describe('GetMovementsUseCase', () => {
         createdBy: 'user-123',
       });
       return Movement.create(props, mockOrgId);
+    };
+
+    const createMovementWithLines = ({
+      type = 'IN',
+      status = 'DRAFT',
+      postedAt,
+      productIds = ['product-1'],
+      warehouseId = 'warehouse-123',
+    }: {
+      type?: 'IN' | 'OUT';
+      status?: 'DRAFT' | 'POSTED' | 'VOID';
+      postedAt?: Date;
+      productIds?: string[];
+      warehouseId?: string;
+    }) => {
+      const lines = productIds.map(productId =>
+        MovementMapper.createLineEntity(
+          {
+            productId,
+            locationId: 'location-1',
+            quantity: 2,
+            unitCost: 10,
+            currency: 'USD',
+          },
+          0,
+          mockOrgId
+        )
+      );
+      const props = {
+        type: MovementType.create(type),
+        status: MovementStatus.create(status),
+        warehouseId,
+        createdBy: 'user-123',
+        postedAt,
+      };
+      return Movement.reconstitute(props, `movement-${productIds.join('-')}`, mockOrgId, lines);
+    };
+
+    const createMockProduct = (sku: string, name: string) => {
+      const props = ProductMapper.toDomainProps({
+        sku,
+        name,
+        unit: { code: 'UNIT', name: 'Unit', precision: 0 },
+      }).unwrap();
+      return Product.create(props, mockOrgId);
     };
 
     it('Given: valid request When: getting movements Then: should return paginated movements', async () => {
@@ -181,6 +230,83 @@ describe('GetMovementsUseCase', () => {
       result.match(
         value => {
           expect(value.success).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: request with product and date filters When: getting movements Then: should include product info and handle errors', async () => {
+      // Arrange
+      const movementWithPostedAt = createMovementWithLines({
+        type: 'IN',
+        status: 'POSTED',
+        postedAt: new Date('2024-01-10T10:00:00.000Z'),
+        productIds: ['product-1', 'product-2'],
+      });
+      const movementWithoutPostedAt = createMovementWithLines({
+        type: 'OUT',
+        status: 'DRAFT',
+        productIds: ['product-3'],
+      });
+
+      mockMovementRepository.findBySpecification.mockResolvedValue({
+        data: [movementWithoutPostedAt, movementWithPostedAt],
+        total: 2,
+        hasMore: false,
+      });
+
+      mockProductRepository.findById.mockImplementation(async (productId: string) => {
+        if (productId === 'product-2') {
+          throw new Error('Product lookup failed');
+        }
+        return createMockProduct(`SKU-${productId}`, `Product ${productId}`);
+      });
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        productId: 'product-1',
+        startDate: new Date('2024-01-01T00:00:00.000Z'),
+        endDate: new Date('2024-02-01T00:00:00.000Z'),
+        sortBy: 'postedAt',
+        sortOrder: 'desc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockMovementRepository.findBySpecification).toHaveBeenCalled();
+      expect(mockProductRepository.findById).toHaveBeenCalledWith('product-1', mockOrgId);
+      expect(mockProductRepository.findById).toHaveBeenCalledWith('product-2', mockOrgId);
+      expect(mockProductRepository.findById).toHaveBeenCalledWith('product-3', mockOrgId);
+    });
+
+    it('Given: request with sortBy type When: getting movements Then: should return sorted data', async () => {
+      // Arrange
+      const mockMovements = [createMockMovement('OUT'), createMockMovement('IN')];
+      mockMovementRepository.findAll.mockResolvedValue(mockMovements);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'type',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
         },
         () => {
           throw new Error('Expected Ok result');

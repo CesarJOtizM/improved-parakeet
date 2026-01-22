@@ -45,6 +45,33 @@ describe('GetTransfersUseCase', () => {
       );
     };
 
+    const createTransferWithDates = ({
+      fromWarehouseId = 'warehouse-from-123',
+      toWarehouseId = 'warehouse-to-123',
+      status = 'DRAFT',
+      initiatedAt,
+      receivedAt,
+    }: {
+      fromWarehouseId?: string;
+      toWarehouseId?: string;
+      status?: 'DRAFT' | 'IN_TRANSIT' | 'RECEIVED' | 'REJECTED' | 'CANCELED' | 'PARTIAL';
+      initiatedAt?: Date;
+      receivedAt?: Date;
+    }) => {
+      return Transfer.reconstitute(
+        {
+          fromWarehouseId,
+          toWarehouseId,
+          status: TransferStatus.create(status),
+          createdBy: 'user-123',
+          initiatedAt,
+          receivedAt,
+        },
+        `transfer-${fromWarehouseId}-${toWarehouseId}`,
+        mockOrgId
+      );
+    };
+
     it('Given: valid request When: getting transfers Then: should return paginated transfers', async () => {
       // Arrange
       const mockTransfers = [createMockTransfer(), createMockTransfer()];
@@ -99,6 +126,74 @@ describe('GetTransfersUseCase', () => {
         }
       );
       expect(mockTransferRepository.findByStatus).toHaveBeenCalledWith('PENDING', mockOrgId);
+    });
+
+    it('Given: request with from/to filters When: getting transfers Then: should apply additional filters', async () => {
+      // Arrange
+      const mockTransfers = [
+        createTransferWithDates({
+          fromWarehouseId: 'warehouse-from-123',
+          toWarehouseId: 'warehouse-to-123',
+          status: 'IN_TRANSIT',
+          initiatedAt: new Date('2024-01-05T10:00:00.000Z'),
+        }),
+        createTransferWithDates({
+          fromWarehouseId: 'warehouse-from-123',
+          toWarehouseId: 'warehouse-to-999',
+          status: 'DRAFT',
+          initiatedAt: new Date('2024-01-04T10:00:00.000Z'),
+        }),
+      ];
+
+      mockTransferRepository.findByFromWarehouse.mockResolvedValue(mockTransfers);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        fromWarehouseId: 'warehouse-from-123',
+        toWarehouseId: 'warehouse-to-123',
+        status: 'IN_TRANSIT',
+        sortBy: 'initiatedAt',
+        sortOrder: 'desc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(1);
+          expect(value.data[0].toWarehouseId).toBe('warehouse-to-123');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: date range filter When: getting transfers Then: should use date range query and handle empty list', async () => {
+      // Arrange
+      mockTransferRepository.findByDateRange.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        startDate: new Date('2024-01-01T00:00:00.000Z'),
+        endDate: new Date('2024-01-31T23:59:59.999Z'),
+        sortBy: 'receivedAt',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockTransferRepository.findByDateRange).toHaveBeenCalled();
     });
   });
 });

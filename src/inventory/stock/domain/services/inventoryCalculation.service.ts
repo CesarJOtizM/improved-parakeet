@@ -57,7 +57,7 @@ export function calculateInventoryBalance(movements: IMovementCalculation[]): {
   totalCost: Money;
 } {
   let totalQuantity = Quantity.create(0);
-  let totalValue = Money.create(0);
+  let totalValue: Money | null = null;
 
   for (const movement of movements) {
     if (movement.quantity) {
@@ -65,11 +65,18 @@ export function calculateInventoryBalance(movements: IMovementCalculation[]): {
     }
 
     if (movement.totalCost) {
+      if (!totalValue) {
+        totalValue = Money.create(
+          0,
+          movement.totalCost.getCurrency(),
+          movement.totalCost.getPrecision()
+        );
+      }
       totalValue = totalValue.add(movement.totalCost);
     }
   }
 
-  return { quantity: totalQuantity, totalCost: totalValue };
+  return { quantity: totalQuantity, totalCost: totalValue ?? Money.create(0) };
 }
 
 /**

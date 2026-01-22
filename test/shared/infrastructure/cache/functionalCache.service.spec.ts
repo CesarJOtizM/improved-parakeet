@@ -1,22 +1,19 @@
-// Functional Cache Service Integration Tests
-// Integration tests for FunctionalCacheService with Result monad and error handling
-
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { Cache } from '@nestjs/cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FunctionalCacheService } from '@shared/infrastructure/cache/functionalCache.service';
 
-describe('FunctionalCacheService Integration', () => {
-  let cacheService: FunctionalCacheService;
-  let cacheManager: { get: jest.Mock; set: jest.Mock; del: jest.Mock; reset: jest.Mock };
+describe('FunctionalCacheService', () => {
+  let service: FunctionalCacheService;
+  let mockCacheManager: jest.Mocked<Cache>;
 
   beforeEach(async () => {
-    // Create a mock cache manager
-    const mockCacheManager = {
+    mockCacheManager = {
       get: jest.fn(),
       set: jest.fn(),
       del: jest.fn(),
-      reset: jest.fn(),
-    };
+    } as unknown as jest.Mocked<Cache>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -28,241 +25,303 @@ describe('FunctionalCacheService Integration', () => {
       ],
     }).compile();
 
-    cacheService = module.get<FunctionalCacheService>(FunctionalCacheService);
-    cacheManager = module.get(CACHE_MANAGER);
+    service = module.get<FunctionalCacheService>(FunctionalCacheService);
   });
 
   describe('get', () => {
-    it('Given: cached value exists When: getting value Then: should return Ok result with value', async () => {
+    it('Given: key exists in cache When: getting value Then: should return ok result with value', async () => {
       // Arrange
       const key = 'test-key';
-      const value = { id: '123', name: 'Test' };
-      cacheManager.get.mockResolvedValue(value);
+      const expectedValue = { id: '123', name: 'Test' };
+      mockCacheManager.get.mockResolvedValue(expectedValue);
 
       // Act
-      const result = await cacheService.get(key);
+      const result = await service.get<typeof expectedValue>(key);
 
       // Assert
       expect(result.isOk()).toBe(true);
-      result.match(
-        val => {
-          expect(val).toEqual(value);
-        },
-        () => {
-          throw new Error('Expected Ok result');
-        }
-      );
-      expect(cacheManager.get).toHaveBeenCalledWith(key);
+      expect(result.unwrap()).toEqual(expectedValue);
+      expect(mockCacheManager.get).toHaveBeenCalledWith(key);
     });
 
-    it('Given: cached value does not exist When: getting value Then: should return Ok result with null', async () => {
+    it('Given: key does not exist in cache When: getting value Then: should return ok result with null', async () => {
       // Arrange
       const key = 'non-existent-key';
-      cacheManager.get.mockResolvedValue(null);
+      mockCacheManager.get.mockResolvedValue(undefined);
 
       // Act
-      const result = await cacheService.get(key);
+      const result = await service.get<string>(key);
 
       // Assert
       expect(result.isOk()).toBe(true);
-      result.match(
-        val => {
-          expect(val).toBeNull();
-        },
-        () => {
-          throw new Error('Expected Ok result');
-        }
-      );
+      expect(result.unwrap()).toBeNull();
     });
 
-    it('Given: cache error occurs When: getting value Then: should return Err result', async () => {
+    it('Given: cache throws error When: getting value Then: should return err result', async () => {
       // Arrange
-      const key = 'test-key';
-      const error = new Error('Cache error');
-      cacheManager.get.mockRejectedValue(error);
+      const key = 'error-key';
+      mockCacheManager.get.mockRejectedValue(new Error('Connection failed'));
 
       // Act
-      const result = await cacheService.get(key);
+      const result = await service.get<string>(key);
 
       // Assert
       expect(result.isErr()).toBe(true);
-      result.match(
-        () => {
-          throw new Error('Expected Err result');
-        },
-        err => {
-          expect(err).toBeInstanceOf(Error);
-          expect(err.message).toContain('Failed to get cache value');
-        }
-      );
+      expect(result.unwrapErr().message).toContain('Failed to get cache value');
     });
   });
 
   describe('set', () => {
-    it('Given: value and TTL When: setting value Then: should return Ok result', async () => {
+    it('Given: valid key and value When: setting value Then: should return ok result', async () => {
       // Arrange
       const key = 'test-key';
       const value = { id: '123', name: 'Test' };
-      const ttl = 3600; // seconds
-      cacheManager.set.mockResolvedValue(undefined);
+      mockCacheManager.set.mockResolvedValue(undefined);
 
       // Act
-      const result = await cacheService.set(key, value, ttl);
+      const result = await service.set(key, value);
 
       // Assert
       expect(result.isOk()).toBe(true);
-      expect(cacheManager.set).toHaveBeenCalledWith(key, value, ttl * 1000); // TTL converted to milliseconds
+      expect(mockCacheManager.set).toHaveBeenCalledWith(key, value, undefined);
     });
 
-    it('Given: value without TTL When: setting value Then: should use default TTL', async () => {
+    it('Given: key, value and TTL When: setting value Then: should convert TTL to milliseconds', async () => {
       // Arrange
       const key = 'test-key';
-      const value = { id: '123', name: 'Test' };
-      cacheManager.set.mockResolvedValue(undefined);
+      const value = 'test-value';
+      const ttlSeconds = 60;
+      mockCacheManager.set.mockResolvedValue(undefined);
 
       // Act
-      const result = await cacheService.set(key, value);
+      const result = await service.set(key, value, ttlSeconds);
 
       // Assert
       expect(result.isOk()).toBe(true);
-      expect(cacheManager.set).toHaveBeenCalledWith(key, value, undefined);
+      expect(mockCacheManager.set).toHaveBeenCalledWith(key, value, 60000);
     });
 
-    it('Given: cache error occurs When: setting value Then: should return Err result', async () => {
+    it('Given: cache throws error When: setting value Then: should return err result', async () => {
       // Arrange
-      const key = 'test-key';
-      const value = { id: '123', name: 'Test' };
-      const error = new Error('Cache error');
-      cacheManager.set.mockRejectedValue(error);
+      const key = 'error-key';
+      const value = 'test-value';
+      mockCacheManager.set.mockRejectedValue(new Error('Write failed'));
 
       // Act
-      const result = await cacheService.set(key, value);
+      const result = await service.set(key, value);
 
       // Assert
       expect(result.isErr()).toBe(true);
-      result.match(
-        () => {
-          throw new Error('Expected Err result');
-        },
-        err => {
-          expect(err).toBeInstanceOf(Error);
-          expect(err.message).toContain('Failed to set cache value');
-        }
-      );
+      expect(result.unwrapErr().message).toContain('Failed to set cache value');
     });
   });
 
   describe('delete', () => {
-    it('Given: existing key When: deleting value Then: should return Ok result', async () => {
+    it('Given: key exists in cache When: deleting value Then: should return ok result', async () => {
       // Arrange
       const key = 'test-key';
-      cacheManager.del.mockResolvedValue(undefined);
+      mockCacheManager.del.mockResolvedValue(undefined);
 
       // Act
-      const result = await cacheService.delete(key);
+      const result = await service.delete(key);
 
       // Assert
       expect(result.isOk()).toBe(true);
-      expect(cacheManager.del).toHaveBeenCalledWith(key);
+      expect(mockCacheManager.del).toHaveBeenCalledWith(key);
     });
 
-    it('Given: cache error occurs When: deleting value Then: should return Err result', async () => {
+    it('Given: cache throws error When: deleting value Then: should return err result', async () => {
       // Arrange
-      const key = 'test-key';
-      const error = new Error('Cache error');
-      cacheManager.del.mockRejectedValue(error);
+      const key = 'error-key';
+      mockCacheManager.del.mockRejectedValue(new Error('Delete failed'));
 
       // Act
-      const result = await cacheService.delete(key);
+      const result = await service.delete(key);
 
       // Assert
       expect(result.isErr()).toBe(true);
-      result.match(
-        () => {
-          throw new Error('Expected Err result');
-        },
-        err => {
-          expect(err).toBeInstanceOf(Error);
-          expect(err.message).toContain('Failed to delete cache value');
-        }
-      );
+      expect(result.unwrapErr().message).toContain('Failed to delete cache value');
     });
   });
 
   describe('exists', () => {
-    it('Given: existing key When: checking existence Then: should return Ok result with true', async () => {
+    it('Given: key exists in cache When: checking existence Then: should return ok result with true', async () => {
       // Arrange
-      const key = 'test-key';
-      const value = { id: '123' };
-      cacheManager.get.mockResolvedValue(value);
+      const key = 'existing-key';
+      mockCacheManager.get.mockResolvedValue('some-value');
 
       // Act
-      const result = await cacheService.exists(key);
+      const result = await service.exists(key);
 
       // Assert
       expect(result.isOk()).toBe(true);
-      result.match(
-        exists => {
-          expect(exists).toBe(true);
-        },
-        () => {
-          throw new Error('Expected Ok result');
-        }
-      );
+      expect(result.unwrap()).toBe(true);
     });
 
-    it('Given: non-existent key When: checking existence Then: should return Ok result with false', async () => {
+    it('Given: key does not exist in cache When: checking existence Then: should return ok result with false', async () => {
       // Arrange
       const key = 'non-existent-key';
-      cacheManager.get.mockResolvedValue(null);
+      mockCacheManager.get.mockResolvedValue(undefined);
 
       // Act
-      const result = await cacheService.exists(key);
+      const result = await service.exists(key);
 
       // Assert
       expect(result.isOk()).toBe(true);
-      result.match(
-        exists => {
-          expect(exists).toBe(false);
-        },
-        () => {
-          throw new Error('Expected Ok result');
-        }
-      );
+      expect(result.unwrap()).toBe(false);
+    });
+
+    it('Given: key value is null When: checking existence Then: should return ok result with false', async () => {
+      // Arrange
+      const key = 'null-key';
+      mockCacheManager.get.mockResolvedValue(null);
+
+      // Act
+      const result = await service.exists(key);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toBe(false);
+    });
+
+    it('Given: cache throws error When: checking existence Then: should return err result', async () => {
+      // Arrange
+      const key = 'error-key';
+      mockCacheManager.get.mockRejectedValue(new Error('Connection failed'));
+
+      // Act
+      const result = await service.exists(key);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      expect(result.unwrapErr().message).toContain('Failed to check cache key existence');
     });
   });
 
   describe('clear', () => {
-    it('Given: cache When: clearing Then: should return Ok result', async () => {
-      // Arrange
-      // Note: clear() currently only logs a warning, doesn't actually clear cache
-      // This is because Cache Manager v5+ doesn't support reset() directly
-
+    it('Given: cache service When: clearing cache Then: should return ok result', async () => {
       // Act
-      const result = await cacheService.clear();
+      const result = await service.clear();
 
       // Assert
       expect(result.isOk()).toBe(true);
-      // Note: reset() is not called in current implementation
+    });
+  });
+
+  describe('getMany', () => {
+    it('Given: multiple keys exist When: getting many values Then: should return map with all values', async () => {
+      // Arrange
+      const keys = ['key1', 'key2', 'key3'];
+      mockCacheManager.get
+        .mockResolvedValueOnce('value1')
+        .mockResolvedValueOnce('value2')
+        .mockResolvedValueOnce('value3');
+
+      // Act
+      const result = await service.getMany<string>(keys);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      const map = result.unwrap();
+      expect(map.get('key1')).toBe('value1');
+      expect(map.get('key2')).toBe('value2');
+      expect(map.get('key3')).toBe('value3');
     });
 
-    it('Given: cache When: clearing Then: should return Ok result without errors', async () => {
+    it('Given: some keys do not exist When: getting many values Then: should return null for missing keys', async () => {
       // Arrange
-      // The current implementation always returns Ok with a warning
+      const keys = ['key1', 'key2'];
+      mockCacheManager.get.mockResolvedValueOnce('value1').mockResolvedValueOnce(undefined);
 
       // Act
-      const result = await cacheService.clear();
+      const result = await service.getMany<string>(keys);
 
       // Assert
       expect(result.isOk()).toBe(true);
-      result.match(
-        () => {
-          // Success - clear operation completed (with warning)
-        },
-        () => {
-          throw new Error('Expected Ok result');
-        }
-      );
+      const map = result.unwrap();
+      expect(map.get('key1')).toBe('value1');
+      expect(map.get('key2')).toBeNull();
+    });
+  });
+
+  describe('setMany', () => {
+    it('Given: multiple entries When: setting many values Then: should return ok result', async () => {
+      // Arrange
+      const entries = [
+        { key: 'key1', value: 'value1' },
+        { key: 'key2', value: 'value2' },
+      ];
+      mockCacheManager.set.mockResolvedValue(undefined);
+
+      // Act
+      const result = await service.setMany(entries);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockCacheManager.set).toHaveBeenCalledTimes(2);
+    });
+
+    it('Given: entries with TTL When: setting many values Then: should use provided TTLs', async () => {
+      // Arrange
+      const entries = [
+        { key: 'key1', value: 'value1', ttl: 60 },
+        { key: 'key2', value: 'value2', ttl: 120 },
+      ];
+      mockCacheManager.set.mockResolvedValue(undefined);
+
+      // Act
+      const result = await service.setMany(entries);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockCacheManager.set).toHaveBeenNthCalledWith(1, 'key1', 'value1', 60000);
+      expect(mockCacheManager.set).toHaveBeenNthCalledWith(2, 'key2', 'value2', 120000);
+    });
+
+    it('Given: cache throws error on one entry When: setting many values Then: should return err result', async () => {
+      // Arrange
+      const entries = [
+        { key: 'key1', value: 'value1' },
+        { key: 'key2', value: 'value2' },
+      ];
+      mockCacheManager.set
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValueOnce(new Error('Write failed'));
+
+      // Act
+      const result = await service.setMany(entries);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+    });
+  });
+
+  describe('deleteMany', () => {
+    it('Given: multiple keys When: deleting many values Then: should return ok result', async () => {
+      // Arrange
+      const keys = ['key1', 'key2', 'key3'];
+      mockCacheManager.del.mockResolvedValue(undefined);
+
+      // Act
+      const result = await service.deleteMany(keys);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockCacheManager.del).toHaveBeenCalledTimes(3);
+    });
+
+    it('Given: cache throws error on one key When: deleting many values Then: should return err result', async () => {
+      // Arrange
+      const keys = ['key1', 'key2'];
+      mockCacheManager.del
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValueOnce(new Error('Delete failed'));
+
+      // Act
+      const result = await service.deleteMany(keys);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
     });
   });
 });

@@ -2,6 +2,7 @@ import { GetSalesUseCase } from '@application/saleUseCases/getSalesUseCase';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Sale } from '@sale/domain/entities/sale.entity';
 import { SaleNumber } from '@sale/domain/valueObjects/saleNumber.valueObject';
+import { SaleStatus } from '@sale/domain/valueObjects/saleStatus.valueObject';
 import { SaleMapper } from '@sale/mappers';
 
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
@@ -44,6 +45,28 @@ describe('GetSalesUseCase', () => {
         saleNumber
       );
       return Sale.create(props, mockOrgId);
+    };
+
+    const createSaleWithDates = ({
+      saleNumber,
+      status = 'DRAFT',
+      confirmedAt,
+    }: {
+      saleNumber: SaleNumber;
+      status?: 'DRAFT' | 'CONFIRMED' | 'CANCELLED';
+      confirmedAt?: Date;
+    }) => {
+      return Sale.reconstitute(
+        {
+          saleNumber,
+          status: SaleStatus.create(status),
+          warehouseId: 'warehouse-123',
+          createdBy: 'user-123',
+          confirmedAt,
+        },
+        `sale-${saleNumber.getValue()}`,
+        mockOrgId
+      );
     };
 
     it('Given: valid request When: getting sales Then: should return paginated sales', async () => {
@@ -106,6 +129,100 @@ describe('GetSalesUseCase', () => {
         }
       );
       expect(mockSaleRepository.findBySpecification).toHaveBeenCalled();
+    });
+
+    it('Given: request with date range When: getting sales Then: should call findBySpecification', async () => {
+      // Arrange
+      const mockSales = [createMockSale()];
+      mockSaleRepository.findBySpecification.mockResolvedValue({
+        data: mockSales,
+        total: 1,
+        hasMore: false,
+      });
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        startDate: new Date('2024-01-01T00:00:00.000Z'),
+        endDate: new Date('2024-02-01T00:00:00.000Z'),
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockSaleRepository.findBySpecification).toHaveBeenCalled();
+    });
+
+    it('Given: sortBy saleNumber and confirmedAt When: getting sales Then: should sort results', async () => {
+      // Arrange
+      const saleOne = createSaleWithDates({
+        saleNumber: SaleNumber.create(2025, 1),
+        status: 'CONFIRMED',
+        confirmedAt: new Date('2024-01-05T10:00:00.000Z'),
+      });
+      const saleTwo = createSaleWithDates({
+        saleNumber: SaleNumber.create(2025, 2),
+        status: 'DRAFT',
+      });
+      mockSaleRepository.findAll.mockResolvedValue([saleTwo, saleOne]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'confirmedAt',
+        sortOrder: 'desc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy saleNumber When: getting sales Then: should return sorted list', async () => {
+      // Arrange
+      const saleOne = createSaleWithDates({
+        saleNumber: SaleNumber.create(2025, 1),
+      });
+      const saleTwo = createSaleWithDates({
+        saleNumber: SaleNumber.create(2025, 2),
+      });
+      mockSaleRepository.findAll.mockResolvedValue([saleTwo, saleOne]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'saleNumber',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
     });
   });
 });

@@ -132,8 +132,8 @@ export class PPMService {
   ): Promise<{ quantity: Quantity; averageCost: Money } | null> {
     // This method should be implemented by the application layer
     // It should query the stock repository or stock aggregate
-    throw new Error(
-      'getCurrentPPM must be implemented by the application layer using stock repository'
+    return Promise.reject(
+      new Error('getCurrentPPM must be implemented by the application layer using stock repository')
     );
   }
 }

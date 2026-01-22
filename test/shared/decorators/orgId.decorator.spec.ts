@@ -1,668 +1,228 @@
-// OrgId Decorator Tests - Decorador de parámetro para organización
-// Tests unitarios para el decorador de parámetro siguiendo AAA y Given-When-Then
+import 'reflect-metadata';
 
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ExecutionContext } from '@nestjs/common';
+import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
 import { ModuleRef } from '@nestjs/core';
-import { Organization } from '@organization/domain/entities/organization.entity';
-import { IOrganizationRepository } from '@organization/domain/repositories/organizationRepository.interface';
+import { OrgId } from '@shared/decorators/orgId.decorator';
+
+import type { IOrganizationRepository } from '@organization/domain/repositories';
 
 describe('OrgId Decorator', () => {
-  let mockExecutionContext: ExecutionContext;
-  let mockGetRequest: jest.MockedFunction<() => unknown>;
-  let mockModuleRef: jest.Mocked<ModuleRef>;
+  class TestController {
+    test(@OrgId() _orgId: string) {
+      return _orgId;
+    }
+  }
+
   let mockOrganizationRepository: jest.Mocked<IOrganizationRepository>;
+  let mockModuleRef: jest.Mocked<ModuleRef>;
 
-  // Helper function to execute the decorator factory directly
-  // We test the factory function that is passed to createParamDecorator
-  const executeDecorator = async (ctx: ExecutionContext): Promise<string> => {
-    // Import the factory function logic directly
-    // Since createParamDecorator wraps the factory, we need to extract and test the factory logic
-    const request = ctx.switchToHttp().getRequest();
+  const buildContext = (request: Record<string, unknown>): ExecutionContext => {
+    return {
+      switchToHttp: () => ({
+        getRequest: () => request,
+      }),
+    } as ExecutionContext;
+  };
 
-    // 1. Desde el header X-Organization-ID
-    const orgIdFromHeader = request.headers['x-organization-id'];
-    if (orgIdFromHeader) {
-      return orgIdFromHeader;
-    }
+  const getOrgIdFactory = () => {
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, TestController, 'test') as Record<
+      string,
+      { factory: (data: unknown, ctx: ExecutionContext) => Promise<string>; data: unknown }
+    >;
+    const paramMetadata = Object.values(metadata)[0];
+    return paramMetadata;
+  };
 
-    // 2. Desde el header X-Organization-Slug
-    const orgSlugFromHeader = request.headers['x-organization-slug'];
-    if (orgSlugFromHeader) {
-      // Try to resolve slug to orgId
-      const moduleRef = request.app?.get(ModuleRef, { strict: false });
-      if (moduleRef) {
-        const orgRepository = moduleRef.get('OrganizationRepository', {
-          strict: false,
-        }) as IOrganizationRepository | undefined;
-        if (orgRepository) {
-          try {
-            const organization = await orgRepository.findBySlug(orgSlugFromHeader);
-            if (organization && organization.isActive) {
-              return organization.id;
-            }
-          } catch (_error) {
-            // If error occurs, fall back to using slug as orgId
-          }
-        }
-      }
-      return orgSlugFromHeader;
-    }
-
-    // 3. Intentar obtener orgId del subdominio
-    const host = request.headers.host;
-    if (host) {
-      const subdomain = host.split('.')[0];
-      if (
-        subdomain &&
-        subdomain !== 'localhost' &&
-        subdomain !== '127.0.0.1' &&
-        subdomain !== 'www' &&
-        subdomain !== 'api'
-      ) {
-        const moduleRef = request.app?.get(ModuleRef, { strict: false });
-        if (moduleRef) {
-          const orgRepository = moduleRef.get('OrganizationRepository', {
-            strict: false,
-          }) as IOrganizationRepository | undefined;
-          if (orgRepository) {
-            try {
-              // Try to find organization by slug (subdomain)
-              let organization = await orgRepository.findBySlug(subdomain);
-
-              // If not found by slug, try by domain (full host)
-              if (!organization) {
-                organization = await orgRepository.findByDomain(host);
-              }
-
-              // If organization found and is active, return its id
-              if (organization && organization.isActive) {
-                return organization.id;
-              }
-            } catch (_error) {
-              // If error occurs, fall back to default
-            }
-          }
-        }
-      }
-    }
-
-    // Por defecto, usar un orgId de desarrollo
-    return process.env.DEFAULT_ORG_ID || 'dev-org';
+  const executeDecorator = async (request: Record<string, unknown>): Promise<string> => {
+    const { factory, data } = getOrgIdFactory();
+    const context = buildContext(request);
+    return factory(data, context);
   };
 
   beforeEach(() => {
-    // Mock OrganizationRepository
     mockOrganizationRepository = {
       findBySlug: jest.fn(),
       findByDomain: jest.fn(),
       findById: jest.fn(),
-    } as unknown as jest.Mocked<IOrganizationRepository>;
+      findAll: jest.fn(),
+      findBySpecification: jest.fn(),
+      exists: jest.fn(),
+      findActiveOrganizations: jest.fn(),
+      existsBySlug: jest.fn(),
+      existsByDomain: jest.fn(),
+      countActiveOrganizations: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    } as jest.Mocked<IOrganizationRepository>;
 
-    // Mock ModuleRef
     mockModuleRef = {
       get: jest.fn(),
-    } as unknown as jest.Mocked<ModuleRef>;
-
-    mockGetRequest = jest.fn().mockReturnValue({
-      headers: {},
-      app: {
-        get: jest.fn().mockReturnValue(mockModuleRef),
-      },
-    });
-
-    mockExecutionContext = {
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: mockGetRequest,
-      }),
-    } as unknown as ExecutionContext;
+    } as jest.Mocked<ModuleRef>;
   });
 
   describe('OrgId parameter decorator', () => {
-    it('Given: X-Organization-ID header When: calling decorator Then: should return orgId from header', async () => {
+    it('Given: request orgId When: resolving orgId Then: should return request orgId', async () => {
       // Arrange
-      const orgId = 'org-123';
       const request = {
-        headers: {
-          'x-organization-id': orgId,
-        },
-        app: {
-          get: jest.fn(),
-        },
+        orgId: 'org-123',
+        headers: {},
       };
-      mockGetRequest.mockReturnValue(request);
 
       // Act
-      const result = await executeDecorator(mockExecutionContext);
+      const result = await executeDecorator(request);
 
       // Assert
-      expect(result).toBe(orgId);
+      expect(result).toBe('org-123');
     });
 
-    it('Given: X-Organization-Slug header When: organization exists and is active Then: should return organization id', async () => {
+    it('Given: X-Organization-ID header When: resolving orgId Then: should return orgId from header', async () => {
       // Arrange
-      const orgSlug = 'my-organization';
-      const orgId = 'org-123';
-      const mockOrganization = Organization.reconstitute(
-        {
-          name: 'My Organization',
-          settings: {},
-          timezone: 'UTC',
-          currency: 'USD',
-          dateFormat: 'YYYY-MM-DD',
-          isActive: true,
-        },
-        orgId,
-        orgId
-      );
-
-      mockModuleRef.get.mockReturnValue(mockOrganizationRepository);
-      mockOrganizationRepository.findBySlug.mockResolvedValue(mockOrganization);
-
       const request = {
         headers: {
-          'x-organization-slug': orgSlug,
+          'x-organization-id': 'org-456',
+        },
+      };
+
+      // Act
+      const result = await executeDecorator(request);
+
+      // Assert
+      expect(result).toBe('org-456');
+    });
+
+    it('Given: X-Organization-Slug header When: active organization exists Then: should return organization id', async () => {
+      // Arrange
+      const request = {
+        headers: {
+          'x-organization-slug': 'acme',
         },
         app: {
           get: jest.fn().mockReturnValue(mockModuleRef),
         },
       };
-      mockGetRequest.mockReturnValue(request);
+      mockModuleRef.get.mockReturnValue(mockOrganizationRepository);
+      mockOrganizationRepository.findBySlug.mockResolvedValue({
+        id: 'org-789',
+        isActive: true,
+      } as never);
 
       // Act
-      const result = await executeDecorator(mockExecutionContext);
+      const result = await executeDecorator(request);
 
       // Assert
-      expect(result).toBe(orgId);
-      expect(mockOrganizationRepository.findBySlug).toHaveBeenCalledWith(orgSlug);
+      expect(result).toBe('org-789');
+      expect(mockOrganizationRepository.findBySlug).toHaveBeenCalledWith('acme');
     });
 
-    it('Given: X-Organization-Slug header When: organization not found Then: should return slug as fallback', async () => {
+    it('Given: X-Organization-Slug header When: repository throws Then: should return slug', async () => {
       // Arrange
-      const orgSlug = 'my-organization';
-      mockModuleRef.get.mockReturnValue(mockOrganizationRepository);
-      mockOrganizationRepository.findBySlug.mockResolvedValue(null);
-
       const request = {
         headers: {
-          'x-organization-slug': orgSlug,
+          'x-organization-slug': 'fallback-slug',
         },
         app: {
           get: jest.fn().mockReturnValue(mockModuleRef),
         },
       };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(orgSlug);
-      expect(mockOrganizationRepository.findBySlug).toHaveBeenCalledWith(orgSlug);
-    });
-
-    it('Given: X-Organization-Slug header When: organization is inactive Then: should return slug as fallback', async () => {
-      // Arrange
-      const orgSlug = 'my-organization';
-      const orgId = 'org-123';
-      const mockOrganization = Organization.reconstitute(
-        {
-          name: 'My Organization',
-          settings: {},
-          timezone: 'UTC',
-          currency: 'USD',
-          dateFormat: 'YYYY-MM-DD',
-          isActive: false,
-        },
-        orgId,
-        orgId
-      );
-
       mockModuleRef.get.mockReturnValue(mockOrganizationRepository);
-      mockOrganizationRepository.findBySlug.mockResolvedValue(mockOrganization);
-
-      const request = {
-        headers: {
-          'x-organization-slug': orgSlug,
-        },
-        app: {
-          get: jest.fn().mockReturnValue(mockModuleRef),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
+      mockOrganizationRepository.findBySlug.mockRejectedValue(new Error('failure'));
 
       // Act
-      const result = await executeDecorator(mockExecutionContext);
+      const result = await executeDecorator(request);
 
       // Assert
-      expect(result).toBe(orgSlug);
-      expect(mockOrganizationRepository.findBySlug).toHaveBeenCalledWith(orgSlug);
+      expect(result).toBe('fallback-slug');
     });
 
-    it('Given: subdomain in host When: organization found by slug and is active Then: should return organization id', async () => {
-      // Arrange
-      const subdomain = 'mycompany';
-      const host = `${subdomain}.example.com`;
-      const orgId = 'org-456';
-      const mockOrganization = Organization.reconstitute(
-        {
-          name: 'My Company',
-          settings: {},
-          timezone: 'UTC',
-          currency: 'USD',
-          dateFormat: 'YYYY-MM-DD',
-          isActive: true,
-        },
-        orgId,
-        orgId
-      );
-
-      mockModuleRef.get.mockReturnValue(mockOrganizationRepository);
-      mockOrganizationRepository.findBySlug.mockResolvedValue(mockOrganization);
-
-      const request = {
-        headers: {
-          host,
-        },
-        app: {
-          get: jest.fn().mockReturnValue(mockModuleRef),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(orgId);
-      expect(mockOrganizationRepository.findBySlug).toHaveBeenCalledWith(subdomain);
-    });
-
-    it('Given: subdomain in host When: organization not found by slug but found by domain Then: should return organization id', async () => {
-      // Arrange
-      const subdomain = 'mycompany';
-      const host = `${subdomain}.example.com`;
-      const orgId = 'org-789';
-      const mockOrganization = Organization.reconstitute(
-        {
-          name: 'My Company',
-          settings: {},
-          timezone: 'UTC',
-          currency: 'USD',
-          dateFormat: 'YYYY-MM-DD',
-          isActive: true,
-        },
-        orgId,
-        orgId
-      );
-
-      mockModuleRef.get.mockReturnValue(mockOrganizationRepository);
-      mockOrganizationRepository.findBySlug.mockResolvedValue(null);
-      mockOrganizationRepository.findByDomain.mockResolvedValue(mockOrganization);
-
-      const request = {
-        headers: {
-          host,
-        },
-        app: {
-          get: jest.fn().mockReturnValue(mockModuleRef),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(orgId);
-      expect(mockOrganizationRepository.findBySlug).toHaveBeenCalledWith(subdomain);
-      expect(mockOrganizationRepository.findByDomain).toHaveBeenCalledWith(host);
-    });
-
-    it('Given: subdomain in host When: organization not found Then: should return default orgId', async () => {
-      // Arrange
-      const subdomain = 'mycompany';
-      const host = `${subdomain}.example.com`;
-
-      mockModuleRef.get.mockReturnValue(mockOrganizationRepository);
-      mockOrganizationRepository.findBySlug.mockResolvedValue(null);
-      mockOrganizationRepository.findByDomain.mockResolvedValue(null);
-
-      const request = {
-        headers: {
-          host,
-        },
-        app: {
-          get: jest.fn().mockReturnValue(mockModuleRef),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(process.env.DEFAULT_ORG_ID || 'dev-org');
-      expect(mockOrganizationRepository.findBySlug).toHaveBeenCalledWith(subdomain);
-      expect(mockOrganizationRepository.findByDomain).toHaveBeenCalledWith(host);
-    });
-
-    it('Given: subdomain in host When: organization found but is inactive Then: should return default orgId', async () => {
-      // Arrange
-      const subdomain = 'mycompany';
-      const host = `${subdomain}.example.com`;
-      const orgId = 'org-999';
-      const mockOrganization = Organization.reconstitute(
-        {
-          name: 'My Company',
-          settings: {},
-          timezone: 'UTC',
-          currency: 'USD',
-          dateFormat: 'YYYY-MM-DD',
-          isActive: false,
-        },
-        orgId,
-        orgId
-      );
-
-      mockModuleRef.get.mockReturnValue(mockOrganizationRepository);
-      mockOrganizationRepository.findBySlug.mockResolvedValue(mockOrganization);
-
-      const request = {
-        headers: {
-          host,
-        },
-        app: {
-          get: jest.fn().mockReturnValue(mockModuleRef),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(process.env.DEFAULT_ORG_ID || 'dev-org');
-      expect(mockOrganizationRepository.findBySlug).toHaveBeenCalledWith(subdomain);
-    });
-
-    it('Given: localhost host When: calling decorator Then: should return default orgId', async () => {
-      // Arrange
-      const request = {
-        headers: {
-          host: 'localhost:3000',
-        },
-        app: {
-          get: jest.fn(),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(process.env.DEFAULT_ORG_ID || 'dev-org');
-    });
-
-    it('Given: 127.0.0.1 host When: calling decorator Then: should return default orgId', async () => {
-      // Arrange
-      const request = {
-        headers: {
-          host: '127.0.0.1:3000',
-        },
-        app: {
-          get: jest.fn(),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(process.env.DEFAULT_ORG_ID || 'dev-org');
-    });
-
-    it('Given: www subdomain When: calling decorator Then: should return default orgId', async () => {
-      // Arrange
-      const request = {
-        headers: {
-          host: 'www.example.com',
-        },
-        app: {
-          get: jest.fn(),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(process.env.DEFAULT_ORG_ID || 'dev-org');
-    });
-
-    it('Given: api subdomain When: calling decorator Then: should return default orgId', async () => {
-      // Arrange
-      const request = {
-        headers: {
-          host: 'api.example.com',
-        },
-        app: {
-          get: jest.fn(),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(process.env.DEFAULT_ORG_ID || 'dev-org');
-    });
-
-    it('Given: no headers When: calling decorator Then: should return default orgId', async () => {
+    it('Given: body orgId slug When: active organization exists Then: should return organization id', async () => {
       // Arrange
       const request = {
         headers: {},
-        app: {
-          get: jest.fn(),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(process.env.DEFAULT_ORG_ID || 'dev-org');
-    });
-
-    it('Given: empty host When: calling decorator Then: should return default orgId', async () => {
-      // Arrange
-      const request = {
-        headers: {
-          host: '',
+        body: {
+          orgId: 'acme',
         },
         app: {
-          get: jest.fn(),
+          get: jest.fn().mockReturnValue(mockModuleRef),
         },
       };
-      mockGetRequest.mockReturnValue(request);
+      mockModuleRef.get.mockReturnValue(mockOrganizationRepository);
+      mockOrganizationRepository.findBySlug.mockResolvedValue({
+        id: 'org-999',
+        isActive: true,
+      } as never);
 
       // Act
-      const result = await executeDecorator(mockExecutionContext);
+      const result = await executeDecorator(request);
 
       // Assert
-      expect(result).toBe(process.env.DEFAULT_ORG_ID || 'dev-org');
+      expect(result).toBe('org-999');
+      expect(mockOrganizationRepository.findBySlug).toHaveBeenCalledWith('acme');
     });
 
-    it('Given: undefined host When: calling decorator Then: should return default orgId', async () => {
+    it('Given: body orgId UUID When: resolving orgId Then: should return body orgId', async () => {
       // Arrange
-      const request = {
-        headers: {
-          host: undefined,
-        },
-        app: {
-          get: jest.fn(),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(process.env.DEFAULT_ORG_ID || 'dev-org');
-    });
-
-    it('Given: environment with DEFAULT_ORG_ID When: calling decorator Then: should return env value', async () => {
-      // Arrange
-      const originalEnv = process.env.DEFAULT_ORG_ID;
-      process.env.DEFAULT_ORG_ID = 'custom-org-id';
-
       const request = {
         headers: {},
-        app: {
-          get: jest.fn(),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe('custom-org-id');
-
-      // Cleanup
-      process.env.DEFAULT_ORG_ID = originalEnv;
-    });
-
-    it('Given: priority headers When: calling decorator Then: should prioritize X-Organization-ID', async () => {
-      // Arrange
-      const orgId = 'org-123';
-      const request = {
-        headers: {
-          'x-organization-id': orgId,
-          'x-organization-slug': 'test-org',
-          host: 'subdomain.example.com',
+        body: {
+          orgId: '123e4567-e89b-12d3-a456-426614174000',
         },
         app: {
-          get: jest.fn(),
+          get: jest.fn().mockReturnValue(mockModuleRef),
         },
       };
-      mockGetRequest.mockReturnValue(request);
 
       // Act
-      const result = await executeDecorator(mockExecutionContext);
+      const result = await executeDecorator(request);
 
       // Assert
-      expect(result).toBe(orgId);
-      // Should not call repository when X-Organization-ID is present
+      expect(result).toBe('123e4567-e89b-12d3-a456-426614174000');
       expect(mockOrganizationRepository.findBySlug).not.toHaveBeenCalled();
     });
 
-    it('Given: slug and host When: calling decorator Then: should prioritize X-Organization-Slug', async () => {
+    it('Given: subdomain host When: organization found by domain Then: should return organization id', async () => {
       // Arrange
-      const orgSlug = 'test-org';
-      const orgId = 'org-456';
-      const mockOrganization = Organization.reconstitute(
-        {
-          name: 'Test Org',
-          settings: {},
-          timezone: 'UTC',
-          currency: 'USD',
-          dateFormat: 'YYYY-MM-DD',
-          isActive: true,
-        },
-        orgId,
-        orgId
-      );
-
-      mockModuleRef.get.mockReturnValue(mockOrganizationRepository);
-      mockOrganizationRepository.findBySlug.mockResolvedValue(mockOrganization);
-
       const request = {
         headers: {
-          'x-organization-slug': orgSlug,
-          host: 'subdomain.example.com',
+          host: 'acme.example.com',
         },
         app: {
           get: jest.fn().mockReturnValue(mockModuleRef),
         },
       };
-      mockGetRequest.mockReturnValue(request);
+      mockModuleRef.get.mockReturnValue(mockOrganizationRepository);
+      mockOrganizationRepository.findBySlug.mockResolvedValue(null);
+      mockOrganizationRepository.findByDomain.mockResolvedValue({
+        id: 'org-domain',
+        isActive: true,
+      } as never);
 
       // Act
-      const result = await executeDecorator(mockExecutionContext);
+      const result = await executeDecorator(request);
 
       // Assert
-      expect(result).toBe(orgId);
-      expect(mockOrganizationRepository.findBySlug).toHaveBeenCalledWith(orgSlug);
-      // Should not try to resolve by subdomain when slug is present
-      expect(mockOrganizationRepository.findByDomain).not.toHaveBeenCalled();
+      expect(result).toBe('org-domain');
+      expect(mockOrganizationRepository.findByDomain).toHaveBeenCalledWith('acme.example.com');
     });
 
-    it('Given: no headers or host When: calling decorator Then: should return default orgId', async () => {
-      // Arrange
-      const request = {
-        headers: {},
-        app: {
-          get: jest.fn(),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(process.env.DEFAULT_ORG_ID || 'dev-org');
-    });
-
-    it('Given: X-Organization-ID takes precedence When: both headers present Then: should prioritize X-Organization-ID', async () => {
-      // Arrange
-      const orgId = 'org-123';
-      const orgSlug = 'my-organization';
-      const request = {
-        headers: {
-          'x-organization-id': orgId,
-          'x-organization-slug': orgSlug,
-        },
-        app: {
-          get: jest.fn(),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(orgId);
-      // Should not call repository when X-Organization-ID is present
-      expect(mockOrganizationRepository.findBySlug).not.toHaveBeenCalled();
-    });
-
-    it('Given: custom DEFAULT_ORG_ID environment variable When: calling decorator Then: should return environment variable', async () => {
+    it('Given: missing app When: resolving orgId Then: should return default orgId', async () => {
       // Arrange
       const originalEnv = process.env.DEFAULT_ORG_ID;
-      process.env.DEFAULT_ORG_ID = 'custom-org';
+      process.env.DEFAULT_ORG_ID = 'default-org';
 
       const request = {
-        headers: {},
-        app: {
-          get: jest.fn(),
+        headers: {
+          host: 'acme.example.com',
         },
       };
-      mockGetRequest.mockReturnValue(request);
 
       // Act
-      const result = await executeDecorator(mockExecutionContext);
+      const result = await executeDecorator(request);
 
       // Assert
-      expect(result).toBe('custom-org');
+      expect(result).toBe('default-org');
 
       // Cleanup
       if (originalEnv) {
@@ -670,73 +230,6 @@ describe('OrgId Decorator', () => {
       } else {
         delete process.env.DEFAULT_ORG_ID;
       }
-    });
-
-    it('Given: IP address host When: calling decorator Then: should return default orgId', async () => {
-      // Arrange
-      const request = {
-        headers: {
-          host: '192.168.1.100:3000',
-        },
-        app: {
-          get: jest.fn(),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(process.env.DEFAULT_ORG_ID || 'dev-org');
-    });
-
-    it('Given: repository not available When: calling decorator with subdomain Then: should return default orgId', async () => {
-      // Arrange
-      const subdomain = 'mycompany';
-      const host = `${subdomain}.example.com`;
-
-      // Mock app.get to return null (no ModuleRef)
-      const request = {
-        headers: {
-          host,
-        },
-        app: {
-          get: jest.fn().mockReturnValue(null),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(process.env.DEFAULT_ORG_ID || 'dev-org');
-    });
-
-    it('Given: repository error When: calling decorator with subdomain Then: should return default orgId', async () => {
-      // Arrange
-      const subdomain = 'mycompany';
-      const host = `${subdomain}.example.com`;
-
-      mockModuleRef.get.mockReturnValue(mockOrganizationRepository);
-      mockOrganizationRepository.findBySlug.mockRejectedValue(new Error('Database error'));
-
-      const request = {
-        headers: {
-          host,
-        },
-        app: {
-          get: jest.fn().mockReturnValue(mockModuleRef),
-        },
-      };
-      mockGetRequest.mockReturnValue(request);
-
-      // Act
-      const result = await executeDecorator(mockExecutionContext);
-
-      // Assert
-      expect(result).toBe(process.env.DEFAULT_ORG_ID || 'dev-org');
     });
   });
 });

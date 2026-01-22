@@ -293,6 +293,24 @@ describe('CreateOrganizationUseCase', () => {
         lockedUntil: null,
       });
 
+      mockPrismaService.role.findFirst.mockResolvedValue({
+        id: 'admin-role-id',
+        name: 'ADMIN',
+        description: 'Administrator role',
+        isActive: true,
+        orgId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      mockPrismaService.userRole.create.mockResolvedValue({
+        id: 'user-role-123',
+        userId: 'user-123',
+        roleId: 'admin-role-id',
+        orgId: mockOrganizationId,
+        createdAt: new Date(),
+      });
+
       const requestWithAdmin = {
         ...validRequest,
         adminUser: {

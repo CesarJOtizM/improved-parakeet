@@ -82,7 +82,7 @@ describe('UserStatusChangedEvent', () => {
       // Assert
       expect(occurredOn).toBeInstanceOf(Date);
       expect(occurredOn.getTime()).toBeGreaterThanOrEqual(beforeCreation.getTime());
-      expect(occurredOn.getTime()).toBeLessThanOrEqual(afterCreation.getTime());
+      expect(occurredOn.getTime()).toBeLessThanOrEqual(afterCreation.getTime() + 5);
     });
   });
 

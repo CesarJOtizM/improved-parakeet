@@ -2,6 +2,8 @@ import { GetReturnsUseCase } from '@application/returnUseCases/getReturnsUseCase
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Return } from '@returns/domain/entities/return.entity';
 import { ReturnNumber } from '@returns/domain/valueObjects/returnNumber.valueObject';
+import { ReturnStatus } from '@returns/domain/valueObjects/returnStatus.valueObject';
+import { ReturnType } from '@returns/domain/valueObjects/returnType.valueObject';
 import { ReturnMapper } from '@returns/mappers';
 
 import type { IReturnRepository } from '@returns/domain/repositories/returnRepository.interface';
@@ -48,6 +50,45 @@ describe('GetReturnsUseCase', () => {
         returnNumber
       );
       return Return.create(props, mockOrgId);
+    };
+
+    const createReturnWithDates = ({
+      returnNumber,
+      status = 'DRAFT',
+      type = 'RETURN_CUSTOMER',
+      confirmedAt,
+      warehouseId = 'warehouse-123',
+    }: {
+      returnNumber: ReturnNumber;
+      status?: 'DRAFT' | 'CONFIRMED' | 'CANCELLED';
+      type?: 'RETURN_CUSTOMER' | 'RETURN_SUPPLIER';
+      confirmedAt?: Date;
+      warehouseId?: string;
+    }) => {
+      return Return.reconstitute(
+        {
+          returnNumber,
+          status: ReturnStatus.create(status),
+          type: ReturnType.create(type),
+          reason: ReturnMapper.toDomainProps(
+            {
+              type,
+              warehouseId,
+              saleId: type === 'RETURN_CUSTOMER' ? 'sale-123' : undefined,
+              sourceMovementId: type === 'RETURN_SUPPLIER' ? 'movement-123' : undefined,
+              createdBy: 'user-123',
+            },
+            returnNumber
+          ).reason,
+          warehouseId,
+          saleId: type === 'RETURN_CUSTOMER' ? 'sale-123' : undefined,
+          sourceMovementId: type === 'RETURN_SUPPLIER' ? 'movement-123' : undefined,
+          createdBy: 'user-123',
+          confirmedAt,
+        },
+        `return-${returnNumber.getValue()}`,
+        mockOrgId
+      );
     };
 
     it('Given: valid request When: getting returns Then: should return paginated returns', async () => {
@@ -104,6 +145,104 @@ describe('GetReturnsUseCase', () => {
         }
       );
       expect(mockReturnRepository.findByStatus).toHaveBeenCalledWith('DRAFT', mockOrgId);
+    });
+
+    it('Given: request with type and warehouse filters When: getting returns Then: should apply additional filters', async () => {
+      // Arrange
+      const mockReturns = [
+        createReturnWithDates({
+          returnNumber: ReturnNumber.create(2025, 1),
+          type: 'RETURN_CUSTOMER',
+          warehouseId: 'warehouse-123',
+        }),
+        createReturnWithDates({
+          returnNumber: ReturnNumber.create(2025, 2),
+          type: 'RETURN_SUPPLIER',
+          warehouseId: 'warehouse-999',
+        }),
+      ];
+      mockReturnRepository.findByType.mockResolvedValue(mockReturns);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        type: 'RETURN_CUSTOMER',
+        warehouseId: 'warehouse-123',
+        sortBy: 'returnNumber',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(1);
+          expect(value.data[0].warehouseId).toBe('warehouse-123');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: request with date range When: getting returns Then: should call findByDateRange', async () => {
+      // Arrange
+      mockReturnRepository.findByDateRange.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        startDate: new Date('2024-01-01T00:00:00.000Z'),
+        endDate: new Date('2024-02-01T00:00:00.000Z'),
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockReturnRepository.findByDateRange).toHaveBeenCalled();
+    });
+
+    it('Given: sortBy confirmedAt When: getting returns Then: should sort results', async () => {
+      // Arrange
+      const returnOne = createReturnWithDates({
+        returnNumber: ReturnNumber.create(2025, 1),
+        status: 'CONFIRMED',
+        confirmedAt: new Date('2024-01-10T10:00:00.000Z'),
+      });
+      const returnTwo = createReturnWithDates({
+        returnNumber: ReturnNumber.create(2025, 2),
+        status: 'DRAFT',
+      });
+      mockReturnRepository.findAll.mockResolvedValue([returnTwo, returnOne]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'confirmedAt',
+        sortOrder: 'desc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
     });
   });
 });
