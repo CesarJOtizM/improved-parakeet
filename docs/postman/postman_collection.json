@@ -135,6 +135,14 @@
       "key": "dateRangeEnd",
       "value": "2024-12-31",
       "type": "string"
+    },
+    {
+      "key": "transferId",
+      "value": ""
+    },
+    {
+      "key": "locationId",
+      "value": ""
     }
   ],
   "item": [
@@ -183,8 +191,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             },
             "description": "Autenticar usuario con email y contraseña, retorna tokens JWT"
           },
@@ -273,8 +286,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/login",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "login"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
                 }
               },
               "status": "OK",
@@ -326,8 +344,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/logout",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "logout"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
             },
             "description": "Cerrar sesión del usuario y blacklistear tokens JWT"
           },
@@ -392,8 +415,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/logout",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "logout"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "logout"
+                  ]
                 }
               },
               "status": "OK",
@@ -441,8 +469,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/refresh",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "refresh"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
             },
             "description": "Refrescar token de acceso usando un refresh token válido"
           },
@@ -526,8 +559,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/refresh",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "refresh"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "refresh"
+                  ]
                 }
               },
               "status": "OK",
@@ -579,8 +617,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/logout-all",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "logout-all"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout-all"
+              ]
             },
             "description": "Cerrar sesión del usuario en todas las sesiones activas y blacklistear todos los tokens"
           },
@@ -646,8 +689,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/logout-all",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "logout-all"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "logout-all"
+                  ]
                 }
               },
               "status": "OK",
@@ -705,8 +753,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/password-reset/request",
-              "host": ["{{baseUrl}}"],
-              "path": ["password-reset", "request"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "password-reset",
+                "request"
+              ]
             },
             "description": "Request password reset by sending OTP to user email"
           },
@@ -722,8 +775,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/password-reset/request",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "password-reset", "request"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password-reset",
+                    "request"
+                  ]
                 }
               },
               "status": "OK",
@@ -781,8 +840,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/password-reset/verify-otp",
-              "host": ["{{baseUrl}}"],
-              "path": ["password-reset", "verify-otp"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "password-reset",
+                "verify-otp"
+              ]
             },
             "description": "Verify OTP code for password reset"
           },
@@ -798,8 +862,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/password-reset/verify",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "password-reset", "verify"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password-reset",
+                    "verify"
+                  ]
                 }
               },
               "status": "OK",
@@ -857,8 +927,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/password-reset/reset",
-              "host": ["{{baseUrl}}"],
-              "path": ["password-reset", "reset"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "password-reset",
+                "reset"
+              ]
             },
             "description": "Reset password with verified OTP and new password"
           },
@@ -874,8 +949,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/password-reset/reset",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "password-reset", "reset"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password-reset",
+                    "reset"
+                  ]
                 }
               },
               "status": "OK",
@@ -889,6 +970,43 @@
               ],
               "cookie": [],
               "body": "{\n  \"success\": true,\n  \"message\": \"Password reset successfully\",\n  \"email\": \"user@example.com\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Test OrgId",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/test-orgid",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "test-orgid"
+              ]
+            },
+            "description": "Test endpoint to verify orgId extraction (development only)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
             }
           ]
         }
@@ -933,8 +1051,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["users"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
             },
             "description": "Create a new user in the organization. Requires USERS:CREATE permission."
           },
@@ -986,8 +1108,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/users?page=1&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["users"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -1058,8 +1184,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/users/{{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "{{userId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
             },
             "description": "Get a specific user by ID. Requires USERS:READ permission."
           },
@@ -1113,8 +1244,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/users/{{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "{{userId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
             },
             "description": "Update user information. Requires USERS:UPDATE permission."
           },
@@ -1167,8 +1303,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/users/{{userId}}/status",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "{{userId}}", "status"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "status"
+              ]
             },
             "description": "Change user status (ACTIVE, INACTIVE, LOCKED). Requires USERS:UPDATE permission."
           },
@@ -1222,8 +1364,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/users/{{userId}}/roles",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "{{userId}}", "roles"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "roles"
+              ]
             },
             "description": "Assign a role to a user. Requires USERS:MANAGE_ROLES permission."
           },
@@ -1275,8 +1423,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/users/{{userId}}/roles/{{roleId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "{{userId}}", "roles", "{{roleId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "roles",
+                "{{roleId}}"
+              ]
             },
             "description": "Remove a role from a user. Requires USERS:MANAGE_ROLES permission."
           },
@@ -1293,6 +1448,319 @@
                   "pm.test(\"Role removed successfully\", function () {",
                   "    const responseJson = pm.response.json();",
                   "    pm.expect(responseJson.success).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Roles Management",
+      "item": [
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"CUSTOM_MANAGER\",\n  \"description\": \"Custom manager role with specific permissions\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles"
+              ]
+            },
+            "description": "Create a new custom role. Requires ROLES:CREATE permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has role data\", function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property(\"success\");",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    if (responseJson.data && responseJson.data.id) {",
+                  "        pm.collectionVariables.set(\"roleId\", responseJson.data.id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles"
+              ]
+            },
+            "description": "Get all available roles. Requires ROLES:READ permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Role by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/roles/{{roleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles",
+                "{{roleId}}"
+              ]
+            },
+            "description": "Get a role by ID. Requires ROLES:READ permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated role description\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/roles/{{roleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles",
+                "{{roleId}}"
+              ]
+            },
+            "description": "Update a custom role. Requires ROLES:UPDATE permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/roles/{{roleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles",
+                "{{roleId}}"
+              ]
+            },
+            "description": "Delete a custom role. Requires ROLES:DELETE permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Assign Permissions to Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permissionIds\": [\n    \"perm-123\",\n    \"perm-456\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/roles/{{roleId}}/permissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles",
+                "{{roleId}}",
+                "permissions"
+              ]
+            },
+            "description": "Assign permissions to a role. Requires ROLES:UPDATE permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -1323,8 +1791,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["health"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
             },
             "description": "Verificación básica de salud del sistema"
           },
@@ -1336,8 +1808,12 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/health",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["health"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "health"
+                  ]
                 }
               },
               "status": "OK",
@@ -1372,8 +1848,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/health/detailed",
-              "host": ["{{baseUrl}}"],
-              "path": ["health", "detailed"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "detailed"
+              ]
             },
             "description": "Verificación detallada de salud con métricas del sistema"
           },
@@ -1385,8 +1866,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/health/detailed",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["health", "detailed"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "health",
+                    "detailed"
+                  ]
                 }
               },
               "status": "OK",
@@ -1421,8 +1907,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/health/full",
-              "host": ["{{baseUrl}}"],
-              "path": ["health", "full"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "full"
+              ]
             },
             "description": "Verificación completa de salud orquestada por el dominio"
           },
@@ -1434,8 +1925,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/health/full",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["health", "full"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "health",
+                    "full"
+                  ]
                 }
               },
               "status": "OK",
@@ -1505,8 +2001,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "products"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "products"
+              ]
             },
             "description": "Obtener todos los productos del inventario"
           },
@@ -1518,8 +2019,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/inventory/products",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "products"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "products"
+                  ]
                 }
               },
               "status": "OK",
@@ -1553,8 +2059,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory/products/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "products", ":id"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "products",
+                ":id"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -1573,8 +2085,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/inventory/products/:id",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "products", ":id"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "products",
+                    ":id"
+                  ]
                 }
               },
               "status": "OK",
@@ -1616,8 +2134,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/inventory/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "products"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "products"
+              ]
             },
             "description": "Crear un nuevo producto en el inventario"
           },
@@ -1633,8 +2156,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/inventory/products",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "products"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "products"
+                  ]
                 }
               },
               "status": "Created",
@@ -1676,8 +2204,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/inventory/products/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "products", ":id"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "products",
+                ":id"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -1700,8 +2234,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/inventory/products/:id",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "products", ":id"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "products",
+                    ":id"
+                  ]
                 }
               },
               "status": "OK",
@@ -1735,8 +2275,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory/warehouses",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "warehouses"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "warehouses"
+              ]
             },
             "description": "Obtener todas las bodegas"
           },
@@ -1748,8 +2293,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/inventory/warehouses",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "warehouses"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "warehouses"
+                  ]
                 }
               },
               "status": "OK",
@@ -1783,8 +2333,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory/warehouses/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "warehouses", ":id"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "warehouses",
+                ":id"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -1803,8 +2359,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/inventory/warehouses/:id",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "warehouses", ":id"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "warehouses",
+                    ":id"
+                  ]
                 }
               },
               "status": "OK",
@@ -1826,8 +2388,14 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/inventory/warehouses/:id",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "warehouses", ":id"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "warehouses",
+                    ":id"
+                  ]
                 }
               },
               "status": "Not Found",
@@ -1869,8 +2437,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/inventory/warehouses",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "warehouses"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "warehouses"
+              ]
             },
             "description": "Crear una nueva bodega"
           },
@@ -1886,8 +2459,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/inventory/warehouses",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "warehouses"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "warehouses"
+                  ]
                 }
               },
               "status": "Created",
@@ -1921,8 +2499,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory/movements?page=1&limit=10&productId={{productId}}&warehouseId={{warehouseId}}&status=POSTED&type=IN&startDate=2024-01-01T00:00:00.000Z&endDate=2024-12-31T23:59:59.999Z&sortBy=createdAt&sortOrder=desc",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "movements"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "movements"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -1996,8 +2579,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/inventory/movements",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "movements"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "movements"
+                  ]
                 }
               },
               "status": "OK",
@@ -2039,8 +2627,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/inventory/movements",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "movements"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "movements"
+              ]
             },
             "description": "Crear un nuevo movimiento de inventario"
           },
@@ -2056,8 +2649,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/inventory/movements",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "movements"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "movements"
+                  ]
                 }
               },
               "status": "Created",
@@ -2091,8 +2689,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory/movements/:id/post",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "movements", ":id", "post"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "movements",
+                ":id",
+                "post"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -2140,8 +2745,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/inventory/transfers",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "transfers"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "transfers"
+              ]
             },
             "description": "Obtener todas las transferencias entre bodegas"
           },
@@ -2153,8 +2763,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/inventory/transfers",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["inventory", "transfers"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "inventory",
+                    "transfers"
+                  ]
                 }
               },
               "status": "OK",
@@ -2196,8 +2811,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/inventory/transfers",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "transfers"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "transfers"
+              ]
             },
             "description": "Initiate a new transfer between warehouses. Requires INVENTORY:TRANSFER permission."
           },
@@ -2220,275 +2840,225 @@
               }
             }
           ]
-        }
-      ]
-    },
-    {
-      "name": "Bulk Imports",
-      "description": "Endpoints para importación masiva de datos (pendientes de implementación)",
-      "item": [
-        {
-          "name": "Import Products",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "file",
-                  "type": "file",
-                  "src": []
-                },
-                {
-                  "key": "type",
-                  "value": "products",
-                  "type": "text"
-                },
-                {
-                  "key": "options",
-                  "value": "{\"skipDuplicates\": true, \"updateExisting\": false}",
-                  "type": "text"
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{baseUrl}}/imports/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["imports", "products"]
-            },
-            "description": "Importar productos masivamente desde archivo"
-          },
-          "response": [
-            {
-              "name": "Products Import Started Exitoso",
-              "originalRequest": {
-                "method": "POST",
-                "header": [],
-                "body": {
-                  "mode": "formdata",
-                  "formdata": [
-                    {
-                      "key": "file",
-                      "type": "file",
-                      "src": []
-                    },
-                    {
-                      "key": "type",
-                      "value": "products",
-                      "type": "text"
-                    }
-                  ]
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/imports/products",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports", "products"]
-                }
-              },
-              "status": "Accepted",
-              "code": 202,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"importId\": \"import-123\",\n  \"type\": \"products\",\n  \"status\": \"VALIDATING\",\n  \"message\": \"File uploaded successfully, validation in progress\",\n  \"fileName\": \"products-import.xlsx\",\n  \"fileSize\": \"1.2MB\",\n  \"totalRows\": 150,\n  \"estimatedCompletion\": \"2024-12-20T10:10:00.000Z\",\n  \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n}"
-            }
-          ]
         },
         {
-          "name": "Import Stock",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "file",
-                  "type": "file",
-                  "src": []
-                },
-                {
-                  "key": "type",
-                  "value": "stock",
-                  "type": "text"
-                },
-                {
-                  "key": "warehouseId",
-                  "value": "warehouse-1",
-                  "type": "text"
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{baseUrl}}/imports/stock",
-              "host": ["{{baseUrl}}"],
-              "path": ["imports", "stock"]
-            },
-            "description": "Importar stock masivamente desde archivo"
-          },
-          "response": [
-            {
-              "name": "Stock Import Started Exitoso",
-              "originalRequest": {
-                "method": "POST",
-                "header": [],
-                "body": {
-                  "mode": "formdata",
-                  "formdata": [
-                    {
-                      "key": "file",
-                      "type": "file",
-                      "src": []
-                    },
-                    {
-                      "key": "type",
-                      "value": "stock",
-                      "type": "text"
-                    },
-                    {
-                      "key": "warehouseId",
-                      "value": "warehouse-1",
-                      "type": "text"
-                    }
-                  ]
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/imports/stock",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports", "stock"]
-                }
-              },
-              "status": "Accepted",
-              "code": 202,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"importId\": \"import-456\",\n  \"type\": \"stock\",\n  \"status\": \"VALIDATING\",\n  \"message\": \"Stock import validation in progress\",\n  \"fileName\": \"stock-update.xlsx\",\n  \"fileSize\": \"856KB\",\n  \"totalRows\": 75,\n  \"warehouseId\": \"warehouse-1\",\n  \"estimatedCompletion\": \"2024-12-20T10:08:00.000Z\",\n  \"createdAt\": \"2024-12-20T10:00:00.000Z\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "Get Import Status",
+          "name": "Stock - Get",
           "request": {
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/imports/status/:importId",
-              "host": ["{{baseUrl}}"],
-              "path": ["imports", "status", ":importId"],
-              "variable": [
-                {
-                  "key": "importId",
-                  "value": "import-id",
-                  "description": "ID de la importación"
-                }
+              "raw": "{{baseUrl}}/inventory/stock?warehouseId={{warehouseId}}&productId={{productId}}&lowStock=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "stock?warehouseId={{warehouseId}}&productId={{productId}}&lowStock=false"
               ]
             },
-            "description": "Obtener estado de una importación"
+            "description": "Get current stock levels with optional filters. Requires INVENTORY:READ permission."
           },
-          "response": [
+          "event": [
             {
-              "name": "Import Status Exitoso",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/imports/status/:importId",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports", "status", ":importId"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"importId\": \"import-123\",\n  \"type\": \"products\",\n  \"status\": \"COMPLETED\",\n  \"progress\": 100,\n  \"message\": \"Import completed successfully\",\n  \"summary\": {\n    \"totalRows\": 150,\n    \"processedRows\": 150,\n    \"successfulRows\": 145,\n    \"failedRows\": 5,\n    \"skippedRows\": 0\n  },\n  \"errors\": [\n    {\n      \"row\": 23,\n      \"field\": \"sku\",\n      \"message\": \"SKU already exists\",\n      \"value\": \"SKU001\"\n    },\n    {\n      \"row\": 45,\n      \"field\": \"price\",\n      \"message\": \"Invalid price format\",\n      \"value\": \"abc\"\n    }\n  ],\n  \"completedAt\": \"2024-12-20T10:10:00.000Z\",\n  \"downloadUrl\": \"{{baseUrl}}/imports/download/import-123\"\n}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
             }
           ]
         },
         {
-          "name": "Download Import Results",
+          "name": "Transfers - Confirm",
           "request": {
-            "method": "GET",
+            "method": "POST",
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/imports/download/:importId",
-              "host": ["{{baseUrl}}"],
-              "path": ["imports", "download", ":importId"],
-              "variable": [
-                {
-                  "key": "importId",
-                  "value": "import-id",
-                  "description": "ID de la importación"
-                }
+              "raw": "{{baseUrl}}/inventory/transfers/{{transferId}}/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "transfers",
+                "{{transferId}}",
+                "confirm"
               ]
             },
-            "description": "Descargar resultados de la importación"
+            "description": "Confirm a transfer (DRAFT -> IN_TRANSIT). Requires INVENTORY:TRANSFER permission."
           },
-          "response": [
+          "event": [
             {
-              "name": "Import Results Download Exitoso",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/imports/download/:importId",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports", "download", ":importId"]
-                }
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Transfers - Receive",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
               },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                },
-                {
-                  "key": "Content-Disposition",
-                  "value": "attachment; filename=\"import-results-import-123.xlsx\""
-                }
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/inventory/transfers/{{transferId}}/receive",
+              "host": [
+                "{{baseUrl}}"
               ],
-              "cookie": [],
-              "body": "Binary file content (Excel file with import results)"
+              "path": [
+                "inventory",
+                "transfers",
+                "{{transferId}}",
+                "receive"
+              ]
+            },
+            "description": "Receive a transfer (IN_TRANSIT -> RECEIVED). Requires INVENTORY:TRANSFER permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Transfers - Reject",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Damaged items\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/inventory/transfers/{{transferId}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "transfers",
+                "{{transferId}}",
+                "reject"
+              ]
+            },
+            "description": "Reject a transfer (IN_TRANSIT -> REJECTED). Requires INVENTORY:TRANSFER permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Transfers - Cancel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Organization-ID",
+                "value": "{{organizationId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/inventory/transfers/{{transferId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventory",
+                "transfers",
+                "{{transferId}}",
+                "cancel"
+              ]
+            },
+            "description": "Cancel a transfer (DRAFT only). Requires INVENTORY:TRANSFER permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
             }
           ]
         }
@@ -2524,8 +3094,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/sales",
-              "host": ["{{baseUrl}}"],
-              "path": ["sales"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales"
+              ]
             },
             "description": "Create a new sale in DRAFT status"
           },
@@ -2568,8 +3142,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/sales?page=1&limit=10&status=DRAFT",
-              "host": ["{{baseUrl}}"],
-              "path": ["sales"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -2606,8 +3184,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/sales/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["sales", ":id"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales",
+                ":id"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -2636,8 +3219,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/sales/:id/returns",
-              "host": ["{{baseUrl}}"],
-              "path": ["sales", ":id", "returns"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales",
+                ":id",
+                "returns"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -2692,8 +3281,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/sales/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["sales", ":id"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales",
+                ":id"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -2735,8 +3329,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/sales/:id/confirm",
-              "host": ["{{baseUrl}}"],
-              "path": ["sales", ":id", "confirm"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales",
+                ":id",
+                "confirm"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -2778,8 +3378,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/sales/:id/cancel?reason=Cancellation reason",
-              "host": ["{{baseUrl}}"],
-              "path": ["sales", ":id", "cancel"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales",
+                ":id",
+                "cancel"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -2837,8 +3443,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/sales/:id/lines",
-              "host": ["{{baseUrl}}"],
-              "path": ["sales", ":id", "lines"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales",
+                ":id",
+                "lines"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -2880,8 +3492,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/sales/:id/lines/:lineId",
-              "host": ["{{baseUrl}}"],
-              "path": ["sales", ":id", "lines", ":lineId"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales",
+                ":id",
+                "lines",
+                ":lineId"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -2928,8 +3547,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/sales/:id/movement",
-              "host": ["{{baseUrl}}"],
-              "path": ["sales", ":id", "movement"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales",
+                ":id",
+                "movement"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -2985,8 +3610,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/returns",
-              "host": ["{{baseUrl}}"],
-              "path": ["returns"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "returns"
+              ]
             },
             "description": "Create a new return in DRAFT status"
           },
@@ -3032,8 +3661,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/returns?page=1&limit=10&type=RETURN_CUSTOMER",
-              "host": ["{{baseUrl}}"],
-              "path": ["returns"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "returns"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -3070,8 +3703,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/returns/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["returns", ":id"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "returns",
+                ":id"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -3108,8 +3746,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/returns/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["returns", ":id"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "returns",
+                ":id"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -3138,8 +3781,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/returns/:id/confirm",
-              "host": ["{{baseUrl}}"],
-              "path": ["returns", ":id", "confirm"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "returns",
+                ":id",
+                "confirm"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -3186,8 +3835,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/returns/:id/cancel?reason=Cancellation reason",
-              "host": ["{{baseUrl}}"],
-              "path": ["returns", ":id", "cancel"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "returns",
+                ":id",
+                "cancel"
+              ],
               "query": [
                 {
                   "key": "reason",
@@ -3230,8 +3885,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/returns/:id/lines",
-              "host": ["{{baseUrl}}"],
-              "path": ["returns", ":id", "lines"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "returns",
+                ":id",
+                "lines"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -3280,8 +3941,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/returns/:id/lines/:lineId",
-              "host": ["{{baseUrl}}"],
-              "path": ["returns", ":id", "lines", ":lineId"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "returns",
+                ":id",
+                "lines",
+                ":lineId"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -3322,8 +3990,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/organizations",
-              "host": ["{{baseUrl}}"],
-              "path": ["organizations"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organizations"
+              ]
             },
             "description": "Create a new multi-tenant organization. Only super-admins can create organizations. Requires SYSTEM_ADMIN role."
           },
@@ -3379,8 +4051,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/organizations/{{organizationId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["organizations", "{{organizationId}}"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organizations",
+                "{{organizationId}}"
+              ],
               "variable": [
                 {
                   "key": "organizationId",
@@ -3452,8 +4129,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/organizations/{{organizationId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["organizations", "{{organizationId}}"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organizations",
+                "{{organizationId}}"
+              ],
               "variable": [
                 {
                   "key": "organizationId",
@@ -3538,8 +4220,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/inventory/available/view?warehouseId={{warehouseId}}&productId={{productId}}&category=&includeInactive=false&locationId={{locationId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "inventory", "available", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "available",
+                    "view"
+                  ],
                   "query": [
                     {
                       "key": "warehouseId",
@@ -3630,8 +4319,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/inventory/movement-history/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&productId={{productId}}&warehouseId={{warehouseId}}&movementType=",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "inventory", "movement-history", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "movement-history",
+                    "view"
+                  ],
                   "query": [
                     {
                       "key": "dateRange[startDate]",
@@ -3717,8 +4413,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/inventory/valuation/view?warehouseId={{warehouseId}}&category=&dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "inventory", "valuation", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "valuation",
+                    "view"
+                  ],
                   "query": [
                     {
                       "key": "warehouseId",
@@ -3799,8 +4502,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/inventory/low-stock/view?warehouseId={{warehouseId}}&severity=CRITICAL",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "inventory", "low-stock", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "low-stock",
+                    "view"
+                  ],
                   "query": [
                     {
                       "key": "warehouseId",
@@ -3865,8 +4575,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/inventory/movements/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&type=&warehouseId={{warehouseId}}&status=",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "inventory", "movements", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "movements",
+                    "view"
+                  ],
                   "query": [
                     {
                       "key": "dateRange[startDate]",
@@ -3945,8 +4662,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/inventory/financial/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}&category=",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "inventory", "financial", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "financial",
+                    "view"
+                  ],
                   "query": [
                     {
                       "key": "dateRange[startDate]",
@@ -4020,8 +4744,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/inventory/turnover/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}&category=&productId={{productId}}&period=MONTHLY",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "inventory", "turnover", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "turnover",
+                    "view"
+                  ],
                   "query": [
                     {
                       "key": "dateRange[startDate]",
@@ -4112,8 +4843,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/sales/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}&productId={{productId}}&status=&customerReference=",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "sales", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "sales",
+                    "view"
+                  ],
                   "query": [
                     {
                       "key": "dateRange[startDate]",
@@ -4204,8 +4941,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/sales/by-product/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}&productId={{productId}}&category=",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "sales", "by-product", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "sales",
+                    "by-product",
+                    "view"
+                  ],
                   "query": [
                     {
                       "key": "dateRange[startDate]",
@@ -4284,8 +5028,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/sales/by-warehouse/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "sales", "by-warehouse", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "sales",
+                    "by-warehouse",
+                    "view"
+                  ],
                   "query": [
                     {
                       "key": "dateRange[startDate]",
@@ -4360,8 +5111,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/returns/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}&returnType=&status=",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "returns", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "returns",
+                    "view"
+                  ],
                   "query": [
                     {
                       "key": "dateRange[startDate]",
@@ -4441,8 +5198,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/returns/by-type/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}&returnType=",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "returns", "by-type", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "returns",
+                    "by-type",
+                    "view"
+                  ],
                   "query": [
                     {
                       "key": "dateRange[startDate]",
@@ -4517,8 +5281,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/returns/by-product/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}&productId={{productId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "returns", "by-product", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "returns",
+                    "by-product",
+                    "view"
+                  ],
                   "query": [
                     {
                       "key": "dateRange[startDate]",
@@ -4592,8 +5363,16 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/returns/by-sale/{{saleId}}/view",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "returns", "by-sale", "{{saleId}}", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "returns",
+                    "by-sale",
+                    "{{saleId}}",
+                    "view"
+                  ],
                   "variable": [
                     {
                       "key": "saleId",
@@ -4651,8 +5430,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/returns/customer/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "returns", "customer", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "returns",
+                    "customer",
+                    "view"
+                  ],
                   "query": [
                     {
                       "key": "dateRange[startDate]",
@@ -4721,8 +5507,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/returns/supplier/view?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "returns", "supplier", "view"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "returns",
+                    "supplier",
+                    "view"
+                  ],
                   "query": [
                     {
                       "key": "dateRange[startDate]",
@@ -4792,8 +5585,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/inventory/available/stream?warehouseId={{warehouseId}}&productId={{productId}}&category=&includeInactive=false",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "inventory", "available", "stream"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "available",
+                    "stream"
+                  ],
                   "query": [
                     {
                       "key": "warehouseId",
@@ -4882,8 +5682,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/sales/view/stream?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "sales", "view", "stream"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "sales",
+                    "view",
+                    "stream"
+                  ],
                   "query": [
                     {
                       "key": "dateRange[startDate]",
@@ -4951,8 +5758,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/returns/view/stream?dateRange[startDate]={{dateRangeStart}}&dateRange[endDate]={{dateRangeEnd}}&warehouseId={{warehouseId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "returns", "view", "stream"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "returns",
+                    "view",
+                    "stream"
+                  ],
                   "query": [
                     {
                       "key": "dateRange[startDate]",
@@ -5029,8 +5843,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/reports/inventory/available/export",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "inventory", "available", "export"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "available",
+                    "export"
+                  ]
                 },
                 "description": "Export available inventory report. Returns file in specified format (PDF, EXCEL, or CSV)."
               },
@@ -5077,6 +5898,276 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "Export Movement History",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"format\": \"{{reportFormat}}\",\n  \"parameters\": {\n    \"dateRange\": {\n      \"startDate\": \"{{dateRangeStart}}\",\n      \"endDate\": \"{{dateRangeEnd}}\"\n    },\n    \"warehouseId\": \"{{warehouseId}}\",\n    \"productId\": \"{{productId}}\"\n  },\n  \"options\": {\n    \"includeHeader\": true,\n    \"includeSummary\": true,\n    \"title\": \"Movement History Report\"\n  },\n  \"saveMetadata\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/movement-history/export",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "movement-history",
+                    "export"
+                  ]
+                },
+                "description": "Export movement history report. Returns file in specified format (PDF, EXCEL, or CSV)."
+              }
+            },
+            {
+              "name": "Export Inventory Valuation",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"format\": \"{{reportFormat}}\",\n  \"parameters\": {\n    \"dateRange\": {\n      \"startDate\": \"{{dateRangeStart}}\",\n      \"endDate\": \"{{dateRangeEnd}}\"\n    },\n    \"warehouseId\": \"{{warehouseId}}\",\n    \"category\": \"\"\n  },\n  \"options\": {\n    \"includeHeader\": true,\n    \"includeSummary\": true,\n    \"title\": \"Inventory Valuation Report\"\n  },\n  \"saveMetadata\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/valuation/export",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "valuation",
+                    "export"
+                  ]
+                },
+                "description": "Export inventory valuation report. Returns file in specified format (PDF, EXCEL, or CSV)."
+              }
+            },
+            {
+              "name": "Export Low Stock",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"format\": \"{{reportFormat}}\",\n  \"parameters\": {\n    \"warehouseId\": \"{{warehouseId}}\",\n    \"severity\": \"CRITICAL\"\n  },\n  \"options\": {\n    \"includeHeader\": true,\n    \"includeSummary\": true,\n    \"title\": \"Low Stock Report\"\n  },\n  \"saveMetadata\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/low-stock/export",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "low-stock",
+                    "export"
+                  ]
+                },
+                "description": "Export low stock report. Returns file in specified format (PDF, EXCEL, or CSV)."
+              }
+            },
+            {
+              "name": "Export Movements Summary",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"format\": \"{{reportFormat}}\",\n  \"parameters\": {\n    \"dateRange\": {\n      \"startDate\": \"{{dateRangeStart}}\",\n      \"endDate\": \"{{dateRangeEnd}}\"\n    },\n    \"warehouseId\": \"{{warehouseId}}\",\n    \"status\": \"\"\n  },\n  \"options\": {\n    \"includeHeader\": true,\n    \"includeSummary\": true,\n    \"title\": \"Movements Summary Report\"\n  },\n  \"saveMetadata\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/movements/export",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "movements",
+                    "export"
+                  ]
+                },
+                "description": "Export movements summary report. Returns file in specified format (PDF, EXCEL, or CSV)."
+              }
+            },
+            {
+              "name": "Export Financial Report",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"format\": \"{{reportFormat}}\",\n  \"parameters\": {\n    \"dateRange\": {\n      \"startDate\": \"{{dateRangeStart}}\",\n      \"endDate\": \"{{dateRangeEnd}}\"\n    },\n    \"warehouseId\": \"{{warehouseId}}\",\n    \"category\": \"\"\n  },\n  \"options\": {\n    \"includeHeader\": true,\n    \"includeSummary\": true,\n    \"title\": \"Financial Report\"\n  },\n  \"saveMetadata\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/financial/export",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "financial",
+                    "export"
+                  ]
+                },
+                "description": "Export financial report. Returns file in specified format (PDF, EXCEL, or CSV)."
+              }
+            },
+            {
+              "name": "Export Inventory Turnover",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"format\": \"{{reportFormat}}\",\n  \"parameters\": {\n    \"dateRange\": {\n      \"startDate\": \"{{dateRangeStart}}\",\n      \"endDate\": \"{{dateRangeEnd}}\"\n    },\n    \"warehouseId\": \"{{warehouseId}}\",\n    \"productId\": \"{{productId}}\",\n    \"period\": \"MONTHLY\"\n  },\n  \"options\": {\n    \"includeHeader\": true,\n    \"includeSummary\": true,\n    \"title\": \"Inventory Turnover Report\"\n  },\n  \"saveMetadata\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/reports/inventory/turnover/export",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "turnover",
+                    "export"
+                  ]
+                },
+                "description": "Export inventory turnover report. Returns file in specified format (PDF, EXCEL, or CSV)."
+              }
             }
           ]
         },
@@ -5116,8 +6207,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/reports/sales/export",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "sales", "export"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "sales",
+                    "export"
+                  ]
                 },
                 "description": "Export sales report. Returns file in specified format (PDF, EXCEL, or CSV)."
               },
@@ -5178,8 +6275,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/reports/sales/by-product/export",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "sales", "by-product", "export"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "sales",
+                    "by-product",
+                    "export"
+                  ]
                 },
                 "description": "Export sales by product report."
               },
@@ -5229,8 +6333,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/reports/sales/by-warehouse/export",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "sales", "by-warehouse", "export"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "sales",
+                    "by-warehouse",
+                    "export"
+                  ]
                 },
                 "description": "Export sales by warehouse report."
               },
@@ -5286,8 +6397,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/reports/returns/export",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "returns", "export"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "returns",
+                    "export"
+                  ]
                 },
                 "description": "Export returns report."
               },
@@ -5337,8 +6454,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/reports/returns/by-type/export",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "returns", "by-type", "export"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "returns",
+                    "by-type",
+                    "export"
+                  ]
                 },
                 "description": "Export returns by type report."
               },
@@ -5388,8 +6512,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/reports/returns/by-product/export",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "returns", "by-product", "export"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "returns",
+                    "by-product",
+                    "export"
+                  ]
                 },
                 "description": "Export returns by product report."
               },
@@ -5436,8 +6567,13 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/history?type={{reportType}}&status=&generatedBy=&startDate=&endDate=",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "history"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "history"
+                  ],
                   "query": [
                     {
                       "key": "type",
@@ -5514,8 +6650,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/audit/logs?page=1&limit=50",
-              "host": ["{{baseUrl}}"],
-              "path": ["audit", "logs"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit",
+                "logs"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -5605,8 +6746,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/audit/logs/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["audit", "logs", ":id"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit",
+                "logs",
+                ":id"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -5649,8 +6796,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/audit/users/:userId/activity?page=1&limit=50",
-              "host": ["{{baseUrl}}"],
-              "path": ["audit", "users", ":userId", "activity"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit",
+                "users",
+                ":userId",
+                "activity"
+              ],
               "variable": [
                 {
                   "key": "userId",
@@ -5705,8 +6859,16 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/audit/entities/:entityType/:entityId/history?page=1&limit=50",
-              "host": ["{{baseUrl}}"],
-              "path": ["audit", "entities", ":entityType", ":entityId", "history"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit",
+                "entities",
+                ":entityType",
+                ":entityId",
+                "history"
+              ],
               "variable": [
                 {
                   "key": "entityType",
@@ -5772,8 +6934,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/report-templates?type=&activeOnly=&createdBy=",
-              "host": ["{{baseUrl}}"],
-              "path": ["report-templates"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "report-templates"
+              ],
               "query": [
                 {
                   "key": "type",
@@ -5829,8 +6995,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/report-templates/active",
-              "host": ["{{baseUrl}}"],
-              "path": ["report-templates", "active"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "report-templates",
+                "active"
+              ]
             },
             "description": "Get only active report templates"
           },
@@ -5866,8 +7037,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/report-templates/by-type/:type",
-              "host": ["{{baseUrl}}"],
-              "path": ["report-templates", "by-type", ":type"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "report-templates",
+                "by-type",
+                ":type"
+              ],
               "variable": [
                 {
                   "key": "type",
@@ -5924,8 +7101,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/report-templates",
-              "host": ["{{baseUrl}}"],
-              "path": ["report-templates"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "report-templates"
+              ]
             },
             "description": "Create a new report template"
           },
@@ -5975,8 +7156,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/report-templates/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["report-templates", ":id"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "report-templates",
+                ":id"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -6044,8 +7230,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/imports/preview",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports", "preview"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "imports",
+                    "preview"
+                  ]
                 },
                 "description": "Preview and validate import file without persisting. Returns validation results and preview data."
               },
@@ -6115,8 +7306,13 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/imports/execute",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports", "execute"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "imports",
+                    "execute"
+                  ]
                 },
                 "description": "Execute complete import process (validate + create + process) in one operation. Returns import batch ID and status."
               },
@@ -6175,8 +7371,12 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/imports",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "imports"
+                  ]
                 },
                 "description": "Create a new import batch. Returns batch ID for subsequent operations."
               },
@@ -6236,8 +7436,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/imports/{{importBatchId}}/validate",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports", "{{importBatchId}}", "validate"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "imports",
+                    "{{importBatchId}}",
+                    "validate"
+                  ],
                   "variable": [
                     {
                       "key": "importBatchId",
@@ -6293,8 +7499,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/imports/{{importBatchId}}/process",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports", "{{importBatchId}}", "process"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "imports",
+                    "{{importBatchId}}",
+                    "process"
+                  ],
                   "variable": [
                     {
                       "key": "importBatchId",
@@ -6346,8 +7558,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/imports/{{importBatchId}}/status",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports", "{{importBatchId}}", "status"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "imports",
+                    "{{importBatchId}}",
+                    "status"
+                  ],
                   "variable": [
                     {
                       "key": "importBatchId",
@@ -6409,8 +7627,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/imports/templates/{{importType}}?format=csv",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports", "templates", "{{importType}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "imports",
+                    "templates",
+                    "{{importType}}"
+                  ],
                   "query": [
                     {
                       "key": "format",
@@ -6471,8 +7695,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/imports/{{importBatchId}}/errors?format=csv",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["imports", "{{importBatchId}}", "errors"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "imports",
+                    "{{importBatchId}}",
+                    "errors"
+                  ],
                   "query": [
                     {
                       "key": "format",
@@ -6572,14 +7802,46 @@
                 }
               ],
               "request": {
-                "method": "GET",
-                "header": [],
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Organization-ID",
+                    "value": "{{organizationId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-User-ID",
+                    "value": "{{userId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
                 "url": {
                   "raw": "{{baseUrl}}/reports/inventory/available/export",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "inventory", "available", "export"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "available",
+                    "export"
+                  ]
                 },
-                "description": "Script to test all export formats. Modify the URL to test different report types. This is a template - copy and modify for each report type."
+                "description": "Script to test all export formats. Modify the URL to test different report types. This is a template - copy and modify for each report type.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"format\": \"{{reportFormat}}\",\n  \"parameters\": {\n    \"warehouseId\": \"{{warehouseId}}\",\n    \"productId\": \"{{productId}}\",\n    \"includeInactive\": false\n  },\n  \"options\": {\n    \"includeHeader\": true,\n    \"includeSummary\": true,\n    \"title\": \"Available Inventory Report\"\n  },\n  \"saveMetadata\": true\n}"
+                }
               }
             },
             {
@@ -6630,8 +7892,15 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/reports/inventory/available/stream",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["reports", "inventory", "available", "stream"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "inventory",
+                    "available",
+                    "stream"
+                  ]
                 },
                 "description": "Script to test stream endpoints with large datasets. Validates NDJSON format and performance."
               }

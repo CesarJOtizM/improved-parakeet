@@ -82,6 +82,7 @@ Colección completa con todos los endpoints del sistema:
 - ✅ Warehouses
 - ✅ Movements
 - ✅ Transfers
+- ✅ Stock
 - ✅ Sales
 - ✅ Returns
 - ✅ Reports (View, Stream, Export)
@@ -192,7 +193,6 @@ Si encuentras problemas:
 **Última actualización**: Diciembre 2024  
 **Versión**: 1.0.0  
 **Compatibilidad**: Postman v10+
-
 
 
 
