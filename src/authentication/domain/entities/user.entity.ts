@@ -26,10 +26,13 @@ export class User extends AggregateRoot<IUserProps> {
   }
 
   public static create(
-    props: Omit<IUserProps, 'passwordHash'> & { password: string },
+    props: Omit<IUserProps, 'passwordHash'> & { password: string; isPasswordHashed?: boolean },
     orgId: string
   ): User {
-    const passwordHash = Password.create(props.password);
+    // If password is already hashed, use createHashed; otherwise validate and create
+    const passwordHash = props.isPasswordHashed
+      ? Password.createHashed(props.password)
+      : Password.create(props.password);
     const userProps: IUserProps = {
       ...props,
       passwordHash,

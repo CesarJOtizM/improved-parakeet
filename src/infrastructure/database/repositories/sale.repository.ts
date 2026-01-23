@@ -10,7 +10,6 @@ import { ISaleRepository } from '@sale/domain/repositories/saleRepository.interf
 import { SaleNumber } from '@sale/domain/valueObjects/saleNumber.valueObject';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
 import { SaleStatus } from '@sale/domain/valueObjects/saleStatus.valueObject';
-import { pipe } from '@shared/utils/functional';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 import type { IPrismaSpecification } from '@shared/domain/specifications';
@@ -472,22 +471,6 @@ export class PrismaSaleRepository implements ISaleRepository {
     );
   }
 
-  private addLinesToSale(sale: Sale, lines: SaleLine[]): Sale {
-    // Add lines to sale (only works when status is DRAFT)
-    for (const line of lines) {
-      sale.addLine(line);
-    }
-    return sale;
-  }
-
-  private restoreSaleStatus(sale: Sale, actualStatus: SaleStatus): Sale {
-    // Restore the actual status if it's not DRAFT
-    if (actualStatus.getValue() !== 'DRAFT') {
-      (sale as unknown as { props: { status: SaleStatus } }).props.status = actualStatus;
-    }
-    return sale;
-  }
-
   private mapToEntity(saleData: {
     id: string;
     saleNumber: string;
@@ -514,9 +497,14 @@ export class PrismaSaleRepository implements ISaleRepository {
       orgId: string;
     }>;
   }): Sale {
-    // Use functional composition with pipe
     const valueObjects = this.createSaleValueObjects(saleData);
-    const sale = Sale.reconstitute(
+
+    // Create lines using functional approach
+    const lines = saleData.lines.map(lineData => this.createSaleLine(lineData));
+
+    // Use reconstitute with lines parameter to bypass addLine validation
+    // This is correct because we are reconstituting from database, not adding new lines
+    return Sale.reconstitute(
       {
         saleNumber: valueObjects.saleNumber,
         status: valueObjects.status,
@@ -530,17 +518,9 @@ export class PrismaSaleRepository implements ISaleRepository {
         movementId: valueObjects.movementId,
       },
       saleData.id,
-      saleData.orgId
+      saleData.orgId,
+      lines
     );
-
-    // Create lines using functional approach
-    const lines = saleData.lines.map(lineData => this.createSaleLine(lineData));
-
-    // Compose operations using pipe
-    return pipe(
-      (s: Sale) => this.addLinesToSale(s, lines),
-      (s: Sale) => this.restoreSaleStatus(s, valueObjects.status)
-    )(sale);
   }
 
   private mapToEntityWithoutLines(saleData: {

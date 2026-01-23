@@ -12,7 +12,6 @@ import { ReturnReason } from '@returns/domain/valueObjects/returnReason.valueObj
 import { ReturnStatus } from '@returns/domain/valueObjects/returnStatus.valueObject';
 import { ReturnType } from '@returns/domain/valueObjects/returnType.valueObject';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
-import { pipe } from '@shared/utils/functional';
 import { Money } from '@stock/domain/valueObjects/money.valueObject';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
@@ -480,22 +479,6 @@ export class PrismaReturnRepository implements IReturnRepository {
     );
   }
 
-  private addLinesToReturn(returnEntity: Return, lines: ReturnLine[]): Return {
-    // Add lines to return (only works when status is DRAFT)
-    for (const line of lines) {
-      returnEntity.addLine(line);
-    }
-    return returnEntity;
-  }
-
-  private restoreReturnStatus(returnEntity: Return, actualStatus: ReturnStatus): Return {
-    // Restore the actual status if it's not DRAFT
-    if (actualStatus.getValue() !== 'DRAFT') {
-      (returnEntity as unknown as { props: { status: ReturnStatus } }).props.status = actualStatus;
-    }
-    return returnEntity;
-  }
-
   private mapToEntity(returnData: {
     id: string;
     returnNumber: string;
@@ -525,9 +508,16 @@ export class PrismaReturnRepository implements IReturnRepository {
       orgId: string;
     }>;
   }): Return {
-    // Use functional composition with pipe
     const valueObjects = this.createReturnValueObjects(returnData);
-    const returnEntity = Return.reconstitute(
+
+    // Create lines using functional approach
+    const lines = returnData.lines.map(lineData =>
+      this.createReturnLine(lineData, valueObjects.type)
+    );
+
+    // Use reconstitute with lines parameter to bypass addLine validation
+    // This is correct because we are reconstituting from database, not adding new lines
+    return Return.reconstitute(
       {
         returnNumber: valueObjects.returnNumber,
         status: valueObjects.status,
@@ -543,19 +533,9 @@ export class PrismaReturnRepository implements IReturnRepository {
         createdBy: valueObjects.createdBy,
       },
       returnData.id,
-      returnData.orgId
+      returnData.orgId,
+      lines
     );
-
-    // Create lines using functional approach
-    const lines = returnData.lines.map(lineData =>
-      this.createReturnLine(lineData, valueObjects.type)
-    );
-
-    // Compose operations using pipe
-    return pipe(
-      (r: Return) => this.addLinesToReturn(r, lines),
-      (r: Return) => this.restoreReturnStatus(r, valueObjects.status)
-    )(returnEntity);
   }
 
   async findBySpecification(

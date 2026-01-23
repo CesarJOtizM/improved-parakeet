@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__mcp-server-supabase__list_projects",
+      "mcp__acp__Bash",
+      "mcp__mcp-server-supabase__list_tables",
+      "mcp__mcp-server-supabase__execute_sql",
+      "mcp__mcp-server-supabase__get_logs",
+      "mcp__acp__Edit"
+    ]
+  }
+}

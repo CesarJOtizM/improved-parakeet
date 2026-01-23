@@ -1,4 +1,5 @@
 import { User } from '@auth/domain/entities/user.entity';
+import { AuthenticationService } from '@auth/domain/services/authenticationService';
 import { UserManagementService } from '@auth/domain/services/userManagementService';
 import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
@@ -76,12 +77,16 @@ export class CreateUserUseCase {
       return err(new ConflictError('Username is already in use'));
     }
 
-    // Create user entity
+    // Hash the password before creating the user
+    const hashedPassword = await AuthenticationService.hashPassword(request.password);
+
+    // Create user entity with hashed password
     const user = User.create(
       {
         email: Email.create(request.email),
         username: request.username,
-        password: request.password,
+        password: hashedPassword,
+        isPasswordHashed: true,
         firstName: request.firstName,
         lastName: request.lastName,
         status: UserStatus.create('ACTIVE'),
