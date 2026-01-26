@@ -1,3 +1,4 @@
+import { UnitOfWork } from '@infrastructure/database/unitOfWork.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InventoryOutGeneratedEvent } from '@sale/domain/events/inventoryOutGenerated.event';
 import { InventoryIntegrationService } from '@sale/domain/services/inventoryIntegration.service';
@@ -6,6 +7,7 @@ import {
   BusinessRuleError,
   DomainError,
   err,
+  InsufficientStockError,
   NotFoundError,
   ok,
   Result,
@@ -13,7 +15,6 @@ import {
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISaleData } from './createSaleUseCase';
-import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
 import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 import type { IStockRepository } from '@stock/domain/repositories/stockRepository.interface';
@@ -32,12 +33,11 @@ export class ConfirmSaleUseCase {
   constructor(
     @Inject('SaleRepository')
     private readonly saleRepository: ISaleRepository,
-    @Inject('MovementRepository')
-    private readonly movementRepository: IMovementRepository,
     @Inject('StockRepository')
     private readonly stockRepository: IStockRepository,
     @Inject('DomainEventDispatcher')
-    private readonly eventDispatcher: IDomainEventDispatcher
+    private readonly eventDispatcher: IDomainEventDispatcher,
+    private readonly unitOfWork: UnitOfWork
   ) {}
 
   async execute(request: IConfirmSaleRequest): Promise<Result<IConfirmSaleResponse, DomainError>> {
@@ -58,7 +58,7 @@ export class ConfirmSaleUseCase {
       );
     }
 
-    // Validate stock availability
+    // Validate stock availability (pre-check before transaction)
     const stockValidation = await SaleValidationService.validateStockAvailability(
       sale,
       this.stockRepository
@@ -67,69 +67,147 @@ export class ConfirmSaleUseCase {
       return err(new BusinessRuleError(`Insufficient stock: ${stockValidation.errors.join(', ')}`));
     }
 
-    // Generate movement from sale (accepts DRAFT sales for MVP flow)
+    // Generate movement from sale
     const movement = InventoryIntegrationService.generateMovementFromSale(sale);
 
-    // Save movement in DRAFT state first
-    const savedMovement = await this.movementRepository.save(movement);
+    try {
+      // Execute all operations in a single atomic transaction
+      const { confirmedSale, postedMovement } = await this.unitOfWork.execute(async tx => {
+        // 1. Create and post movement atomically
+        const movementData = {
+          id: movement.id,
+          type: movement.type.getValue(),
+          status: 'POSTED', // Create directly as POSTED
+          warehouseId: movement.warehouseId,
+          reference: movement.reference || null,
+          reason: movement.reason || null,
+          notes: movement.note || null,
+          postedAt: new Date(),
+          createdBy: movement.createdBy,
+          orgId: movement.orgId,
+        };
 
-    // Post movement (returns new instance with events attached)
-    const postedMovementInstance = savedMovement.post();
-    const postedMovement = await this.movementRepository.save(postedMovementInstance);
+        const savedMovement = await tx.movement.create({
+          data: movementData,
+        });
 
-    // Dispatch movement domain events to update stock via MovementPostedEventHandler
-    await this.eventDispatcher.markAndDispatch(postedMovementInstance.domainEvents);
+        // 2. Create movement lines
+        const movementLines = movement.getLines();
+        if (movementLines.length > 0) {
+          await tx.movementLine.createMany({
+            data: movementLines.map(line => ({
+              id: line.id,
+              movementId: savedMovement.id,
+              productId: line.productId,
+              locationId: line.locationId || null,
+              quantity: Math.round(line.quantity.getNumericValue()),
+              unitCost: line.unitCost?.getAmount() || null,
+              currency: line.currency,
+              orgId: movement.orgId,
+            })),
+          });
+        }
 
-    // Confirm sale with movementId
-    sale.confirm(postedMovement.id);
+        // 3. Update stock atomically for each line (decrement for OUT movement)
+        for (const line of movementLines) {
+          const quantityValue = Math.round(line.quantity.getNumericValue());
+          const locationIdValue = line.locationId || null;
 
-    // Save sale
-    const confirmedSale = await this.saleRepository.save(sale);
+          const result = await tx.$executeRaw`
+            UPDATE "stock"
+            SET "quantity" = "quantity" - ${quantityValue}
+            WHERE "productId" = ${line.productId}
+              AND "warehouseId" = ${movement.warehouseId}
+              AND "locationId" IS NOT DISTINCT FROM ${locationIdValue}
+              AND "orgId" = ${movement.orgId}
+              AND "quantity" >= ${quantityValue}
+          `;
 
-    // Dispatch sale domain events
-    confirmedSale.markEventsForDispatch();
-    await this.eventDispatcher.dispatchEvents(confirmedSale.domainEvents);
-    confirmedSale.clearEvents();
+          if (result === 0) {
+            // Stock insufficient - transaction will be rolled back
+            throw new InsufficientStockError(
+              line.productId,
+              movement.warehouseId,
+              quantityValue,
+              undefined,
+              line.locationId
+            );
+          }
+        }
 
-    // Dispatch inventory out generated event
-    const inventoryEvent = new InventoryOutGeneratedEvent(
-      confirmedSale.id,
-      postedMovement.id,
-      confirmedSale.orgId
-    );
-    inventoryEvent.markForDispatch();
-    await this.eventDispatcher.dispatchEvents([inventoryEvent]);
+        // 4. Confirm sale with movement ID
+        const updatedSale = await tx.sale.update({
+          where: { id: sale.id },
+          data: {
+            status: 'CONFIRMED',
+            confirmedAt: new Date(),
+            movementId: savedMovement.id,
+          },
+          include: { lines: true },
+        });
 
-    this.logger.log('Sale confirmed successfully', {
-      saleId: confirmedSale.id,
-      saleNumber: confirmedSale.saleNumber.getValue(),
-      movementId: postedMovement.id,
-    });
+        return {
+          confirmedSale: updatedSale,
+          postedMovement: savedMovement,
+        };
+      });
 
-    const totalAmount = confirmedSale.getTotalAmount();
+      // Dispatch domain events AFTER successful transaction
+      sale.confirm(postedMovement.id);
+      sale.markEventsForDispatch();
+      await this.eventDispatcher.dispatchEvents(sale.domainEvents);
+      sale.clearEvents();
 
-    return ok({
-      success: true,
-      message: 'Sale confirmed successfully',
-      data: {
-        id: confirmedSale.id,
-        saleNumber: confirmedSale.saleNumber.getValue(),
-        status: confirmedSale.status.getValue(),
-        warehouseId: confirmedSale.warehouseId,
-        customerReference: confirmedSale.customerReference,
-        externalReference: confirmedSale.externalReference,
-        note: confirmedSale.note,
-        confirmedAt: confirmedSale.confirmedAt,
-        cancelledAt: confirmedSale.cancelledAt,
-        movementId: confirmedSale.movementId!,
-        createdBy: confirmedSale.createdBy,
-        orgId: confirmedSale.orgId,
-        createdAt: confirmedSale.createdAt,
-        updatedAt: confirmedSale.updatedAt,
-        totalAmount: totalAmount.getAmount(),
-        currency: totalAmount.getCurrency(),
-      },
-      timestamp: new Date().toISOString(),
-    });
+      // Dispatch inventory out generated event
+      const inventoryEvent = new InventoryOutGeneratedEvent(
+        confirmedSale.id,
+        postedMovement.id,
+        confirmedSale.orgId
+      );
+      inventoryEvent.markForDispatch();
+      await this.eventDispatcher.dispatchEvents([inventoryEvent]);
+
+      this.logger.log('Sale confirmed successfully', {
+        saleId: confirmedSale.id,
+        saleNumber: confirmedSale.saleNumber,
+        movementId: postedMovement.id,
+      });
+
+      // Calculate total from sale lines
+      const totalAmount = sale.getTotalAmount();
+
+      return ok({
+        success: true,
+        message: 'Sale confirmed successfully',
+        data: {
+          id: confirmedSale.id,
+          saleNumber: confirmedSale.saleNumber,
+          status: confirmedSale.status,
+          warehouseId: confirmedSale.warehouseId,
+          customerReference: confirmedSale.customerReference || undefined,
+          externalReference: confirmedSale.externalReference || undefined,
+          note: confirmedSale.note || undefined,
+          confirmedAt: confirmedSale.confirmedAt || undefined,
+          cancelledAt: confirmedSale.cancelledAt || undefined,
+          movementId: confirmedSale.movementId!,
+          createdBy: confirmedSale.createdBy,
+          orgId: confirmedSale.orgId,
+          createdAt: confirmedSale.createdAt,
+          updatedAt: confirmedSale.updatedAt,
+          totalAmount: totalAmount.getAmount(),
+          currency: totalAmount.getCurrency(),
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      if (error instanceof InsufficientStockError) {
+        return err(
+          new BusinessRuleError(
+            `Insufficient stock for product ${error.productId}: requested ${error.requestedQuantity}, available ${error.availableQuantity ?? 'unknown'}`
+          )
+        );
+      }
+      throw error;
+    }
   }
 }

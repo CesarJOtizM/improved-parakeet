@@ -10,13 +10,14 @@ import { StockUpdatedEvent } from '@movement/domain/events/stockUpdated.event';
 import { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
 import { MovementStatus } from '@movement/domain/valueObjects/movementStatus.valueObject';
 import { MovementType } from '@movement/domain/valueObjects/movementType.valueObject';
-import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
+import { DomainEventBus, EventIdempotencyService } from '@shared/domain/events';
 import { IStockRepository } from '@stock/domain/repositories/stockRepository.interface';
 
 describe('PPM Calculation Integration Tests', () => {
   let handler: MovementPostedEventHandler;
   let mockMovementRepository: jest.Mocked<IMovementRepository>;
   let mockStockRepository: jest.Mocked<IStockRepository>;
+  let mockIdempotencyService: jest.Mocked<EventIdempotencyService>;
   let eventBus: DomainEventBus;
 
   const testOrgId = 'test-org-123';
@@ -39,7 +40,16 @@ describe('PPM Calculation Integration Tests', () => {
       decrementStock: jest.fn(),
     } as any;
 
-    handler = new MovementPostedEventHandler(mockMovementRepository, mockStockRepository, eventBus);
+    mockIdempotencyService = {
+      tryMarkAsProcessed: jest.fn().mockResolvedValue(true),
+    } as any;
+
+    handler = new MovementPostedEventHandler(
+      mockMovementRepository,
+      mockStockRepository,
+      eventBus,
+      mockIdempotencyService
+    );
   });
 
   describe('PPM Calculation for Input Movements', () => {

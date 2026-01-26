@@ -4,8 +4,8 @@ import { PPMRecalculatedEvent } from '@movement/domain/events/ppmRecalculated.ev
 import { StockUpdatedEvent } from '@movement/domain/events/stockUpdated.event';
 import { calculatePPM } from '@movement/domain/services/ppmService';
 import { Injectable, Inject, Logger } from '@nestjs/common';
+import { DomainEventBus, EventIdempotencyService } from '@shared/domain/events';
 import { IDomainEventHandler } from '@shared/domain/events/domainEventBus.service';
-import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
 
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
 import type { IStockRepository } from '@stock/domain/repositories/stockRepository.interface';
@@ -19,7 +19,8 @@ export class MovementPostedEventHandler implements IDomainEventHandler<MovementP
     private readonly movementRepository: IMovementRepository,
     @Inject('StockRepository')
     private readonly stockRepository: IStockRepository,
-    private readonly eventBus: DomainEventBus
+    private readonly eventBus: DomainEventBus,
+    private readonly idempotencyService: EventIdempotencyService
   ) {}
 
   async handle(event: MovementPostedEvent): Promise<void> {
@@ -29,6 +30,20 @@ export class MovementPostedEventHandler implements IDomainEventHandler<MovementP
       warehouseId: event.warehouseId,
       orgId: event.orgId,
     });
+
+    // Check idempotency - prevent duplicate processing
+    const shouldProcess = await this.idempotencyService.tryMarkAsProcessed(
+      'MovementPostedEvent',
+      event.movementId,
+      event.orgId
+    );
+
+    if (!shouldProcess) {
+      this.logger.warn('MovementPosted event already processed, skipping', {
+        movementId: event.movementId,
+      });
+      return;
+    }
 
     try {
       // Retrieve the full movement entity

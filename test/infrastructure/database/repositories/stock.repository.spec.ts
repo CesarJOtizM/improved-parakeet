@@ -3,11 +3,12 @@ import { PrismaStockRepository } from '@infrastructure/database/repositories/sto
 import { Money } from '@inventory/stock/domain/valueObjects/money.valueObject';
 import { Quantity } from '@inventory/stock/domain/valueObjects/quantity.valueObject';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { InsufficientStockError, StockNotFoundError } from '@shared/domain/result';
 
 describe('PrismaStockRepository', () => {
   let repository: PrismaStockRepository;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockPrismaService: { stock: Record<string, jest.Mock<any>> };
+  let mockPrismaService: { stock: Record<string, jest.Mock<any>>; $executeRaw: jest.Mock<any> };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockProductRepository: Record<string, jest.Mock<any>>;
 
@@ -38,6 +39,7 @@ describe('PrismaStockRepository', () => {
         update: jest.fn(),
         delete: jest.fn(),
       },
+      $executeRaw: jest.fn(),
     };
 
     mockProductRepository = {
@@ -224,14 +226,9 @@ describe('PrismaStockRepository', () => {
   });
 
   describe('incrementStock', () => {
-    it('Given: existing stock When: incrementing Then: should add to current quantity', async () => {
+    it('Given: valid parameters When: incrementing Then: should execute atomic upsert', async () => {
       // Arrange
-      mockPrismaService.stock.findFirst.mockResolvedValue(mockStockData);
-      mockProductRepository.findById.mockResolvedValue(mockProduct);
-      mockPrismaService.stock.update.mockResolvedValue({
-        ...mockStockData,
-        quantity: 150,
-      });
+      mockPrismaService.$executeRaw.mockResolvedValue(1);
 
       const incrementQuantity = Quantity.create(50, 0);
 
@@ -239,18 +236,12 @@ describe('PrismaStockRepository', () => {
       await repository.incrementStock('product-123', 'warehouse-123', 'org-123', incrementQuantity);
 
       // Assert
-      expect(mockPrismaService.stock.update).toHaveBeenCalled();
+      expect(mockPrismaService.$executeRaw).toHaveBeenCalled();
     });
 
-    it('Given: no existing stock When: incrementing Then: should create new stock with zero cost', async () => {
+    it('Given: no existing stock When: incrementing Then: should create new stock via upsert', async () => {
       // Arrange
-      mockPrismaService.stock.findFirst.mockResolvedValue(null);
-      mockProductRepository.findById.mockResolvedValue(mockProduct);
-      mockPrismaService.stock.create.mockResolvedValue({
-        ...mockStockData,
-        quantity: 50,
-        unitCost: 0,
-      });
+      mockPrismaService.$executeRaw.mockResolvedValue(1);
 
       const incrementQuantity = Quantity.create(50, 0);
 
@@ -258,12 +249,12 @@ describe('PrismaStockRepository', () => {
       await repository.incrementStock('product-123', 'warehouse-123', 'org-123', incrementQuantity);
 
       // Assert
-      expect(mockPrismaService.stock.create).toHaveBeenCalled();
+      expect(mockPrismaService.$executeRaw).toHaveBeenCalled();
     });
 
     it('Given: database error When: incrementing Then: should throw error', async () => {
       // Arrange
-      mockPrismaService.stock.findFirst.mockRejectedValue(new Error('Increment failed'));
+      mockPrismaService.$executeRaw.mockRejectedValue(new Error('Increment failed'));
 
       const incrementQuantity = Quantity.create(50, 0);
 
@@ -272,17 +263,31 @@ describe('PrismaStockRepository', () => {
         repository.incrementStock('product-123', 'warehouse-123', 'org-123', incrementQuantity)
       ).rejects.toThrow('Increment failed');
     });
+
+    it('Given: locationId provided When: incrementing Then: should include locationId in query', async () => {
+      // Arrange
+      mockPrismaService.$executeRaw.mockResolvedValue(1);
+
+      const incrementQuantity = Quantity.create(50, 0);
+
+      // Act
+      await repository.incrementStock(
+        'product-123',
+        'warehouse-123',
+        'org-123',
+        incrementQuantity,
+        'location-123'
+      );
+
+      // Assert
+      expect(mockPrismaService.$executeRaw).toHaveBeenCalled();
+    });
   });
 
   describe('decrementStock', () => {
-    it('Given: existing stock When: decrementing Then: should subtract from quantity', async () => {
+    it('Given: sufficient stock When: decrementing Then: should execute atomic update', async () => {
       // Arrange
-      mockPrismaService.stock.findFirst.mockResolvedValue(mockStockData);
-      mockProductRepository.findById.mockResolvedValue(mockProduct);
-      mockPrismaService.stock.update.mockResolvedValue({
-        ...mockStockData,
-        quantity: 50,
-      });
+      mockPrismaService.$executeRaw.mockResolvedValue(1); // 1 row affected = success
 
       const decrementQuantity = Quantity.create(50, 0);
 
@@ -290,24 +295,41 @@ describe('PrismaStockRepository', () => {
       await repository.decrementStock('product-123', 'warehouse-123', 'org-123', decrementQuantity);
 
       // Assert
-      expect(mockPrismaService.stock.update).toHaveBeenCalled();
+      expect(mockPrismaService.$executeRaw).toHaveBeenCalled();
     });
 
-    it('Given: no existing stock When: decrementing Then: should throw error', async () => {
+    it('Given: no existing stock When: decrementing Then: should throw StockNotFoundError', async () => {
       // Arrange
-      mockPrismaService.stock.findFirst.mockResolvedValue(null);
+      mockPrismaService.$executeRaw.mockResolvedValue(0); // 0 rows affected
+      mockPrismaService.stock.findFirst.mockResolvedValue(null); // Stock doesn't exist
 
       const decrementQuantity = Quantity.create(50, 0);
 
       // Act & Assert
       await expect(
         repository.decrementStock('product-123', 'warehouse-123', 'org-123', decrementQuantity)
-      ).rejects.toThrow('Stock not found for product product-123 in warehouse warehouse-123');
+      ).rejects.toThrow(StockNotFoundError);
+    });
+
+    it('Given: insufficient stock When: decrementing Then: should throw InsufficientStockError', async () => {
+      // Arrange
+      mockPrismaService.$executeRaw.mockResolvedValue(0); // 0 rows affected (quantity check failed)
+      mockPrismaService.stock.findFirst.mockResolvedValue({
+        ...mockStockData,
+        quantity: 30, // Only 30 available, trying to decrement 50
+      });
+
+      const decrementQuantity = Quantity.create(50, 0);
+
+      // Act & Assert
+      await expect(
+        repository.decrementStock('product-123', 'warehouse-123', 'org-123', decrementQuantity)
+      ).rejects.toThrow(InsufficientStockError);
     });
 
     it('Given: database error When: decrementing Then: should throw error', async () => {
       // Arrange
-      mockPrismaService.stock.findFirst.mockRejectedValue(new Error('Decrement failed'));
+      mockPrismaService.$executeRaw.mockRejectedValue(new Error('Decrement failed'));
 
       const decrementQuantity = Quantity.create(50, 0);
 
@@ -315,6 +337,25 @@ describe('PrismaStockRepository', () => {
       await expect(
         repository.decrementStock('product-123', 'warehouse-123', 'org-123', decrementQuantity)
       ).rejects.toThrow('Decrement failed');
+    });
+
+    it('Given: locationId provided When: decrementing Then: should include locationId in query', async () => {
+      // Arrange
+      mockPrismaService.$executeRaw.mockResolvedValue(1);
+
+      const decrementQuantity = Quantity.create(50, 0);
+
+      // Act
+      await repository.decrementStock(
+        'product-123',
+        'warehouse-123',
+        'org-123',
+        decrementQuantity,
+        'location-123'
+      );
+
+      // Assert
+      expect(mockPrismaService.$executeRaw).toHaveBeenCalled();
     });
   });
 

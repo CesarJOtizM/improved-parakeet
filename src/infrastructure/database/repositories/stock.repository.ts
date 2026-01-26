@@ -2,6 +2,7 @@ import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Money } from '@inventory/stock/domain/valueObjects/money.valueObject';
 import { Quantity } from '@inventory/stock/domain/valueObjects/quantity.valueObject';
 import { Injectable, Inject, Logger, Optional } from '@nestjs/common';
+import { InsufficientStockError, StockNotFoundError } from '@shared/domain/result';
 import {
   IStockData,
   IStockFilters,
@@ -170,6 +171,10 @@ export class PrismaStockRepository implements IStockRepository {
     }
   }
 
+  /**
+   * Atomically increments stock quantity using SQL to prevent race conditions.
+   * If the stock record doesn't exist, it creates one with the given quantity.
+   */
   async incrementStock(
     productId: string,
     warehouseId: string,
@@ -178,25 +183,23 @@ export class PrismaStockRepository implements IStockRepository {
     locationId?: string
   ): Promise<void> {
     try {
-      const currentStock = await this.getStockWithCost(productId, warehouseId, orgId, locationId);
+      const quantityValue = Math.round(quantity.getNumericValue());
+      const locationIdValue = locationId ?? null;
 
-      if (currentStock) {
-        const newQuantity = currentStock.quantity.add(quantity);
-        await this.updateStock(
-          productId,
-          warehouseId,
-          orgId,
-          newQuantity,
-          currentStock.averageCost,
-          locationId
-        );
-      } else {
-        // Create new stock record with zero cost
-        const precision = await this.getProductPrecision(productId, orgId);
-        const newQuantity = Quantity.create(quantity.getNumericValue(), precision);
-        const zeroCost = Money.create(0, 'COP', 2);
-        await this.updateStock(productId, warehouseId, orgId, newQuantity, zeroCost, locationId);
-      }
+      // Use atomic UPSERT operation
+      await this.prisma.$executeRaw`
+        INSERT INTO "stock" ("id", "productId", "warehouseId", "locationId", "orgId", "quantity", "unitCost")
+        VALUES (gen_random_uuid()::TEXT, ${productId}, ${warehouseId}, ${locationIdValue}, ${orgId}, ${quantityValue}, 0)
+        ON CONFLICT ("productId", "warehouseId", "locationId", "orgId")
+        DO UPDATE SET "quantity" = "stock"."quantity" + ${quantityValue}
+      `;
+
+      this.logger.debug('Stock incremented atomically', {
+        productId,
+        warehouseId,
+        locationId: locationIdValue,
+        quantity: quantityValue,
+      });
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Error incrementing stock: ${error.message}`);
@@ -207,6 +210,10 @@ export class PrismaStockRepository implements IStockRepository {
     }
   }
 
+  /**
+   * Atomically decrements stock quantity using SQL to prevent race conditions.
+   * Throws an error if the stock record doesn't exist or if there's insufficient stock.
+   */
   async decrementStock(
     productId: string,
     warehouseId: string,
@@ -215,21 +222,51 @@ export class PrismaStockRepository implements IStockRepository {
     locationId?: string
   ): Promise<void> {
     try {
-      const currentStock = await this.getStockWithCost(productId, warehouseId, orgId, locationId);
+      const quantityValue = Math.round(quantity.getNumericValue());
+      const locationIdValue = locationId ?? null;
 
-      if (!currentStock) {
-        throw new Error(`Stock not found for product ${productId} in warehouse ${warehouseId}`);
+      // Use atomic UPDATE with quantity check to prevent negative stock
+      const result = await this.prisma.$executeRaw`
+        UPDATE "stock"
+        SET "quantity" = "quantity" - ${quantityValue}
+        WHERE "productId" = ${productId}
+          AND "warehouseId" = ${warehouseId}
+          AND "locationId" IS NOT DISTINCT FROM ${locationIdValue}
+          AND "orgId" = ${orgId}
+          AND "quantity" >= ${quantityValue}
+      `;
+
+      if (result === 0) {
+        // Check if stock exists to provide better error message
+        const existingStock = await this.prisma.stock.findFirst({
+          where: {
+            productId,
+            warehouseId,
+            orgId,
+            locationId: locationIdValue,
+          },
+          select: { quantity: true },
+        });
+
+        if (!existingStock) {
+          throw new StockNotFoundError(productId, warehouseId, locationId);
+        }
+
+        throw new InsufficientStockError(
+          productId,
+          warehouseId,
+          quantityValue,
+          Number(existingStock.quantity),
+          locationId
+        );
       }
 
-      const newQuantity = currentStock.quantity.subtract(quantity);
-      await this.updateStock(
+      this.logger.debug('Stock decremented atomically', {
         productId,
         warehouseId,
-        orgId,
-        newQuantity,
-        currentStock.averageCost,
-        locationId
-      );
+        locationId: locationIdValue,
+        quantity: quantityValue,
+      });
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Error decrementing stock: ${error.message}`);

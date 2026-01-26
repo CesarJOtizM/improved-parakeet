@@ -80,3 +80,57 @@ export class RateLimitError extends DomainError {
     super(message, 'RATE_LIMIT_EXCEEDED');
   }
 }
+
+/**
+ * Insufficient stock error - thrown when attempting to decrement stock below zero
+ */
+export class InsufficientStockError extends DomainError {
+  public readonly productId: string;
+  public readonly warehouseId: string;
+  public readonly locationId?: string;
+  public readonly requestedQuantity: number;
+  public readonly availableQuantity?: number;
+
+  constructor(
+    productId: string,
+    warehouseId: string,
+    requestedQuantity: number,
+    availableQuantity?: number,
+    locationId?: string
+  ) {
+    const locationInfo = locationId ? ` at location ${locationId}` : '';
+    const availableInfo =
+      availableQuantity !== undefined ? `. Available: ${availableQuantity}` : '';
+    super(
+      `Insufficient stock for product ${productId} in warehouse ${warehouseId}${locationInfo}. Requested: ${requestedQuantity}${availableInfo}`,
+      'INSUFFICIENT_STOCK',
+      { productId, warehouseId, locationId, requestedQuantity, availableQuantity }
+    );
+    this.productId = productId;
+    this.warehouseId = warehouseId;
+    this.locationId = locationId;
+    this.requestedQuantity = requestedQuantity;
+    this.availableQuantity = availableQuantity;
+  }
+}
+
+/**
+ * Stock not found error - thrown when stock record doesn't exist
+ */
+export class StockNotFoundError extends DomainError {
+  public readonly productId: string;
+  public readonly warehouseId: string;
+  public readonly locationId?: string;
+
+  constructor(productId: string, warehouseId: string, locationId?: string) {
+    const locationInfo = locationId ? ` at location ${locationId}` : '';
+    super(
+      `Stock not found for product ${productId} in warehouse ${warehouseId}${locationInfo}`,
+      'STOCK_NOT_FOUND',
+      { productId, warehouseId, locationId }
+    );
+    this.productId = productId;
+    this.warehouseId = warehouseId;
+    this.locationId = locationId;
+  }
+}

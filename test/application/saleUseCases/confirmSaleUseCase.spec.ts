@@ -1,4 +1,5 @@
 import { ConfirmSaleUseCase } from '@application/saleUseCases/confirmSaleUseCase';
+import { UnitOfWork } from '@infrastructure/database/unitOfWork.service';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Movement } from '@movement/domain/entities/movement.entity';
 import { MovementStatus } from '@movement/domain/valueObjects/movementStatus.valueObject';
@@ -11,7 +12,6 @@ import { SaleMapper } from '@sale/mappers';
 import { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 import { BusinessRuleError, NotFoundError } from '@shared/domain/result/domainError';
 
-import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
 import type { IStockRepository } from '@stock/domain/repositories/stockRepository.interface';
 
@@ -22,9 +22,9 @@ describe('ConfirmSaleUseCase', () => {
 
   let useCase: ConfirmSaleUseCase;
   let mockSaleRepository: jest.Mocked<ISaleRepository>;
-  let mockMovementRepository: jest.Mocked<IMovementRepository>;
   let mockStockRepository: jest.Mocked<IStockRepository>;
   let mockEventDispatcher: jest.Mocked<IDomainEventDispatcher>;
+  let mockUnitOfWork: jest.Mocked<UnitOfWork>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -41,24 +41,10 @@ describe('ConfirmSaleUseCase', () => {
       findByWarehouse: jest.fn(),
       findByDateRange: jest.fn(),
       getLastSaleNumberForYear: jest.fn(),
+      getNextSaleNumber: jest.fn(),
       findByMovementId: jest.fn(),
+      addLine: jest.fn(),
     } as jest.Mocked<ISaleRepository>;
-
-    mockMovementRepository = {
-      save: jest.fn(),
-      findById: jest.fn(),
-      findAll: jest.fn(),
-      findBySpecification: jest.fn(),
-      exists: jest.fn(),
-      delete: jest.fn(),
-      findByWarehouse: jest.fn(),
-      findByStatus: jest.fn(),
-      findByType: jest.fn(),
-      findByDateRange: jest.fn(),
-      findByProduct: jest.fn(),
-      findDraftMovements: jest.fn(),
-      findPostedMovements: jest.fn(),
-    } as jest.Mocked<IMovementRepository>;
 
     mockStockRepository = {
       getStockQuantity: jest.fn(),
@@ -73,11 +59,15 @@ describe('ConfirmSaleUseCase', () => {
       markAndDispatch: jest.fn().mockResolvedValue(undefined as never),
     } as jest.Mocked<IDomainEventDispatcher>;
 
+    mockUnitOfWork = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<UnitOfWork>;
+
     useCase = new ConfirmSaleUseCase(
       mockSaleRepository,
-      mockMovementRepository,
       mockStockRepository,
-      mockEventDispatcher
+      mockEventDispatcher,
+      mockUnitOfWork
     );
   });
 
@@ -97,6 +87,41 @@ describe('ConfirmSaleUseCase', () => {
     it('Given: draft sale with valid stock When: confirming sale Then: should return success result', async () => {
       // Arrange
       const mockSale = createMockSale();
+      // Add a mock line to the sale so it can be confirmed
+      const mockSaleLine = {
+        id: 'line-123',
+        productId: 'product-123',
+        locationId: 'location-123',
+        quantity: { isPositive: () => true, getNumericValue: () => 5 },
+        getTotalPrice: () => ({ getAmount: () => 100, getCurrency: () => 'COP' }),
+        unitPrice: { getAmount: () => 20 },
+        unitCost: { getAmount: () => 15 },
+        currency: 'COP',
+      };
+      (
+        mockSale as unknown as {
+          lines: unknown[];
+          getLines: () => unknown[];
+          getTotalAmount: () => unknown;
+        }
+      ).lines = [mockSaleLine];
+      (
+        mockSale as unknown as {
+          lines: unknown[];
+          getLines: () => unknown[];
+          getTotalAmount: () => unknown;
+        }
+      ).getLines = jest.fn<() => unknown[]>().mockReturnValue([mockSaleLine]);
+      (
+        mockSale as unknown as {
+          lines: unknown[];
+          getLines: () => unknown[];
+          getTotalAmount: () => unknown;
+        }
+      ).getTotalAmount = jest
+        .fn()
+        .mockReturnValue({ getAmount: () => 100, getCurrency: () => 'COP' });
+
       mockSaleRepository.findById.mockResolvedValue(mockSale);
 
       jest.spyOn(SaleValidationService, 'validateSaleCanBeConfirmed').mockReturnValue({
@@ -123,14 +148,36 @@ describe('ConfirmSaleUseCase', () => {
         .spyOn(InventoryIntegrationService, 'generateMovementFromSale')
         .mockReturnValue(mockMovement);
 
-      const postedMovement = { ...mockMovement, id: mockMovementId, post: () => mockMovement };
-      mockMovementRepository.save.mockResolvedValue(
-        postedMovement as unknown as typeof mockMovement
-      );
-
-      const confirmedSale = mockSale;
-      confirmedSale.confirm = jest.fn();
-      mockSaleRepository.save.mockResolvedValue(confirmedSale);
+      // Mock unitOfWork.execute to return the confirmed sale and posted movement
+      mockUnitOfWork.execute.mockImplementation(async _callback => {
+        // Return mock data that simulates the transaction result
+        return {
+          confirmedSale: {
+            id: mockSaleId,
+            saleNumber: 'SALE-2025-001',
+            status: 'CONFIRMED',
+            warehouseId: 'warehouse-123',
+            customerReference: null,
+            externalReference: null,
+            note: null,
+            confirmedAt: new Date(),
+            cancelledAt: null,
+            movementId: mockMovementId,
+            createdBy: 'user-123',
+            orgId: mockOrgId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            lines: [],
+          },
+          postedMovement: {
+            id: mockMovementId,
+            type: 'OUT',
+            status: 'POSTED',
+            warehouseId: 'warehouse-123',
+            orgId: mockOrgId,
+          },
+        };
+      });
 
       const request = {
         id: mockSaleId,

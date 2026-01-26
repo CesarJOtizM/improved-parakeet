@@ -2,11 +2,14 @@ import { AddSaleLineUseCase } from '@application/saleUseCases/addSaleLineUseCase
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Product } from '@product/domain/entities/product.entity';
 import { ProductMapper } from '@product/mappers';
-import { Sale } from '@sale/domain/entities/sale.entity';
-import { SaleNumber } from '@sale/domain/valueObjects/saleNumber.valueObject';
-import { SaleMapper } from '@sale/mappers';
-import { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
-import { NotFoundError, ValidationError } from '@shared/domain/result/domainError';
+import { SaleLine } from '@sale/domain/entities/saleLine.entity';
+import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
+import {
+  BusinessRuleError,
+  NotFoundError,
+  ValidationError,
+} from '@shared/domain/result/domainError';
+import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
@@ -19,7 +22,6 @@ describe('AddSaleLineUseCase', () => {
   let useCase: AddSaleLineUseCase;
   let mockSaleRepository: jest.Mocked<ISaleRepository>;
   let mockProductRepository: jest.Mocked<IProductRepository>;
-  let mockEventDispatcher: jest.Mocked<IDomainEventDispatcher>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -37,6 +39,8 @@ describe('AddSaleLineUseCase', () => {
       findByDateRange: jest.fn(),
       getLastSaleNumberForYear: jest.fn(),
       findByMovementId: jest.fn(),
+      getNextSaleNumber: jest.fn(),
+      addLine: jest.fn(),
     } as jest.Mocked<ISaleRepository>;
 
     mockProductRepository = {
@@ -54,32 +58,10 @@ describe('AddSaleLineUseCase', () => {
       existsBySku: jest.fn(),
     } as jest.Mocked<IProductRepository>;
 
-    mockEventDispatcher = {
-      dispatchEvents: jest.fn().mockResolvedValue(undefined as never),
-      markAndDispatch: jest.fn().mockResolvedValue(undefined as never),
-    } as jest.Mocked<IDomainEventDispatcher>;
-
-    useCase = new AddSaleLineUseCase(
-      mockSaleRepository,
-      mockProductRepository,
-      mockEventDispatcher
-    );
+    useCase = new AddSaleLineUseCase(mockSaleRepository, mockProductRepository);
   });
 
   describe('execute', () => {
-    const createMockSale = () => {
-      const props = SaleMapper.toDomainProps(
-        {
-          warehouseId: 'warehouse-123',
-          createdBy: 'user-123',
-        },
-        SaleNumber.create(2025, 1)
-      );
-      const sale = Sale.reconstitute(props, mockSaleId, mockOrgId);
-      sale.addLine = jest.fn();
-      return sale;
-    };
-
     const createMockProduct = () => {
       const props = ProductMapper.toDomainProps({
         sku: 'PROD-001',
@@ -89,14 +71,26 @@ describe('AddSaleLineUseCase', () => {
       return Product.create(props, mockOrgId);
     };
 
+    const createMockSaleLine = () => {
+      return SaleLine.reconstitute(
+        {
+          productId: mockProductId,
+          locationId: 'location-123',
+          quantity: Quantity.create(10, 6),
+          salePrice: SalePrice.create(100, 'COP', 2),
+        },
+        'line-123',
+        mockOrgId
+      );
+    };
+
     it('Given: existing sale and product When: adding line Then: should return success result', async () => {
       // Arrange
-      const mockSale = createMockSale();
       const mockProduct = createMockProduct();
+      const mockSavedLine = createMockSaleLine();
 
-      mockSaleRepository.findById.mockResolvedValue(mockSale);
       mockProductRepository.findById.mockResolvedValue(mockProduct);
-      mockSaleRepository.save.mockResolvedValue(mockSale);
+      mockSaleRepository.addLine.mockResolvedValue(mockSavedLine);
 
       const request = {
         saleId: mockSaleId,
@@ -117,17 +111,23 @@ describe('AddSaleLineUseCase', () => {
         value => {
           expect(value.success).toBe(true);
           expect(value.message).toBe('Line added to sale successfully');
+          expect(value.data.productId).toBe(mockProductId);
+          expect(value.data.quantity).toBe(10);
         },
         () => {
           throw new Error('Expected Ok result');
         }
       );
-      expect(mockSaleRepository.save).toHaveBeenCalledTimes(1);
+      expect(mockSaleRepository.addLine).toHaveBeenCalledTimes(1);
     });
 
     it('Given: non-existent sale When: adding line Then: should return NotFoundError', async () => {
       // Arrange
-      mockSaleRepository.findById.mockResolvedValue(null);
+      const mockProduct = createMockProduct();
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+      mockSaleRepository.addLine.mockRejectedValue(
+        new NotFoundError('Sale with ID non-existent-id not found')
+      );
 
       const request = {
         saleId: 'non-existent-id',
@@ -155,8 +155,6 @@ describe('AddSaleLineUseCase', () => {
 
     it('Given: non-existent product When: adding line Then: should return ValidationError', async () => {
       // Arrange
-      const mockSale = createMockSale();
-      mockSaleRepository.findById.mockResolvedValue(mockSale);
       mockProductRepository.findById.mockResolvedValue(null);
 
       const request = {
@@ -179,6 +177,38 @@ describe('AddSaleLineUseCase', () => {
         },
         error => {
           expect(error).toBeInstanceOf(ValidationError);
+        }
+      );
+    });
+
+    it('Given: sale not in DRAFT status When: adding line Then: should return BusinessRuleError', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+      mockSaleRepository.addLine.mockRejectedValue(
+        new BusinessRuleError('Cannot add lines to sale in CONFIRMED status')
+      );
+
+      const request = {
+        saleId: mockSaleId,
+        productId: mockProductId,
+        locationId: 'location-123',
+        quantity: 10,
+        salePrice: 100,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(BusinessRuleError);
         }
       );
     });

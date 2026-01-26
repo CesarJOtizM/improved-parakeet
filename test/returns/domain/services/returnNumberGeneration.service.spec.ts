@@ -17,6 +17,8 @@ describe('ReturnNumberGenerationService', () => {
       exists: jest.fn(),
       findByReturnNumber: jest.fn(),
       getLastReturnNumberForYear: jest.fn(),
+      getNextReturnNumber: jest.fn(),
+      addLine: jest.fn(),
     } as unknown as jest.Mocked<IReturnRepository>;
   });
 
@@ -24,7 +26,7 @@ describe('ReturnNumberGenerationService', () => {
     it('Given: no existing returns for the year When: generating next return number Then: should return sequence 001', async () => {
       // Arrange
       const currentYear = new Date().getFullYear();
-      mockRepository.getLastReturnNumberForYear.mockResolvedValue(null);
+      mockRepository.getNextReturnNumber.mockResolvedValue(`RETURN-${currentYear}-001`);
 
       // Act
       const result = await ReturnNumberGenerationService.generateNextReturnNumber(
@@ -34,16 +36,13 @@ describe('ReturnNumberGenerationService', () => {
 
       // Assert
       expect(result.getValue()).toBe(`RETURN-${currentYear}-001`);
-      expect(mockRepository.getLastReturnNumberForYear).toHaveBeenCalledWith(
-        currentYear,
-        mockOrgId
-      );
+      expect(mockRepository.getNextReturnNumber).toHaveBeenCalledWith(mockOrgId, currentYear);
     });
 
     it('Given: existing return number 001 for the year When: generating next return number Then: should return sequence 002', async () => {
       // Arrange
       const currentYear = new Date().getFullYear();
-      mockRepository.getLastReturnNumberForYear.mockResolvedValue(`RETURN-${currentYear}-001`);
+      mockRepository.getNextReturnNumber.mockResolvedValue(`RETURN-${currentYear}-002`);
 
       // Act
       const result = await ReturnNumberGenerationService.generateNextReturnNumber(
@@ -58,7 +57,7 @@ describe('ReturnNumberGenerationService', () => {
     it('Given: existing return number 500 for the year When: generating next return number Then: should return sequence 501', async () => {
       // Arrange
       const currentYear = new Date().getFullYear();
-      mockRepository.getLastReturnNumberForYear.mockResolvedValue(`RETURN-${currentYear}-500`);
+      mockRepository.getNextReturnNumber.mockResolvedValue(`RETURN-${currentYear}-501`);
 
       // Act
       const result = await ReturnNumberGenerationService.generateNextReturnNumber(
@@ -70,52 +69,10 @@ describe('ReturnNumberGenerationService', () => {
       expect(result.getValue()).toBe(`RETURN-${currentYear}-501`);
     });
 
-    it('Given: existing return number from different year When: generating next return number Then: should return sequence 001', async () => {
+    it('Given: sequence at 999 When: generating next return number Then: should return sequence 999', async () => {
       // Arrange
       const currentYear = new Date().getFullYear();
-      const lastYear = currentYear - 1;
-      mockRepository.getLastReturnNumberForYear.mockResolvedValue(`RETURN-${lastYear}-999`);
-
-      // Act
-      const result = await ReturnNumberGenerationService.generateNextReturnNumber(
-        mockOrgId,
-        mockRepository
-      );
-
-      // Assert
-      expect(result.getValue()).toBe(`RETURN-${currentYear}-001`);
-    });
-
-    it('Given: invalid return number format in repository When: generating next return number Then: should return sequence 001', async () => {
-      // Arrange
-      const currentYear = new Date().getFullYear();
-      mockRepository.getLastReturnNumberForYear.mockResolvedValue('INVALID-FORMAT');
-
-      // Act
-      const result = await ReturnNumberGenerationService.generateNextReturnNumber(
-        mockOrgId,
-        mockRepository
-      );
-
-      // Assert
-      expect(result.getValue()).toBe(`RETURN-${currentYear}-001`);
-    });
-
-    it('Given: sequence at 999 When: generating next return number Then: should throw error', async () => {
-      // Arrange
-      const currentYear = new Date().getFullYear();
-      mockRepository.getLastReturnNumberForYear.mockResolvedValue(`RETURN-${currentYear}-999`);
-
-      // Act & Assert
-      await expect(
-        ReturnNumberGenerationService.generateNextReturnNumber(mockOrgId, mockRepository)
-      ).rejects.toThrow(`Return sequence for year ${currentYear} exceeds maximum (999)`);
-    });
-
-    it('Given: sequence at 998 When: generating next return number Then: should return sequence 999', async () => {
-      // Arrange
-      const currentYear = new Date().getFullYear();
-      mockRepository.getLastReturnNumberForYear.mockResolvedValue(`RETURN-${currentYear}-998`);
+      mockRepository.getNextReturnNumber.mockResolvedValue(`RETURN-${currentYear}-999`);
 
       // Act
       const result = await ReturnNumberGenerationService.generateNextReturnNumber(
@@ -127,10 +84,23 @@ describe('ReturnNumberGenerationService', () => {
       expect(result.getValue()).toBe(`RETURN-${currentYear}-999`);
     });
 
+    it('Given: repository throws error When: generating next return number Then: should propagate error', async () => {
+      // Arrange
+      const currentYear = new Date().getFullYear();
+      mockRepository.getNextReturnNumber.mockRejectedValue(
+        new Error(`Return sequence for year ${currentYear} exceeds maximum (999)`)
+      );
+
+      // Act & Assert
+      await expect(
+        ReturnNumberGenerationService.generateNextReturnNumber(mockOrgId, mockRepository)
+      ).rejects.toThrow(`Return sequence for year ${currentYear} exceeds maximum (999)`);
+    });
+
     it('Given: return number with leading zeros When: generating next return number Then: should handle correctly', async () => {
       // Arrange
       const currentYear = new Date().getFullYear();
-      mockRepository.getLastReturnNumberForYear.mockResolvedValue(`RETURN-${currentYear}-009`);
+      mockRepository.getNextReturnNumber.mockResolvedValue(`RETURN-${currentYear}-010`);
 
       // Act
       const result = await ReturnNumberGenerationService.generateNextReturnNumber(
@@ -145,7 +115,7 @@ describe('ReturnNumberGenerationService', () => {
     it('Given: return number with mid-range sequence When: generating next return number Then: should format with leading zeros', async () => {
       // Arrange
       const currentYear = new Date().getFullYear();
-      mockRepository.getLastReturnNumberForYear.mockResolvedValue(`RETURN-${currentYear}-099`);
+      mockRepository.getNextReturnNumber.mockResolvedValue(`RETURN-${currentYear}-100`);
 
       // Act
       const result = await ReturnNumberGenerationService.generateNextReturnNumber(

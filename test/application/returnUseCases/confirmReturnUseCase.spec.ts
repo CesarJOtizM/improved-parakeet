@@ -1,4 +1,5 @@
 import { ConfirmReturnUseCase } from '@application/returnUseCases/confirmReturnUseCase';
+import { UnitOfWork } from '@infrastructure/database/unitOfWork.service';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Movement } from '@movement/domain/entities/movement.entity';
 import { Return } from '@returns/domain/entities/return.entity';
@@ -11,17 +12,17 @@ import { BusinessRuleError, NotFoundError } from '@shared/domain/result/domainEr
 
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
 import type { IReturnRepository } from '@returns/domain/repositories/returnRepository.interface';
-import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
 
 describe('ConfirmReturnUseCase', () => {
   const mockOrgId = 'test-org-id';
   const mockReturnId = 'return-123';
+  const mockMovementId = 'movement-123';
 
   let useCase: ConfirmReturnUseCase;
   let mockReturnRepository: jest.Mocked<IReturnRepository>;
   let mockMovementRepository: jest.Mocked<IMovementRepository>;
-  let mockSaleRepository: jest.Mocked<ISaleRepository>;
   let mockEventDispatcher: jest.Mocked<IDomainEventDispatcher>;
+  let mockUnitOfWork: jest.Mocked<UnitOfWork>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -40,7 +41,9 @@ describe('ConfirmReturnUseCase', () => {
       findBySourceMovementId: jest.fn(),
       findByDateRange: jest.fn(),
       getLastReturnNumberForYear: jest.fn(),
+      getNextReturnNumber: jest.fn(),
       findByReturnMovementId: jest.fn(),
+      addLine: jest.fn(),
     } as jest.Mocked<IReturnRepository>;
 
     mockMovementRepository = {
@@ -59,31 +62,20 @@ describe('ConfirmReturnUseCase', () => {
       findPostedMovements: jest.fn(),
     } as jest.Mocked<IMovementRepository>;
 
-    mockSaleRepository = {
-      save: jest.fn(),
-      findById: jest.fn(),
-      findAll: jest.fn(),
-      findBySpecification: jest.fn(),
-      exists: jest.fn(),
-      delete: jest.fn(),
-      findBySaleNumber: jest.fn(),
-      findByStatus: jest.fn(),
-      findByWarehouse: jest.fn(),
-      findByDateRange: jest.fn(),
-      getLastSaleNumberForYear: jest.fn(),
-      findByMovementId: jest.fn(),
-    } as jest.Mocked<ISaleRepository>;
-
     mockEventDispatcher = {
       dispatchEvents: jest.fn().mockResolvedValue(undefined as never),
       markAndDispatch: jest.fn().mockResolvedValue(undefined as never),
     } as jest.Mocked<IDomainEventDispatcher>;
 
+    mockUnitOfWork = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<UnitOfWork>;
+
     useCase = new ConfirmReturnUseCase(
       mockReturnRepository,
       mockMovementRepository,
-      mockSaleRepository,
-      mockEventDispatcher
+      mockEventDispatcher,
+      mockUnitOfWork
     );
   });
 
@@ -160,9 +152,9 @@ describe('ConfirmReturnUseCase', () => {
 
       // Mock generateMovementFromCustomerReturn to bypass status validation
       const mockMovement: Movement = {
-        id: 'movement-123',
+        id: mockMovementId,
         post: jest.fn().mockReturnValue({
-          id: 'movement-123',
+          id: mockMovementId,
           getLines: () => [],
         }),
       } as unknown as typeof mockMovement & { post: () => unknown };
@@ -170,10 +162,37 @@ describe('ConfirmReturnUseCase', () => {
         .spyOn(InventoryIntegrationService, 'generateMovementFromCustomerReturn')
         .mockReturnValue(mockMovement);
 
-      mockMovementRepository.save.mockResolvedValue(mockMovement);
-
-      // Mock the repository to return the modified return
-      mockReturnRepository.save.mockImplementation(async returnEntity => returnEntity);
+      // Mock unitOfWork.execute to return the confirmed return and posted movement
+      mockUnitOfWork.execute.mockImplementation(async _callback => {
+        return {
+          confirmedReturn: {
+            id: mockReturnId,
+            returnNumber: 'RETURN-2025-001',
+            status: 'CONFIRMED',
+            type: 'RETURN_CUSTOMER',
+            reason: null,
+            warehouseId: 'warehouse-123',
+            saleId: 'sale-123',
+            sourceMovementId: null,
+            returnMovementId: mockMovementId,
+            note: null,
+            confirmedAt: new Date(),
+            cancelledAt: null,
+            createdBy: 'user-123',
+            orgId: mockOrgId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            lines: [],
+          },
+          postedMovement: {
+            id: mockMovementId,
+            type: 'IN',
+            status: 'POSTED',
+            warehouseId: 'warehouse-123',
+            orgId: mockOrgId,
+          },
+        };
+      });
 
       const request = {
         id: mockReturnId,

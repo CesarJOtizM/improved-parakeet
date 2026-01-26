@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ReturnLine } from '@returns/domain/entities/returnLine.entity';
+import { ReturnType } from '@returns/domain/valueObjects/returnType.valueObject';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
 import {
   BusinessRuleError,
@@ -19,7 +20,6 @@ import type { IMovementRepository } from '@movement/domain/repositories/movement
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
 import type { IReturnRepository } from '@returns/domain/repositories/returnRepository.interface';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
-import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 
 export interface IAddReturnLineRequest {
   returnId: string;
@@ -44,9 +44,7 @@ export class AddReturnLineUseCase {
     @Inject('SaleRepository')
     private readonly saleRepository: ISaleRepository,
     @Inject('MovementRepository')
-    private readonly movementRepository: IMovementRepository,
-    @Inject('DomainEventDispatcher')
-    private readonly eventDispatcher: IDomainEventDispatcher
+    private readonly movementRepository: IMovementRepository
   ) {}
 
   async execute(
@@ -58,7 +56,7 @@ export class AddReturnLineUseCase {
       orgId: request.orgId,
     });
 
-    // Retrieve return
+    // Retrieve return (we need type, saleId, sourceMovementId for validation)
     const returnEntity = await this.returnRepository.findById(request.returnId, request.orgId);
 
     if (!returnEntity) {
@@ -76,9 +74,12 @@ export class AddReturnLineUseCase {
 
     let originalSalePrice: SalePrice | undefined;
     let originalUnitCost: Money | undefined;
+    let returnType: ReturnType;
 
     // Get original price/cost based on return type
     if (returnEntity.type.isCustomerReturn()) {
+      returnType = ReturnType.create('RETURN_CUSTOMER');
+
       if (!returnEntity.saleId) {
         return err(new ValidationError('Sale ID is required for customer returns'));
       }
@@ -101,6 +102,8 @@ export class AddReturnLineUseCase {
       originalSalePrice = saleLine.salePrice;
     } else {
       // Supplier return
+      returnType = ReturnType.create('RETURN_SUPPLIER');
+
       if (!returnEntity.sourceMovementId) {
         return err(new ValidationError('Source movement ID is required for supplier returns'));
       }
@@ -151,49 +154,44 @@ export class AddReturnLineUseCase {
         currency,
       },
       request.orgId,
-      returnEntity.type
+      returnType
     );
 
-    // Add line to return
     try {
-      returnEntity.addLine(line);
+      // Add line directly to return using atomic repository method
+      // This prevents race conditions when multiple lines are added concurrently
+      const savedLine = await this.returnRepository.addLine(request.returnId, line, request.orgId);
+
+      this.logger.log('Line added to return successfully', {
+        returnId: request.returnId,
+        lineId: savedLine.id,
+      });
+
+      const totalPrice = savedLine.getTotalPrice();
+
+      return ok({
+        success: true,
+        message: 'Line added to return successfully',
+        data: {
+          id: savedLine.id,
+          productId: savedLine.productId,
+          locationId: savedLine.locationId,
+          quantity: savedLine.quantity.getNumericValue(),
+          originalSalePrice: savedLine.originalSalePrice?.getAmount(),
+          originalUnitCost: savedLine.originalUnitCost?.getAmount(),
+          currency: savedLine.currency,
+          totalPrice: totalPrice?.getAmount() || 0,
+        },
+        timestamp: new Date().toISOString(),
+      });
     } catch (error) {
-      return err(
-        new BusinessRuleError(
-          error instanceof Error ? error.message : 'Failed to add line to return'
-        )
-      );
+      if (error instanceof NotFoundError) {
+        return err(error);
+      }
+      if (error instanceof BusinessRuleError) {
+        return err(error);
+      }
+      throw error;
     }
-
-    // Save return
-    const updatedReturn = await this.returnRepository.save(returnEntity);
-
-    // Dispatch domain events
-    updatedReturn.markEventsForDispatch();
-    await this.eventDispatcher.dispatchEvents(updatedReturn.domainEvents);
-    updatedReturn.clearEvents();
-
-    this.logger.log('Line added to return successfully', {
-      returnId: updatedReturn.id,
-      lineId: line.id,
-    });
-
-    const totalPrice = line.getTotalPrice();
-
-    return ok({
-      success: true,
-      message: 'Line added to return successfully',
-      data: {
-        id: line.id,
-        productId: line.productId,
-        locationId: line.locationId,
-        quantity: line.quantity.getNumericValue(),
-        originalSalePrice: line.originalSalePrice?.getAmount(),
-        originalUnitCost: line.originalUnitCost?.getAmount(),
-        currency: line.currency,
-        totalPrice: totalPrice?.getAmount() || 0,
-      },
-      timestamp: new Date().toISOString(),
-    });
   }
 }

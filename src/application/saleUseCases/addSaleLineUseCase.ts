@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { SaleLine } from '@sale/domain/entities/saleLine.entity';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
 import {
+  BusinessRuleError,
   DomainError,
   NotFoundError,
   Result,
@@ -14,7 +15,6 @@ import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
-import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 
 export interface IAddSaleLineRequest {
   saleId: string;
@@ -46,20 +46,11 @@ export class AddSaleLineUseCase {
     @Inject('SaleRepository')
     private readonly saleRepository: ISaleRepository,
     @Inject('ProductRepository')
-    private readonly productRepository: IProductRepository,
-    @Inject('DomainEventDispatcher')
-    private readonly eventDispatcher: IDomainEventDispatcher
+    private readonly productRepository: IProductRepository
   ) {}
 
   async execute(request: IAddSaleLineRequest): Promise<Result<IAddSaleLineResponse, DomainError>> {
     this.logger.log('Adding line to sale', { saleId: request.saleId, orgId: request.orgId });
-
-    // Retrieve sale
-    const sale = await this.saleRepository.findById(request.saleId, request.orgId);
-
-    if (!sale) {
-      return err(new NotFoundError(`Sale with ID ${request.saleId} not found`));
-    }
 
     // Validate product exists
     const product = await this.productRepository.findById(request.productId, request.orgId);
@@ -81,37 +72,40 @@ export class AddSaleLineUseCase {
       request.orgId
     );
 
-    // Add line to sale
-    sale.addLine(line);
+    try {
+      // Add line directly to sale using atomic repository method
+      // This prevents race conditions when multiple lines are added concurrently
+      const savedLine = await this.saleRepository.addLine(request.saleId, line, request.orgId);
 
-    // Save sale
-    const updatedSale = await this.saleRepository.save(sale);
+      this.logger.log('Line added to sale successfully', {
+        saleId: request.saleId,
+        lineId: savedLine.id,
+      });
 
-    // Dispatch domain events
-    updatedSale.markEventsForDispatch();
-    await this.eventDispatcher.dispatchEvents(updatedSale.domainEvents);
-    updatedSale.clearEvents();
+      const totalPrice = savedLine.getTotalPrice();
 
-    this.logger.log('Line added to sale successfully', {
-      saleId: updatedSale.id,
-      lineId: line.id,
-    });
-
-    const totalPrice = line.getTotalPrice();
-
-    return ok({
-      success: true,
-      message: 'Line added to sale successfully',
-      data: {
-        id: line.id,
-        productId: line.productId,
-        locationId: line.locationId,
-        quantity: line.quantity.getNumericValue(),
-        salePrice: line.salePrice.getAmount(),
-        currency: line.salePrice.getCurrency(),
-        totalPrice: totalPrice.getAmount(),
-      },
-      timestamp: new Date().toISOString(),
-    });
+      return ok({
+        success: true,
+        message: 'Line added to sale successfully',
+        data: {
+          id: savedLine.id,
+          productId: savedLine.productId,
+          locationId: savedLine.locationId,
+          quantity: savedLine.quantity.getNumericValue(),
+          salePrice: savedLine.salePrice.getAmount(),
+          currency: savedLine.salePrice.getCurrency(),
+          totalPrice: totalPrice.getAmount(),
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        return err(error);
+      }
+      if (error instanceof BusinessRuleError) {
+        return err(error);
+      }
+      throw error;
+    }
   }
 }

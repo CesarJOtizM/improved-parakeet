@@ -642,3 +642,31 @@ model ImportRow {
   @@index([orgId, isValid])
   @@map("import_rows")
 }
+
+// Document Number Sequences (for atomic document number generation: SALE, RETURN, etc.)
+model DocumentNumberSequence {
+  id           String   @id @default(cuid())
+  orgId        String
+  type         String   // SALE, RETURN, etc.
+  year         Int
+  lastSequence Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([orgId, type, year])
+  @@map("document_number_sequences")
+}
+
+// Processed Events (for event handler idempotency - prevents duplicate processing)
+model ProcessedEvent {
+  id          String   @id @default(cuid())
+  eventType   String   // Event class name (e.g., MovementPostedEvent)
+  eventId     String   // Unique event identifier (e.g., movementId, saleId)
+  orgId       String
+  processedAt DateTime @default(now())
+
+  @@unique([eventType, eventId, orgId])
+  @@index([orgId, eventType])
+  @@index([processedAt])
+  @@map("processed_events")
+}

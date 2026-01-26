@@ -64,6 +64,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
+import { EventIdempotencyService } from '@shared/domain/events/eventIdempotency.service';
 import { FunctionalCacheService } from '@shared/infrastructure/cache';
 
 @Module({
@@ -105,8 +106,9 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     AuditController,
   ],
   providers: [
-    // Event Bus and Dispatcher
+    // Event Bus, Dispatcher and Idempotency
     DomainEventBus,
+    EventIdempotencyService,
     {
       provide: 'DomainEventDispatcher',
       useClass: DomainEventDispatcher,
@@ -206,6 +208,7 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     RoleBasedAuthGuard,
     JwtStrategy,
     DomainEventBus,
+    EventIdempotencyService,
     'DomainEventDispatcher',
     EmailService,
     // Export repositories for cross-module access (e.g., InventoryModule event handlers)

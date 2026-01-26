@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Product } from '@product/domain/entities/product.entity';
 import { ProductMapper } from '@product/mappers';
 import { Return } from '@returns/domain/entities/return.entity';
+import { ReturnLine } from '@returns/domain/entities/returnLine.entity';
 import { ReturnNumber } from '@returns/domain/valueObjects/returnNumber.valueObject';
 import { ReturnMapper } from '@returns/mappers';
 import { Sale } from '@sale/domain/entities/sale.entity';
@@ -10,7 +11,6 @@ import { SaleLine } from '@sale/domain/entities/saleLine.entity';
 import { SaleNumber } from '@sale/domain/valueObjects/saleNumber.valueObject';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
 import { SaleMapper } from '@sale/mappers';
-import { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 import { NotFoundError, ValidationError } from '@shared/domain/result/domainError';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
@@ -29,7 +29,6 @@ describe('AddReturnLineUseCase', () => {
   let mockProductRepository: jest.Mocked<IProductRepository>;
   let mockSaleRepository: jest.Mocked<ISaleRepository>;
   let mockMovementRepository: jest.Mocked<IMovementRepository>;
-  let mockEventDispatcher: jest.Mocked<IDomainEventDispatcher>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -49,6 +48,8 @@ describe('AddReturnLineUseCase', () => {
       findByDateRange: jest.fn(),
       getLastReturnNumberForYear: jest.fn(),
       findByReturnMovementId: jest.fn(),
+      getNextReturnNumber: jest.fn(),
+      addLine: jest.fn(),
     } as jest.Mocked<IReturnRepository>;
 
     mockProductRepository = {
@@ -79,6 +80,8 @@ describe('AddReturnLineUseCase', () => {
       findByDateRange: jest.fn(),
       getLastSaleNumberForYear: jest.fn(),
       findByMovementId: jest.fn(),
+      getNextSaleNumber: jest.fn(),
+      addLine: jest.fn(),
     } as jest.Mocked<ISaleRepository>;
 
     mockMovementRepository = {
@@ -97,17 +100,11 @@ describe('AddReturnLineUseCase', () => {
       findPostedMovements: jest.fn(),
     } as jest.Mocked<IMovementRepository>;
 
-    mockEventDispatcher = {
-      dispatchEvents: jest.fn().mockResolvedValue(undefined as never),
-      markAndDispatch: jest.fn().mockResolvedValue(undefined as never),
-    } as jest.Mocked<IDomainEventDispatcher>;
-
     useCase = new AddReturnLineUseCase(
       mockReturnRepository,
       mockProductRepository,
       mockSaleRepository,
-      mockMovementRepository,
-      mockEventDispatcher
+      mockMovementRepository
     );
   });
 
@@ -123,7 +120,6 @@ describe('AddReturnLineUseCase', () => {
         ReturnNumber.create(2025, 1)
       );
       const returnEntity = Return.reconstitute(props, mockReturnId, mockOrgId);
-      returnEntity.addLine = jest.fn();
       return returnEntity;
     };
 
@@ -136,10 +132,25 @@ describe('AddReturnLineUseCase', () => {
       return Product.create(props, mockOrgId);
     };
 
+    const createMockReturnLine = () => {
+      return ReturnLine.reconstitute(
+        {
+          productId: mockProductId,
+          locationId: 'location-123',
+          quantity: Quantity.create(5, 6),
+          originalSalePrice: SalePrice.create(100, 'COP', 2),
+          currency: 'COP',
+        },
+        'line-123',
+        mockOrgId
+      );
+    };
+
     it('Given: existing return and product When: adding line Then: should return success result', async () => {
       // Arrange
       const mockReturn = createMockReturn();
       const mockProduct = createMockProduct();
+      const mockSavedLine = createMockReturnLine();
 
       // Create a mock Sale with lines
       const saleNumber = SaleNumber.create(2025, 1);
@@ -165,7 +176,7 @@ describe('AddReturnLineUseCase', () => {
       mockReturnRepository.findById.mockResolvedValue(mockReturn);
       mockProductRepository.findById.mockResolvedValue(mockProduct);
       mockSaleRepository.findById.mockResolvedValue(mockSale);
-      mockReturnRepository.save.mockResolvedValue(mockReturn);
+      mockReturnRepository.addLine.mockResolvedValue(mockSavedLine);
 
       const request = {
         returnId: mockReturnId,
@@ -190,6 +201,7 @@ describe('AddReturnLineUseCase', () => {
           throw new Error('Expected Ok result');
         }
       );
+      expect(mockReturnRepository.addLine).toHaveBeenCalledTimes(1);
     });
 
     it('Given: non-existent return When: adding line Then: should return NotFoundError', async () => {

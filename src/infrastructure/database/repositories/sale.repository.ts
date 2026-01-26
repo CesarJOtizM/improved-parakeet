@@ -10,6 +10,7 @@ import { ISaleRepository } from '@sale/domain/repositories/saleRepository.interf
 import { SaleNumber } from '@sale/domain/valueObjects/saleNumber.valueObject';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
 import { SaleStatus } from '@sale/domain/valueObjects/saleStatus.valueObject';
+import { BusinessRuleError, NotFoundError } from '@shared/domain/result';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 import type { IPrismaSpecification } from '@shared/domain/specifications';
@@ -282,6 +283,68 @@ export class PrismaSaleRepository implements ISaleRepository {
     }
   }
 
+  /**
+   * Adds a line directly to the sale without loading all existing lines.
+   * This prevents race conditions when multiple lines are added concurrently.
+   * Uses a transaction to validate sale status and add the line atomically.
+   */
+  async addLine(saleId: string, line: SaleLine, orgId: string): Promise<SaleLine> {
+    try {
+      this.logger.debug('Adding line directly to sale', {
+        saleId,
+        lineId: line.id,
+        productId: line.productId,
+        orgId,
+      });
+
+      return await this.prisma.$transaction(async tx => {
+        // 1. Verify sale exists and is in DRAFT status
+        const sale = await tx.sale.findUnique({
+          where: { id: saleId },
+          select: { id: true, status: true, orgId: true },
+        });
+
+        if (!sale || sale.orgId !== orgId) {
+          throw new NotFoundError(`Sale with ID ${saleId} not found`);
+        }
+
+        if (sale.status !== 'DRAFT') {
+          throw new BusinessRuleError(
+            `Cannot add lines to sale in ${sale.status} status. Sale must be in DRAFT status.`
+          );
+        }
+
+        // 2. Create the line directly (no need to read existing lines)
+        const createdLine = await tx.saleLine.create({
+          data: {
+            id: line.id,
+            saleId,
+            productId: line.productId,
+            locationId: line.locationId || null,
+            quantity: line.quantity.getNumericValue(),
+            salePrice: line.salePrice.getAmount(),
+            currency: line.salePrice.getCurrency(),
+            extra: line.extra ? JSON.parse(JSON.stringify(line.extra)) : undefined,
+            orgId,
+          },
+        });
+
+        // 3. Return the line as a domain entity
+        return this.createSaleLine(createdLine);
+      });
+    } catch (error) {
+      if (error instanceof NotFoundError || error instanceof BusinessRuleError) {
+        throw error;
+      }
+      if (error instanceof Error) {
+        this.logger.error(`Error adding line to sale: ${error.message}`);
+      } else {
+        this.logger.error(`Error adding line to sale: ${error}`);
+      }
+      throw error;
+    }
+  }
+
   async findBySaleNumber(saleNumber: string, orgId: string): Promise<Sale | null> {
     try {
       const saleData = await this.prisma.sale.findFirst({
@@ -384,6 +447,23 @@ export class PrismaSaleRepository implements ISaleRepository {
         this.logger.error(`Error getting last sale number for year: ${error.message}`);
       } else {
         this.logger.error(`Error getting last sale number for year: ${error}`);
+      }
+      throw error;
+    }
+  }
+
+  async getNextSaleNumber(orgId: string, year: number): Promise<string> {
+    try {
+      const result = await this.prisma.$queryRaw<[{ get_next_sale_number: string }]>`
+        SELECT get_next_sale_number(${orgId}, ${year})
+      `;
+
+      return result[0].get_next_sale_number;
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error getting next sale number: ${error.message}`);
+      } else {
+        this.logger.error(`Error getting next sale number: ${error}`);
       }
       throw error;
     }

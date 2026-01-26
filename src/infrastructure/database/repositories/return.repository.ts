@@ -12,6 +12,7 @@ import { ReturnReason } from '@returns/domain/valueObjects/returnReason.valueObj
 import { ReturnStatus } from '@returns/domain/valueObjects/returnStatus.valueObject';
 import { ReturnType } from '@returns/domain/valueObjects/returnType.valueObject';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
+import { BusinessRuleError, NotFoundError } from '@shared/domain/result';
 import { Money } from '@stock/domain/valueObjects/money.valueObject';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
@@ -229,6 +230,72 @@ export class PrismaReturnRepository implements IReturnRepository {
     }
   }
 
+  /**
+   * Adds a line directly to the return without loading all existing lines.
+   * This prevents race conditions when multiple lines are added concurrently.
+   * Uses a transaction to validate return status and add the line atomically.
+   */
+  async addLine(returnId: string, line: ReturnLine, orgId: string): Promise<ReturnLine> {
+    try {
+      this.logger.debug('Adding line directly to return', {
+        returnId,
+        lineId: line.id,
+        productId: line.productId,
+        orgId,
+      });
+
+      return await this.prisma.$transaction(async tx => {
+        // 1. Verify return exists and is in DRAFT status
+        const returnEntity = await tx.return.findUnique({
+          where: { id: returnId },
+          select: { id: true, status: true, type: true, orgId: true },
+        });
+
+        if (!returnEntity || returnEntity.orgId !== orgId) {
+          throw new NotFoundError(`Return with ID ${returnId} not found`);
+        }
+
+        if (returnEntity.status !== 'DRAFT') {
+          throw new BusinessRuleError(
+            `Cannot add lines to return in ${returnEntity.status} status. Return must be in DRAFT status.`
+          );
+        }
+
+        // 2. Create the line directly (no need to read existing lines)
+        const createdLine = await tx.returnLine.create({
+          data: {
+            id: line.id,
+            returnId,
+            productId: line.productId,
+            locationId: line.locationId || null,
+            quantity: line.quantity.getNumericValue(),
+            originalSalePrice: line.originalSalePrice?.getAmount() || null,
+            originalUnitCost: line.originalUnitCost?.getAmount() || null,
+            currency: line.currency,
+            extra: line.extra ? JSON.parse(JSON.stringify(line.extra)) : undefined,
+            orgId,
+          },
+        });
+
+        // 3. Return the line as a domain entity
+        const returnType = ReturnType.create(
+          returnEntity.type as 'RETURN_CUSTOMER' | 'RETURN_SUPPLIER'
+        );
+        return this.createReturnLine(createdLine, returnType);
+      });
+    } catch (error) {
+      if (error instanceof NotFoundError || error instanceof BusinessRuleError) {
+        throw error;
+      }
+      if (error instanceof Error) {
+        this.logger.error(`Error adding line to return: ${error.message}`);
+      } else {
+        this.logger.error(`Error adding line to return: ${error}`);
+      }
+      throw error;
+    }
+  }
+
   async findByReturnNumber(returnNumber: string, orgId: string): Promise<Return | null> {
     try {
       const returnData = await this.prisma.return.findFirst({
@@ -356,7 +423,7 @@ export class PrismaReturnRepository implements IReturnRepository {
         where: {
           orgId,
           returnNumber: {
-            startsWith: `RET-${year}-`,
+            startsWith: `RETURN-${year}-`,
           },
         },
         orderBy: { returnNumber: 'desc' },
@@ -369,6 +436,23 @@ export class PrismaReturnRepository implements IReturnRepository {
         this.logger.error(`Error getting last return number for year: ${error.message}`);
       } else {
         this.logger.error(`Error getting last return number for year: ${error}`);
+      }
+      throw error;
+    }
+  }
+
+  async getNextReturnNumber(orgId: string, year: number): Promise<string> {
+    try {
+      const result = await this.prisma.$queryRaw<[{ get_next_return_number: string }]>`
+        SELECT get_next_return_number(${orgId}, ${year})
+      `;
+
+      return result[0].get_next_return_number;
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error getting next return number: ${error.message}`);
+      } else {
+        this.logger.error(`Error getting next return number: ${error}`);
       }
       throw error;
     }
