@@ -1,4 +1,3 @@
-import { InventorySeed } from '@infrastructure/database/prisma/seeds/inventory';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Organization } from '@organization/domain/entities/organization.entity';
@@ -23,7 +22,6 @@ export interface ICreateOrganizationRequest {
   timezone?: string;
   currency?: string;
   dateFormat?: string;
-  createInitialData?: boolean;
   adminUser?: {
     email: string;
     username: string;
@@ -170,13 +168,6 @@ export class CreateOrganizationUseCase {
       };
 
       this.logger.log('Admin user created', { userId: adminUser.id });
-    }
-
-    // Create initial inventory data (optional)
-    if (request.createInitialData) {
-      const inventorySeed = new InventorySeed(this.prisma);
-      await inventorySeed.seed(savedOrg.id);
-      this.logger.log('Initial inventory data created');
     }
 
     // Get complete organization from DB to get createdAt

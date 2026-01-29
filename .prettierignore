@@ -104,3 +104,6 @@ bun.lock
 # Generated files
 *.min.js
 *.min.css 
+
+.agents/**
+.claude/**

@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsBoolean,
   IsEmail,
   IsOptional,
   IsString,
@@ -140,16 +139,6 @@ export class CreateOrganizationDto {
   @IsOptional()
   @IsString({ message: 'Date format must be a string' })
   dateFormat?: string;
-
-  @ApiProperty({
-    description: 'Create initial inventory data (warehouses, products, etc.)',
-    example: false,
-    default: false,
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean({ message: 'createInitialData must be a boolean' })
-  createInitialData?: boolean;
 
   @ApiProperty({
     description: 'Admin user data (optional, can be created later)',

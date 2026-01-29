@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { createId } from '@paralleldrive/cuid2';
 
 export abstract class Entity<T> {
   protected readonly _id: string;
@@ -8,7 +8,7 @@ export abstract class Entity<T> {
   protected readonly props: T;
 
   constructor(props: T, id?: string, orgId?: string) {
-    this._id = id || uuidv4();
+    this._id = id || createId();
     this._orgId = orgId || '';
     this._createdAt = new Date();
     this._updatedAt = new Date();

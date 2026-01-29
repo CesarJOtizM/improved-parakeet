@@ -140,6 +140,8 @@ export const baseConfig = [
       '**/bunfig.toml',
       '**/turbo.json',
       '**/nx.json',
+      '.agents/**',
+      '.claude/**',
     ],
   },
 ];

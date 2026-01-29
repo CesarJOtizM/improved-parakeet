@@ -406,8 +406,8 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
   }
 
   private toPersistence(auditLog: AuditLog) {
-    return {
-      id: auditLog.id,
+    // Let DB generate ID via @default(cuid()) - only include if it's a valid non-empty string
+    const data: Record<string, unknown> = {
       orgId: auditLog.orgId || null,
       entityType: auditLog.entityType.getValue(),
       entityId: auditLog.entityId || null,
@@ -421,5 +421,12 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
       httpStatusCode: auditLog.httpStatusCode || null,
       duration: auditLog.duration || null,
     };
+
+    // Only set ID if it's a valid non-empty string (for reconstituted entities)
+    if (auditLog.id && auditLog.id.length > 0) {
+      data.id = auditLog.id;
+    }
+
+    return data;
   }
 }

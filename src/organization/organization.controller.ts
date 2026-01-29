@@ -76,7 +76,6 @@ export class OrganizationController {
       name: createOrganizationDto.name,
       slug: createOrganizationDto.slug,
       hasAdminUser: !!createOrganizationDto.adminUser,
-      createInitialData: createOrganizationDto.createInitialData || false,
     });
 
     const result = await this.createOrganizationUseCase.execute({
@@ -86,7 +85,6 @@ export class OrganizationController {
       timezone: createOrganizationDto.timezone,
       currency: createOrganizationDto.currency,
       dateFormat: createOrganizationDto.dateFormat,
-      createInitialData: createOrganizationDto.createInitialData || false,
       adminUser: createOrganizationDto.adminUser
         ? {
             email: createOrganizationDto.adminUser.email,

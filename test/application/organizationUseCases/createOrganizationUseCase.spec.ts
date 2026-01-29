@@ -1,6 +1,5 @@
 import { CreateOrganizationUseCase } from '@application/organizationUseCases/createOrganizationUseCase';
 import { AuthSeed } from '@infrastructure/database/prisma/seeds/auth';
-import { InventorySeed } from '@infrastructure/database/prisma/seeds/inventory';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Organization } from '@organization/domain/entities/organization.entity';
@@ -86,12 +85,6 @@ describe('CreateOrganizationUseCase', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       },
-    });
-
-    // Mock InventorySeed
-    jest.spyOn(InventorySeed.prototype, 'seed').mockResolvedValue({
-      warehouses: [],
-      products: [],
     });
 
     useCase = new CreateOrganizationUseCase(mockOrganizationRepository, mockPrismaService);
