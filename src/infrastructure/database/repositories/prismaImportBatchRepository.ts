@@ -239,7 +239,7 @@ export class PrismaImportBatchRepository implements IImportBatchRepository {
       )
     );
 
-    batch.setRows(rows);
+    batch.restoreRows(rows);
 
     return batch;
   }

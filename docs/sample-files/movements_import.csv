@@ -1,0 +1,4 @@
+Type,Warehouse Code,Product SKU,Location Code,Quantity,Unit Cost,Currency,Reference,Reason,Note
+IN,BOD001,PROD-001,,50,25.00,COP,PO-IMP-001,PURCHASE,Entrada por importacion
+IN,BOD001,IMPORT-001,,100,15.50,COP,PO-IMP-002,PURCHASE,Stock inicial producto importado
+OUT,BOD001,PROD-001,,10,25.00,COP,SO-IMP-001,SALE,Salida por venta importada

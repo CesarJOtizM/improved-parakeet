@@ -25,7 +25,18 @@
       "Bash(ORG=\"cmkwpo05v0000vsryp8mbw6up\")",
       "Bash(__NEW_LINE_33af02e4b76ac37e__ echo \"5.2 Transfers:\")",
       "Bash(__NEW_LINE_a365754873dd91f1__ echo \"6.3 Sale by ID:\")",
-      "Bash(__NEW_LINE_32ef9d0ad36b34b0__ echo \"7.2 Returns list:\")"
+      "Bash(__NEW_LINE_32ef9d0ad36b34b0__ echo \"7.2 Returns list:\")",
+      "Bash(npx prisma studio:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWt3cG8wZXEwMDAxdnNyeTJvMXYwMDM0Iiwib3JnX2lkIjoiY21rd3BvMDV2MDAwMHZzcnlwOG1idzZ1cCIsImVtYWlsIjoiYWRtaW5AdGVzdC1vcmcuY29tIiwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGVzIjpbIkFETUlOIl0sInBlcm1pc3Npb25zIjpbIlVTRVJTOkNSRUFURSIsIlVTRVJTOlJFQUQiLCJVU0VSUzpVUERBVEUiLCJVU0VSUzpERUxFVEUiLCJVU0VSUzpNQU5BR0VfUk9MRVMiLCJST0xFUzpDUkVBVEUiLCJST0xFUzpSRUFEIiwiUk9MRVM6VVBEQVRFIiwiUk9MRVM6REVMRVRFIiwiUFJPRFVDVFM6Q1JFQVRFIiwiUFJPRFVDVFM6UkVBRCIsIlBST0RVQ1RTOlVQREFURSIsIlBST0RVQ1RTOkRFTEVURSIsIlBST0RVQ1RTOklNUE9SVCIsIldBUkVIT1VTRVM6Q1JFQVRFIiwiV0FSRUhPVVNFUzpSRUFEIiwiV0FSRUhPVVNFUzpVUERBVEUiLCJXQVJFSE9VU0VTOkRFTEVURSIsIklOVkVOVE9SWTpSRUFEIiwiSU5WRU5UT1JZOkVOVFJZIiwiSU5WRU5UT1JZOkVYSVQiLCJJTlZFTlRPUlk6VFJBTlNGRVIiLCJJTlZFTlRPUlk6QURKVVNUIiwiTU9WRU1FTlRTOkNSRUFURSIsIk1PVkVNRU5UUzpSRUFEIiwiTU9WRU1FTlRTOlVQREFURSIsIk1PVkVNRU5UUzpQT1NUIiwiTU9WRU1FTlRTOlZPSUQiLCJTVE9DSzpWSUVXX0JBTEFOQ0UiLCJTVE9DSzpWSUVXX0xPV19TVE9DSyIsIlNUT0NLOkFESlVTVF9TVE9DSyIsIlJFUE9SVFM6UkVBRCIsIlJFUE9SVFM6UkVBRF9TRU5TSVRJVkUiLCJSRVBPUlRTOkVYUE9SVCIsIklNUE9SVFM6Q1JFQVRFX1BST0RVQ1RTIiwiSU1QT1JUUzpWQUxJREFURSIsIklNUE9SVFM6QVBQTFkiLCJPUkdBTklaQVRJT046VklFV19TRVRUSU5HUyIsIk9SR0FOSVpBVElPTjpVUERBVEVfU0VUVElOR1MiLCJPUkdBTklaQVRJT046TUFOQUdFX0JSQU5ESU5HIiwiU0FMRVM6Q1JFQVRFIiwiU0FMRVM6UkVBRCIsIlNBTEVTOlVQREFURSIsIlNBTEVTOkRFTEVURSIsIlNBTEVTOkNPTkZJUk0iLCJTQUxFUzpDQU5DRUwiLCJSRVRVUk5TOkNSRUFURSIsIlJFVFVSTlM6UkVBRCIsIlJFVFVSTlM6VVBEQVRFIiwiUkVUVVJOUzpERUxFVEUiLCJSRVRVUk5TOkNPTkZJUk0iLCJSRVRVUk5TOkNBTkNFTCIsIkFVRElUOlJFQUQiLCJBVURJVDpFWFBPUlQiXSwiaWF0IjoxNzY5NzIxMTA3LCJqdGkiOiJqdGlfMTc2OTcyMTEwNzYyMV83cjg4YTU0YWoiLCJleHAiOjE3Njk3MjIwMDd9.oyax8D9DSQHM16UHbRDBTlzsdIAUvX7PNhNzikCMYto\")",
+      "Bash(__NEW_LINE_c111263a5c3da40a__ curl -s -X POST \"http://localhost:3000/roles\" -H \"Authorization: Bearer $TOKEN\" -H \"X-Organization-ID: cmkwpo05v0000vsryp8mbw6up\" -H \"Content-Type: application/json\" -d \"{\"\"name\"\": \"\"TEST_ROLE\"\", \"\"description\"\": \"\"Test role for API testing\"\"}\")",
+      "Bash(__NEW_LINE_8fe9cbcdb27b0e42__ echo -e \"\\\\n\\\\n=== 8.3.4 Returns by Sale ===\")",
+      "Bash(__NEW_LINE_527676a0d98bd35e__ echo -e \"\\\\n\\\\n=== 8.3.5 Customer Returns ===\")",
+      "Bash(__NEW_LINE_e2497de3eed18da8__ echo -e \"\\\\n\\\\n=== 8.3.6 Supplier Returns ===\")",
+      "Bash(__NEW_LINE_c4f7d73958cddfce__ echo -e \"\\\\n\\\\n=== 8.3.3 Returns by Product ===\")",
+      "Bash(bun run dev)",
+      "Bash($response = Invoke-RestMethod -Uri \"http://localhost:3000/auth/login\" -Method POST -ContentType \"application/json\" -Body '{\"\"email\"\":\"\"admin@test-org.com\"\",\"\"password\"\":\"\"Admin123!\"\"}')",
+      "Bash($response.data.accessToken)",
+      "Bash(Set-Content -Path \"C:\\\\Users\\\\Usuario\\\\AppData\\\\Local\\\\Temp\\\\token.txt\")"
     ]
   }
 }

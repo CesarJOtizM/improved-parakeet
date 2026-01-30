@@ -1,0 +1,4 @@
+SKU,Name,Description,Unit Code,Unit Name,Unit Precision,Barcode,Brand,Model,Status,Cost Method,Category
+IMPORT-001,Producto Importado 1,Producto de prueba importacion,UND,Unidad,0,1111111111111,Test Brand,Model A,ACTIVE,AVG,Categoria Test
+IMPORT-002,Producto Importado 2,Segundo producto importado,KG,Kilogramo,3,2222222222222,Test Brand,Model B,ACTIVE,FIFO,Categoria Test
+IMPORT-003,Producto Importado 3,Tercer producto importado,LT,Litro,2,3333333333333,Otra Marca,Model C,ACTIVE,AVG,Otra Categoria

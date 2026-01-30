@@ -77,6 +77,15 @@ export class ImportBatch extends AggregateRoot<IImportBatchProps> {
     this.updateTimestamp();
   }
 
+  /**
+   * Restore rows from persistence without status validation.
+   * This is used only when reconstituting the entity from the database.
+   * Do not use this method for business operations - use setRows() instead.
+   */
+  public restoreRows(rows: ImportRow[]): void {
+    this.rows = [...rows];
+  }
+
   public markAsValidated(): void {
     if (!this.props.status.isValidating()) {
       throw new Error('Import batch can only be marked as validated when status is VALIDATING');

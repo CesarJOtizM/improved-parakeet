@@ -238,7 +238,12 @@ export class RoleRepository implements IRoleRepository {
         throw new Error('Custom roles must have an organization ID');
       }
 
-      if (role.id) {
+      // Check if role exists in database to decide create vs update
+      const existingRole = await this.prisma.role.findUnique({
+        where: { id: role.id },
+      });
+
+      if (existingRole) {
         // Update existing role
         const updatedRole = await this.prisma.role.update({
           where: { id: role.id },
@@ -265,6 +270,7 @@ export class RoleRepository implements IRoleRepository {
         // Create new role
         const newRole = await this.prisma.role.create({
           data: {
+            id: role.id,
             name: role.name,
             description: role.description,
             isActive: role.isActive,
