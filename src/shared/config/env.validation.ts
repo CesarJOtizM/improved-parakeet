@@ -47,7 +47,7 @@ export class EnvironmentVariables {
 
   @IsString()
   @IsNotEmpty()
-  DATABASE_URL: string;
+  DATABASE_URL!: string;
 
   @IsString()
   @IsOptional()
@@ -80,7 +80,7 @@ export class EnvironmentVariables {
 
   @IsString()
   @IsNotEmpty()
-  REDIS_URL: string;
+  REDIS_URL!: string;
 
   @IsString()
   @IsOptional()
@@ -106,11 +106,11 @@ export class EnvironmentVariables {
 
   @IsString()
   @IsNotEmpty()
-  JWT_SECRET: string;
+  JWT_SECRET!: string;
 
   @IsString()
   @IsNotEmpty()
-  JWT_REFRESH_SECRET: string;
+  JWT_REFRESH_SECRET!: string;
 
   @IsString()
   @IsNotEmpty()
@@ -144,7 +144,7 @@ export class EnvironmentVariables {
 
   @IsString()
   @IsNotEmpty()
-  ENCRYPTION_KEY: string;
+  ENCRYPTION_KEY!: string;
 
   @IsNumber()
   @Min(1)
