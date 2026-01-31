@@ -36,7 +36,15 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 # dotenv environment variable files
+.env.production
 .env
+.env.production.example
+
+# SSL certificates (NEVER commit)
+nginx/ssl/*.pem
+nginx/ssl/*.key
+nginx/ssl/*.crt
+!nginx/ssl/README.md
 .env.development.local
 .env.test.local
 .env.production.local

@@ -1,24 +1,69 @@
+version: '3.8'
+
 services:
   app:
     build:
       context: .
       dockerfile: docker/prod.Dockerfile
       target: production
-    container_name: inventory_app_prod
+    container_name: inventory_app_production
     ports:
       - '3000:3000'
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=redis://redis:6379
       - BUN_ENV=production
+      - PORT=3000
+      # Database (external - must be provided)
+      - DATABASE_URL=${DATABASE_URL}
+      # Redis (internal)
+      - REDIS_URL=redis://redis:6379
+      # JWT Secrets (MUST be changed)
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_ACCESS_TOKEN_EXPIRES_IN=900
+      - JWT_REFRESH_TOKEN_EXPIRES_IN=604800
+      # Encryption
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - BCRYPT_SALT_ROUNDS=12
+      # Security
+      - MAX_FAILED_LOGIN_ATTEMPTS=3
+      - LOCKOUT_DURATION_MINUTES=30
+      - SESSION_TIMEOUT_MINUTES=240
+      - REQUIRE_MFA=false
+      # Rate Limiting (stricter for production)
+      - RATE_LIMIT_IP_MAX=50
+      - RATE_LIMIT_IP_WINDOW_MS=60000
+      - RATE_LIMIT_IP_BLOCK_DURATION_MS=300000
+      - RATE_LIMIT_USER_MAX=500
+      - RATE_LIMIT_USER_WINDOW_MS=3600000
+      - RATE_LIMIT_USER_BLOCK_DURATION_MS=900000
+      - RATE_LIMIT_LOGIN_MAX=3
+      - RATE_LIMIT_LOGIN_WINDOW_MS=900000
+      - RATE_LIMIT_LOGIN_BLOCK_DURATION_MS=1800000
+      # CORS
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      # Logging
+      - LOG_LEVEL=warn
+      - LOG_FORMAT=json
+      - LOG_DIR=logs
+      # Swagger (disabled in production)
+      - SWAGGER_ENABLED=false
+      # File uploads
+      - MAX_FILE_SIZE=10485760
+      # Multi-tenancy
+      - DEFAULT_ORGANIZATION_DOMAIN=${DEFAULT_ORGANIZATION_DOMAIN}
     depends_on:
       redis:
         condition: service_healthy
     networks:
-      - inventory_network
+      - inventory_network_prod
     restart: unless-stopped
-    # Configuraciones de producción
+    # Security settings
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+      - /app/logs:noexec,nosuid,size=50m
+    # Resource limits for production
     deploy:
       resources:
         limits:
@@ -27,32 +72,123 @@ services:
         reservations:
           memory: 256M
           cpus: '0.25'
+    # Health check
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Logging
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
 
   redis:
     image: redis:7-alpine
-    container_name: inventory_redis_prod
+    container_name: inventory_redis_production
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --timeout 0
+      --tcp-keepalive 300
     ports:
       - '6379:6379'
     volumes:
       - redis_prod_data:/data
     networks:
-      - inventory_network
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - inventory_network_prod
     restart: unless-stopped
-    # Configuraciones de producción para Redis
+    # Security settings
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=50m
+    # Resource limits
     deploy:
       resources:
         limits:
           memory: 256M
           cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+    # Health check
+    healthcheck:
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # Logging
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '5m'
+        max-file: '2'
+
+  # Nginx reverse proxy (optional but recommended)
+  nginx:
+    image: nginx:alpine
+    container_name: inventory_nginx_production
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./nginx/prod.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_cache:/var/cache/nginx
+    depends_on:
+      - app
+    networks:
+      - inventory_network_prod
+    restart: unless-stopped
+    # Security settings
+    read_only: true
+    tmpfs:
+      - /var/run:noexec,nosuid,size=10m
+      - /var/cache/nginx:noexec,nosuid,size=50m
+      - /tmp:noexec,nosuid,size=10m
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.2'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    # Health check
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   redis_prod_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/redis
+  nginx_cache:
+    driver: local
 
 networks:
-  inventory_network:
+  inventory_network_prod:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Production-specific configurations
+# To deploy:
+# 1. Create .env.production with all required variables
+# 2. Run: docker-compose -f docker-compose.production.yml --env-file .env.production up -d
+# 3. Monitor logs: docker-compose -f docker-compose.production.yml logs -f

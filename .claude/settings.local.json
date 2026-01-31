@@ -36,7 +36,8 @@
       "Bash(bun run dev)",
       "Bash($response = Invoke-RestMethod -Uri \"http://localhost:3000/auth/login\" -Method POST -ContentType \"application/json\" -Body '{\"\"email\"\":\"\"admin@test-org.com\"\",\"\"password\"\":\"\"Admin123!\"\"}')",
       "Bash($response.data.accessToken)",
-      "Bash(Set-Content -Path \"C:\\\\Users\\\\Usuario\\\\AppData\\\\Local\\\\Temp\\\\token.txt\")"
+      "Bash(Set-Content -Path \"C:\\\\Users\\\\Usuario\\\\AppData\\\\Local\\\\Temp\\\\token.txt\")",
+      "Bash(tree:*)"
     ]
   }
 }
