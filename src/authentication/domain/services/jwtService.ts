@@ -80,7 +80,8 @@ export class JwtService {
       };
     } catch (error) {
       throw new Error(
-        `Invalid JWT token: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Invalid JWT token: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
       );
     }
   }
@@ -122,7 +123,8 @@ export class JwtService {
       };
     } catch (error) {
       throw new Error(
-        `Invalid JWT token: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Invalid JWT token: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
       );
     }
   }
@@ -136,7 +138,8 @@ export class JwtService {
       return payload;
     } catch (error) {
       throw new Error(
-        `Invalid JWT token: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Invalid JWT token: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
       );
     }
   }

@@ -5,7 +5,11 @@ import { Money, Quantity } from '@inventory/stock';
  */
 export interface IStockData {
   productId: string;
+  productName?: string;
+  productSku?: string;
   warehouseId: string;
+  warehouseName?: string;
+  warehouseCode?: string;
   locationId?: string;
   quantity: Quantity;
   averageCost: Money;

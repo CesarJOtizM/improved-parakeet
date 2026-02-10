@@ -3,6 +3,7 @@ export * from './assignPermissionsToRole.dto';
 export * from './changeUserStatus.dto';
 export * from './createRole.dto';
 export * from './createUser.dto';
+export * from './getPermissionsResponse.dto';
 export * from './getRolesResponse.dto';
 export * from './getUsers.dto';
 export * from './requestPasswordReset.dto';

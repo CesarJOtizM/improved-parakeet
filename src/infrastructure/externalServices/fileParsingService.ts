@@ -155,7 +155,8 @@ export class FileParsingService implements IFileParsingService {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw new Error(
-        `Failed to parse Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to parse Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
       );
     }
   }
@@ -214,7 +215,8 @@ export class FileParsingService implements IFileParsingService {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw new Error(
-        `Failed to parse CSV file: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to parse CSV file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
       );
     }
   }

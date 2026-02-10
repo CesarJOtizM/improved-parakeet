@@ -1,6 +1,8 @@
 import { AssignPermissionsToRoleUseCase } from '@application/roleUseCases/assignPermissionsToRoleUseCase';
 import { CreateRoleUseCase } from '@application/roleUseCases/createRoleUseCase';
 import { DeleteRoleUseCase } from '@application/roleUseCases/deleteRoleUseCase';
+import { GetPermissionsUseCase } from '@application/roleUseCases/getPermissionsUseCase';
+import { GetRolePermissionsUseCase } from '@application/roleUseCases/getRolePermissionsUseCase';
 import { GetRolesUseCase } from '@application/roleUseCases/getRolesUseCase';
 import { GetRoleUseCase } from '@application/roleUseCases/getRoleUseCase';
 import { UpdateRoleUseCase } from '@application/roleUseCases/updateRoleUseCase';
@@ -9,6 +11,7 @@ import {
   AssignPermissionsToRoleResponseDto,
   CreateRoleDto,
   CreateRoleResponseDto,
+  GetPermissionsResponseDto,
   GetRoleResponseDto,
   GetRolesResponseDto,
   UpdateRoleDto,
@@ -54,7 +57,9 @@ export class RolesController {
     private readonly getRoleUseCase: GetRoleUseCase,
     private readonly updateRoleUseCase: UpdateRoleUseCase,
     private readonly deleteRoleUseCase: DeleteRoleUseCase,
-    private readonly assignPermissionsToRoleUseCase: AssignPermissionsToRoleUseCase
+    private readonly assignPermissionsToRoleUseCase: AssignPermissionsToRoleUseCase,
+    private readonly getPermissionsUseCase: GetPermissionsUseCase,
+    private readonly getRolePermissionsUseCase: GetRolePermissionsUseCase
   ) {}
 
   @Post()
@@ -121,6 +126,30 @@ export class RolesController {
 
     const request = { orgId };
     const result = await this.getRolesUseCase.execute(request);
+    return resultToHttpResponse(result);
+  }
+
+  @Get('permissions')
+  @HttpCode(HttpStatus.OK)
+  @RateLimited('USER')
+  @RequirePermissions(SYSTEM_PERMISSIONS.ROLES_READ)
+  @ApiOperation({
+    summary: 'Get all available permissions',
+    description: 'Get all system permissions grouped by module. Requires ROLES:READ permission.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Permissions retrieved successfully',
+    type: GetPermissionsResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions',
+  })
+  async getPermissions(): Promise<GetPermissionsResponseDto> {
+    this.logger.log('Getting all permissions');
+
+    const result = await this.getPermissionsUseCase.execute();
     return resultToHttpResponse(result);
   }
 
@@ -245,6 +274,39 @@ export class RolesController {
     };
 
     const result = await this.deleteRoleUseCase.execute(request);
+    return resultToHttpResponse(result);
+  }
+
+  @Get(':id/permissions')
+  @HttpCode(HttpStatus.OK)
+  @RateLimited('USER')
+  @RequirePermissions(SYSTEM_PERMISSIONS.ROLES_READ)
+  @ApiOperation({
+    summary: 'Get role permissions',
+    description: 'Get all permissions assigned to a specific role. Requires ROLES:READ permission.',
+  })
+  @ApiParam({ name: 'id', description: 'Role ID', example: 'role-123' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Role permissions retrieved successfully',
+    type: GetPermissionsResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Role not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions',
+  })
+  async getRolePermissions(
+    @Param('id') roleId: string,
+    @OrgId() orgId: string
+  ): Promise<GetPermissionsResponseDto> {
+    this.logger.log('Getting role permissions', { roleId, orgId });
+
+    const request = { roleId, orgId };
+    const result = await this.getRolePermissionsUseCase.execute(request);
     return resultToHttpResponse(result);
   }
 

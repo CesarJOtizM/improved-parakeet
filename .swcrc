@@ -1,0 +1,5 @@
+{
+  "$schema": "https://swc.rs/schema.json",
+  "inputSourceMap": false,
+  "sourceMaps": true
+}

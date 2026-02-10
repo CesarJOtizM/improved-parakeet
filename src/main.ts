@@ -1,22 +1,32 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { validationConfig } from '@shared/config';
 import { AppModule } from '@src/app.module';
 import { NextFunction, Request, Response } from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Enable extended query parser for nested objects like dateRange[startDate]
+  app.set('query parser', 'extended');
 
   // Configuración global de validación
   app.useGlobalPipes(new ValidationPipe(validationConfig));
 
   // Configuración de seguridad global
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['*', 'http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Organization-ID', 'X-Organization-Slug'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Organization-ID',
+      'X-Organization-Slug',
+      'X-User-ID',
+    ],
   });
 
   // Configuración de rate limiting global

@@ -115,7 +115,8 @@ export class AuthenticationService {
       return await bcrypt.hash(password, this.SALT_ROUNDS);
     } catch (error) {
       throw new Error(
-        `Error hashing password: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Error hashing password: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
       );
     }
   }

@@ -29,8 +29,10 @@ export class AuditMetadata extends ValueObject<IAuditMetadataProps> {
     // Check for circular references by attempting JSON serialization
     try {
       JSON.stringify(props.value);
-    } catch (_error) {
-      throw new Error('Audit metadata contains circular references or invalid values');
+    } catch (error) {
+      throw new Error('Audit metadata contains circular references or invalid values', {
+        cause: error,
+      });
     }
   }
 

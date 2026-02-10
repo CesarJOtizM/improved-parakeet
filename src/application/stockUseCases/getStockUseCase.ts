@@ -13,7 +13,11 @@ export interface IGetStockRequest {
 
 export interface IStockItemData {
   productId: string;
+  productName?: string;
+  productSku?: string;
   warehouseId: string;
+  warehouseName?: string;
+  warehouseCode?: string;
   locationId?: string;
   quantity: number;
   averageCost: number;
@@ -53,7 +57,11 @@ export class GetStockUseCase {
 
       return {
         productId: stock.productId,
+        productName: stock.productName,
+        productSku: stock.productSku,
         warehouseId: stock.warehouseId,
+        warehouseName: stock.warehouseName,
+        warehouseCode: stock.warehouseCode,
         locationId: stock.locationId,
         quantity,
         averageCost,

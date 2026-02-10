@@ -2,12 +2,10 @@ import { PrismaClient } from '@infrastructure/database/generated/prisma';
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
-  private pool: Pool | null = null;
 
   constructor(configService?: ConfigService) {
     // Set DATABASE_URL environment variable for Prisma
@@ -17,27 +15,22 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     // Parse database URL to extract connection parameters
     const url = new URL(databaseUrl);
 
-    // Create PostgreSQL adapter for Prisma 7.2.0
-    // Prisma 7.2.0 requires an adapter when using custom output path
-    // Configure SSL for Supabase and other cloud providers
-    const pool = new Pool({
+    // Pass connection config directly to PrismaPg (not a Pool instance)
+    // This avoids instanceof mismatch when @prisma/adapter-pg bundles its own copy of pg
+    const poolConfig = {
       connectionString: databaseUrl,
       ssl:
         url.hostname.includes('supabase') || url.hostname.includes('amazonaws.com')
           ? { rejectUnauthorized: false }
           : undefined,
-    });
-    const adapter = new PrismaPg(pool);
+    };
+    const adapter = new PrismaPg(poolConfig);
 
-    // Call super() before accessing 'this'
     super({
       adapter,
       log:
         configService?.get('NODE_ENV') === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
-
-    // Assign pool after super() call
-    this.pool = pool;
   }
 
   async onModuleInit() {
@@ -47,9 +40,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   async onModuleDestroy() {
     await this.$disconnect();
-    if (this.pool) {
-      await this.pool.end();
-    }
     this.logger.log('Database connection closed');
   }
 

@@ -37,7 +37,25 @@
       "Bash($response = Invoke-RestMethod -Uri \"http://localhost:3000/auth/login\" -Method POST -ContentType \"application/json\" -Body '{\"\"email\"\":\"\"admin@test-org.com\"\",\"\"password\"\":\"\"Admin123!\"\"}')",
       "Bash($response.data.accessToken)",
       "Bash(Set-Content -Path \"C:\\\\Users\\\\Usuario\\\\AppData\\\\Local\\\\Temp\\\\token.txt\")",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(powershell:*)",
+      "mcp__supabase__list_projects",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__execute_sql",
+      "Bash(bun -e \"const u = new URL\\(''postgresql://postgres.kiuoqhrkqzmbukvjcddv:whm-dzx@mkw6CJN@dfm@aws-0-us-west-2.pooler.supabase.com:5432/postgres''\\); console.log\\(''Original password:'', u.password\\); console.log\\(''Reconstructed:'', u.toString\\(\\)\\);\")",
+      "Bash(bun -e \"const u = new URL\\(''postgresql://postgres.kiuoqhrkqzmbukvjcddv:whm-dzx@mkw6CJN@dfm@aws-0-us-west-2.pooler.supabase.com:5432/postgres''\\); u.searchParams.set\\(''connection_limit'', ''10''\\); u.searchParams.set\\(''pool_timeout'', ''10''\\); console.log\\(''Final URL:'', u.toString\\(\\)\\);\")",
+      "Bash(bun -e \"\nconst { Pool } = require\\(''pg''\\);\nconst pool = new Pool\\({\n  connectionString: ''postgresql://postgres.kiuoqhrkqzmbukvjcddv:whm-dzx%40mkw6CJN%40dfm@aws-0-us-west-2.pooler.supabase.com:5432/postgres'',\n  ssl: { rejectUnauthorized: false },\n}\\);\npool.query\\(''SELECT 1 as test''\\).then\\(r => { console.log\\(''SUCCESS:'', r.rows\\); pool.end\\(\\); }\\).catch\\(e => { console.log\\(''ERROR:'', e.message\\); pool.end\\(\\); }\\);\n\")",
+      "Bash(bun -e \"\nconst { Pool } = require\\(''pg''\\);\nconst pool = new Pool\\({\n  connectionString: ''postgresql://postgres.kiuoqhrkqzmbukvjcddv:whm-dzx@mkw6CJN@dfm@aws-0-us-west-2.pooler.supabase.com:5432/postgres'',\n  ssl: { rejectUnauthorized: false },\n}\\);\npool.query\\(''SELECT 1 as test''\\).then\\(r => { console.log\\(''SUCCESS:'', r.rows\\); pool.end\\(\\); }\\).catch\\(e => { console.log\\(''ERROR code:'', e.code, ''message:'', e.message\\); pool.end\\(\\); }\\);\n\")",
+      "Bash(bun run build:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(bun run:*)",
+      "Bash(bun pm:*)",
+      "Bash(bun add:*)",
+      "Bash(findstr:*)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }

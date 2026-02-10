@@ -354,7 +354,11 @@ export class PrismaStockRepository implements IStockRepository {
 
         result.push({
           productId: stock.productId,
+          productName: stock.product?.name,
+          productSku: stock.product?.sku,
           warehouseId: stock.warehouseId,
+          warehouseName: stock.warehouse?.name,
+          warehouseCode: stock.warehouse?.code,
           locationId: undefined, // MVP: no locations
           quantity,
           averageCost,

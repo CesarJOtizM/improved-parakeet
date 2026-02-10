@@ -55,7 +55,8 @@ export class TokenBlacklistService {
     } catch (error) {
       this.logger.error(`Error blacklisting token ${tokenId}:`, error);
       throw new Error(
-        `Failed to blacklist token: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to blacklist token: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
       );
     }
   }
@@ -131,7 +132,8 @@ export class TokenBlacklistService {
     } catch (error) {
       this.logger.error(`Error blacklisting all tokens for user ${userId}:`, error);
       throw new Error(
-        `Failed to blacklist all user tokens: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to blacklist all user tokens: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
       );
     }
   }
