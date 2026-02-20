@@ -40,6 +40,7 @@ export class PrismaProductRepository implements IProductRepository {
 
       const productData = await this.prisma.product.findUnique({
         where: { id },
+        include: { categories: { select: { id: true, name: true } } },
       });
 
       if (!productData || productData.orgId !== orgId) return null;
@@ -49,6 +50,7 @@ export class PrismaProductRepository implements IProductRepository {
           sku: SKU.reconstitute(productData.sku),
           name: ProductName.reconstitute(productData.name),
           description: productData.description || undefined,
+          categories: productData.categories ?? [],
           unit: UnitValueObject.create(
             productData.unit,
             productData.unit,
@@ -93,6 +95,7 @@ export class PrismaProductRepository implements IProductRepository {
     try {
       const productsData = await this.prisma.product.findMany({
         where: { orgId },
+        include: { categories: { select: { id: true, name: true } } },
       });
 
       return productsData.map(productData =>
@@ -101,6 +104,7 @@ export class PrismaProductRepository implements IProductRepository {
             sku: SKU.reconstitute(productData.sku),
             name: ProductName.reconstitute(productData.name),
             description: productData.description || undefined,
+            categories: productData.categories ?? [],
             unit: UnitValueObject.create(productData.unit, productData.unit, 0),
             barcode: productData.barcode || undefined,
             brand: productData.brand || undefined,
@@ -179,7 +183,13 @@ export class PrismaProductRepository implements IProductRepository {
         if (existingProduct) {
           const updatedProduct = await this.prisma.product.update({
             where: { id: product.id },
-            data: productData,
+            data: {
+              ...productData,
+              categories: {
+                set: product.categories.map(c => ({ id: c.id })),
+              },
+            },
+            include: { categories: { select: { id: true, name: true } } },
           });
 
           const savedProduct = Product.reconstitute(
@@ -187,6 +197,7 @@ export class PrismaProductRepository implements IProductRepository {
               sku: SKU.reconstitute(updatedProduct.sku),
               name: ProductName.reconstitute(updatedProduct.name),
               description: updatedProduct.description || undefined,
+              categories: updatedProduct.categories ?? [],
               unit: UnitValueObject.create(updatedProduct.unit, updatedProduct.unit, 0),
               barcode: updatedProduct.barcode || undefined,
               brand: updatedProduct.brand || undefined,
@@ -229,7 +240,15 @@ export class PrismaProductRepository implements IProductRepository {
       }
 
       const newProduct = await this.prisma.product.create({
-        data: productData,
+        data: {
+          ...productData,
+          ...(product.categories.length > 0 && {
+            categories: {
+              connect: product.categories.map(c => ({ id: c.id })),
+            },
+          }),
+        },
+        include: { categories: { select: { id: true, name: true } } },
       });
 
       const savedProduct = Product.reconstitute(
@@ -237,6 +256,7 @@ export class PrismaProductRepository implements IProductRepository {
           sku: SKU.reconstitute(newProduct.sku),
           name: ProductName.reconstitute(newProduct.name),
           description: newProduct.description || undefined,
+          categories: newProduct.categories ?? [],
           unit: UnitValueObject.create(newProduct.unit, newProduct.unit, 0),
           barcode: newProduct.barcode || undefined,
           brand: newProduct.brand || undefined,
@@ -329,6 +349,7 @@ export class PrismaProductRepository implements IProductRepository {
           sku: SKU.reconstitute(productData.sku),
           name: ProductName.reconstitute(productData.name),
           description: productData.description || undefined,
+          categories: [],
           unit: UnitValueObject.create(productData.unit, productData.unit, 0),
           barcode: productData.barcode || undefined,
           brand: productData.brand || undefined,
@@ -368,7 +389,8 @@ export class PrismaProductRepository implements IProductRepository {
   async findByCategory(categoryId: string, orgId: string): Promise<Product[]> {
     try {
       const productsData = await this.prisma.product.findMany({
-        where: { category: categoryId, orgId },
+        where: { categories: { some: { id: categoryId } }, orgId },
+        include: { categories: { select: { id: true, name: true } } },
       });
 
       return productsData.map(productData =>
@@ -377,6 +399,7 @@ export class PrismaProductRepository implements IProductRepository {
             sku: SKU.reconstitute(productData.sku),
             name: ProductName.reconstitute(productData.name),
             description: productData.description || undefined,
+            categories: productData.categories ?? [],
             unit: UnitValueObject.create(productData.unit, productData.unit, 0),
             barcode: productData.barcode || undefined,
             brand: productData.brand || undefined,
@@ -420,6 +443,7 @@ export class PrismaProductRepository implements IProductRepository {
             sku: SKU.reconstitute(productData.sku),
             name: ProductName.reconstitute(productData.name),
             description: productData.description || undefined,
+            categories: [],
             unit: UnitValueObject.create(productData.unit, productData.unit, 0),
             barcode: productData.barcode || undefined,
             brand: productData.brand || undefined,
@@ -464,6 +488,7 @@ export class PrismaProductRepository implements IProductRepository {
             sku: SKU.reconstitute(stock.product.sku),
             name: ProductName.reconstitute(stock.product.name),
             description: stock.product.description || undefined,
+            categories: [],
             unit: UnitValueObject.create(stock.product.unit, stock.product.unit, 0),
             barcode: stock.product.barcode || undefined,
             brand: stock.product.brand || undefined,
@@ -513,6 +538,7 @@ export class PrismaProductRepository implements IProductRepository {
             sku: SKU.reconstitute(stock.product.sku),
             name: ProductName.reconstitute(stock.product.name),
             description: stock.product.description || undefined,
+            categories: [],
             unit: UnitValueObject.create(stock.product.unit, stock.product.unit, 0),
             barcode: stock.product.barcode || undefined,
             brand: stock.product.brand || undefined,
@@ -575,6 +601,7 @@ export class PrismaProductRepository implements IProductRepository {
           skip,
           take,
           orderBy: { createdAt: 'desc' },
+          include: { categories: { select: { id: true, name: true } } },
         }),
         this.prisma.product.count({ where }),
       ]);
@@ -585,6 +612,7 @@ export class PrismaProductRepository implements IProductRepository {
             sku: SKU.reconstitute(productData.sku),
             name: ProductName.reconstitute(productData.name),
             description: productData.description || undefined,
+            categories: productData.categories ?? [],
             unit: UnitValueObject.create(productData.unit, productData.unit, 0),
             barcode: productData.barcode || undefined,
             brand: productData.brand || undefined,

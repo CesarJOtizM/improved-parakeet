@@ -1,6 +1,10 @@
 import { CreateMovementUseCase } from '@application/movementUseCases/createMovementUseCase';
+import { DeleteMovementUseCase } from '@application/movementUseCases/deleteMovementUseCase';
+import { GetMovementByIdUseCase } from '@application/movementUseCases/getMovementByIdUseCase';
 import { GetMovementsUseCase } from '@application/movementUseCases/getMovementsUseCase';
 import { PostMovementUseCase } from '@application/movementUseCases/postMovementUseCase';
+import { UpdateMovementUseCase } from '@application/movementUseCases/updateMovementUseCase';
+import { VoidMovementUseCase } from '@application/movementUseCases/voidMovementUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
 import {
@@ -9,14 +13,17 @@ import {
   GetMovementsResponseDto,
   CreateMovementResponseDto,
 } from '@movement/dto';
+import { UpdateMovementDto } from '@movement/dto/updateMovement.dto';
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Logger,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -51,7 +58,11 @@ export class MovementsController {
   constructor(
     private readonly createMovementUseCase: CreateMovementUseCase,
     private readonly getMovementsUseCase: GetMovementsUseCase,
-    private readonly postMovementUseCase: PostMovementUseCase
+    private readonly getMovementByIdUseCase: GetMovementByIdUseCase,
+    private readonly postMovementUseCase: PostMovementUseCase,
+    private readonly updateMovementUseCase: UpdateMovementUseCase,
+    private readonly deleteMovementUseCase: DeleteMovementUseCase,
+    private readonly voidMovementUseCase: VoidMovementUseCase
   ) {}
 
   @Post()
@@ -158,6 +169,23 @@ export class MovementsController {
     return resultToHttpResponse(result);
   }
 
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.INVENTORY_READ)
+  @ApiOperation({
+    summary: 'Get movement by ID',
+    description: 'Get a single movement by its ID. Requires INVENTORY:READ permission.',
+  })
+  @ApiParam({ name: 'id', description: 'Movement ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Movement retrieved successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Movement not found' })
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Insufficient permissions' })
+  async getMovementById(@Param('id') movementId: string, @OrgId() orgId: string) {
+    this.logger.log('Getting movement by ID', { movementId, orgId });
+    const result = await this.getMovementByIdUseCase.execute({ movementId, orgId });
+    return resultToHttpResponse(result);
+  }
+
   @Post(':id/post')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(SYSTEM_PERMISSIONS.INVENTORY_ENTRY)
@@ -189,12 +217,75 @@ export class MovementsController {
   ): Promise<{ success: boolean; message: string; data: unknown; timestamp: string }> {
     this.logger.log('Posting movement', { movementId, orgId });
 
-    const request = {
+    const result = await this.postMovementUseCase.execute({ movementId, orgId });
+    return resultToHttpResponse(result);
+  }
+
+  @Patch(':id')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.INVENTORY_ENTRY)
+  @ApiOperation({
+    summary: 'Update DRAFT movement',
+    description: 'Update a movement in DRAFT status. Requires INVENTORY:ENTRY permission.',
+  })
+  @ApiParam({ name: 'id', description: 'Movement ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Movement updated successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Movement not found' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Movement cannot be updated' })
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Insufficient permissions' })
+  async updateMovement(
+    @Param('id') movementId: string,
+    @Body() updateMovementDto: UpdateMovementDto,
+    @OrgId() orgId: string
+  ) {
+    this.logger.log('Updating movement', { movementId, orgId });
+
+    const result = await this.updateMovementUseCase.execute({
       movementId,
       orgId,
-    };
+      reference: updateMovementDto.reference,
+      reason: updateMovementDto.reason,
+      note: updateMovementDto.note,
+      lines: updateMovementDto.lines,
+    });
+    return resultToHttpResponse(result);
+  }
 
-    const result = await this.postMovementUseCase.execute(request);
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.INVENTORY_ENTRY)
+  @ApiOperation({
+    summary: 'Delete DRAFT movement',
+    description: 'Delete a movement in DRAFT status. Requires INVENTORY:ENTRY permission.',
+  })
+  @ApiParam({ name: 'id', description: 'Movement ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Movement deleted successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Movement not found' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Movement cannot be deleted' })
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Insufficient permissions' })
+  async deleteMovement(@Param('id') movementId: string, @OrgId() orgId: string) {
+    this.logger.log('Deleting movement', { movementId, orgId });
+
+    const result = await this.deleteMovementUseCase.execute({ movementId, orgId });
+    return resultToHttpResponse(result);
+  }
+
+  @Post(':id/void')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.INVENTORY_ENTRY)
+  @ApiOperation({
+    summary: 'Void movement',
+    description: 'Void a posted movement (POSTED → VOID). Requires INVENTORY:ENTRY permission.',
+  })
+  @ApiParam({ name: 'id', description: 'Movement ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Movement voided successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Movement not found' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Movement cannot be voided' })
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Insufficient permissions' })
+  async voidMovement(@Param('id') movementId: string, @OrgId() orgId: string) {
+    this.logger.log('Voiding movement', { movementId, orgId });
+
+    const result = await this.voidMovementUseCase.execute({ movementId, orgId });
     return resultToHttpResponse(result);
   }
 }

@@ -17,8 +17,14 @@ export interface IMovementProps {
 export class Movement extends AggregateRoot<IMovementProps> {
   private lines: MovementLine[] = [];
 
-  private constructor(props: IMovementProps, id?: string, orgId?: string) {
-    super(props, id, orgId);
+  private constructor(
+    props: IMovementProps,
+    id?: string,
+    orgId?: string,
+    createdAt?: Date,
+    updatedAt?: Date
+  ) {
+    super(props, id, orgId, createdAt, updatedAt);
   }
 
   public static create(props: IMovementProps, orgId: string): Movement {
@@ -30,9 +36,11 @@ export class Movement extends AggregateRoot<IMovementProps> {
     props: IMovementProps,
     id: string,
     orgId: string,
-    lines: MovementLine[] = []
+    lines: MovementLine[] = [],
+    createdAt?: Date,
+    updatedAt?: Date
   ): Movement {
-    const movement = new Movement(props, id, orgId);
+    const movement = new Movement(props, id, orgId, createdAt, updatedAt);
     movement.lines = lines;
     return movement;
   }
@@ -123,10 +131,14 @@ export class Movement extends AggregateRoot<IMovementProps> {
       postedAt: new Date(),
     };
 
-    // Create new instance preserving lines
-    const postedMovement = Movement.reconstitute(updatedProps, this.id, this.orgId!, [
-      ...this.lines,
-    ]);
+    // Create new instance preserving lines and original timestamps
+    const postedMovement = Movement.reconstitute(
+      updatedProps,
+      this.id,
+      this.orgId!,
+      [...this.lines],
+      this.createdAt
+    );
     const event = new MovementPostedEvent(postedMovement);
     postedMovement.addDomainEvent(event);
     return postedMovement;
@@ -148,10 +160,14 @@ export class Movement extends AggregateRoot<IMovementProps> {
       status: MovementStatus.create('VOID'),
     };
 
-    // Create new instance preserving lines
-    const voidedMovement = Movement.reconstitute(updatedProps, this.id, this.orgId!, [
-      ...this.lines,
-    ]);
+    // Create new instance preserving lines and original timestamps
+    const voidedMovement = Movement.reconstitute(
+      updatedProps,
+      this.id,
+      this.orgId!,
+      [...this.lines],
+      this.createdAt
+    );
     const event = new MovementVoidedEvent(voidedMovement);
     voidedMovement.addDomainEvent(event);
     return voidedMovement;
@@ -173,8 +189,14 @@ export class Movement extends AggregateRoot<IMovementProps> {
       createdBy: this.props.createdBy,
     };
 
-    // Create new instance preserving lines
-    return Movement.reconstitute(updatedProps, this.id, this.orgId!, [...this.lines]);
+    // Create new instance preserving lines and original timestamps
+    return Movement.reconstitute(
+      updatedProps,
+      this.id,
+      this.orgId!,
+      [...this.lines],
+      this.createdAt
+    );
   }
 
   public getTotalQuantity(): number {

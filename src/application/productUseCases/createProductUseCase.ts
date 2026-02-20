@@ -19,6 +19,7 @@ export interface ICreateProductRequest {
   sku: string;
   name: string;
   description?: string;
+  categoryIds?: string[];
   unit: {
     code: string;
     name: string;
@@ -27,6 +28,8 @@ export interface ICreateProductRequest {
   barcode?: string;
   brand?: string;
   model?: string;
+  price?: number;
+  currency?: string;
   status?: 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED';
   costMethod?: 'AVG' | 'FIFO';
   orgId: string;
@@ -37,6 +40,7 @@ export interface IProductData {
   sku: string;
   name: string;
   description?: string;
+  categories?: { id: string; name: string }[];
   unit: {
     code: string;
     name: string;

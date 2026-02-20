@@ -123,7 +123,7 @@ export class ProductByCategorySpecification extends PrismaSpecification<Product>
   public toPrismaWhere(orgId: string): PrismaWhereInput {
     return {
       orgId,
-      category: this.category,
+      categories: { some: { id: this.category } },
     };
   }
 }

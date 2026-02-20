@@ -12,6 +12,7 @@ export interface IProductProps {
   sku: SKU;
   name: ProductName;
   description?: string;
+  categories?: { id: string; name: string }[];
   unit: UnitValueObject;
   barcode?: string;
   brand?: string;
@@ -86,6 +87,7 @@ export class Product extends AggregateRoot<IProductProps> {
       sku: props.sku !== undefined ? props.sku : this.props.sku,
       name: props.name !== undefined ? props.name : this.props.name,
       description: props.description !== undefined ? props.description : this.props.description,
+      categories: props.categories !== undefined ? props.categories : this.props.categories,
       unit: props.unit !== undefined ? props.unit : this.props.unit,
       barcode: props.barcode !== undefined ? props.barcode : this.props.barcode,
       brand: props.brand !== undefined ? props.brand : this.props.brand,
@@ -138,6 +140,10 @@ export class Product extends AggregateRoot<IProductProps> {
 
   get description(): string | undefined {
     return this.props.description;
+  }
+
+  get categories(): { id: string; name: string }[] {
+    return this.props.categories ?? [];
   }
 
   get unit(): UnitValueObject {

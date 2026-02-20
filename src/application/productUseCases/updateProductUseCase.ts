@@ -26,6 +26,7 @@ export interface IUpdateProductRequest {
   productId: string;
   name?: string;
   description?: string;
+  categoryIds?: string[];
   unit?: {
     code: string;
     name: string;
@@ -87,6 +88,10 @@ export class UpdateProductUseCase {
 
       if (request.description !== undefined) {
         updateProps.description = request.description;
+      }
+
+      if (request.categoryIds !== undefined) {
+        updateProps.categories = request.categoryIds.map(id => ({ id, name: '' }));
       }
 
       if (request.unit !== undefined) {
@@ -186,6 +191,7 @@ export class UpdateProductUseCase {
           sku: savedProduct.sku.getValue(),
           name: savedProduct.name.getValue(),
           description: savedProduct.description,
+          categories: savedProduct.categories,
           unit: {
             code: savedProduct.unit.getValue().code,
             name: savedProduct.unit.getValue().name,

@@ -7,11 +7,11 @@ export abstract class Entity<T> {
   protected _updatedAt: Date;
   protected readonly props: T;
 
-  constructor(props: T, id?: string, orgId?: string) {
+  constructor(props: T, id?: string, orgId?: string, createdAt?: Date, updatedAt?: Date) {
     this._id = id || createId();
     this._orgId = orgId || '';
-    this._createdAt = new Date();
-    this._updatedAt = new Date();
+    this._createdAt = createdAt ?? new Date();
+    this._updatedAt = updatedAt ?? new Date();
     this.props = props;
   }
 

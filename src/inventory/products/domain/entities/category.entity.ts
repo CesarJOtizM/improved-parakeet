@@ -4,6 +4,7 @@ export interface ICategoryProps {
   name: string;
   parentId?: string;
   description?: string;
+  isActive: boolean;
 }
 
 export class Category extends Entity<ICategoryProps> {
@@ -11,8 +12,11 @@ export class Category extends Entity<ICategoryProps> {
     super(props, id, orgId);
   }
 
-  public static create(props: ICategoryProps, orgId: string): Category {
-    return new Category(props, undefined, orgId);
+  public static create(
+    props: Omit<ICategoryProps, 'isActive'> & { isActive?: boolean },
+    orgId: string
+  ): Category {
+    return new Category({ ...props, isActive: props.isActive ?? true }, undefined, orgId);
   }
 
   public static reconstitute(props: ICategoryProps, id: string, orgId: string): Category {
@@ -23,6 +27,7 @@ export class Category extends Entity<ICategoryProps> {
     if (props.name !== undefined) this.props.name = props.name;
     if (props.parentId !== undefined) this.props.parentId = props.parentId;
     if (props.description !== undefined) this.props.description = props.description;
+    if (props.isActive !== undefined) this.props.isActive = props.isActive;
 
     this.updateTimestamp();
   }
@@ -46,5 +51,9 @@ export class Category extends Entity<ICategoryProps> {
 
   get description(): string | undefined {
     return this.props.description;
+  }
+
+  get isActive(): boolean {
+    return this.props.isActive;
   }
 }

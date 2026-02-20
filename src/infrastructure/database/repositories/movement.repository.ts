@@ -572,7 +572,10 @@ export class PrismaMovementRepository implements IMovementRepository {
         createdBy: valueObjects.createdBy,
       },
       movementData.id,
-      movementData.orgId
+      movementData.orgId,
+      [],
+      movementData.createdAt,
+      movementData.updatedAt
     );
 
     // Create lines using functional approach
@@ -621,7 +624,9 @@ export class PrismaMovementRepository implements IMovementRepository {
       },
       movementData.id,
       movementData.orgId,
-      [] // No lines for this method
+      [],
+      movementData.createdAt,
+      movementData.updatedAt
     );
 
     return movement;

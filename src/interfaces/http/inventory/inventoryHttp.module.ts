@@ -2,8 +2,10 @@ import { AuthenticationModule } from '@auth/authentication.module';
 import { InventoryModule } from '@inventory/inventory.module';
 import { Module } from '@nestjs/common';
 
+import { CategoriesController } from './categories.controller';
 import { MovementsController } from './movements.controller';
 import { ProductsController } from './products.controller';
+import { ReorderRulesController } from './reorderRules.controller';
 import { StockController } from './stock.controller';
 import { TransfersController } from './transfers.controller';
 import { WarehousesController } from './warehouses.controller';
@@ -14,11 +16,13 @@ import { WarehousesController } from './warehouses.controller';
     InventoryModule,
   ],
   controllers: [
+    CategoriesController,
     ProductsController,
     WarehousesController,
     MovementsController,
     TransfersController,
     StockController,
+    ReorderRulesController,
   ],
 })
 export class InventoryHttpModule {}

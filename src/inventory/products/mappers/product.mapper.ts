@@ -1,5 +1,6 @@
 import { IProductProps, Product } from '@product/domain/entities/product.entity';
 import { CostMethod } from '@product/domain/valueObjects/costMethod.valueObject';
+import { Price } from '@product/domain/valueObjects/price.valueObject';
 import { ProductName } from '@product/domain/valueObjects/productName.valueObject';
 import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
 import { SKU } from '@product/domain/valueObjects/sku.valueObject';
@@ -13,6 +14,7 @@ export interface IProductCreateInput {
   sku: string;
   name: string;
   description?: string;
+  categoryIds?: string[];
   unit: {
     code: string;
     name: string;
@@ -21,6 +23,8 @@ export interface IProductCreateInput {
   barcode?: string;
   brand?: string;
   model?: string;
+  price?: number;
+  currency?: string;
   status?: 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED';
   costMethod?: 'AVG' | 'FIFO';
 }
@@ -33,6 +37,7 @@ export interface IProductResponseData {
   sku: string;
   name: string;
   description?: string;
+  categories: { id: string; name: string }[];
   unit: {
     code: string;
     name: string;
@@ -80,10 +85,13 @@ export class ProductMapper {
         sku,
         name,
         description: input.description,
+        categories: input.categoryIds?.map(id => ({ id, name: '' })) ?? [],
         unit,
         barcode: input.barcode,
         brand: input.brand,
         model: input.model,
+        price:
+          input.price != null ? Price.create(input.price, input.currency || 'COP', 2) : undefined,
         status,
         costMethod,
       }))
@@ -106,6 +114,7 @@ export class ProductMapper {
       sku: product.sku.getValue(),
       name: product.name.getValue(),
       description: product.description,
+      categories: product.categories,
       unit: {
         code: product.unit.getValue().code,
         name: product.unit.getValue().name,

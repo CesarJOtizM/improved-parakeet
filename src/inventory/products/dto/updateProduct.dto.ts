@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -44,6 +45,17 @@ export class UpdateProductDto {
   @ValidateNested()
   @Type(() => UnitDto)
   unit?: UnitDto;
+
+  @ApiProperty({
+    description: 'Category IDs (many-to-many)',
+    example: ['clxyz...'],
+    required: false,
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true, message: 'Each category ID must be a string' })
+  categoryIds?: string[];
 
   @ApiProperty({
     description: 'Product barcode',

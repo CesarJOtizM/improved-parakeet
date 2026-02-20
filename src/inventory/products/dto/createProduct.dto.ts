@@ -11,6 +11,7 @@ import {
   IsNumber,
   Min,
   Max,
+  IsArray,
 } from 'class-validator';
 
 export class UnitDto {
@@ -86,6 +87,17 @@ export class CreateProductDto {
   unit!: UnitDto;
 
   @ApiProperty({
+    description: 'Category IDs (many-to-many)',
+    example: ['clxyz...'],
+    required: false,
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true, message: 'Each category ID must be a string' })
+  categoryIds?: string[];
+
+  @ApiProperty({
     description: 'Product barcode',
     example: '1234567890123',
     required: false,
@@ -126,6 +138,25 @@ export class CreateProductDto {
     message: 'Status must be one of: ACTIVE, INACTIVE, DISCONTINUED',
   })
   status?: 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED';
+
+  @ApiProperty({
+    description: 'Product price',
+    example: 19.99,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'Price must be a number' })
+  @Min(0, { message: 'Price must be a positive number' })
+  price?: number;
+
+  @ApiProperty({
+    description: 'Price currency (ISO 4217)',
+    example: 'COP',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Currency must be a string' })
+  currency?: string;
 
   @ApiProperty({
     description: 'Cost method',

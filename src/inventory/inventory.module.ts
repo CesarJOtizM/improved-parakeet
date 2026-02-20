@@ -11,12 +11,25 @@ import { TransferReceivedAuditHandler } from '@application/eventHandlers/transfe
 import { TransferRejectedAuditHandler } from '@application/eventHandlers/transferRejectedAuditHandler';
 import { WarehouseCreatedEventHandler } from '@application/eventHandlers/warehouseCreatedEventHandler';
 import { CreateMovementUseCase } from '@application/movementUseCases/createMovementUseCase';
+import { DeleteMovementUseCase } from '@application/movementUseCases/deleteMovementUseCase';
+import { GetMovementByIdUseCase } from '@application/movementUseCases/getMovementByIdUseCase';
 import { GetMovementsUseCase } from '@application/movementUseCases/getMovementsUseCase';
 import { PostMovementUseCase } from '@application/movementUseCases/postMovementUseCase';
+import { UpdateMovementUseCase } from '@application/movementUseCases/updateMovementUseCase';
+import { VoidMovementUseCase } from '@application/movementUseCases/voidMovementUseCase';
+import { CreateCategoryUseCase } from '@application/categoryUseCases/createCategoryUseCase';
+import { DeleteCategoryUseCase } from '@application/categoryUseCases/deleteCategoryUseCase';
+import { GetCategoriesUseCase } from '@application/categoryUseCases/getCategoriesUseCase';
+import { GetCategoryByIdUseCase } from '@application/categoryUseCases/getCategoryByIdUseCase';
+import { UpdateCategoryUseCase } from '@application/categoryUseCases/updateCategoryUseCase';
 import { CreateProductUseCase } from '@application/productUseCases/createProductUseCase';
 import { GetProductByIdUseCase } from '@application/productUseCases/getProductByIdUseCase';
 import { GetProductsUseCase } from '@application/productUseCases/getProductsUseCase';
 import { UpdateProductUseCase } from '@application/productUseCases/updateProductUseCase';
+import { CreateReorderRuleUseCase } from '@application/reorderRuleUseCases/createReorderRuleUseCase';
+import { DeleteReorderRuleUseCase } from '@application/reorderRuleUseCases/deleteReorderRuleUseCase';
+import { GetReorderRulesUseCase } from '@application/reorderRuleUseCases/getReorderRulesUseCase';
+import { UpdateReorderRuleUseCase } from '@application/reorderRuleUseCases/updateReorderRuleUseCase';
 import { GetStockUseCase } from '@application/stockUseCases/getStockUseCase';
 import { CancelTransferUseCase } from '@application/transferUseCases/cancelTransferUseCase';
 import { ConfirmTransferUseCase } from '@application/transferUseCases/confirmTransferUseCase';
@@ -29,6 +42,7 @@ import { GetWarehouseByIdUseCase } from '@application/warehouseUseCases/getWareh
 import { GetWarehousesUseCase } from '@application/warehouseUseCases/getWarehousesUseCase';
 import { AuthenticationModule } from '@auth/authentication.module';
 import {
+  PrismaCategoryRepository,
   PrismaLocationRepository,
   PrismaMovementRepository,
   PrismaProductRepository,
@@ -73,6 +87,10 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
   providers: [
     // Repositories
     {
+      provide: 'CategoryRepository',
+      useClass: PrismaCategoryRepository,
+    },
+    {
       provide: 'ProductRepository',
       useClass: PrismaProductRepository,
     },
@@ -100,6 +118,12 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
       provide: 'LocationRepository',
       useClass: PrismaLocationRepository,
     },
+    // Category Use Cases
+    GetCategoriesUseCase,
+    GetCategoryByIdUseCase,
+    CreateCategoryUseCase,
+    UpdateCategoryUseCase,
+    DeleteCategoryUseCase,
     // Product Use Cases
     CreateProductUseCase,
     GetProductsUseCase,
@@ -112,9 +136,18 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     // Movement Use Cases
     CreateMovementUseCase,
     GetMovementsUseCase,
+    GetMovementByIdUseCase,
     PostMovementUseCase,
+    UpdateMovementUseCase,
+    DeleteMovementUseCase,
+    VoidMovementUseCase,
     // Stock Use Cases
     GetStockUseCase,
+    // Reorder Rule Use Cases
+    GetReorderRulesUseCase,
+    CreateReorderRuleUseCase,
+    UpdateReorderRuleUseCase,
+    DeleteReorderRuleUseCase,
     // Transfer Use Cases
     InitiateTransferUseCase,
     GetTransfersUseCase,
@@ -150,6 +183,11 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
   ],
   exports: [
     // Export use cases for controllers
+    GetCategoriesUseCase,
+    GetCategoryByIdUseCase,
+    CreateCategoryUseCase,
+    UpdateCategoryUseCase,
+    DeleteCategoryUseCase,
     CreateProductUseCase,
     GetProductsUseCase,
     GetProductByIdUseCase,
@@ -159,8 +197,16 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     GetWarehouseByIdUseCase,
     CreateMovementUseCase,
     GetMovementsUseCase,
+    GetMovementByIdUseCase,
     PostMovementUseCase,
+    UpdateMovementUseCase,
+    DeleteMovementUseCase,
+    VoidMovementUseCase,
     GetStockUseCase,
+    GetReorderRulesUseCase,
+    CreateReorderRuleUseCase,
+    UpdateReorderRuleUseCase,
+    DeleteReorderRuleUseCase,
     InitiateTransferUseCase,
     GetTransfersUseCase,
     ConfirmTransferUseCase,

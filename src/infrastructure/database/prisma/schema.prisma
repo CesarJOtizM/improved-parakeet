@@ -35,6 +35,7 @@ model Organization {
   users      User[]
   products   Product[]
   warehouses Warehouse[]
+  categories Category[]
 
   @@map("organizations")
 }
@@ -179,7 +180,6 @@ model Product {
   sku         String
   name        String
   description String?
-  category    String?
   unit        String
   barcode     String?
   brand       String?
@@ -194,6 +194,7 @@ model Product {
 
   // Relations
   organization Organization   @relation(fields: [orgId], references: [id])
+  categories   Category[]     @relation("ProductCategories")
   movements    MovementLine[]
   transfers    TransferLine[]
   stock        Stock[]
@@ -204,7 +205,6 @@ model Product {
   @@unique([sku, orgId])
   @@index([orgId])
   @@index([orgId, isActive])
-  @@index([orgId, category])
   @@map("products")
 }
 
@@ -511,6 +511,29 @@ model ReturnLine {
   @@index([productId, orgId])
   @@index([locationId])
   @@map("return_lines")
+}
+
+// Categories
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  parentId    String?
+  isActive    Boolean  @default(true)
+  orgId       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [orgId], references: [id])
+  parent       Category?    @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children     Category[]   @relation("CategoryHierarchy")
+  products     Product[]    @relation("ProductCategories")
+
+  @@unique([name, orgId])
+  @@index([orgId])
+  @@index([orgId, parentId])
+  @@map("categories")
 }
 
 // Audit Logs

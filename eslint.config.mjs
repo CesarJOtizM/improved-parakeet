@@ -69,45 +69,9 @@ export const baseConfig = [
         },
       ],
 
-      // Ordenamiento de importaciones
-      'import/order': [
-        'error',
-        {
-          groups: [
-            'builtin', // Node.js built-in modules
-            'external', // Paquetes de npm
-            'internal', // Archivos internos del proyecto
-            'parent', // Importaciones desde el directorio padre
-            'sibling', // Importaciones desde el mismo directorio
-            'index', // Importaciones desde el archivo index
-            'object', // Importaciones de objetos
-            'type', // Importaciones de tipos
-          ],
-          pathGroups: [
-            {
-              pattern: 'core/**',
-              group: 'internal',
-              position: 'before',
-            },
-            {
-              pattern: '@repo/**',
-              group: 'internal',
-              position: 'before',
-            },
-            {
-              pattern: '@/**',
-              group: 'internal',
-              position: 'before',
-            },
-          ],
-          pathGroupsExcludedImportTypes: ['builtin'],
-          'newlines-between': 'always',
-          alphabetize: {
-            order: 'asc',
-            caseInsensitive: true,
-          },
-        },
-      ],
+      // Ordenamiento de importaciones (desactivado: eslint-plugin-import no es compatible con ESLint 10;
+      // getTokenOrCommentAfter fue eliminado de la API. Reactivar al usar ESLint 8 o cuando el plugin lo soporte)
+      'import/order': 'off',
     },
   },
 
