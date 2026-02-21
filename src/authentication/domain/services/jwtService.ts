@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService as NestJwtService } from '@nestjs/jwt';
 
 export interface IJwtPayload {
@@ -23,9 +24,35 @@ export interface ITokenPair {
   refreshTokenExpiresAt: Date;
 }
 
+/** Convierte cadena de expiración (ej. '8h', '15d') a milisegundos */
+function expiryToMs(expiry: string): number {
+  const match = /^(\d+)([smhd])$/.exec(expiry?.trim() || '');
+  if (!match) return 8 * 60 * 60 * 1000; // default 8h
+  const n = parseInt(match[1], 10);
+  const unit = match[2];
+  const multipliers: Record<string, number> = {
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+  };
+  return n * (multipliers[unit] ?? 0);
+}
+
 @Injectable()
 export class JwtService {
-  constructor(private readonly nestJwtService: NestJwtService) {}
+  constructor(
+    private readonly nestJwtService: NestJwtService,
+    private readonly configService: ConfigService
+  ) {}
+
+  private get accessTokenExpiry(): string {
+    return this.configService.get('auth')?.jwt?.accessTokenExpiry ?? '8h';
+  }
+
+  private get refreshTokenExpiry(): string {
+    return this.configService.get('auth')?.jwt?.refreshTokenExpiry ?? '15d';
+  }
 
   /**
    * Genera un par de tokens (access + refresh) para un usuario
@@ -40,8 +67,10 @@ export class JwtService {
   ): Promise<ITokenPair> {
     try {
       const now = new Date();
-      const accessTokenExpiresAt = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutos
-      const refreshTokenExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 días
+      const accessTokenExpiry = this.accessTokenExpiry;
+      const refreshTokenExpiry = this.refreshTokenExpiry;
+      const accessTokenExpiresAt = new Date(now.getTime() + expiryToMs(accessTokenExpiry));
+      const refreshTokenExpiresAt = new Date(now.getTime() + expiryToMs(refreshTokenExpiry));
 
       const accessTokenPayload: IJwtPayload = {
         sub: userId,
@@ -66,10 +95,10 @@ export class JwtService {
       };
 
       const accessToken = await this.nestJwtService.signAsync(accessTokenPayload, {
-        expiresIn: '15m',
+        expiresIn: accessTokenExpiry as import('ms').StringValue,
       });
       const refreshToken = await this.nestJwtService.signAsync(refreshTokenPayload, {
-        expiresIn: '7d',
+        expiresIn: refreshTokenExpiry as import('ms').StringValue,
       });
 
       return {
@@ -100,7 +129,8 @@ export class JwtService {
   ): Promise<{ accessToken: string; accessTokenExpiresAt: Date }> {
     try {
       const now = new Date();
-      const accessTokenExpiresAt = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutos
+      const accessTokenExpiry = this.accessTokenExpiry;
+      const accessTokenExpiresAt = new Date(now.getTime() + expiryToMs(accessTokenExpiry));
 
       const accessTokenPayload: IJwtPayload = {
         sub: userId,
@@ -114,7 +144,7 @@ export class JwtService {
       };
 
       const accessToken = await this.nestJwtService.signAsync(accessTokenPayload, {
-        expiresIn: '15m',
+        expiresIn: accessTokenExpiry as import('ms').StringValue,
       });
 
       return {

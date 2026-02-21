@@ -1,5 +1,6 @@
 import { CancelTransferUseCase } from '@application/transferUseCases/cancelTransferUseCase';
 import { ConfirmTransferUseCase } from '@application/transferUseCases/confirmTransferUseCase';
+import { GetTransferByIdUseCase } from '@application/transferUseCases/getTransferByIdUseCase';
 import { GetTransfersUseCase } from '@application/transferUseCases/getTransfersUseCase';
 import { InitiateTransferUseCase } from '@application/transferUseCases/initiateTransferUseCase';
 import { ReceiveTransferUseCase } from '@application/transferUseCases/receiveTransferUseCase';
@@ -30,6 +31,7 @@ import {
   InitiateTransferDto,
   GetTransfersQueryDto,
   GetTransfersResponseDto,
+  GetTransferByIdResponseDto,
   InitiateTransferResponseDto,
 } from '@transfer/dto';
 
@@ -47,6 +49,7 @@ export class TransfersController {
   constructor(
     private readonly initiateTransferUseCase: InitiateTransferUseCase,
     private readonly getTransfersUseCase: GetTransfersUseCase,
+    private readonly getTransferByIdUseCase: GetTransferByIdUseCase,
     private readonly confirmTransferUseCase: ConfirmTransferUseCase,
     private readonly receiveTransferUseCase: ReceiveTransferUseCase,
     private readonly rejectTransferUseCase: RejectTransferUseCase,
@@ -157,6 +160,36 @@ export class TransfersController {
     return resultToHttpResponse(result);
   }
 
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.INVENTORY_READ)
+  @ApiOperation({
+    summary: 'Get transfer by ID',
+    description:
+      'Get a transfer by its ID including warehouse names and product details. Requires INVENTORY:READ permission.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Transfer retrieved successfully',
+    type: GetTransferByIdResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Transfer not found',
+  })
+  async getTransferById(
+    @Param('id') id: string,
+    @OrgId() orgId: string
+  ): Promise<GetTransferByIdResponseDto> {
+    this.logger.log('Getting transfer by ID', { transferId: id, orgId });
+
+    const result = await this.getTransferByIdUseCase.execute({
+      transferId: id,
+      orgId,
+    });
+    return resultToHttpResponse(result);
+  }
+
   @Post(':id/confirm')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(SYSTEM_PERMISSIONS.INVENTORY_TRANSFER)
@@ -207,12 +240,18 @@ export class TransfersController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Transfer cannot be received',
   })
-  async receiveTransfer(@Param('id') id: string, @OrgId() orgId: string): Promise<unknown> {
-    this.logger.log('Receiving transfer', { transferId: id, orgId });
+  async receiveTransfer(
+    @Param('id') id: string,
+    @OrgId() orgId: string,
+    @Req() req: Request
+  ): Promise<unknown> {
+    const user = req.user as IAuthenticatedUser;
+    this.logger.log('Receiving transfer', { transferId: id, orgId, receivedBy: user.id });
 
     const result = await this.receiveTransferUseCase.execute({
       transferId: id,
       orgId,
+      receivedBy: user.id,
     });
     return resultToHttpResponse(result);
   }

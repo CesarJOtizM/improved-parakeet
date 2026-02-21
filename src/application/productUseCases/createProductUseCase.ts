@@ -56,6 +56,8 @@ export interface IProductData {
   orgId: string;
   createdAt: Date;
   updatedAt: Date;
+  statusChangedBy?: string | null;
+  statusChangedAt?: Date | null;
 }
 
 export type ICreateProductResponse = IApiResponseSuccess<IProductData>;

@@ -13,6 +13,7 @@ export interface ITransferProps {
   note?: string;
   initiatedAt?: Date;
   receivedAt?: Date;
+  receivedBy?: string;
 }
 
 export class Transfer extends AggregateRoot<ITransferProps> {
@@ -136,7 +137,7 @@ export class Transfer extends AggregateRoot<ITransferProps> {
     this.addDomainEvent(event);
   }
 
-  public receive(): void {
+  public receive(userId?: string): void {
     // Validate status can be received
     if (!this.props.status.canReceive()) {
       throw new Error('Transfer cannot be received');
@@ -144,6 +145,7 @@ export class Transfer extends AggregateRoot<ITransferProps> {
 
     this.props.status = TransferStatus.create('RECEIVED');
     this.props.receivedAt = new Date();
+    this.props.receivedBy = userId;
     this.updateTimestamp();
 
     // Emit TransferReceivedEvent
@@ -196,6 +198,7 @@ export class Transfer extends AggregateRoot<ITransferProps> {
       note: props.note !== undefined ? props.note : this.props.note,
       initiatedAt: this.props.initiatedAt,
       receivedAt: this.props.receivedAt,
+      receivedBy: this.props.receivedBy,
     };
 
     // Create new instance preserving lines
@@ -237,5 +240,9 @@ export class Transfer extends AggregateRoot<ITransferProps> {
 
   get receivedAt(): Date | undefined {
     return this.props.receivedAt;
+  }
+
+  get receivedBy(): string | undefined {
+    return this.props.receivedBy;
   }
 }

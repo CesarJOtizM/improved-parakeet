@@ -64,15 +64,27 @@ export interface IMovementResponseData {
   type: string;
   status: string;
   warehouseId: string;
+  warehouseName?: string;
+  warehouseCode?: string;
   reference?: string;
   reason?: string;
   note?: string;
   postedAt?: Date;
+  postedBy?: string;
+  postedByName?: string;
   createdBy: string;
+  createdByName?: string;
   orgId: string;
   createdAt: Date;
   updatedAt: Date;
   lines: IMovementLineResponseData[];
+}
+
+export interface IMovementResolvedNames {
+  warehouseName?: string;
+  warehouseCode?: string;
+  createdByName?: string;
+  postedByName?: string;
 }
 
 /**
@@ -181,18 +193,24 @@ export class MovementMapper {
    */
   public static toResponseData(
     movement: Movement,
-    productInfoMap?: Map<string, IProductInfo>
+    productInfoMap?: Map<string, IProductInfo>,
+    resolved?: IMovementResolvedNames
   ): IMovementResponseData {
     return {
       id: movement.id,
       type: movement.type.getValue(),
       status: movement.status.getValue(),
       warehouseId: movement.warehouseId,
+      warehouseName: resolved?.warehouseName,
+      warehouseCode: resolved?.warehouseCode,
       reference: movement.reference,
       reason: movement.reason,
       note: movement.note,
       postedAt: movement.postedAt,
+      postedBy: movement.postedBy,
+      postedByName: resolved?.postedByName,
       createdBy: movement.createdBy,
+      createdByName: resolved?.createdByName,
       orgId: movement.orgId!,
       createdAt: movement.createdAt,
       updatedAt: movement.updatedAt,
@@ -211,8 +229,15 @@ export class MovementMapper {
    */
   public static toResponseDataList(
     movements: Movement[],
-    productInfoMap?: Map<string, IProductInfo>
+    productInfoMap?: Map<string, IProductInfo>,
+    warehouseMap?: Map<string, { name: string; code: string }>
   ): IMovementResponseData[] {
-    return movements.map(movement => MovementMapper.toResponseData(movement, productInfoMap));
+    return movements.map(movement => {
+      const wh = warehouseMap?.get(movement.warehouseId);
+      return MovementMapper.toResponseData(movement, productInfoMap, {
+        warehouseName: wh?.name,
+        warehouseCode: wh?.code,
+      });
+    });
   }
 }

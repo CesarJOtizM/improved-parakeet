@@ -215,9 +215,11 @@ export class ProductsController {
   async updateProduct(
     @Param('id') productId: string,
     @Body() updateProductDto: UpdateProductDto,
-    @OrgId() orgId: string
+    @OrgId() orgId: string,
+    @Req() req: Request
   ): Promise<UpdateProductResponseDto> {
-    this.logger.log('Updating product', { productId, orgId });
+    const user = req.user as IAuthenticatedUser;
+    this.logger.log('Updating product', { productId, orgId, updatedBy: user.id });
 
     const request = {
       productId,
@@ -233,6 +235,7 @@ export class ProductsController {
       currency: updateProductDto.currency,
       status: updateProductDto.status,
       costMethod: updateProductDto.costMethod,
+      updatedBy: user.id,
     };
 
     const result = await this.updateProductUseCase.execute(request);

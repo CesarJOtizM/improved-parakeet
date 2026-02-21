@@ -11,6 +11,7 @@ import { MovementMapper, type IProductInfo } from '@movement/mappers';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { DomainError, Result, ok } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
+import { PrismaService } from '@infrastructure/database/prisma.service';
 
 import type { IMovementData } from './createMovementUseCase';
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
@@ -40,7 +41,8 @@ export class GetMovementsUseCase {
 
   constructor(
     @Inject('MovementRepository') private readonly movementRepository: IMovementRepository,
-    @Inject('ProductRepository') private readonly productRepository: IProductRepository
+    @Inject('ProductRepository') private readonly productRepository: IProductRepository,
+    private readonly prisma: PrismaService
   ) {}
 
   async execute(
@@ -178,11 +180,21 @@ export class GetMovementsUseCase {
       }
     }
 
+    // Batch-fetch warehouse names for all movements
+    const warehouseIds = [...new Set(sortedMovements.map(m => m.warehouseId))];
+    const warehouses = warehouseIds.length
+      ? await this.prisma.warehouse.findMany({
+          where: { id: { in: warehouseIds } },
+          select: { id: true, name: true, code: true },
+        })
+      : [];
+    const warehouseMap = new Map(warehouses.map(w => [w.id, { name: w.name, code: w.code }]));
+
     // Use mapper to convert entities to response DTOs with product information
     return ok({
       success: true,
       message: 'Movements retrieved successfully',
-      data: MovementMapper.toResponseDataList(sortedMovements, productInfoMap),
+      data: MovementMapper.toResponseDataList(sortedMovements, productInfoMap, warehouseMap),
       pagination: {
         page,
         limit,

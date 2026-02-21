@@ -186,9 +186,11 @@ model Product {
   model       String?
   price       Decimal? @db.Decimal(10, 2)
   currency    String?  @default("COP")
-  costMethod  String   @default("AVG") // AVG, FIFO
-  isActive    Boolean  @default(true)
-  orgId       String
+  costMethod        String    @default("AVG") // AVG, FIFO
+  isActive          Boolean   @default(true)
+  statusChangedBy   String?
+  statusChangedAt   DateTime?
+  orgId             String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -215,10 +217,12 @@ model Warehouse {
   name        String
   description String?
   address     String?
-  isActive    Boolean  @default(true)
-  orgId       String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive          Boolean   @default(true)
+  statusChangedBy   String?
+  statusChangedAt   DateTime?
+  orgId             String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   // Relations
   organization  Organization  @relation(fields: [orgId], references: [id])
@@ -319,6 +323,7 @@ model Movement {
   reason      String?
   notes       String?
   postedAt    DateTime?
+  postedBy    String?
   createdBy   String
   orgId       String
   createdAt   DateTime  @default(now())
@@ -364,6 +369,7 @@ model Transfer {
   note            String?
   initiatedAt     DateTime?
   receivedAt      DateTime?
+  receivedBy      String?
   createdBy       String
   orgId           String
   createdAt       DateTime  @default(now())

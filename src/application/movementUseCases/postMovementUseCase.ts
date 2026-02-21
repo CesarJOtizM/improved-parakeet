@@ -18,6 +18,7 @@ import type { IStockRepository } from '@stock/domain/repositories/stockRepositor
 export interface IPostMovementRequest {
   movementId: string;
   orgId: string;
+  postedBy?: string;
 }
 
 export interface IPostMovementData {
@@ -71,7 +72,7 @@ export class PostMovementUseCase {
     }
 
     // Post the movement - this returns a new instance with the event attached
-    const postedMovement = movement.post();
+    const postedMovement = movement.post(request.postedBy);
 
     // Save the posted movement
     const savedMovement = await this.movementRepository.save(postedMovement);

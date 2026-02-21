@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '@infrastructure/database/prisma.service';
 import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -49,6 +50,8 @@ export interface IProductDetailData {
   daysOfStock: number | null;
   turnoverRate: number;
   lastMovementDate: string | null;
+  statusChangedBy?: string | null;
+  statusChangedAt?: Date | null;
 }
 
 export type IGetProductByIdResponse = IApiResponseSuccess<IProductDetailData>;
@@ -61,7 +64,8 @@ export class GetProductByIdUseCase {
     @Inject('ProductRepository') private readonly productRepository: IProductRepository,
     @Inject('StockRepository') private readonly stockRepository: IStockRepository,
     @Inject('ReorderRuleRepository') private readonly reorderRuleRepository: IReorderRuleRepository,
-    @Inject('MovementRepository') private readonly movementRepository: IMovementRepository
+    @Inject('MovementRepository') private readonly movementRepository: IMovementRepository,
+    private readonly prisma: PrismaService
   ) {}
 
   async execute(
@@ -199,8 +203,24 @@ export class GetProductByIdUseCase {
         daysOfStock: daysOfStock !== null ? Math.round(daysOfStock) : null,
         turnoverRate: Math.round(turnoverRate * 10) / 10,
         lastMovementDate: lastMovementDate ? lastMovementDate.toISOString() : null,
+        statusChangedBy: await this.resolveUserName(product.statusChangedBy),
+        statusChangedAt: product.statusChangedAt ?? null,
       },
       timestamp: new Date().toISOString(),
     });
+  }
+
+  private async resolveUserName(userId?: string | null): Promise<string | null> {
+    if (!userId) return null;
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { firstName: true, lastName: true },
+      });
+      if (!user) return userId;
+      return `${user.firstName} ${user.lastName}`.trim();
+    } catch {
+      return userId;
+    }
   }
 }

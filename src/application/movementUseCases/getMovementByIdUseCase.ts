@@ -4,6 +4,7 @@ import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
 import { MovementMapper, type IProductInfo, type IMovementResponseData } from '@movement/mappers';
+import { PrismaService } from '@infrastructure/database/prisma.service';
 
 export interface IGetMovementByIdRequest {
   movementId: string;
@@ -20,7 +21,8 @@ export class GetMovementByIdUseCase {
     @Inject('MovementRepository')
     private readonly movementRepository: IMovementRepository,
     @Inject('ProductRepository')
-    private readonly productRepository: IProductRepository
+    private readonly productRepository: IProductRepository,
+    private readonly prisma: PrismaService
   ) {}
 
   async execute(
@@ -57,10 +59,31 @@ export class GetMovementByIdUseCase {
       }
     }
 
+    // Resolve warehouse name
+    const warehouse = await this.prisma.warehouse.findFirst({
+      where: { id: movement.warehouseId },
+      select: { name: true, code: true },
+    });
+
+    // Resolve user names (createdBy and postedBy)
+    const userIds = [movement.createdBy, movement.postedBy].filter(Boolean) as string[];
+    const users = userIds.length
+      ? await this.prisma.user.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, firstName: true, lastName: true },
+        })
+      : [];
+    const userMap = new Map(users.map(u => [u.id, `${u.firstName} ${u.lastName}`]));
+
     return ok({
       success: true,
       message: 'Movement retrieved successfully',
-      data: MovementMapper.toResponseData(movement, productInfoMap),
+      data: MovementMapper.toResponseData(movement, productInfoMap, {
+        warehouseName: warehouse?.name,
+        warehouseCode: warehouse?.code,
+        createdByName: userMap.get(movement.createdBy),
+        postedByName: movement.postedBy ? userMap.get(movement.postedBy) : undefined,
+      }),
       timestamp: new Date().toISOString(),
     });
   }

@@ -33,6 +33,7 @@ import { UpdateReorderRuleUseCase } from '@application/reorderRuleUseCases/updat
 import { GetStockUseCase } from '@application/stockUseCases/getStockUseCase';
 import { CancelTransferUseCase } from '@application/transferUseCases/cancelTransferUseCase';
 import { ConfirmTransferUseCase } from '@application/transferUseCases/confirmTransferUseCase';
+import { GetTransferByIdUseCase } from '@application/transferUseCases/getTransferByIdUseCase';
 import { GetTransfersUseCase } from '@application/transferUseCases/getTransfersUseCase';
 import { InitiateTransferUseCase } from '@application/transferUseCases/initiateTransferUseCase';
 import { ReceiveTransferUseCase } from '@application/transferUseCases/receiveTransferUseCase';
@@ -40,6 +41,7 @@ import { RejectTransferUseCase } from '@application/transferUseCases/rejectTrans
 import { CreateWarehouseUseCase } from '@application/warehouseUseCases/createWarehouseUseCase';
 import { GetWarehouseByIdUseCase } from '@application/warehouseUseCases/getWarehouseByIdUseCase';
 import { GetWarehousesUseCase } from '@application/warehouseUseCases/getWarehousesUseCase';
+import { UpdateWarehouseUseCase } from '@application/warehouseUseCases/updateWarehouseUseCase';
 import { AuthenticationModule } from '@auth/authentication.module';
 import {
   PrismaCategoryRepository,
@@ -133,6 +135,7 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     CreateWarehouseUseCase,
     GetWarehousesUseCase,
     GetWarehouseByIdUseCase,
+    UpdateWarehouseUseCase,
     // Movement Use Cases
     CreateMovementUseCase,
     GetMovementsUseCase,
@@ -151,6 +154,7 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     // Transfer Use Cases
     InitiateTransferUseCase,
     GetTransfersUseCase,
+    GetTransferByIdUseCase,
     ConfirmTransferUseCase,
     ReceiveTransferUseCase,
     RejectTransferUseCase,
@@ -195,6 +199,7 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     CreateWarehouseUseCase,
     GetWarehousesUseCase,
     GetWarehouseByIdUseCase,
+    UpdateWarehouseUseCase,
     CreateMovementUseCase,
     GetMovementsUseCase,
     GetMovementByIdUseCase,
@@ -209,6 +214,7 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     DeleteReorderRuleUseCase,
     InitiateTransferUseCase,
     GetTransfersUseCase,
+    GetTransferByIdUseCase,
     ConfirmTransferUseCase,
     ReceiveTransferUseCase,
     RejectTransferUseCase,

@@ -19,6 +19,8 @@ export interface IWarehouseResponseData {
   orgId: string;
   createdAt: Date;
   updatedAt: Date;
+  statusChangedBy?: string | null;
+  statusChangedAt?: Date | null;
 }
 
 /**
@@ -60,6 +62,8 @@ export class WarehouseMapper {
       orgId: warehouse.orgId!,
       createdAt: warehouse.createdAt,
       updatedAt: warehouse.updatedAt,
+      statusChangedBy: warehouse.statusChangedBy ?? null,
+      statusChangedAt: warehouse.statusChangedAt ?? null,
     };
   }
 

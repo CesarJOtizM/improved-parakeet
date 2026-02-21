@@ -1,6 +1,7 @@
 import { CreateWarehouseUseCase } from '@application/warehouseUseCases/createWarehouseUseCase';
 import { GetWarehouseByIdUseCase } from '@application/warehouseUseCases/getWarehouseByIdUseCase';
 import { GetWarehousesUseCase } from '@application/warehouseUseCases/getWarehousesUseCase';
+import { UpdateWarehouseUseCase } from '@application/warehouseUseCases/updateWarehouseUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
 import {
@@ -12,6 +13,7 @@ import {
   Logger,
   Param,
   Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -52,7 +54,8 @@ export class WarehousesController {
   constructor(
     private readonly createWarehouseUseCase: CreateWarehouseUseCase,
     private readonly getWarehousesUseCase: GetWarehousesUseCase,
-    private readonly getWarehouseByIdUseCase: GetWarehouseByIdUseCase
+    private readonly getWarehouseByIdUseCase: GetWarehouseByIdUseCase,
+    private readonly updateWarehouseUseCase: UpdateWarehouseUseCase
   ) {}
 
   @Post()
@@ -177,6 +180,45 @@ export class WarehousesController {
     };
 
     const result = await this.getWarehouseByIdUseCase.execute(request);
+    return resultToHttpResponse(result);
+  }
+
+  @Put(':id')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.WAREHOUSES_UPDATE)
+  @ApiOperation({
+    summary: 'Update warehouse status',
+    description: 'Update warehouse active status. Requires WAREHOUSES:UPDATE permission.',
+  })
+  @ApiParam({ name: 'id', description: 'Warehouse ID', example: 'warehouse-123' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Warehouse updated successfully',
+    type: GetWarehouseResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Warehouse not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions',
+  })
+  async updateWarehouse(
+    @Param('id') warehouseId: string,
+    @Body() body: { isActive?: boolean },
+    @OrgId() orgId: string,
+    @Req() req: Request
+  ): Promise<GetWarehouseResponseDto> {
+    const user = req.user as IAuthenticatedUser;
+    this.logger.log('Updating warehouse', { warehouseId, orgId, updatedBy: user.id });
+
+    const result = await this.updateWarehouseUseCase.execute({
+      warehouseId,
+      orgId,
+      isActive: body.isActive,
+      updatedBy: user.id,
+    });
     return resultToHttpResponse(result);
   }
 }

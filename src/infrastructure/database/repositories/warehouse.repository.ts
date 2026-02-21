@@ -41,6 +41,8 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
           name: warehouseData.name,
           address: warehouseData.address ? Address.create(warehouseData.address) : undefined,
           isActive: warehouseData.isActive,
+          statusChangedBy: warehouseData.statusChangedBy || undefined,
+          statusChangedAt: warehouseData.statusChangedAt || undefined,
         },
         warehouseData.id,
         warehouseData.orgId
@@ -75,6 +77,8 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
             name: warehouseData.name,
             address: warehouseData.address ? Address.create(warehouseData.address) : undefined,
             isActive: warehouseData.isActive,
+            statusChangedBy: warehouseData.statusChangedBy || undefined,
+            statusChangedAt: warehouseData.statusChangedAt || undefined,
           },
           warehouseData.id,
           warehouseData.orgId
@@ -121,6 +125,8 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
         description: null, // Not in domain entity
         address: warehouse.address?.getValue() || null,
         isActive: warehouse.isActive,
+        statusChangedBy: warehouse.statusChangedBy ?? null,
+        statusChangedAt: warehouse.statusChangedAt ?? null,
         orgId: warehouse.orgId,
       };
 
@@ -143,6 +149,8 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
                 ? Address.create(updatedWarehouse.address)
                 : undefined,
               isActive: updatedWarehouse.isActive,
+              statusChangedBy: updatedWarehouse.statusChangedBy || undefined,
+              statusChangedAt: updatedWarehouse.statusChangedAt || undefined,
             },
             updatedWarehouse.id,
             updatedWarehouse.orgId
@@ -179,6 +187,8 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
           name: newWarehouse.name,
           address: newWarehouse.address ? Address.create(newWarehouse.address) : undefined,
           isActive: newWarehouse.isActive,
+          statusChangedBy: newWarehouse.statusChangedBy || undefined,
+          statusChangedAt: newWarehouse.statusChangedAt || undefined,
         },
         newWarehouse.id,
         newWarehouse.orgId
@@ -255,6 +265,8 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
           name: warehouseData.name,
           address: warehouseData.address ? Address.create(warehouseData.address) : undefined,
           isActive: warehouseData.isActive,
+          statusChangedBy: warehouseData.statusChangedBy || undefined,
+          statusChangedAt: warehouseData.statusChangedAt || undefined,
         },
         warehouseData.id,
         warehouseData.orgId
@@ -305,6 +317,8 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
             name: warehouseData.name,
             address: warehouseData.address ? Address.create(warehouseData.address) : undefined,
             isActive: warehouseData.isActive,
+            statusChangedBy: warehouseData.statusChangedBy || undefined,
+            statusChangedAt: warehouseData.statusChangedAt || undefined,
           },
           warehouseData.id,
           warehouseData.orgId

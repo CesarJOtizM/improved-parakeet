@@ -11,6 +11,7 @@ export interface IMovementProps {
   reason?: string;
   note?: string;
   postedAt?: Date;
+  postedBy?: string;
   createdBy: string;
 }
 
@@ -114,7 +115,7 @@ export class Movement extends AggregateRoot<IMovementProps> {
     this.updateTimestamp();
   }
 
-  public post(): Movement {
+  public post(userId?: string): Movement {
     if (!this.canPost()) {
       if (!this.props.status.canPost()) {
         throw new Error('Movement cannot be posted');
@@ -129,6 +130,7 @@ export class Movement extends AggregateRoot<IMovementProps> {
       ...this.props,
       status: MovementStatus.create('POSTED'),
       postedAt: new Date(),
+      postedBy: userId,
     };
 
     // Create new instance preserving lines and original timestamps
@@ -186,6 +188,7 @@ export class Movement extends AggregateRoot<IMovementProps> {
       reason: props.reason !== undefined ? props.reason : this.props.reason,
       note: props.note !== undefined ? props.note : this.props.note,
       postedAt: this.props.postedAt,
+      postedBy: this.props.postedBy,
       createdBy: this.props.createdBy,
     };
 
@@ -234,6 +237,10 @@ export class Movement extends AggregateRoot<IMovementProps> {
 
   get postedAt(): Date | undefined {
     return this.props.postedAt;
+  }
+
+  get postedBy(): string | undefined {
+    return this.props.postedBy;
   }
 
   get createdBy(): string {

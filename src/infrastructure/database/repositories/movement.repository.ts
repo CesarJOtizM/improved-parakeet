@@ -182,14 +182,14 @@ export class PrismaMovementRepository implements IMovementRepository {
       });
 
       return await this.prisma.$transaction(async tx => {
-        const movementData = {
+        const scalarData = {
           type: movement.type.getValue(),
           status: movement.status.getValue(),
-          warehouseId: movement.warehouseId,
           reference: movement.reference || null,
           reason: movement.reason || null,
           notes: movement.note || null,
           postedAt: movement.postedAt || null,
+          postedBy: movement.postedBy || null,
           createdBy: movement.createdBy,
           orgId: movement.orgId,
         };
@@ -202,10 +202,13 @@ export class PrismaMovementRepository implements IMovementRepository {
           });
 
           if (existingMovement) {
-            // Update movement
+            // Update movement — use relation connect for warehouseId
             savedMovement = await tx.movement.update({
               where: { id: movement.id },
-              data: movementData,
+              data: {
+                ...scalarData,
+                warehouse: { connect: { id: movement.warehouseId } },
+              },
             });
 
             // Delete existing lines
@@ -215,13 +218,13 @@ export class PrismaMovementRepository implements IMovementRepository {
           } else {
             // Create new movement with provided ID
             savedMovement = await tx.movement.create({
-              data: { ...movementData, id: movement.id },
+              data: { ...scalarData, id: movement.id, warehouseId: movement.warehouseId },
             });
           }
         } else {
           // Create new movement
           savedMovement = await tx.movement.create({
-            data: movementData,
+            data: { ...scalarData, warehouseId: movement.warehouseId },
           });
         }
 
@@ -470,6 +473,7 @@ export class PrismaMovementRepository implements IMovementRepository {
       reason: movementData.reason || undefined,
       note: movementData.notes || undefined,
       postedAt: movementData.postedAt || undefined,
+      postedBy: (movementData as { postedBy?: string | null }).postedBy || undefined,
       createdBy: movementData.createdBy,
       actualStatus: MovementStatus.create(movementData.status as 'DRAFT' | 'POSTED' | 'VOID'),
       actualPostedAt: movementData.postedAt || undefined,
@@ -569,6 +573,7 @@ export class PrismaMovementRepository implements IMovementRepository {
         reason: valueObjects.reason,
         note: valueObjects.note,
         postedAt: valueObjects.postedAt,
+        postedBy: valueObjects.postedBy,
         createdBy: valueObjects.createdBy,
       },
       movementData.id,
@@ -620,6 +625,7 @@ export class PrismaMovementRepository implements IMovementRepository {
         reason: movementData.reason || undefined,
         note: movementData.notes || undefined,
         postedAt: movementData.postedAt || undefined,
+        postedBy: (movementData as { postedBy?: string | null }).postedBy || undefined,
         createdBy: movementData.createdBy,
       },
       movementData.id,

@@ -70,6 +70,8 @@ export class PrismaProductRepository implements IProductRepository {
             : undefined,
           status: ProductStatus.create(productData.isActive ? 'ACTIVE' : 'INACTIVE'),
           costMethod: CostMethod.create((productData.costMethod as 'AVG' | 'FIFO') || 'AVG'),
+          statusChangedBy: productData.statusChangedBy || undefined,
+          statusChangedAt: productData.statusChangedAt || undefined,
         },
         productData.id,
         productData.orgId
@@ -172,6 +174,8 @@ export class PrismaProductRepository implements IProductRepository {
         currency: product.price ? product.price.getCurrency() : null,
         costMethod: product.costMethod.getValue(),
         isActive: product.status.getValue() === 'ACTIVE',
+        statusChangedBy: product.statusChangedBy ?? null,
+        statusChangedAt: product.statusChangedAt ?? null,
         orgId: product.orgId,
       };
 
@@ -213,6 +217,8 @@ export class PrismaProductRepository implements IProductRepository {
                 : undefined,
               status: ProductStatus.create(updatedProduct.isActive ? 'ACTIVE' : 'INACTIVE'),
               costMethod: CostMethod.create((updatedProduct.costMethod as 'AVG' | 'FIFO') || 'AVG'),
+              statusChangedBy: updatedProduct.statusChangedBy || undefined,
+              statusChangedAt: updatedProduct.statusChangedAt || undefined,
             },
             updatedProduct.id,
             updatedProduct.orgId
@@ -272,6 +278,8 @@ export class PrismaProductRepository implements IProductRepository {
             : undefined,
           status: ProductStatus.create(newProduct.isActive ? 'ACTIVE' : 'INACTIVE'),
           costMethod: CostMethod.create((newProduct.costMethod as 'AVG' | 'FIFO') || 'AVG'),
+          statusChangedBy: newProduct.statusChangedBy || undefined,
+          statusChangedAt: newProduct.statusChangedAt || undefined,
         },
         newProduct.id,
         newProduct.orgId

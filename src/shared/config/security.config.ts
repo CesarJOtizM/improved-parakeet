@@ -99,8 +99,8 @@ export const defaultSecurityConfig = {
   },
   jwt: {
     secret: 'your-super-secret-jwt-key-change-in-production',
-    accessTokenExpiry: '15m',
-    refreshTokenExpiry: '7d',
+    accessTokenExpiry: '8h',
+    refreshTokenExpiry: '15d',
     saltRounds: 12,
   },
   redis: {

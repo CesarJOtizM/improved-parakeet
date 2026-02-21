@@ -83,6 +83,7 @@ export class PrismaTransferRepository implements ITransferRepository {
           note: transfer.note || null,
           initiatedAt: transfer.initiatedAt || null,
           receivedAt: transfer.receivedAt || null,
+          receivedBy: transfer.receivedBy || null,
           createdBy: transfer.createdBy,
           orgId: transfer.orgId,
         };
@@ -298,6 +299,7 @@ export class PrismaTransferRepository implements ITransferRepository {
     note: string | null;
     initiatedAt: Date | null;
     receivedAt: Date | null;
+    receivedBy: string | null;
     createdBy: string;
     orgId: string;
     createdAt: Date;
@@ -322,6 +324,7 @@ export class PrismaTransferRepository implements ITransferRepository {
         note: transferData.note || undefined,
         initiatedAt: transferData.initiatedAt || undefined,
         receivedAt: transferData.receivedAt || undefined,
+        receivedBy: transferData.receivedBy || undefined,
       },
       transferData.id,
       transferData.orgId

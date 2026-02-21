@@ -213,11 +213,13 @@ export class MovementsController {
   })
   async postMovement(
     @Param('id') movementId: string,
-    @OrgId() orgId: string
+    @OrgId() orgId: string,
+    @Req() req: Request
   ): Promise<{ success: boolean; message: string; data: unknown; timestamp: string }> {
-    this.logger.log('Posting movement', { movementId, orgId });
+    const user = req.user as IAuthenticatedUser;
+    this.logger.log('Posting movement', { movementId, orgId, postedBy: user.id });
 
-    const result = await this.postMovementUseCase.execute({ movementId, orgId });
+    const result = await this.postMovementUseCase.execute({ movementId, orgId, postedBy: user.id });
     return resultToHttpResponse(result);
   }
 

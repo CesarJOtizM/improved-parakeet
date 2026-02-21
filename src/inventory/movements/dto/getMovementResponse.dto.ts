@@ -59,6 +59,16 @@ export class MovementResponseDto {
   note?: string;
 
   @ApiProperty({
+    description: 'Posted at timestamp',
+    example: '2024-01-01T00:00:00.000Z',
+    required: false,
+  })
+  postedAt?: Date;
+
+  @ApiProperty({ description: 'Posted by user ID', example: 'user-123', required: false })
+  postedBy?: string;
+
+  @ApiProperty({
     description: 'Movement lines',
     type: [MovementLineResponseDto],
   })

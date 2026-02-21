@@ -19,8 +19,8 @@ export interface ILoginCredentials {
 
 export class AuthenticationService {
   private static readonly SALT_ROUNDS = 12;
-  private static readonly ACCESS_TOKEN_EXPIRY_MINUTES = 15;
-  private static readonly REFRESH_TOKEN_EXPIRY_DAYS = 7;
+  private static readonly ACCESS_TOKEN_EXPIRY_MINUTES = 8 * 60; // 8 horas
+  private static readonly REFRESH_TOKEN_EXPIRY_DAYS = 15;
 
   /**
    * Valida las credenciales de login de un usuario usando bcrypt

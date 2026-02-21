@@ -40,6 +40,7 @@ export interface IUpdateProductRequest {
   status?: 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED';
   costMethod?: 'AVG' | 'FIFO';
   orgId: string;
+  updatedBy?: string;
 }
 
 export type IUpdateProductResponse = IApiResponseSuccess<IProductData>;
@@ -135,6 +136,7 @@ export class UpdateProductUseCase {
           );
         }
         updateProps.status = ProductStatus.create(request.status);
+        updateProps.statusChangedBy = request.updatedBy;
       }
 
       if (request.costMethod !== undefined) {
@@ -207,6 +209,8 @@ export class UpdateProductUseCase {
           orgId: savedProduct.orgId!,
           createdAt: savedProduct.createdAt,
           updatedAt: savedProduct.updatedAt,
+          statusChangedBy: savedProduct.statusChangedBy ?? null,
+          statusChangedAt: savedProduct.statusChangedAt ?? null,
         } as IProductData,
         timestamp: new Date().toISOString(),
       };

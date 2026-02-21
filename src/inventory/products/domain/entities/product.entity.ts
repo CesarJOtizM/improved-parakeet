@@ -20,6 +20,8 @@ export interface IProductProps {
   price?: Price;
   status: ProductStatus;
   costMethod: CostMethod;
+  statusChangedBy?: string;
+  statusChangedAt?: Date;
 }
 
 export class Product extends AggregateRoot<IProductProps> {
@@ -82,6 +84,16 @@ export class Product extends AggregateRoot<IProductProps> {
       }
     }
 
+    // Determine statusChangedBy / statusChangedAt
+    const statusChanging =
+      props.status !== undefined && props.status.getValue() !== this.props.status.getValue();
+    const statusChangedBy = statusChanging
+      ? (props.statusChangedBy ?? this.props.statusChangedBy)
+      : this.props.statusChangedBy;
+    const statusChangedAt = statusChanging
+      ? (props.statusChangedAt ?? new Date())
+      : this.props.statusChangedAt;
+
     // Create new props with updated values
     const updatedProps: IProductProps = {
       sku: props.sku !== undefined ? props.sku : this.props.sku,
@@ -95,6 +107,8 @@ export class Product extends AggregateRoot<IProductProps> {
       price: props.price !== undefined ? props.price : this.props.price,
       status: props.status !== undefined ? props.status : this.props.status,
       costMethod: props.costMethod !== undefined ? props.costMethod : this.props.costMethod,
+      statusChangedBy,
+      statusChangedAt,
     };
 
     // Create new instance using reconstitute
@@ -176,5 +190,13 @@ export class Product extends AggregateRoot<IProductProps> {
 
   get isActive(): boolean {
     return this.props.status.getValue() === 'ACTIVE';
+  }
+
+  get statusChangedBy(): string | undefined {
+    return this.props.statusChangedBy;
+  }
+
+  get statusChangedAt(): Date | undefined {
+    return this.props.statusChangedAt;
   }
 }

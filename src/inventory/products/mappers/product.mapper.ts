@@ -53,6 +53,8 @@ export interface IProductResponseData {
   orgId: string;
   createdAt: Date;
   updatedAt: Date;
+  statusChangedBy?: string | null;
+  statusChangedAt?: Date | null;
 }
 
 /**
@@ -130,6 +132,8 @@ export class ProductMapper {
       orgId: product.orgId!,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
+      statusChangedBy: product.statusChangedBy ?? null,
+      statusChangedAt: product.statusChangedAt ?? null,
     };
   }
 

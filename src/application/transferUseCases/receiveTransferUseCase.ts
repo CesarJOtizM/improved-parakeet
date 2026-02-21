@@ -22,6 +22,7 @@ import type { ITransferRepository } from '@transfer/domain/repositories/transfer
 export interface IReceiveTransferRequest {
   transferId: string;
   orgId: string;
+  receivedBy?: string;
 }
 
 export type IReceiveTransferResponse = IApiResponseSuccess<
@@ -79,7 +80,7 @@ export class ReceiveTransferUseCase {
     await this.eventDispatcher.markAndDispatch(postedMovementInstance.domainEvents);
 
     // Receive the transfer (changes status to RECEIVED)
-    transfer.receive();
+    transfer.receive(request.receivedBy);
 
     // Save transfer
     const receivedTransfer = await this.transferRepository.save(transfer);
@@ -103,6 +104,7 @@ export class ReceiveTransferUseCase {
         toWarehouseId: receivedTransfer.toWarehouseId,
         status: receivedTransfer.status.getValue(),
         createdBy: receivedTransfer.createdBy,
+        receivedBy: receivedTransfer.receivedBy,
         note: receivedTransfer.note,
         linesCount: receivedTransfer.getLines().length,
         orgId: receivedTransfer.orgId!,

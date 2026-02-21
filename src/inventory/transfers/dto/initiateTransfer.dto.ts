@@ -68,10 +68,11 @@ export class InitiateTransferDto {
   @ApiProperty({
     description: 'User ID who created the transfer',
     example: 'user-id-123',
+    required: false,
   })
+  @IsOptional()
   @IsString({ message: 'Created by must be a string' })
-  @IsNotEmpty({ message: 'Created by is required' })
-  createdBy!: string;
+  createdBy?: string;
 
   @ApiProperty({
     description: 'Transfer note',
