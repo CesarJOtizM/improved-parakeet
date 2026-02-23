@@ -41,7 +41,9 @@ export interface ISaleData {
   externalReference?: string;
   note?: string;
   confirmedAt?: Date;
+  confirmedBy?: string;
   cancelledAt?: Date;
+  cancelledBy?: string;
   movementId?: string;
   createdBy: string;
   orgId: string;

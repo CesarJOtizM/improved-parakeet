@@ -410,7 +410,9 @@ model Sale {
   externalReference String?
   note              String?
   confirmedAt       DateTime?
+  confirmedBy       String?
   cancelledAt       DateTime?
+  cancelledBy       String?
   movementId        String?   @unique
   createdBy         String
   orgId             String

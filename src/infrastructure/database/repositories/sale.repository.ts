@@ -187,7 +187,9 @@ export class PrismaSaleRepository implements ISaleRepository {
           externalReference: sale.externalReference || null,
           note: sale.note || null,
           confirmedAt: sale.confirmedAt || null,
+          confirmedBy: sale.confirmedBy || null,
           cancelledAt: sale.cancelledAt || null,
+          cancelledBy: sale.cancelledBy || null,
           movementId: sale.movementId || null,
           createdBy: sale.createdBy,
           orgId: sale.orgId,
@@ -498,7 +500,9 @@ export class PrismaSaleRepository implements ISaleRepository {
     externalReference: string | null;
     note: string | null;
     confirmedAt: Date | null;
+    confirmedBy: string | null;
     cancelledAt: Date | null;
+    cancelledBy: string | null;
     movementId: string | null;
     createdBy: string;
   }) {
@@ -510,7 +514,9 @@ export class PrismaSaleRepository implements ISaleRepository {
       externalReference: saleData.externalReference || undefined,
       note: saleData.note || undefined,
       confirmedAt: saleData.confirmedAt || undefined,
+      confirmedBy: saleData.confirmedBy || undefined,
       cancelledAt: saleData.cancelledAt || undefined,
+      cancelledBy: saleData.cancelledBy || undefined,
       createdBy: saleData.createdBy,
       movementId: saleData.movementId || undefined,
     };
@@ -560,7 +566,9 @@ export class PrismaSaleRepository implements ISaleRepository {
     externalReference: string | null;
     note: string | null;
     confirmedAt: Date | null;
+    confirmedBy: string | null;
     cancelledAt: Date | null;
+    cancelledBy: string | null;
     movementId: string | null;
     createdBy: string;
     orgId: string;
@@ -593,7 +601,9 @@ export class PrismaSaleRepository implements ISaleRepository {
         externalReference: valueObjects.externalReference,
         note: valueObjects.note,
         confirmedAt: valueObjects.confirmedAt,
+        confirmedBy: valueObjects.confirmedBy,
         cancelledAt: valueObjects.cancelledAt,
+        cancelledBy: valueObjects.cancelledBy,
         createdBy: valueObjects.createdBy,
         movementId: valueObjects.movementId,
       },
@@ -612,7 +622,9 @@ export class PrismaSaleRepository implements ISaleRepository {
     externalReference: string | null;
     note: string | null;
     confirmedAt: Date | null;
+    confirmedBy: string | null;
     cancelledAt: Date | null;
+    cancelledBy: string | null;
     movementId: string | null;
     createdBy: string;
     orgId: string;
@@ -631,7 +643,9 @@ export class PrismaSaleRepository implements ISaleRepository {
         externalReference: saleData.externalReference || undefined,
         note: saleData.note || undefined,
         confirmedAt: saleData.confirmedAt || undefined,
+        confirmedBy: saleData.confirmedBy || undefined,
         cancelledAt: saleData.cancelledAt || undefined,
+        cancelledBy: saleData.cancelledBy || undefined,
         createdBy: saleData.createdBy,
         movementId: saleData.movementId || undefined,
       },

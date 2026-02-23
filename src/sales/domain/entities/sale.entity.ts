@@ -15,7 +15,9 @@ export interface ISaleProps {
   externalReference?: string;
   note?: string;
   confirmedAt?: Date;
+  confirmedBy?: string;
   cancelledAt?: Date;
+  cancelledBy?: string;
   createdBy: string;
   movementId?: string;
 }
@@ -75,7 +77,7 @@ export class Sale extends AggregateRoot<ISaleProps> {
     this.updateTimestamp();
   }
 
-  public confirm(movementId: string): void {
+  public confirm(movementId: string, confirmedBy?: string): void {
     // Validate status can be confirmed
     if (!this.props.status.canConfirm()) {
       throw new Error('Sale cannot be confirmed');
@@ -95,6 +97,7 @@ export class Sale extends AggregateRoot<ISaleProps> {
 
     this.props.status = SaleStatus.create('CONFIRMED');
     this.props.confirmedAt = new Date();
+    this.props.confirmedBy = confirmedBy;
     this.props.movementId = movementId;
     this.updateTimestamp();
 
@@ -103,7 +106,7 @@ export class Sale extends AggregateRoot<ISaleProps> {
     this.addDomainEvent(event);
   }
 
-  public cancel(reason?: string): void {
+  public cancel(reason?: string, cancelledBy?: string): void {
     // Validate status can be cancelled
     if (!this.props.status.canCancel()) {
       throw new Error('Sale cannot be cancelled');
@@ -116,6 +119,7 @@ export class Sale extends AggregateRoot<ISaleProps> {
 
     this.props.status = SaleStatus.create('CANCELLED');
     this.props.cancelledAt = new Date();
+    this.props.cancelledBy = cancelledBy;
     this.updateTimestamp();
 
     // Emit SaleCancelledEvent
@@ -143,7 +147,9 @@ export class Sale extends AggregateRoot<ISaleProps> {
           : this.props.externalReference,
       note: props.note !== undefined ? props.note : this.props.note,
       confirmedAt: this.props.confirmedAt,
+      confirmedBy: this.props.confirmedBy,
       cancelledAt: this.props.cancelledAt,
+      cancelledBy: this.props.cancelledBy,
       createdBy: this.props.createdBy,
       movementId: this.props.movementId,
     };
@@ -201,8 +207,16 @@ export class Sale extends AggregateRoot<ISaleProps> {
     return this.props.confirmedAt;
   }
 
+  get confirmedBy(): string | undefined {
+    return this.props.confirmedBy;
+  }
+
   get cancelledAt(): Date | undefined {
     return this.props.cancelledAt;
+  }
+
+  get cancelledBy(): string | undefined {
+    return this.props.cancelledBy;
   }
 
   get createdBy(): string {

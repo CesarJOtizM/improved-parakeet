@@ -39,6 +39,7 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
         {
           code: WarehouseCode.create(warehouseData.code),
           name: warehouseData.name,
+          description: warehouseData.description || undefined,
           address: warehouseData.address ? Address.create(warehouseData.address) : undefined,
           isActive: warehouseData.isActive,
           statusChangedBy: warehouseData.statusChangedBy || undefined,
@@ -75,6 +76,7 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
           {
             code: WarehouseCode.create(warehouseData.code),
             name: warehouseData.name,
+            description: warehouseData.description || undefined,
             address: warehouseData.address ? Address.create(warehouseData.address) : undefined,
             isActive: warehouseData.isActive,
             statusChangedBy: warehouseData.statusChangedBy || undefined,
@@ -122,7 +124,7 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
       const warehouseData = {
         code: warehouse.code.getValue(),
         name: warehouse.name,
-        description: null, // Not in domain entity
+        description: warehouse.description || null,
         address: warehouse.address?.getValue() || null,
         isActive: warehouse.isActive,
         statusChangedBy: warehouse.statusChangedBy ?? null,
@@ -145,6 +147,7 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
             {
               code: WarehouseCode.create(updatedWarehouse.code),
               name: updatedWarehouse.name,
+              description: updatedWarehouse.description || undefined,
               address: updatedWarehouse.address
                 ? Address.create(updatedWarehouse.address)
                 : undefined,
@@ -185,6 +188,7 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
         {
           code: WarehouseCode.create(newWarehouse.code),
           name: newWarehouse.name,
+          description: newWarehouse.description || undefined,
           address: newWarehouse.address ? Address.create(newWarehouse.address) : undefined,
           isActive: newWarehouse.isActive,
           statusChangedBy: newWarehouse.statusChangedBy || undefined,
@@ -263,6 +267,7 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
         {
           code: WarehouseCode.create(warehouseData.code),
           name: warehouseData.name,
+          description: warehouseData.description || undefined,
           address: warehouseData.address ? Address.create(warehouseData.address) : undefined,
           isActive: warehouseData.isActive,
           statusChangedBy: warehouseData.statusChangedBy || undefined,
@@ -315,6 +320,7 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
           {
             code: WarehouseCode.create(warehouseData.code),
             name: warehouseData.name,
+            description: warehouseData.description || undefined,
             address: warehouseData.address ? Address.create(warehouseData.address) : undefined,
             isActive: warehouseData.isActive,
             statusChangedBy: warehouseData.statusChangedBy || undefined,

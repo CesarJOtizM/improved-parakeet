@@ -34,6 +34,7 @@ import { AuditInterceptor } from '@shared/interceptors/audit.interceptor';
 import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 import {
   CreateWarehouseDto,
+  UpdateWarehouseDto,
   GetWarehouseResponseDto,
   GetWarehousesQueryDto,
   GetWarehousesResponseDto,
@@ -187,8 +188,9 @@ export class WarehousesController {
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(SYSTEM_PERMISSIONS.WAREHOUSES_UPDATE)
   @ApiOperation({
-    summary: 'Update warehouse status',
-    description: 'Update warehouse active status. Requires WAREHOUSES:UPDATE permission.',
+    summary: 'Update warehouse',
+    description:
+      'Update warehouse details (name, address, status). Requires WAREHOUSES:UPDATE permission.',
   })
   @ApiParam({ name: 'id', description: 'Warehouse ID', example: 'warehouse-123' })
   @ApiResponse({
@@ -206,7 +208,7 @@ export class WarehousesController {
   })
   async updateWarehouse(
     @Param('id') warehouseId: string,
-    @Body() body: { isActive?: boolean },
+    @Body() dto: UpdateWarehouseDto,
     @OrgId() orgId: string,
     @Req() req: Request
   ): Promise<GetWarehouseResponseDto> {
@@ -216,7 +218,10 @@ export class WarehousesController {
     const result = await this.updateWarehouseUseCase.execute({
       warehouseId,
       orgId,
-      isActive: body.isActive,
+      name: dto.name,
+      description: dto.description,
+      address: dto.address,
+      isActive: dto.isActive,
       updatedBy: user.id,
     });
     return resultToHttpResponse(result);

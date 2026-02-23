@@ -1,3 +1,4 @@
+import { PrismaService } from '@infrastructure/database/prisma.service';
 import { QueryPagination } from '@infrastructure/database/utils/queryOptimizer';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Sale } from '@sale/domain/entities/sale.entity';
@@ -6,13 +7,14 @@ import {
   SaleByStatusSpecification,
   SaleByWarehouseSpecification,
 } from '@sale/domain/specifications';
-import { SaleMapper } from '@sale/mappers';
+import { ISaleResponseData, SaleMapper } from '@sale/mappers';
 import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
-import type { ISaleData } from './createSaleUseCase';
+import type { IProductRepository } from '@product/domain/ports/repositories/iProductRepository.port';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
 import type { IPrismaSpecification } from '@shared/domain/specifications';
+import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
 
 export interface IGetSalesRequest {
   orgId: string;
@@ -24,10 +26,10 @@ export interface IGetSalesRequest {
   endDate?: Date;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-  includeLines?: boolean; // Optional: include lines in response (default: true)
+  includeLines?: boolean;
 }
 
-export type IGetSalesResponse = IPaginatedResponse<ISaleData>;
+export type IGetSalesResponse = IPaginatedResponse<ISaleResponseData>;
 
 @Injectable()
 export class GetSalesUseCase {
@@ -35,7 +37,12 @@ export class GetSalesUseCase {
 
   constructor(
     @Inject('SaleRepository')
-    private readonly saleRepository: ISaleRepository
+    private readonly saleRepository: ISaleRepository,
+    @Inject('WarehouseRepository')
+    private readonly warehouseRepository: IWarehouseRepository,
+    @Inject('ProductRepository')
+    private readonly productRepository: IProductRepository,
+    private readonly prisma: PrismaService
   ) {}
 
   async execute(request: IGetSalesRequest): Promise<Result<IGetSalesResponse, DomainError>> {
@@ -129,11 +136,16 @@ export class GetSalesUseCase {
 
     const totalPages = Math.ceil(result.total / limit);
 
-    // Use mapper to convert entities to response DTOs
+    // Convert to response DTOs
+    const salesData = SaleMapper.toResponseDataList(sortedSales, true);
+
+    // Batch resolve warehouse and product names
+    await this.enrichWithNames(salesData, request.orgId);
+
     return ok({
       success: true,
       message: 'Sales retrieved successfully',
-      data: SaleMapper.toResponseDataList(sortedSales),
+      data: salesData,
       pagination: {
         page,
         limit,
@@ -144,5 +156,86 @@ export class GetSalesUseCase {
       },
       timestamp: new Date().toISOString(),
     });
+  }
+
+  private async enrichWithNames(salesData: ISaleResponseData[], orgId: string): Promise<void> {
+    // Collect unique warehouse IDs
+    const warehouseIds = [...new Set(salesData.map(s => s.warehouseId))];
+    const warehouseMap = new Map<string, string>();
+
+    for (const wId of warehouseIds) {
+      try {
+        const warehouse = await this.warehouseRepository.findById(wId, orgId);
+        if (warehouse) {
+          warehouseMap.set(wId, `${warehouse.name} (${warehouse.code.getValue()})`);
+        }
+      } catch {
+        this.logger.warn('Could not resolve warehouse', { warehouseId: wId });
+      }
+    }
+
+    // Collect unique product IDs from all lines
+    const productIds = new Set<string>();
+    for (const sale of salesData) {
+      if (sale.lines) {
+        for (const line of sale.lines) {
+          productIds.add(line.productId);
+        }
+      }
+    }
+
+    const productMap = new Map<string, { name: string; sku: string }>();
+    for (const pId of productIds) {
+      try {
+        const product = await this.productRepository.findById(pId, orgId);
+        if (product) {
+          productMap.set(pId, { name: product.name.getValue(), sku: product.sku.getValue() });
+        }
+      } catch {
+        this.logger.warn('Could not resolve product', { productId: pId });
+      }
+    }
+
+    // Collect unique user IDs for confirmedBy/cancelledBy
+    const userIds = new Set<string>();
+    for (const sale of salesData) {
+      if (sale.confirmedBy) userIds.add(sale.confirmedBy);
+      if (sale.cancelledBy) userIds.add(sale.cancelledBy);
+    }
+
+    const userMap = new Map<string, string>();
+    for (const userId of userIds) {
+      try {
+        const user = await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { firstName: true, lastName: true },
+        });
+        if (user) {
+          userMap.set(userId, `${user.firstName} ${user.lastName}`.trim());
+        }
+      } catch {
+        this.logger.warn('Could not resolve user', { userId });
+      }
+    }
+
+    // Enrich the response data
+    for (const sale of salesData) {
+      sale.warehouseName = warehouseMap.get(sale.warehouseId);
+      if (sale.confirmedBy) {
+        sale.confirmedByName = userMap.get(sale.confirmedBy);
+      }
+      if (sale.cancelledBy) {
+        sale.cancelledByName = userMap.get(sale.cancelledBy);
+      }
+      if (sale.lines) {
+        for (const line of sale.lines) {
+          const product = productMap.get(line.productId);
+          if (product) {
+            line.productName = product.name;
+            line.productSku = product.sku;
+          }
+        }
+      }
+    }
   }
 }

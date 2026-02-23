@@ -35,6 +35,8 @@ export interface ISaleCreateInput {
 export interface ISaleLineResponseData {
   id: string;
   productId: string;
+  productName?: string;
+  productSku?: string;
   locationId?: string; // Optional for MVP - warehouse is the location
   quantity: number;
   salePrice: number;
@@ -51,11 +53,16 @@ export interface ISaleResponseData {
   saleNumber: string;
   status: string;
   warehouseId: string;
+  warehouseName?: string;
   customerReference?: string;
   externalReference?: string;
   note?: string;
   confirmedAt?: Date;
+  confirmedBy?: string;
+  confirmedByName?: string;
   cancelledAt?: Date;
+  cancelledBy?: string;
+  cancelledByName?: string;
   movementId?: string;
   createdBy: string;
   orgId: string;
@@ -166,7 +173,9 @@ export class SaleMapper {
       externalReference: sale.externalReference,
       note: sale.note,
       confirmedAt: sale.confirmedAt,
+      confirmedBy: sale.confirmedBy,
       cancelledAt: sale.cancelledAt,
+      cancelledBy: sale.cancelledBy,
       movementId: sale.movementId,
       createdBy: sale.createdBy,
       orgId: sale.orgId!,

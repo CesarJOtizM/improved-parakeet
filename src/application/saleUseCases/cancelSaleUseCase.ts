@@ -17,6 +17,7 @@ export interface ICancelSaleRequest {
   id: string;
   reason?: string;
   orgId: string;
+  userId?: string;
 }
 
 export type ICancelSaleResponse = IApiResponseSuccess<ISaleData>;
@@ -44,7 +45,7 @@ export class CancelSaleUseCase {
 
     // Cancel sale
     try {
-      sale.cancel(request.reason);
+      sale.cancel(request.reason, request.userId);
     } catch (error) {
       return err(
         new BusinessRuleError(error instanceof Error ? error.message : 'Failed to cancel sale')
@@ -78,7 +79,9 @@ export class CancelSaleUseCase {
         externalReference: cancelledSale.externalReference,
         note: cancelledSale.note,
         confirmedAt: cancelledSale.confirmedAt,
+        confirmedBy: cancelledSale.confirmedBy,
         cancelledAt: cancelledSale.cancelledAt,
+        cancelledBy: cancelledSale.cancelledBy,
         movementId: cancelledSale.movementId,
         createdBy: cancelledSale.createdBy,
         orgId: cancelledSale.orgId,

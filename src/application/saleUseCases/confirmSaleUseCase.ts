@@ -22,6 +22,7 @@ import type { IStockRepository } from '@stock/domain/repositories/stockRepositor
 export interface IConfirmSaleRequest {
   id: string;
   orgId: string;
+  userId?: string;
 }
 
 export type IConfirmSaleResponse = IApiResponseSuccess<ISaleData & { movementId: string }>;
@@ -141,6 +142,7 @@ export class ConfirmSaleUseCase {
           data: {
             status: 'CONFIRMED',
             confirmedAt: new Date(),
+            confirmedBy: request.userId || null,
             movementId: savedMovement.id,
           },
           include: { lines: true },
@@ -153,7 +155,7 @@ export class ConfirmSaleUseCase {
       });
 
       // Dispatch domain events AFTER successful transaction
-      sale.confirm(postedMovement.id);
+      sale.confirm(postedMovement.id, request.userId);
       sale.markEventsForDispatch();
       await this.eventDispatcher.dispatchEvents(sale.domainEvents);
       sale.clearEvents();
@@ -188,7 +190,9 @@ export class ConfirmSaleUseCase {
           externalReference: confirmedSale.externalReference || undefined,
           note: confirmedSale.note || undefined,
           confirmedAt: confirmedSale.confirmedAt || undefined,
+          confirmedBy: confirmedSale.confirmedBy || undefined,
           cancelledAt: confirmedSale.cancelledAt || undefined,
+          cancelledBy: confirmedSale.cancelledBy || undefined,
           movementId: confirmedSale.movementId!,
           createdBy: confirmedSale.createdBy,
           orgId: confirmedSale.orgId,

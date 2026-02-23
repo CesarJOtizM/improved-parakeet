@@ -108,8 +108,40 @@ export class UpdateCategoryUseCase {
     } catch (error) {
       this.logger.error('Error updating category', {
         error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        categoryId: request.categoryId,
+        orgId: request.orgId,
       });
-      return err(new ValidationError('Failed to update category', 'CATEGORY_UPDATE_ERROR'));
+
+      if (error && typeof error === 'object' && 'code' in error) {
+        const prismaError = error as { code: string; meta?: Record<string, unknown> };
+
+        if (prismaError.code === 'P2002') {
+          return err(
+            new ConflictError(
+              'A category with this name already exists in this organization',
+              'CATEGORY_NAME_CONFLICT'
+            )
+          );
+        }
+
+        if (prismaError.code === 'P2003') {
+          return err(
+            new ValidationError('Invalid parent category reference', 'INVALID_PARENT_CATEGORY')
+          );
+        }
+
+        if (prismaError.code === 'P2025') {
+          return err(new NotFoundError('Category not found'));
+        }
+      }
+
+      return err(
+        new ValidationError(
+          `Failed to update category: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'CATEGORY_UPDATE_ERROR'
+        )
+      );
     }
   }
 }

@@ -214,10 +214,11 @@ export class SalesController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Sale cannot be confirmed or insufficient stock',
   })
-  async confirmSale(@Param('id') id: string, @OrgId() orgId: string) {
-    this.logger.log('Confirming sale', { saleId: id, orgId });
+  async confirmSale(@Param('id') id: string, @OrgId() orgId: string, @Req() req: Request) {
+    const user = req.user as IAuthenticatedUser;
+    this.logger.log('Confirming sale', { saleId: id, orgId, confirmedBy: user.id });
 
-    const result = await this.confirmSaleUseCase.execute({ id, orgId });
+    const result = await this.confirmSaleUseCase.execute({ id, orgId, userId: user.id });
     return resultToHttpResponse(result);
   }
 
@@ -241,11 +242,13 @@ export class SalesController {
   async cancelSale(
     @Param('id') id: string,
     @Query('reason') reason: string | undefined,
-    @OrgId() orgId: string
+    @OrgId() orgId: string,
+    @Req() req: Request
   ) {
-    this.logger.log('Cancelling sale', { saleId: id, orgId, reason });
+    const user = req.user as IAuthenticatedUser;
+    this.logger.log('Cancelling sale', { saleId: id, orgId, reason, cancelledBy: user.id });
 
-    const result = await this.cancelSaleUseCase.execute({ id, reason, orgId });
+    const result = await this.cancelSaleUseCase.execute({ id, reason, orgId, userId: user.id });
     return resultToHttpResponse(result);
   }
 

@@ -111,3 +111,44 @@ export class CreateWarehouseDto {
   @IsOptional()
   isActive?: boolean;
 }
+
+export class UpdateWarehouseDto {
+  @ApiProperty({
+    description: 'Warehouse name',
+    example: 'Main Warehouse',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Name must be a string' })
+  @MinLength(1, { message: 'Name must be at least 1 character long' })
+  @MaxLength(200, { message: 'Name must be at most 200 characters long' })
+  name?: string;
+
+  @ApiProperty({
+    description: 'Warehouse description',
+    example: 'Main warehouse for inventory storage',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Description must be a string' })
+  @MaxLength(1000, { message: 'Description must be at most 1000 characters long' })
+  description?: string;
+
+  @ApiProperty({
+    description: 'Warehouse address',
+    type: AddressDto,
+    required: false,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AddressDto)
+  address?: AddressDto;
+
+  @ApiProperty({
+    description: 'Whether the warehouse is active',
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  isActive?: boolean;
+}

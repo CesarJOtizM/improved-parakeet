@@ -8,6 +8,7 @@ import {
   ok,
 } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
+import { Address } from '@warehouse/domain/valueObjects/address.valueObject';
 import { WarehouseMapper } from '@warehouse/mappers/warehouse.mapper';
 
 import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
@@ -16,6 +17,15 @@ import type { IStockRepository } from '@stock/domain/ports/repositories';
 export interface IUpdateWarehouseRequest {
   warehouseId: string;
   orgId: string;
+  name?: string;
+  description?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    country?: string;
+  };
   isActive?: boolean;
   updatedBy?: string;
 }
@@ -72,11 +82,25 @@ export class UpdateWarehouseUseCase {
         }
       }
 
+      // Build update props
+      const updateProps: Record<string, unknown> = {};
+
+      if (request.name !== undefined) {
+        updateProps.name = request.name;
+      }
+
+      if (request.address !== undefined) {
+        const addressString = JSON.stringify(request.address);
+        updateProps.address = Address.create(addressString);
+      }
+
       if (request.isActive !== undefined) {
-        warehouse.update({
-          isActive: request.isActive,
-          statusChangedBy: request.updatedBy,
-        });
+        updateProps.isActive = request.isActive;
+        updateProps.statusChangedBy = request.updatedBy;
+      }
+
+      if (Object.keys(updateProps).length > 0) {
+        warehouse.update(updateProps);
       }
 
       const savedWarehouse = await this.warehouseRepository.save(warehouse);
@@ -90,11 +114,17 @@ export class UpdateWarehouseUseCase {
     } catch (error) {
       this.logger.error('Error updating warehouse', {
         error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
         warehouseId: request.warehouseId,
         orgId: request.orgId,
       });
 
-      return err(new ValidationError('Failed to update warehouse', 'WAREHOUSE_UPDATE_ERROR'));
+      return err(
+        new ValidationError(
+          `Failed to update warehouse: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'WAREHOUSE_UPDATE_ERROR'
+        )
+      );
     }
   }
 }

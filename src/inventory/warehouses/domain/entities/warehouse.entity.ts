@@ -6,6 +6,7 @@ import { WarehouseCode } from '@warehouse/domain/valueObjects/warehouseCode.valu
 export interface IWarehouseProps {
   code: WarehouseCode;
   name: string;
+  description?: string;
   address?: Address;
   isActive: boolean;
   statusChangedBy?: string;
@@ -31,6 +32,7 @@ export class Warehouse extends AggregateRoot<IWarehouseProps> {
     const statusChanging = props.isActive !== undefined && props.isActive !== this.props.isActive;
     if (props.code !== undefined) this.props.code = props.code;
     if (props.name !== undefined) this.props.name = props.name;
+    if (props.description !== undefined) this.props.description = props.description;
     if (props.address !== undefined) this.props.address = props.address;
     if (props.isActive !== undefined) this.props.isActive = props.isActive;
     if (statusChanging) {
@@ -65,6 +67,10 @@ export class Warehouse extends AggregateRoot<IWarehouseProps> {
 
   get name(): string {
     return this.props.name;
+  }
+
+  get description(): string | undefined {
+    return this.props.description;
   }
 
   get address(): Address | undefined {

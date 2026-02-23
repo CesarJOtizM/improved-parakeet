@@ -77,19 +77,7 @@ export class CreateWarehouseUseCase {
     }
     const code = codeResult.unwrap();
 
-    const address = request.address
-      ? Address.create(
-          [
-            request.address.street,
-            request.address.city,
-            request.address.state,
-            request.address.zipCode,
-            request.address.country,
-          ]
-            .filter(Boolean)
-            .join(', ')
-        )
-      : undefined;
+    const address = request.address ? Address.create(JSON.stringify(request.address)) : undefined;
 
     // Validate code uniqueness using business rules
     const codeExists = await this.warehouseRepository.existsByCode(code.getValue(), request.orgId);
@@ -104,6 +92,7 @@ export class CreateWarehouseUseCase {
       {
         code,
         name: request.name,
+        description: request.description,
         address,
         isActive: request.isActive !== undefined ? request.isActive : true,
       },

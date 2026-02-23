@@ -31,6 +31,31 @@ export interface IWarehouseResponseData {
  */
 export class WarehouseMapper {
   /**
+   * Parses an address string back to structured address object.
+   * Supports JSON format (new) and comma-separated fallback (legacy data).
+   */
+  private static parseAddress(addressValue: string): IWarehouseResponseData['address'] {
+    // Try JSON parse first (new format)
+    try {
+      const parsed = JSON.parse(addressValue);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          street: parsed.street || undefined,
+          city: parsed.city || undefined,
+          state: parsed.state || undefined,
+          zipCode: parsed.zipCode || undefined,
+          country: parsed.country || undefined,
+        };
+      }
+    } catch {
+      // Not JSON — fallback for legacy comma-separated strings
+    }
+
+    // Fallback: put the raw string in the street field
+    return { street: addressValue };
+  }
+
+  /**
    * Converts a Warehouse domain entity to a response DTO
    * Extracts values from all value objects
    *
@@ -38,25 +63,14 @@ export class WarehouseMapper {
    * @returns IWarehouseResponseData for API responses
    */
   public static toResponseData(warehouse: Warehouse): IWarehouseResponseData {
-    // Address is stored as a string in the database, but DTO expects an object
-    // Since we can't reliably parse the address string back to its components,
-    // we'll return undefined for the address object structure
-    // The address string value is available via warehouse.address?.getValue()
     const addressValue = warehouse.address?.getValue();
-    const address = addressValue
-      ? {
-          street: undefined,
-          city: undefined,
-          state: undefined,
-          zipCode: undefined,
-          country: undefined,
-        }
-      : undefined;
+    const address = addressValue ? WarehouseMapper.parseAddress(addressValue) : undefined;
 
     return {
       id: warehouse.id,
       code: warehouse.code.getValue(),
       name: warehouse.name,
+      description: warehouse.description,
       address,
       isActive: warehouse.isActive,
       orgId: warehouse.orgId!,
