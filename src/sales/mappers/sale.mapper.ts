@@ -63,8 +63,21 @@ export interface ISaleResponseData {
   cancelledAt?: Date;
   cancelledBy?: string;
   cancelledByName?: string;
+  pickedAt?: Date;
+  pickedBy?: string;
+  pickedByName?: string;
+  shippedAt?: Date;
+  shippedBy?: string;
+  shippedByName?: string;
+  trackingNumber?: string;
+  shippingCarrier?: string;
+  shippingNotes?: string;
+  completedAt?: Date;
+  completedBy?: string;
+  completedByName?: string;
   movementId?: string;
   createdBy: string;
+  createdByName?: string;
   orgId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -176,6 +189,15 @@ export class SaleMapper {
       confirmedBy: sale.confirmedBy,
       cancelledAt: sale.cancelledAt,
       cancelledBy: sale.cancelledBy,
+      pickedAt: sale.pickedAt,
+      pickedBy: sale.pickedBy,
+      shippedAt: sale.shippedAt,
+      shippedBy: sale.shippedBy,
+      trackingNumber: sale.trackingNumber,
+      shippingCarrier: sale.shippingCarrier,
+      shippingNotes: sale.shippingNotes,
+      completedAt: sale.completedAt,
+      completedBy: sale.completedBy,
       movementId: sale.movementId,
       createdBy: sale.createdBy,
       orgId: sale.orgId!,

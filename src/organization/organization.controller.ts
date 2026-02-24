@@ -1,5 +1,6 @@
 import { CreateOrganizationUseCase } from '@application/organizationUseCases/createOrganizationUseCase';
 import { GetOrganizationByIdUseCase } from '@application/organizationUseCases/getOrganizationByIdUseCase';
+import { TogglePickingSettingUseCase } from '@application/organizationUseCases/togglePickingSettingUseCase';
 import { UpdateOrganizationUseCase } from '@application/organizationUseCases/updateOrganizationUseCase';
 import { RequireRoles } from '@auth/security/decorators/roleBasedAuth.decorator';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
@@ -12,6 +13,7 @@ import {
   HttpStatus,
   Logger,
   Param,
+  Patch,
   Post,
   Put,
   UseGuards,
@@ -35,7 +37,8 @@ export class OrganizationController {
   constructor(
     private readonly createOrganizationUseCase: CreateOrganizationUseCase,
     private readonly getOrganizationByIdUseCase: GetOrganizationByIdUseCase,
-    private readonly updateOrganizationUseCase: UpdateOrganizationUseCase
+    private readonly updateOrganizationUseCase: UpdateOrganizationUseCase,
+    private readonly togglePickingSettingUseCase: TogglePickingSettingUseCase
   ) {}
 
   @Post()
@@ -213,5 +216,45 @@ export class OrganizationController {
     });
 
     return response;
+  }
+
+  @Patch(':id/settings/picking')
+  @UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+  @RequireRoles([SYSTEM_ROLES.SYSTEM_ADMIN], { checkOrganization: false })
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Toggle picking setting',
+    description:
+      'Enable or disable the picking/shipping workflow for an organization. Only super-admins can change this setting.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Organization ID (CUID)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Picking setting updated successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Organization not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions. Only super-admins can change this setting.',
+  })
+  async togglePickingSetting(@Param('id') id: string, @Body() body: { pickingEnabled: boolean }) {
+    this.logger.log('Toggling picking setting', {
+      organizationId: id,
+      pickingEnabled: body.pickingEnabled,
+    });
+
+    const result = await this.togglePickingSettingUseCase.execute({
+      orgId: id,
+      pickingEnabled: body.pickingEnabled,
+    });
+
+    return resultToHttpResponse(result);
   }
 }

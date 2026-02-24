@@ -23,7 +23,7 @@ export class OrganizationRepository implements IOrganizationRepository {
         {
           name: organizationData.name,
           taxId: undefined, // Does not exist in current schema
-          settings: {},
+          settings: (organizationData.settings as Record<string, unknown>) ?? {},
           timezone: 'UTC', // Default values
           currency: 'USD',
           dateFormat: 'YYYY-MM-DD',
@@ -52,7 +52,7 @@ export class OrganizationRepository implements IOrganizationRepository {
         {
           name: organizationData.name,
           taxId: undefined, // Does not exist in current schema
-          settings: {},
+          settings: (organizationData.settings as Record<string, unknown>) ?? {},
           timezone: 'UTC', // Default values
           currency: 'USD',
           dateFormat: 'YYYY-MM-DD',
@@ -81,7 +81,7 @@ export class OrganizationRepository implements IOrganizationRepository {
         {
           name: organizationData.name,
           taxId: undefined, // Does not exist in current schema
-          settings: {},
+          settings: (organizationData.settings as Record<string, unknown>) ?? {},
           timezone: 'UTC', // Default values
           currency: 'USD',
           dateFormat: 'YYYY-MM-DD',
@@ -107,7 +107,7 @@ export class OrganizationRepository implements IOrganizationRepository {
           {
             name: orgData.name,
             taxId: undefined, // Does not exist in current schema
-            settings: {},
+            settings: (orgData.settings as Record<string, unknown>) ?? {},
             timezone: 'UTC',
             currency: 'USD',
             dateFormat: 'YYYY-MM-DD',
@@ -191,7 +191,7 @@ export class OrganizationRepository implements IOrganizationRepository {
         {
           name: newOrg.name,
           taxId: undefined, // Does not exist in current schema
-          settings: {},
+          settings: (newOrg.settings as Record<string, unknown>) ?? {},
           timezone: 'UTC',
           currency: 'USD',
           dateFormat: 'YYYY-MM-DD',
@@ -215,12 +215,7 @@ export class OrganizationRepository implements IOrganizationRepository {
         throw new Error('Organization ID is required for update');
       }
 
-      const organizationData: {
-        name?: string;
-        slug?: string;
-        domain?: string;
-        isActive?: boolean;
-      } = {};
+      const organizationData: Record<string, unknown> = {};
 
       if (organization.name) {
         organizationData.name = organization.name;
@@ -238,6 +233,10 @@ export class OrganizationRepository implements IOrganizationRepository {
         organizationData.isActive = organization.isActive;
       }
 
+      if (organization.settings && Object.keys(organization.settings).length > 0) {
+        organizationData.settings = organization.settings;
+      }
+
       const updatedOrg = await this.prisma.organization.update({
         where: { id: organization.id },
         data: organizationData,
@@ -249,7 +248,7 @@ export class OrganizationRepository implements IOrganizationRepository {
         {
           name: updatedOrg.name,
           taxId: undefined,
-          settings: {},
+          settings: (updatedOrg.settings as Record<string, unknown>) ?? {},
           timezone: 'UTC',
           currency: 'USD',
           dateFormat: 'YYYY-MM-DD',
@@ -289,7 +288,7 @@ export class OrganizationRepository implements IOrganizationRepository {
           {
             name: orgData.name,
             taxId: undefined, // Does not exist in current schema
-            settings: {},
+            settings: (orgData.settings as Record<string, unknown>) ?? {},
             timezone: 'UTC',
             currency: 'USD',
             dateFormat: 'YYYY-MM-DD',
@@ -314,7 +313,7 @@ export class OrganizationRepository implements IOrganizationRepository {
           {
             name: orgData.name,
             taxId: undefined, // Does not exist in current schema
-            settings: {},
+            settings: (orgData.settings as Record<string, unknown>) ?? {},
             timezone: 'UTC',
             currency: 'USD',
             dateFormat: 'YYYY-MM-DD',

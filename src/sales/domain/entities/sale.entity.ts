@@ -2,6 +2,9 @@ import { SaleLine } from '@sale/domain/entities/saleLine.entity';
 import { SaleCancelledEvent } from '@sale/domain/events/saleCancelled.event';
 import { SaleConfirmedEvent } from '@sale/domain/events/saleConfirmed.event';
 import { SaleCreatedEvent } from '@sale/domain/events/saleCreated.event';
+import { SalePickingStartedEvent } from '@sale/domain/events/salePickingStarted.event';
+import { SaleCompletedEvent } from '@sale/domain/events/saleCompleted.event';
+import { SaleShippedEvent } from '@sale/domain/events/saleShipped.event';
 import { SaleNumber } from '@sale/domain/valueObjects/saleNumber.valueObject';
 import { SaleStatus } from '@sale/domain/valueObjects/saleStatus.valueObject';
 import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
@@ -18,6 +21,15 @@ export interface ISaleProps {
   confirmedBy?: string;
   cancelledAt?: Date;
   cancelledBy?: string;
+  pickedAt?: Date;
+  pickedBy?: string;
+  shippedAt?: Date;
+  shippedBy?: string;
+  trackingNumber?: string;
+  shippingCarrier?: string;
+  shippingNotes?: string;
+  completedAt?: Date;
+  completedBy?: string;
   createdBy: string;
   movementId?: string;
 }
@@ -106,6 +118,48 @@ export class Sale extends AggregateRoot<ISaleProps> {
     this.addDomainEvent(event);
   }
 
+  public startPicking(userId?: string): void {
+    if (!this.props.status.canStartPicking()) {
+      throw new Error('Sale cannot start picking from current status');
+    }
+
+    this.props.status = SaleStatus.create('PICKING');
+    this.props.pickedAt = new Date();
+    this.props.pickedBy = userId;
+    this.updateTimestamp();
+
+    this.addDomainEvent(new SalePickingStartedEvent(this));
+  }
+
+  public ship(trackingNumber?: string, carrier?: string, notes?: string, userId?: string): void {
+    if (!this.props.status.canShip()) {
+      throw new Error('Sale cannot be shipped from current status');
+    }
+
+    this.props.status = SaleStatus.create('SHIPPED');
+    this.props.shippedAt = new Date();
+    this.props.shippedBy = userId;
+    this.props.trackingNumber = trackingNumber;
+    this.props.shippingCarrier = carrier;
+    this.props.shippingNotes = notes;
+    this.updateTimestamp();
+
+    this.addDomainEvent(new SaleShippedEvent(this));
+  }
+
+  public complete(userId?: string): void {
+    if (!this.props.status.canComplete()) {
+      throw new Error('Sale cannot be completed from current status');
+    }
+
+    this.props.status = SaleStatus.create('COMPLETED');
+    this.props.completedAt = new Date();
+    this.props.completedBy = userId;
+    this.updateTimestamp();
+
+    this.addDomainEvent(new SaleCompletedEvent(this));
+  }
+
   public cancel(reason?: string, cancelledBy?: string): void {
     // Validate status can be cancelled
     if (!this.props.status.canCancel()) {
@@ -150,6 +204,15 @@ export class Sale extends AggregateRoot<ISaleProps> {
       confirmedBy: this.props.confirmedBy,
       cancelledAt: this.props.cancelledAt,
       cancelledBy: this.props.cancelledBy,
+      pickedAt: this.props.pickedAt,
+      pickedBy: this.props.pickedBy,
+      shippedAt: this.props.shippedAt,
+      shippedBy: this.props.shippedBy,
+      trackingNumber: this.props.trackingNumber,
+      shippingCarrier: this.props.shippingCarrier,
+      shippingNotes: this.props.shippingNotes,
+      completedAt: this.props.completedAt,
+      completedBy: this.props.completedBy,
       createdBy: this.props.createdBy,
       movementId: this.props.movementId,
     };
@@ -217,6 +280,42 @@ export class Sale extends AggregateRoot<ISaleProps> {
 
   get cancelledBy(): string | undefined {
     return this.props.cancelledBy;
+  }
+
+  get pickedAt(): Date | undefined {
+    return this.props.pickedAt;
+  }
+
+  get pickedBy(): string | undefined {
+    return this.props.pickedBy;
+  }
+
+  get shippedAt(): Date | undefined {
+    return this.props.shippedAt;
+  }
+
+  get shippedBy(): string | undefined {
+    return this.props.shippedBy;
+  }
+
+  get trackingNumber(): string | undefined {
+    return this.props.trackingNumber;
+  }
+
+  get shippingCarrier(): string | undefined {
+    return this.props.shippingCarrier;
+  }
+
+  get shippingNotes(): string | undefined {
+    return this.props.shippingNotes;
+  }
+
+  get completedAt(): Date | undefined {
+    return this.props.completedAt;
+  }
+
+  get completedBy(): string | undefined {
+    return this.props.completedBy;
   }
 
   get createdBy(): string {

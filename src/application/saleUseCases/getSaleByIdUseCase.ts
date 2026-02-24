@@ -4,6 +4,7 @@ import { SaleMapper, ISaleResponseData } from '@sale/mappers';
 import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
+import type { IOrganizationRepository } from '@organization/domain/repositories';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
 import type { IProductRepository } from '@product/domain/ports/repositories/iProductRepository.port';
 import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
@@ -13,7 +14,9 @@ export interface IGetSaleByIdRequest {
   orgId: string;
 }
 
-export type IGetSaleByIdResponse = IApiResponseSuccess<ISaleResponseData>;
+export type IGetSaleByIdResponse = IApiResponseSuccess<
+  ISaleResponseData & { pickingEnabled: boolean }
+>;
 
 @Injectable()
 export class GetSaleByIdUseCase {
@@ -26,6 +29,8 @@ export class GetSaleByIdUseCase {
     private readonly warehouseRepository: IWarehouseRepository,
     @Inject('ProductRepository')
     private readonly productRepository: IProductRepository,
+    @Inject('OrganizationRepository')
+    private readonly organizationRepository: IOrganizationRepository,
     private readonly prisma: PrismaService
   ) {}
 
@@ -78,14 +83,29 @@ export class GetSaleByIdUseCase {
       }
     }
 
-    // Resolve confirmedBy/cancelledBy user names
+    // Resolve user names for traceability
+    responseData.createdByName = await this.resolveUserName(responseData.createdBy);
     responseData.confirmedByName = await this.resolveUserName(responseData.confirmedBy);
     responseData.cancelledByName = await this.resolveUserName(responseData.cancelledBy);
+    responseData.pickedByName = await this.resolveUserName(responseData.pickedBy);
+    responseData.shippedByName = await this.resolveUserName(responseData.shippedBy);
+    responseData.completedByName = await this.resolveUserName(responseData.completedBy);
+
+    // Include pickingEnabled from org settings
+    let pickingEnabled = false;
+    try {
+      const org = await this.organizationRepository.findById(request.orgId);
+      if (org) {
+        pickingEnabled = !!org.getSetting('pickingEnabled');
+      }
+    } catch {
+      this.logger.warn('Could not resolve org settings', { orgId: request.orgId });
+    }
 
     return ok({
       success: true,
       message: 'Sale retrieved successfully',
-      data: responseData,
+      data: { ...responseData, pickingEnabled },
       timestamp: new Date().toISOString(),
     });
   }

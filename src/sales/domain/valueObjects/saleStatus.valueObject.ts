@@ -1,6 +1,12 @@
 import { ValueObject } from '@shared/domain/base/valueObject.base';
 
-export type SaleStatusValue = 'DRAFT' | 'CONFIRMED' | 'CANCELLED';
+export type SaleStatusValue =
+  | 'DRAFT'
+  | 'CONFIRMED'
+  | 'PICKING'
+  | 'SHIPPED'
+  | 'COMPLETED'
+  | 'CANCELLED';
 
 export class SaleStatus extends ValueObject<{ value: SaleStatusValue }> {
   constructor(value: SaleStatusValue) {
@@ -15,7 +21,7 @@ export class SaleStatus extends ValueObject<{ value: SaleStatusValue }> {
   }
 
   private static isValid(value: string): value is SaleStatusValue {
-    return ['DRAFT', 'CONFIRMED', 'CANCELLED'].includes(value);
+    return ['DRAFT', 'CONFIRMED', 'PICKING', 'SHIPPED', 'COMPLETED', 'CANCELLED'].includes(value);
   }
 
   public isDraft(): boolean {
@@ -26,6 +32,18 @@ export class SaleStatus extends ValueObject<{ value: SaleStatusValue }> {
     return this.props.value === 'CONFIRMED';
   }
 
+  public isPicking(): boolean {
+    return this.props.value === 'PICKING';
+  }
+
+  public isShipped(): boolean {
+    return this.props.value === 'SHIPPED';
+  }
+
+  public isCompleted(): boolean {
+    return this.props.value === 'COMPLETED';
+  }
+
   public isCancelled(): boolean {
     return this.props.value === 'CANCELLED';
   }
@@ -34,8 +52,24 @@ export class SaleStatus extends ValueObject<{ value: SaleStatusValue }> {
     return this.props.value === 'DRAFT';
   }
 
+  public canStartPicking(): boolean {
+    return this.props.value === 'CONFIRMED';
+  }
+
+  public canShip(): boolean {
+    return this.props.value === 'PICKING';
+  }
+
+  public canComplete(): boolean {
+    return this.props.value === 'SHIPPED';
+  }
+
   public canCancel(): boolean {
-    return this.props.value === 'DRAFT' || this.props.value === 'CONFIRMED';
+    return (
+      this.props.value === 'DRAFT' ||
+      this.props.value === 'CONFIRMED' ||
+      this.props.value === 'PICKING'
+    );
   }
 
   public getValue(): SaleStatusValue {

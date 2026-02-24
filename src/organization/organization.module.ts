@@ -1,5 +1,6 @@
 import { CreateOrganizationUseCase } from '@application/organizationUseCases/createOrganizationUseCase';
 import { GetOrganizationByIdUseCase } from '@application/organizationUseCases/getOrganizationByIdUseCase';
+import { TogglePickingSettingUseCase } from '@application/organizationUseCases/togglePickingSettingUseCase';
 import { UpdateOrganizationUseCase } from '@application/organizationUseCases/updateOrganizationUseCase';
 import { AuthenticationModule } from '@auth/authentication.module';
 import { PrismaModule } from '@infrastructure/database/prisma.module';
@@ -17,6 +18,7 @@ import { OrganizationController } from '@organization/organization.controller';
     CreateOrganizationUseCase,
     GetOrganizationByIdUseCase,
     UpdateOrganizationUseCase,
+    TogglePickingSettingUseCase,
     {
       provide: 'OrganizationRepository',
       useClass: OrganizationRepository,

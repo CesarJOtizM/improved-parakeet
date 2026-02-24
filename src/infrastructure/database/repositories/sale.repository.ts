@@ -190,6 +190,15 @@ export class PrismaSaleRepository implements ISaleRepository {
           confirmedBy: sale.confirmedBy || null,
           cancelledAt: sale.cancelledAt || null,
           cancelledBy: sale.cancelledBy || null,
+          pickedAt: sale.pickedAt || null,
+          pickedBy: sale.pickedBy || null,
+          shippedAt: sale.shippedAt || null,
+          shippedBy: sale.shippedBy || null,
+          trackingNumber: sale.trackingNumber || null,
+          shippingCarrier: sale.shippingCarrier || null,
+          shippingNotes: sale.shippingNotes || null,
+          completedAt: sale.completedAt || null,
+          completedBy: sale.completedBy || null,
           movementId: sale.movementId || null,
           createdBy: sale.createdBy,
           orgId: sale.orgId,
@@ -503,12 +512,23 @@ export class PrismaSaleRepository implements ISaleRepository {
     confirmedBy: string | null;
     cancelledAt: Date | null;
     cancelledBy: string | null;
+    pickedAt: Date | null;
+    pickedBy: string | null;
+    shippedAt: Date | null;
+    shippedBy: string | null;
+    trackingNumber: string | null;
+    shippingCarrier: string | null;
+    shippingNotes: string | null;
+    completedAt: Date | null;
+    completedBy: string | null;
     movementId: string | null;
     createdBy: string;
   }) {
     return {
       saleNumber: SaleNumber.fromString(saleData.saleNumber),
-      status: SaleStatus.create(saleData.status as 'DRAFT' | 'CONFIRMED' | 'CANCELLED'),
+      status: SaleStatus.create(
+        saleData.status as 'DRAFT' | 'CONFIRMED' | 'PICKING' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED'
+      ),
       warehouseId: saleData.warehouseId,
       customerReference: saleData.customerReference || undefined,
       externalReference: saleData.externalReference || undefined,
@@ -517,6 +537,15 @@ export class PrismaSaleRepository implements ISaleRepository {
       confirmedBy: saleData.confirmedBy || undefined,
       cancelledAt: saleData.cancelledAt || undefined,
       cancelledBy: saleData.cancelledBy || undefined,
+      pickedAt: saleData.pickedAt || undefined,
+      pickedBy: saleData.pickedBy || undefined,
+      shippedAt: saleData.shippedAt || undefined,
+      shippedBy: saleData.shippedBy || undefined,
+      trackingNumber: saleData.trackingNumber || undefined,
+      shippingCarrier: saleData.shippingCarrier || undefined,
+      shippingNotes: saleData.shippingNotes || undefined,
+      completedAt: saleData.completedAt || undefined,
+      completedBy: saleData.completedBy || undefined,
       createdBy: saleData.createdBy,
       movementId: saleData.movementId || undefined,
     };
@@ -569,6 +598,15 @@ export class PrismaSaleRepository implements ISaleRepository {
     confirmedBy: string | null;
     cancelledAt: Date | null;
     cancelledBy: string | null;
+    pickedAt: Date | null;
+    pickedBy: string | null;
+    shippedAt: Date | null;
+    shippedBy: string | null;
+    trackingNumber: string | null;
+    shippingCarrier: string | null;
+    shippingNotes: string | null;
+    completedAt: Date | null;
+    completedBy: string | null;
     movementId: string | null;
     createdBy: string;
     orgId: string;
@@ -604,6 +642,15 @@ export class PrismaSaleRepository implements ISaleRepository {
         confirmedBy: valueObjects.confirmedBy,
         cancelledAt: valueObjects.cancelledAt,
         cancelledBy: valueObjects.cancelledBy,
+        pickedAt: valueObjects.pickedAt,
+        pickedBy: valueObjects.pickedBy,
+        shippedAt: valueObjects.shippedAt,
+        shippedBy: valueObjects.shippedBy,
+        trackingNumber: valueObjects.trackingNumber,
+        shippingCarrier: valueObjects.shippingCarrier,
+        shippingNotes: valueObjects.shippingNotes,
+        completedAt: valueObjects.completedAt,
+        completedBy: valueObjects.completedBy,
         createdBy: valueObjects.createdBy,
         movementId: valueObjects.movementId,
       },
@@ -625,6 +672,15 @@ export class PrismaSaleRepository implements ISaleRepository {
     confirmedBy: string | null;
     cancelledAt: Date | null;
     cancelledBy: string | null;
+    pickedAt: Date | null;
+    pickedBy: string | null;
+    shippedAt: Date | null;
+    shippedBy: string | null;
+    trackingNumber: string | null;
+    shippingCarrier: string | null;
+    shippingNotes: string | null;
+    completedAt: Date | null;
+    completedBy: string | null;
     movementId: string | null;
     createdBy: string;
     orgId: string;
@@ -632,7 +688,9 @@ export class PrismaSaleRepository implements ISaleRepository {
     updatedAt: Date;
   }): Sale {
     const saleNumber = SaleNumber.fromString(saleData.saleNumber);
-    const status = SaleStatus.create(saleData.status as 'DRAFT' | 'CONFIRMED' | 'CANCELLED');
+    const status = SaleStatus.create(
+      saleData.status as 'DRAFT' | 'CONFIRMED' | 'PICKING' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED'
+    );
 
     const sale = Sale.reconstitute(
       {
@@ -646,6 +704,15 @@ export class PrismaSaleRepository implements ISaleRepository {
         confirmedBy: saleData.confirmedBy || undefined,
         cancelledAt: saleData.cancelledAt || undefined,
         cancelledBy: saleData.cancelledBy || undefined,
+        pickedAt: saleData.pickedAt || undefined,
+        pickedBy: saleData.pickedBy || undefined,
+        shippedAt: saleData.shippedAt || undefined,
+        shippedBy: saleData.shippedBy || undefined,
+        trackingNumber: saleData.trackingNumber || undefined,
+        shippingCarrier: saleData.shippingCarrier || undefined,
+        shippingNotes: saleData.shippingNotes || undefined,
+        completedAt: saleData.completedAt || undefined,
+        completedBy: saleData.completedBy || undefined,
         createdBy: saleData.createdBy,
         movementId: saleData.movementId || undefined,
       },

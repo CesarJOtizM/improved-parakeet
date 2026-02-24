@@ -44,6 +44,15 @@ export interface ISaleData {
   confirmedBy?: string;
   cancelledAt?: Date;
   cancelledBy?: string;
+  pickedAt?: Date;
+  pickedBy?: string;
+  shippedAt?: Date;
+  shippedBy?: string;
+  trackingNumber?: string;
+  shippingCarrier?: string;
+  shippingNotes?: string;
+  completedAt?: Date;
+  completedBy?: string;
   movementId?: string;
   createdBy: string;
   orgId: string;

@@ -7,6 +7,9 @@ import { GetSaleByIdUseCase } from '@application/saleUseCases/getSaleByIdUseCase
 import { GetSaleMovementUseCase } from '@application/saleUseCases/getSaleMovementUseCase';
 import { GetSalesUseCase } from '@application/saleUseCases/getSalesUseCase';
 import { RemoveSaleLineUseCase } from '@application/saleUseCases/removeSaleLineUseCase';
+import { CompleteSaleUseCase } from '@application/saleUseCases/completeSaleUseCase';
+import { ShipSaleUseCase } from '@application/saleUseCases/shipSaleUseCase';
+import { StartPickingSaleUseCase } from '@application/saleUseCases/startPickingSaleUseCase';
 import { UpdateSaleUseCase } from '@application/saleUseCases/updateSaleUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
@@ -62,7 +65,10 @@ export class SalesController {
     private readonly addSaleLineUseCase: AddSaleLineUseCase,
     private readonly removeSaleLineUseCase: RemoveSaleLineUseCase,
     private readonly getSaleMovementUseCase: GetSaleMovementUseCase,
-    private readonly getReturnsBySaleUseCase: GetReturnsBySaleUseCase
+    private readonly getReturnsBySaleUseCase: GetReturnsBySaleUseCase,
+    private readonly startPickingSaleUseCase: StartPickingSaleUseCase,
+    private readonly shipSaleUseCase: ShipSaleUseCase,
+    private readonly completeSaleUseCase: CompleteSaleUseCase
   ) {}
 
   @Post()
@@ -249,6 +255,97 @@ export class SalesController {
     this.logger.log('Cancelling sale', { saleId: id, orgId, reason, cancelledBy: user.id });
 
     const result = await this.cancelSaleUseCase.execute({ id, reason, orgId, userId: user.id });
+    return resultToHttpResponse(result);
+  }
+
+  @Post(':id/pick')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.SALES_PICK)
+  @ApiOperation({
+    summary: 'Start picking for sale',
+    description:
+      'Start the picking process for a confirmed sale. Requires SALES:PICK permission and picking must be enabled for the organization.',
+  })
+  @ApiParam({ name: 'id', description: 'Sale ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Sale picking started successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Sale cannot start picking or picking not enabled',
+  })
+  async startPicking(@Param('id') id: string, @OrgId() orgId: string, @Req() req: Request) {
+    const user = req.user as IAuthenticatedUser;
+    this.logger.log('Starting picking for sale', { saleId: id, orgId, pickedBy: user.id });
+
+    const result = await this.startPickingSaleUseCase.execute({ id, orgId, userId: user.id });
+    return resultToHttpResponse(result);
+  }
+
+  @Post(':id/ship')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.SALES_SHIP)
+  @ApiOperation({
+    summary: 'Ship sale',
+    description:
+      'Ship a sale that is in PICKING status. Requires SALES:SHIP permission and picking must be enabled for the organization.',
+  })
+  @ApiParam({ name: 'id', description: 'Sale ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Sale shipped successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Sale cannot be shipped or picking not enabled',
+  })
+  async shipSale(
+    @Param('id') id: string,
+    @Body() body: { trackingNumber?: string; shippingCarrier?: string; shippingNotes?: string },
+    @OrgId() orgId: string,
+    @Req() req: Request
+  ) {
+    const user = req.user as IAuthenticatedUser;
+    this.logger.log('Shipping sale', { saleId: id, orgId, shippedBy: user.id });
+
+    const result = await this.shipSaleUseCase.execute({
+      id,
+      orgId,
+      userId: user.id,
+      trackingNumber: body.trackingNumber,
+      shippingCarrier: body.shippingCarrier,
+      shippingNotes: body.shippingNotes,
+    });
+    return resultToHttpResponse(result);
+  }
+
+  @Post(':id/complete')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.SALES_COMPLETE)
+  @ApiOperation({
+    summary: 'Complete sale',
+    description:
+      'Mark a shipped sale as completed. Requires SALES:COMPLETE permission and picking must be enabled for the organization.',
+  })
+  @ApiParam({ name: 'id', description: 'Sale ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Sale completed successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Sale cannot be completed or picking not enabled',
+  })
+  async completeSale(@Param('id') id: string, @OrgId() orgId: string, @Req() req: Request) {
+    const user = req.user as IAuthenticatedUser;
+    this.logger.log('Completing sale', { saleId: id, orgId, completedBy: user.id });
+
+    const result = await this.completeSaleUseCase.execute({
+      id,
+      orgId,
+      userId: user.id,
+    });
     return resultToHttpResponse(result);
   }
 

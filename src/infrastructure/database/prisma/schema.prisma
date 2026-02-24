@@ -28,6 +28,7 @@ model Organization {
   slug      String   @unique
   domain    String?  @unique
   isActive  Boolean  @default(true)
+  settings  Json?    @default("{}")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -404,7 +405,7 @@ model TransferLine {
 model Sale {
   id                String    @id @default(cuid())
   saleNumber        String
-  status            String    @default("DRAFT") // DRAFT, CONFIRMED, CANCELLED
+  status            String    @default("DRAFT") // DRAFT, CONFIRMED, PICKING, SHIPPED, COMPLETED, CANCELLED
   warehouseId       String
   customerReference String?
   externalReference String?
@@ -413,6 +414,15 @@ model Sale {
   confirmedBy       String?
   cancelledAt       DateTime?
   cancelledBy       String?
+  pickedAt          DateTime?
+  pickedBy          String?
+  shippedAt         DateTime?
+  shippedBy         String?
+  trackingNumber    String?
+  shippingCarrier   String?
+  shippingNotes     String?
+  completedAt       DateTime?
+  completedBy       String?
   movementId        String?   @unique
   createdBy         String
   orgId             String
