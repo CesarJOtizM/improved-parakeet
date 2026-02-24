@@ -1,5 +1,6 @@
 import { MovementLine, MovementStatus, MovementType } from '@inventory/movements';
 import { MovementPostedEvent } from '@movement/domain/events/movementPosted.event';
+import { MovementReturnedEvent } from '@movement/domain/events/movementReturned.event';
 import { MovementVoidedEvent } from '@movement/domain/events/movementVoided.event';
 import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
 
@@ -12,6 +13,8 @@ export interface IMovementProps {
   note?: string;
   postedAt?: Date;
   postedBy?: string;
+  returnedAt?: Date;
+  returnedBy?: string;
   createdBy: string;
 }
 
@@ -84,7 +87,11 @@ export class Movement extends AggregateRoot<IMovementProps> {
    * Checks if the movement can be updated
    */
   public canUpdate(): boolean {
-    return !this.props.status.isPosted() && !this.props.status.isVoid();
+    return (
+      !this.props.status.isPosted() &&
+      !this.props.status.isVoid() &&
+      !this.props.status.isReturned()
+    );
   }
 
   public addLine(line: MovementLine): void {
@@ -175,6 +182,30 @@ export class Movement extends AggregateRoot<IMovementProps> {
     return voidedMovement;
   }
 
+  public markAsReturned(userId?: string): Movement {
+    if (!this.props.status.canReturn()) {
+      throw new Error('Movement cannot be marked as returned');
+    }
+
+    const updatedProps: IMovementProps = {
+      ...this.props,
+      status: MovementStatus.create('RETURNED'),
+      returnedAt: new Date(),
+      returnedBy: userId,
+    };
+
+    const returnedMovement = Movement.reconstitute(
+      updatedProps,
+      this.id,
+      this.orgId!,
+      [...this.lines],
+      this.createdAt
+    );
+    const event = new MovementReturnedEvent(returnedMovement);
+    returnedMovement.addDomainEvent(event);
+    return returnedMovement;
+  }
+
   public update(props: Partial<IMovementProps>): Movement {
     if (!this.canUpdate()) {
       throw new Error('Cannot update movement when status is POSTED or VOID');
@@ -189,6 +220,8 @@ export class Movement extends AggregateRoot<IMovementProps> {
       note: props.note !== undefined ? props.note : this.props.note,
       postedAt: this.props.postedAt,
       postedBy: this.props.postedBy,
+      returnedAt: this.props.returnedAt,
+      returnedBy: this.props.returnedBy,
       createdBy: this.props.createdBy,
     };
 
@@ -241,6 +274,14 @@ export class Movement extends AggregateRoot<IMovementProps> {
 
   get postedBy(): string | undefined {
     return this.props.postedBy;
+  }
+
+  get returnedAt(): Date | undefined {
+    return this.props.returnedAt;
+  }
+
+  get returnedBy(): string | undefined {
+    return this.props.returnedBy;
   }
 
   get createdBy(): string {

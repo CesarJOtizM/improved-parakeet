@@ -8,6 +8,7 @@ import { GetSaleMovementUseCase } from '@application/saleUseCases/getSaleMovemen
 import { GetSalesUseCase } from '@application/saleUseCases/getSalesUseCase';
 import { RemoveSaleLineUseCase } from '@application/saleUseCases/removeSaleLineUseCase';
 import { CompleteSaleUseCase } from '@application/saleUseCases/completeSaleUseCase';
+import { MarkSaleReturnedUseCase } from '@application/saleUseCases/markSaleReturnedUseCase';
 import { ShipSaleUseCase } from '@application/saleUseCases/shipSaleUseCase';
 import { StartPickingSaleUseCase } from '@application/saleUseCases/startPickingSaleUseCase';
 import { UpdateSaleUseCase } from '@application/saleUseCases/updateSaleUseCase';
@@ -68,7 +69,8 @@ export class SalesController {
     private readonly getReturnsBySaleUseCase: GetReturnsBySaleUseCase,
     private readonly startPickingSaleUseCase: StartPickingSaleUseCase,
     private readonly shipSaleUseCase: ShipSaleUseCase,
-    private readonly completeSaleUseCase: CompleteSaleUseCase
+    private readonly completeSaleUseCase: CompleteSaleUseCase,
+    private readonly markSaleReturnedUseCase: MarkSaleReturnedUseCase
   ) {}
 
   @Post()
@@ -343,6 +345,34 @@ export class SalesController {
 
     const result = await this.completeSaleUseCase.execute({
       id,
+      orgId,
+      userId: user.id,
+    });
+    return resultToHttpResponse(result);
+  }
+
+  @Post(':id/return')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.SALES_RETURN)
+  @ApiOperation({
+    summary: 'Mark sale as returned',
+    description: 'Mark a completed or shipped sale as returned. Requires SALES:RETURN permission.',
+  })
+  @ApiParam({ name: 'id', description: 'Sale ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Sale marked as returned successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Sale cannot be marked as returned',
+  })
+  async markAsReturned(@Param('id') id: string, @OrgId() orgId: string, @Req() req: Request) {
+    const user = req.user as IAuthenticatedUser;
+    this.logger.log('Marking sale as returned', { saleId: id, orgId, returnedBy: user.id });
+
+    const result = await this.markSaleReturnedUseCase.execute({
+      saleId: id,
       orgId,
       userId: user.id,
     });

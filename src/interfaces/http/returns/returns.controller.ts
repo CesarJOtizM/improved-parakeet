@@ -241,11 +241,18 @@ export class ReturnsController {
   async cancelReturn(
     @Param('id') id: string,
     @Query('reason') reason: string | undefined,
-    @OrgId() orgId: string
+    @OrgId() orgId: string,
+    @Req() req: Request
   ) {
-    this.logger.log('Cancelling return', { returnId: id, orgId, reason });
+    const user = req.user as IAuthenticatedUser;
+    this.logger.log('Cancelling return', { returnId: id, orgId, reason, cancelledBy: user.id });
 
-    const result = await this.cancelReturnUseCase.execute({ id, reason, orgId });
+    const result = await this.cancelReturnUseCase.execute({
+      id,
+      reason,
+      cancelledBy: user.id,
+      orgId,
+    });
     return resultToHttpResponse(result);
   }
 

@@ -2,6 +2,7 @@ import { CreateMovementUseCase } from '@application/movementUseCases/createMovem
 import { DeleteMovementUseCase } from '@application/movementUseCases/deleteMovementUseCase';
 import { GetMovementByIdUseCase } from '@application/movementUseCases/getMovementByIdUseCase';
 import { GetMovementsUseCase } from '@application/movementUseCases/getMovementsUseCase';
+import { MarkMovementReturnedUseCase } from '@application/movementUseCases/markMovementReturnedUseCase';
 import { PostMovementUseCase } from '@application/movementUseCases/postMovementUseCase';
 import { UpdateMovementUseCase } from '@application/movementUseCases/updateMovementUseCase';
 import { VoidMovementUseCase } from '@application/movementUseCases/voidMovementUseCase';
@@ -62,7 +63,8 @@ export class MovementsController {
     private readonly postMovementUseCase: PostMovementUseCase,
     private readonly updateMovementUseCase: UpdateMovementUseCase,
     private readonly deleteMovementUseCase: DeleteMovementUseCase,
-    private readonly voidMovementUseCase: VoidMovementUseCase
+    private readonly voidMovementUseCase: VoidMovementUseCase,
+    private readonly markMovementReturnedUseCase: MarkMovementReturnedUseCase
   ) {}
 
   @Post()
@@ -125,7 +127,7 @@ export class MovementsController {
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'warehouseId', required: false, type: String })
-  @ApiQuery({ name: 'status', required: false, enum: ['DRAFT', 'POSTED', 'VOID'] })
+  @ApiQuery({ name: 'status', required: false, enum: ['DRAFT', 'POSTED', 'VOID', 'RETURNED'] })
   @ApiQuery({
     name: 'type',
     required: false,
@@ -288,6 +290,42 @@ export class MovementsController {
     this.logger.log('Voiding movement', { movementId, orgId });
 
     const result = await this.voidMovementUseCase.execute({ movementId, orgId });
+    return resultToHttpResponse(result);
+  }
+
+  @Post(':id/return')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.INVENTORY_ENTRY)
+  @ApiOperation({
+    summary: 'Mark movement as returned',
+    description:
+      'Mark a posted movement as returned (POSTED -> RETURNED). Requires INVENTORY:ENTRY permission.',
+  })
+  @ApiParam({ name: 'id', description: 'Movement ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Movement marked as returned successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Movement not found' })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Movement cannot be marked as returned',
+  })
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Insufficient permissions' })
+  async markAsReturned(
+    @Param('id') movementId: string,
+    @OrgId() orgId: string,
+    @Req() req: Request
+  ) {
+    const user = req.user as IAuthenticatedUser;
+    this.logger.log('Marking movement as returned', {
+      movementId,
+      orgId,
+      returnedBy: user.id,
+    });
+
+    const result = await this.markMovementReturnedUseCase.execute({
+      movementId,
+      orgId,
+      userId: user.id,
+    });
     return resultToHttpResponse(result);
   }
 }

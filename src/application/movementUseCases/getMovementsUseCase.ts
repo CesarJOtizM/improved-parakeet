@@ -70,7 +70,9 @@ export class GetMovementsUseCase {
 
     if (request.status) {
       specifications.push(
-        new MovementByStatusSpecification(request.status as 'DRAFT' | 'POSTED' | 'VOID')
+        new MovementByStatusSpecification(
+          request.status as 'DRAFT' | 'POSTED' | 'VOID' | 'RETURNED'
+        )
       );
     }
 

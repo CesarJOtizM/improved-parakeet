@@ -2,6 +2,7 @@ import { AddSaleLineUseCase } from '@application/saleUseCases/addSaleLineUseCase
 import { CancelSaleUseCase } from '@application/saleUseCases/cancelSaleUseCase';
 import { CompleteSaleUseCase } from '@application/saleUseCases/completeSaleUseCase';
 import { ConfirmSaleUseCase } from '@application/saleUseCases/confirmSaleUseCase';
+import { MarkSaleReturnedUseCase } from '@application/saleUseCases/markSaleReturnedUseCase';
 import { CreateSaleUseCase } from '@application/saleUseCases/createSaleUseCase';
 import { GetSaleByIdUseCase } from '@application/saleUseCases/getSaleByIdUseCase';
 import { GetSaleMovementUseCase } from '@application/saleUseCases/getSaleMovementUseCase';
@@ -41,6 +42,7 @@ import { OrganizationModule } from '@organization/organization.module';
     StartPickingSaleUseCase,
     ShipSaleUseCase,
     CompleteSaleUseCase,
+    MarkSaleReturnedUseCase,
   ],
   exports: [
     // Export use cases for controller
@@ -56,6 +58,7 @@ import { OrganizationModule } from '@organization/organization.module';
     StartPickingSaleUseCase,
     ShipSaleUseCase,
     CompleteSaleUseCase,
+    MarkSaleReturnedUseCase,
     // Export repository for cross-module access (e.g., ReturnsModule)
     'SaleRepository',
   ],

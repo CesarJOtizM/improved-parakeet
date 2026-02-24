@@ -16,7 +16,6 @@ import {
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IReturnData } from './createReturnUseCase';
-import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
 import type { IReturnRepository } from '@returns/domain/repositories/returnRepository.interface';
 import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 
@@ -36,8 +35,6 @@ export class ConfirmReturnUseCase {
   constructor(
     @Inject('ReturnRepository')
     private readonly returnRepository: IReturnRepository,
-    @Inject('MovementRepository')
-    private readonly movementRepository: IMovementRepository,
     @Inject('DomainEventDispatcher')
     private readonly eventDispatcher: IDomainEventDispatcher,
     private readonly unitOfWork: UnitOfWork
@@ -140,15 +137,59 @@ export class ConfirmReturnUseCase {
             SELECT id FROM "movements" WHERE id = ${returnEntity.sourceMovementId} FOR UPDATE
           `;
 
-          // Validate supplier return quantity (similar logic can be implemented here)
-          const quantityValidation = await ReturnValidationService.validateSupplierReturnQuantity(
-            returnEntity,
-            this.movementRepository
-          );
-          if (!quantityValidation.isValid) {
+          // Get the source movement lines (original purchase quantities)
+          const sourceMovement = await tx.movement.findUnique({
+            where: { id: returnEntity.sourceMovementId },
+            include: { lines: true },
+          });
+
+          if (!sourceMovement) {
             throw new BusinessRuleError(
-              `Invalid return quantities: ${quantityValidation.errors.join(', ')}`
+              `Source movement with ID ${returnEntity.sourceMovementId} not found`
             );
+          }
+
+          // Get all existing supplier returns for this source movement (excluding cancelled and current)
+          const existingReturns = await tx.return.findMany({
+            where: {
+              sourceMovementId: returnEntity.sourceMovementId,
+              status: { not: 'CANCELLED' },
+              id: { not: returnEntity.id },
+            },
+            include: { lines: true },
+          });
+
+          // Calculate total already returned per product across all previous returns
+          const alreadyReturnedByProduct = new Map<string, number>();
+          for (const existingReturn of existingReturns) {
+            for (const line of existingReturn.lines) {
+              const current = alreadyReturnedByProduct.get(line.productId) || 0;
+              alreadyReturnedByProduct.set(line.productId, current + Number(line.quantity));
+            }
+          }
+
+          // Validate this return doesn't exceed remaining quantities
+          for (const returnLine of returnEntity.getLines()) {
+            const movementLine = sourceMovement.lines.find(
+              l => l.productId === returnLine.productId
+            );
+            if (!movementLine) {
+              throw new BusinessRuleError(
+                `Product ${returnLine.productId} was not purchased in movement ${returnEntity.sourceMovementId}`
+              );
+            }
+
+            const purchasedQuantity = Number(movementLine.quantity);
+            const alreadyReturned = alreadyReturnedByProduct.get(returnLine.productId) || 0;
+            const thisReturnQty = returnLine.quantity.getNumericValue();
+
+            if (alreadyReturned + thisReturnQty > purchasedQuantity) {
+              throw new BusinessRuleError(
+                `Cannot return ${thisReturnQty} units of product ${returnLine.productId}. ` +
+                  `Purchased: ${purchasedQuantity}, Already returned: ${alreadyReturned}, ` +
+                  `Remaining: ${purchasedQuantity - alreadyReturned}`
+              );
+            }
           }
         }
 
@@ -234,6 +275,47 @@ export class ConfirmReturnUseCase {
           },
           include: { lines: true },
         });
+
+        // 6. If this is a customer return linked to a sale, mark the sale as RETURNED
+        if (isCustomerReturn && returnEntity.saleId) {
+          const saleToUpdate = await tx.sale.findUnique({
+            where: { id: returnEntity.saleId },
+            select: { id: true, status: true },
+          });
+
+          if (
+            saleToUpdate &&
+            (saleToUpdate.status === 'COMPLETED' || saleToUpdate.status === 'SHIPPED')
+          ) {
+            await tx.sale.update({
+              where: { id: returnEntity.saleId },
+              data: {
+                status: 'RETURNED',
+                returnedAt: new Date(),
+                returnedBy: returnEntity.createdBy,
+              },
+            });
+          }
+        }
+
+        // 7. If this is a supplier return linked to a source movement, mark the movement as RETURNED
+        if (!isCustomerReturn && returnEntity.sourceMovementId) {
+          const movementToUpdate = await tx.movement.findUnique({
+            where: { id: returnEntity.sourceMovementId },
+            select: { id: true, status: true },
+          });
+
+          if (movementToUpdate && movementToUpdate.status === 'POSTED') {
+            await tx.movement.update({
+              where: { id: returnEntity.sourceMovementId },
+              data: {
+                status: 'RETURNED',
+                returnedAt: new Date(),
+                returnedBy: returnEntity.createdBy,
+              },
+            });
+          }
+        }
 
         return {
           confirmedReturn: updatedReturn,

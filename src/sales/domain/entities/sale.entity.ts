@@ -4,6 +4,7 @@ import { SaleConfirmedEvent } from '@sale/domain/events/saleConfirmed.event';
 import { SaleCreatedEvent } from '@sale/domain/events/saleCreated.event';
 import { SalePickingStartedEvent } from '@sale/domain/events/salePickingStarted.event';
 import { SaleCompletedEvent } from '@sale/domain/events/saleCompleted.event';
+import { SaleReturnedEvent } from '@sale/domain/events/saleReturned.event';
 import { SaleShippedEvent } from '@sale/domain/events/saleShipped.event';
 import { SaleNumber } from '@sale/domain/valueObjects/saleNumber.valueObject';
 import { SaleStatus } from '@sale/domain/valueObjects/saleStatus.valueObject';
@@ -30,6 +31,8 @@ export interface ISaleProps {
   shippingNotes?: string;
   completedAt?: Date;
   completedBy?: string;
+  returnedAt?: Date;
+  returnedBy?: string;
   createdBy: string;
   movementId?: string;
 }
@@ -160,6 +163,19 @@ export class Sale extends AggregateRoot<ISaleProps> {
     this.addDomainEvent(new SaleCompletedEvent(this));
   }
 
+  public markAsReturned(userId?: string): void {
+    if (!this.props.status.canReturn()) {
+      throw new Error('Sale cannot be marked as returned from current status');
+    }
+
+    this.props.status = SaleStatus.create('RETURNED');
+    this.props.returnedAt = new Date();
+    this.props.returnedBy = userId;
+    this.updateTimestamp();
+
+    this.addDomainEvent(new SaleReturnedEvent(this));
+  }
+
   public cancel(reason?: string, cancelledBy?: string): void {
     // Validate status can be cancelled
     if (!this.props.status.canCancel()) {
@@ -213,6 +229,8 @@ export class Sale extends AggregateRoot<ISaleProps> {
       shippingNotes: this.props.shippingNotes,
       completedAt: this.props.completedAt,
       completedBy: this.props.completedBy,
+      returnedAt: this.props.returnedAt,
+      returnedBy: this.props.returnedBy,
       createdBy: this.props.createdBy,
       movementId: this.props.movementId,
     };
@@ -316,6 +334,14 @@ export class Sale extends AggregateRoot<ISaleProps> {
 
   get completedBy(): string | undefined {
     return this.props.completedBy;
+  }
+
+  get returnedAt(): Date | undefined {
+    return this.props.returnedAt;
+  }
+
+  get returnedBy(): string | undefined {
+    return this.props.returnedBy;
   }
 
   get createdBy(): string {

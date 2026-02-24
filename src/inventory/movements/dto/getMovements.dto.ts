@@ -40,13 +40,13 @@ export class GetMovementsQueryDto {
   @ApiProperty({
     description: 'Filter by movement status',
     example: 'POSTED',
-    enum: ['DRAFT', 'POSTED', 'VOID'],
+    enum: ['DRAFT', 'POSTED', 'VOID', 'RETURNED'],
     required: false,
   })
   @IsOptional()
   @IsString({ message: 'Status must be a string' })
-  @IsEnum(['DRAFT', 'POSTED', 'VOID'], {
-    message: 'Status must be one of: DRAFT, POSTED, VOID',
+  @IsEnum(['DRAFT', 'POSTED', 'VOID', 'RETURNED'], {
+    message: 'Status must be one of: DRAFT, POSTED, VOID, RETURNED',
   })
   status?: string;
 

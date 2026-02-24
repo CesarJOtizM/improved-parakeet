@@ -90,6 +90,7 @@ export class GetSaleByIdUseCase {
     responseData.pickedByName = await this.resolveUserName(responseData.pickedBy);
     responseData.shippedByName = await this.resolveUserName(responseData.shippedBy);
     responseData.completedByName = await this.resolveUserName(responseData.completedBy);
+    responseData.returnedByName = await this.resolveUserName(responseData.returnedBy);
 
     // Include pickingEnabled from org settings
     let pickingEnabled = false;

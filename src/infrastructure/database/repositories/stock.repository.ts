@@ -102,12 +102,13 @@ export class PrismaStockRepository implements IStockRepository {
       const precision = await this.getProductPrecision(productId, orgId);
       const quantity = Quantity.create(Number(stock.quantity), precision);
 
-      const unitCostValue =
+      const rawCost =
         stock.unitCost !== null
           ? typeof stock.unitCost === 'object' && 'toNumber' in stock.unitCost
             ? stock.unitCost.toNumber()
             : Number(stock.unitCost)
           : 0;
+      const unitCostValue = Number.isFinite(rawCost) ? rawCost : 0;
 
       const averageCost = Money.create(unitCostValue, 'COP', 2);
 
@@ -343,12 +344,13 @@ export class PrismaStockRepository implements IStockRepository {
         const precision = await this.getProductPrecision(stock.productId, orgId);
         const quantity = Quantity.create(Number(stock.quantity), precision);
 
-        const unitCostValue =
+        const rawUnitCost =
           stock.unitCost !== null
             ? typeof stock.unitCost === 'object' && 'toNumber' in stock.unitCost
               ? stock.unitCost.toNumber()
               : Number(stock.unitCost)
             : 0;
+        const unitCostValue = Number.isFinite(rawUnitCost) ? rawUnitCost : 0;
 
         const averageCost = Money.create(unitCostValue, 'COP', 2);
 

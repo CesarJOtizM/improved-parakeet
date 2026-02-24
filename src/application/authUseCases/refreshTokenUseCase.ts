@@ -127,9 +127,9 @@ export class RefreshTokenUseCase {
         'LOGOUT'
       );
 
-      // Actualizar sesión con nuevo token
+      // Actualizar sesión con nuevo token y extender hasta que expire el refresh token
       activeSession.refreshToken(newTokenPair.accessToken);
-      activeSession.extendExpiration(15); // 15 minutos adicionales
+      activeSession.update({ expiresAt: newTokenPair.refreshTokenExpiresAt });
       await this.sessionRepository.save(activeSession);
 
       // Extraer JTI del nuevo refresh token para tracking

@@ -125,7 +125,7 @@ export type MovementType =
   | 'ADJUST_OUT'
   | 'TRANSFER_OUT'
   | 'TRANSFER_IN';
-export type MovementStatus = 'DRAFT' | 'POSTED' | 'VOIDED' | 'CANCELLED';
+export type MovementStatus = 'DRAFT' | 'POSTED' | 'VOID' | 'VOIDED' | 'CANCELLED' | 'RETURNED';
 
 export interface IInventoryBalance {
   productId: string;

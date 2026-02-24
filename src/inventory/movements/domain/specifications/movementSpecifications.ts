@@ -5,7 +5,7 @@ import { PrismaSpecification, PrismaWhereInput } from '@shared/domain/specificat
  * Specification for movements by status
  */
 export class MovementByStatusSpecification extends PrismaSpecification<Movement> {
-  constructor(private readonly status: 'DRAFT' | 'POSTED' | 'VOID') {
+  constructor(private readonly status: 'DRAFT' | 'POSTED' | 'VOID' | 'RETURNED') {
     super();
   }
 

@@ -2,7 +2,6 @@ import { Session } from '@auth/domain/entities/session.entity';
 import { AuthenticationService } from '@auth/domain/services/authenticationService';
 import { JwtService } from '@auth/domain/services/jwtService';
 import { RateLimitService } from '@auth/domain/services/rateLimitService';
-import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   AuthenticationError,
@@ -51,7 +50,6 @@ export class LoginUseCase {
     @Inject('UserRepository') private readonly userRepository: IUserRepository,
     @Inject('SessionRepository') private readonly sessionRepository: ISessionRepository,
     private readonly jwtService: JwtService,
-    private readonly tokenBlacklistService: TokenBlacklistService,
     private readonly rateLimitService: RateLimitService
   ) {}
 
@@ -128,21 +126,6 @@ export class LoginUseCase {
       );
 
       await this.sessionRepository.save(session);
-
-      // Extraer JTI del token para blacklisting
-      const accessTokenPayload = this.jwtService.decodeToken(tokenPair.accessToken);
-      const refreshTokenPayload = this.jwtService.decodeToken(tokenPair.refreshToken);
-
-      if (accessTokenPayload && refreshTokenPayload) {
-        // Registrar tokens para tracking (no blacklist aún)
-        await this.tokenBlacklistService.blacklistToken(
-          accessTokenPayload.jti,
-          user.id,
-          user.orgId,
-          tokenPair.accessTokenExpiresAt,
-          'SECURITY'
-        );
-      }
 
       this.logger.log(`Successful login for user: ${user.id}`);
 

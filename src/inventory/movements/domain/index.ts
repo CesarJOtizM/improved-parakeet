@@ -15,6 +15,7 @@ export * from './services/ppmService';
 
 // Events
 export * from './events/movementPosted.event';
+export * from './events/movementReturned.event';
 export * from './events/movementVoided.event';
 export * from './events/ppmRecalculated.event';
 export * from './events/stockUpdated.event';

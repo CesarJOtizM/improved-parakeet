@@ -14,6 +14,7 @@ import { CreateMovementUseCase } from '@application/movementUseCases/createMovem
 import { DeleteMovementUseCase } from '@application/movementUseCases/deleteMovementUseCase';
 import { GetMovementByIdUseCase } from '@application/movementUseCases/getMovementByIdUseCase';
 import { GetMovementsUseCase } from '@application/movementUseCases/getMovementsUseCase';
+import { MarkMovementReturnedUseCase } from '@application/movementUseCases/markMovementReturnedUseCase';
 import { PostMovementUseCase } from '@application/movementUseCases/postMovementUseCase';
 import { UpdateMovementUseCase } from '@application/movementUseCases/updateMovementUseCase';
 import { VoidMovementUseCase } from '@application/movementUseCases/voidMovementUseCase';
@@ -144,6 +145,7 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     UpdateMovementUseCase,
     DeleteMovementUseCase,
     VoidMovementUseCase,
+    MarkMovementReturnedUseCase,
     // Stock Use Cases
     GetStockUseCase,
     // Reorder Rule Use Cases
@@ -207,6 +209,7 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     UpdateMovementUseCase,
     DeleteMovementUseCase,
     VoidMovementUseCase,
+    MarkMovementReturnedUseCase,
     GetStockUseCase,
     GetReorderRulesUseCase,
     CreateReorderRuleUseCase,

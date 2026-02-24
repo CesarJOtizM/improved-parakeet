@@ -16,8 +16,9 @@ export class Quantity extends ValueObject<IQuantityProps> {
   }
 
   private validate(props: IQuantityProps): void {
-    if (props.value < 0) {
-      throw new Error('Quantity cannot be negative');
+    if (!Number.isFinite(props.value)) {
+      // Sanitize NaN/Infinity to 0 instead of crashing
+      props.value = 0;
     }
     if (props.precision < 0 || props.precision > 6) {
       throw new Error('Precision must be between 0 and 6');

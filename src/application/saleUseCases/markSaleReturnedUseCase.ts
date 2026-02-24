@@ -12,61 +12,49 @@ import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 import type { ISaleData } from './createSaleUseCase';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
 import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
-import type { IOrganizationRepository } from '@organization/domain/repositories/organizationRepository.interface';
 
-export interface ICompleteSaleRequest {
-  id: string;
+export interface IMarkSaleReturnedRequest {
+  saleId: string;
   orgId: string;
   userId?: string;
 }
 
-export type ICompleteSaleResponse = IApiResponseSuccess<ISaleData>;
+export type IMarkSaleReturnedResponse = IApiResponseSuccess<ISaleData>;
 
 @Injectable()
-export class CompleteSaleUseCase {
-  private readonly logger = new Logger(CompleteSaleUseCase.name);
+export class MarkSaleReturnedUseCase {
+  private readonly logger = new Logger(MarkSaleReturnedUseCase.name);
 
   constructor(
     @Inject('SaleRepository')
     private readonly saleRepository: ISaleRepository,
-    @Inject('OrganizationRepository')
-    private readonly organizationRepository: IOrganizationRepository,
     @Inject('DomainEventDispatcher')
     private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
 
   async execute(
-    request: ICompleteSaleRequest
-  ): Promise<Result<ICompleteSaleResponse, DomainError>> {
-    this.logger.log('Completing sale', {
-      saleId: request.id,
+    request: IMarkSaleReturnedRequest
+  ): Promise<Result<IMarkSaleReturnedResponse, DomainError>> {
+    this.logger.log('Marking sale as returned', {
+      saleId: request.saleId,
       orgId: request.orgId,
     });
 
-    // Validate org has picking enabled
-    const org = await this.organizationRepository.findById(request.orgId);
-    if (!org) {
-      return err(new NotFoundError(`Organization with ID ${request.orgId} not found`));
-    }
-
-    const pickingEnabled = org.getSetting('pickingEnabled');
-    if (!pickingEnabled) {
-      return err(new BusinessRuleError('Picking/shipping is not enabled for this organization'));
-    }
-
     // Retrieve sale
-    const sale = await this.saleRepository.findById(request.id, request.orgId);
+    const sale = await this.saleRepository.findById(request.saleId, request.orgId);
 
     if (!sale) {
-      return err(new NotFoundError(`Sale with ID ${request.id} not found`));
+      return err(new NotFoundError(`Sale with ID ${request.saleId} not found`));
     }
 
-    // Complete sale
+    // Mark as returned
     try {
-      sale.complete(request.userId);
+      sale.markAsReturned(request.userId);
     } catch (error) {
       return err(
-        new BusinessRuleError(error instanceof Error ? error.message : 'Failed to complete sale')
+        new BusinessRuleError(
+          error instanceof Error ? error.message : 'Failed to mark sale as returned'
+        )
       );
     }
 
@@ -78,7 +66,7 @@ export class CompleteSaleUseCase {
     await this.eventDispatcher.dispatchEvents(updatedSale.domainEvents);
     updatedSale.clearEvents();
 
-    this.logger.log('Sale completed successfully', {
+    this.logger.log('Sale marked as returned successfully', {
       saleId: updatedSale.id,
       saleNumber: updatedSale.saleNumber.getValue(),
     });
@@ -87,7 +75,7 @@ export class CompleteSaleUseCase {
 
     return ok({
       success: true,
-      message: 'Sale completed successfully',
+      message: 'Sale marked as returned successfully',
       data: {
         id: updatedSale.id,
         saleNumber: updatedSale.saleNumber.getValue(),

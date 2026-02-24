@@ -6,7 +6,8 @@ export type SaleStatusValue =
   | 'PICKING'
   | 'SHIPPED'
   | 'COMPLETED'
-  | 'CANCELLED';
+  | 'CANCELLED'
+  | 'RETURNED';
 
 export class SaleStatus extends ValueObject<{ value: SaleStatusValue }> {
   constructor(value: SaleStatusValue) {
@@ -21,7 +22,15 @@ export class SaleStatus extends ValueObject<{ value: SaleStatusValue }> {
   }
 
   private static isValid(value: string): value is SaleStatusValue {
-    return ['DRAFT', 'CONFIRMED', 'PICKING', 'SHIPPED', 'COMPLETED', 'CANCELLED'].includes(value);
+    return [
+      'DRAFT',
+      'CONFIRMED',
+      'PICKING',
+      'SHIPPED',
+      'COMPLETED',
+      'CANCELLED',
+      'RETURNED',
+    ].includes(value);
   }
 
   public isDraft(): boolean {
@@ -62,6 +71,14 @@ export class SaleStatus extends ValueObject<{ value: SaleStatusValue }> {
 
   public canComplete(): boolean {
     return this.props.value === 'SHIPPED';
+  }
+
+  public isReturned(): boolean {
+    return this.props.value === 'RETURNED';
+  }
+
+  public canReturn(): boolean {
+    return this.props.value === 'COMPLETED' || this.props.value === 'SHIPPED';
   }
 
   public canCancel(): boolean {

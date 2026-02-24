@@ -318,13 +318,15 @@ model ReorderRule {
 model Movement {
   id          String    @id @default(cuid())
   type        String // IN, OUT, ADJUSTMENT
-  status      String    @default("DRAFT") // DRAFT, POSTED, VOIDED
+  status      String    @default("DRAFT") // DRAFT, POSTED, VOID, RETURNED
   warehouseId String
   reference   String?
   reason      String?
   notes       String?
   postedAt    DateTime?
   postedBy    String?
+  returnedAt  DateTime?
+  returnedBy  String?
   createdBy   String
   orgId       String
   createdAt   DateTime  @default(now())
@@ -405,7 +407,7 @@ model TransferLine {
 model Sale {
   id                String    @id @default(cuid())
   saleNumber        String
-  status            String    @default("DRAFT") // DRAFT, CONFIRMED, PICKING, SHIPPED, COMPLETED, CANCELLED
+  status            String    @default("DRAFT") // DRAFT, CONFIRMED, PICKING, SHIPPED, COMPLETED, CANCELLED, RETURNED
   warehouseId       String
   customerReference String?
   externalReference String?
@@ -423,6 +425,8 @@ model Sale {
   shippingNotes     String?
   completedAt       DateTime?
   completedBy       String?
+  returnedAt        DateTime?
+  returnedBy        String?
   movementId        String?   @unique
   createdBy         String
   orgId             String

@@ -190,6 +190,8 @@ export class PrismaMovementRepository implements IMovementRepository {
           notes: movement.note || null,
           postedAt: movement.postedAt || null,
           postedBy: movement.postedBy || null,
+          returnedAt: movement.returnedAt || null,
+          returnedBy: movement.returnedBy || null,
           createdBy: movement.createdBy,
           orgId: movement.orgId,
         };
@@ -474,8 +476,12 @@ export class PrismaMovementRepository implements IMovementRepository {
       note: movementData.notes || undefined,
       postedAt: movementData.postedAt || undefined,
       postedBy: (movementData as { postedBy?: string | null }).postedBy || undefined,
+      returnedAt: (movementData as { returnedAt?: Date | null }).returnedAt || undefined,
+      returnedBy: (movementData as { returnedBy?: string | null }).returnedBy || undefined,
       createdBy: movementData.createdBy,
-      actualStatus: MovementStatus.create(movementData.status as 'DRAFT' | 'POSTED' | 'VOID'),
+      actualStatus: MovementStatus.create(
+        movementData.status as 'DRAFT' | 'POSTED' | 'VOID' | 'RETURNED'
+      ),
       actualPostedAt: movementData.postedAt || undefined,
     };
   }
@@ -574,6 +580,8 @@ export class PrismaMovementRepository implements IMovementRepository {
         note: valueObjects.note,
         postedAt: valueObjects.postedAt,
         postedBy: valueObjects.postedBy,
+        returnedAt: valueObjects.returnedAt,
+        returnedBy: valueObjects.returnedBy,
         createdBy: valueObjects.createdBy,
       },
       movementData.id,
@@ -619,13 +627,17 @@ export class PrismaMovementRepository implements IMovementRepository {
             | 'TRANSFER_OUT'
             | 'TRANSFER_IN'
         ),
-        status: MovementStatus.create(movementData.status as 'DRAFT' | 'POSTED' | 'VOID'),
+        status: MovementStatus.create(
+          movementData.status as 'DRAFT' | 'POSTED' | 'VOID' | 'RETURNED'
+        ),
         warehouseId: movementData.warehouseId,
         reference: movementData.reference || undefined,
         reason: movementData.reason || undefined,
         note: movementData.notes || undefined,
         postedAt: movementData.postedAt || undefined,
         postedBy: (movementData as { postedBy?: string | null }).postedBy || undefined,
+        returnedAt: (movementData as { returnedAt?: Date | null }).returnedAt || undefined,
+        returnedBy: (movementData as { returnedBy?: string | null }).returnedBy || undefined,
         createdBy: movementData.createdBy,
       },
       movementData.id,

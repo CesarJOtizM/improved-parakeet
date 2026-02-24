@@ -65,8 +65,10 @@ export class GetMovementByIdUseCase {
       select: { name: true, code: true },
     });
 
-    // Resolve user names (createdBy and postedBy)
-    const userIds = [movement.createdBy, movement.postedBy].filter(Boolean) as string[];
+    // Resolve user names (createdBy, postedBy, returnedBy)
+    const userIds = [movement.createdBy, movement.postedBy, movement.returnedBy].filter(
+      Boolean
+    ) as string[];
     const users = userIds.length
       ? await this.prisma.user.findMany({
           where: { id: { in: userIds } },
@@ -83,6 +85,7 @@ export class GetMovementByIdUseCase {
         warehouseCode: warehouse?.code,
         createdByName: userMap.get(movement.createdBy),
         postedByName: movement.postedBy ? userMap.get(movement.postedBy) : undefined,
+        returnedByName: movement.returnedBy ? userMap.get(movement.returnedBy) : undefined,
       }),
       timestamp: new Date().toISOString(),
     });

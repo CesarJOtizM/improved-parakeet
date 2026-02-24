@@ -72,6 +72,9 @@ export interface IMovementResponseData {
   postedAt?: Date;
   postedBy?: string;
   postedByName?: string;
+  returnedAt?: Date;
+  returnedBy?: string;
+  returnedByName?: string;
   createdBy: string;
   createdByName?: string;
   orgId: string;
@@ -85,6 +88,7 @@ export interface IMovementResolvedNames {
   warehouseCode?: string;
   createdByName?: string;
   postedByName?: string;
+  returnedByName?: string;
 }
 
 /**
@@ -209,6 +213,9 @@ export class MovementMapper {
       postedAt: movement.postedAt,
       postedBy: movement.postedBy,
       postedByName: resolved?.postedByName,
+      returnedAt: movement.returnedAt,
+      returnedBy: movement.returnedBy,
+      returnedByName: resolved?.returnedByName,
       createdBy: movement.createdBy,
       createdByName: resolved?.createdByName,
       orgId: movement.orgId!,

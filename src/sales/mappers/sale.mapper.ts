@@ -75,6 +75,9 @@ export interface ISaleResponseData {
   completedAt?: Date;
   completedBy?: string;
   completedByName?: string;
+  returnedAt?: Date;
+  returnedBy?: string;
+  returnedByName?: string;
   movementId?: string;
   createdBy: string;
   createdByName?: string;
@@ -198,6 +201,8 @@ export class SaleMapper {
       shippingNotes: sale.shippingNotes,
       completedAt: sale.completedAt,
       completedBy: sale.completedBy,
+      returnedAt: sale.returnedAt,
+      returnedBy: sale.returnedBy,
       movementId: sale.movementId,
       createdBy: sale.createdBy,
       orgId: sale.orgId!,

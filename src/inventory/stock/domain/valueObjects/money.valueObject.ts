@@ -19,6 +19,10 @@ export class Money extends ValueObject<IMoneyProps> {
   }
 
   private validate(props: IMoneyProps): void {
+    if (!Number.isFinite(props.value.amount)) {
+      // Sanitize NaN/Infinity to 0 instead of crashing
+      props.value.amount = 0;
+    }
     if (props.value.amount < 0) {
       throw new Error('Amount cannot be negative');
     }

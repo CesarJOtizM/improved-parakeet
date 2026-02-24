@@ -199,6 +199,8 @@ export class PrismaSaleRepository implements ISaleRepository {
           shippingNotes: sale.shippingNotes || null,
           completedAt: sale.completedAt || null,
           completedBy: sale.completedBy || null,
+          returnedAt: sale.returnedAt || null,
+          returnedBy: sale.returnedBy || null,
           movementId: sale.movementId || null,
           createdBy: sale.createdBy,
           orgId: sale.orgId,
@@ -521,13 +523,22 @@ export class PrismaSaleRepository implements ISaleRepository {
     shippingNotes: string | null;
     completedAt: Date | null;
     completedBy: string | null;
+    returnedAt: Date | null;
+    returnedBy: string | null;
     movementId: string | null;
     createdBy: string;
   }) {
     return {
       saleNumber: SaleNumber.fromString(saleData.saleNumber),
       status: SaleStatus.create(
-        saleData.status as 'DRAFT' | 'CONFIRMED' | 'PICKING' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED'
+        saleData.status as
+          | 'DRAFT'
+          | 'CONFIRMED'
+          | 'PICKING'
+          | 'SHIPPED'
+          | 'COMPLETED'
+          | 'CANCELLED'
+          | 'RETURNED'
       ),
       warehouseId: saleData.warehouseId,
       customerReference: saleData.customerReference || undefined,
@@ -546,6 +557,8 @@ export class PrismaSaleRepository implements ISaleRepository {
       shippingNotes: saleData.shippingNotes || undefined,
       completedAt: saleData.completedAt || undefined,
       completedBy: saleData.completedBy || undefined,
+      returnedAt: saleData.returnedAt || undefined,
+      returnedBy: saleData.returnedBy || undefined,
       createdBy: saleData.createdBy,
       movementId: saleData.movementId || undefined,
     };
@@ -607,6 +620,8 @@ export class PrismaSaleRepository implements ISaleRepository {
     shippingNotes: string | null;
     completedAt: Date | null;
     completedBy: string | null;
+    returnedAt: Date | null;
+    returnedBy: string | null;
     movementId: string | null;
     createdBy: string;
     orgId: string;
@@ -651,6 +666,8 @@ export class PrismaSaleRepository implements ISaleRepository {
         shippingNotes: valueObjects.shippingNotes,
         completedAt: valueObjects.completedAt,
         completedBy: valueObjects.completedBy,
+        returnedAt: valueObjects.returnedAt,
+        returnedBy: valueObjects.returnedBy,
         createdBy: valueObjects.createdBy,
         movementId: valueObjects.movementId,
       },
@@ -681,6 +698,8 @@ export class PrismaSaleRepository implements ISaleRepository {
     shippingNotes: string | null;
     completedAt: Date | null;
     completedBy: string | null;
+    returnedAt: Date | null;
+    returnedBy: string | null;
     movementId: string | null;
     createdBy: string;
     orgId: string;
@@ -689,7 +708,14 @@ export class PrismaSaleRepository implements ISaleRepository {
   }): Sale {
     const saleNumber = SaleNumber.fromString(saleData.saleNumber);
     const status = SaleStatus.create(
-      saleData.status as 'DRAFT' | 'CONFIRMED' | 'PICKING' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED'
+      saleData.status as
+        | 'DRAFT'
+        | 'CONFIRMED'
+        | 'PICKING'
+        | 'SHIPPED'
+        | 'COMPLETED'
+        | 'CANCELLED'
+        | 'RETURNED'
     );
 
     const sale = Sale.reconstitute(
@@ -713,6 +739,8 @@ export class PrismaSaleRepository implements ISaleRepository {
         shippingNotes: saleData.shippingNotes || undefined,
         completedAt: saleData.completedAt || undefined,
         completedBy: saleData.completedBy || undefined,
+        returnedAt: saleData.returnedAt || undefined,
+        returnedBy: saleData.returnedBy || undefined,
         createdBy: saleData.createdBy,
         movementId: saleData.movementId || undefined,
       },

@@ -53,6 +53,8 @@ export interface ISaleData {
   shippingNotes?: string;
   completedAt?: Date;
   completedBy?: string;
+  returnedAt?: Date;
+  returnedBy?: string;
   movementId?: string;
   createdBy: string;
   orgId: string;
