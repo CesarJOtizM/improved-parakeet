@@ -10,6 +10,7 @@ export interface IGetReturnsRequest {
   orgId: string;
   page?: number;
   limit?: number;
+  search?: string;
   warehouseId?: string;
   status?: string;
   type?: string;
@@ -71,6 +72,12 @@ export class GetReturnsUseCase {
 
     if (request.type && returns.length > 0) {
       returns = returns.filter(r => r.type.getValue() === request.type);
+    }
+
+    // Apply search filter (by return number)
+    if (request.search && returns.length > 0) {
+      const searchLower = request.search.toLowerCase();
+      returns = returns.filter(r => r.returnNumber.getValue().toLowerCase().includes(searchLower));
     }
 
     // Apply sorting

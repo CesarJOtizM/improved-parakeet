@@ -127,6 +127,7 @@ export class ReturnsController {
       orgId,
       page: query.page,
       limit: query.limit,
+      search: query.search,
       warehouseId: query.warehouseId,
       status: query.status,
       type: query.type,

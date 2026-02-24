@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ReturnMapper } from '@returns/mappers';
 import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -32,45 +33,10 @@ export class GetReturnByIdUseCase {
       return err(new NotFoundError(`Return with ID ${request.id} not found`));
     }
 
-    const totalAmount = returnEntity.getTotalAmount();
-    const lines = returnEntity.getLines().map(line => {
-      const lineTotal = line.getTotalPrice();
-      return {
-        id: line.id,
-        productId: line.productId,
-        locationId: line.locationId,
-        quantity: line.quantity.getNumericValue(),
-        originalSalePrice: line.originalSalePrice?.getAmount(),
-        originalUnitCost: line.originalUnitCost?.getAmount(),
-        currency: line.currency,
-        totalPrice: lineTotal?.getAmount() || 0,
-      };
-    });
-
     return ok({
       success: true,
       message: 'Return retrieved successfully',
-      data: {
-        id: returnEntity.id,
-        returnNumber: returnEntity.returnNumber.getValue(),
-        status: returnEntity.status.getValue(),
-        type: returnEntity.type.getValue(),
-        reason: returnEntity.reason.getValue(),
-        warehouseId: returnEntity.warehouseId,
-        saleId: returnEntity.saleId,
-        sourceMovementId: returnEntity.sourceMovementId,
-        returnMovementId: returnEntity.returnMovementId,
-        note: returnEntity.note,
-        confirmedAt: returnEntity.confirmedAt,
-        cancelledAt: returnEntity.cancelledAt,
-        createdBy: returnEntity.createdBy,
-        orgId: returnEntity.orgId,
-        createdAt: returnEntity.createdAt,
-        updatedAt: returnEntity.updatedAt,
-        totalAmount: totalAmount?.getAmount(),
-        currency: totalAmount?.getCurrency(),
-        lines,
-      },
+      data: ReturnMapper.toResponseData(returnEntity),
       timestamp: new Date().toISOString(),
     });
   }

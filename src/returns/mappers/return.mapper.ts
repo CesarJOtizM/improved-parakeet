@@ -41,6 +41,8 @@ export interface IReturnCreateInput {
 export interface IReturnLineResponseData {
   id: string;
   productId: string;
+  productName?: string;
+  productSku?: string;
   locationId?: string; // Optional for MVP - warehouse is the location
   quantity: number;
   originalSalePrice?: number;
@@ -60,7 +62,9 @@ export interface IReturnResponseData {
   type: string;
   reason: string | null;
   warehouseId: string;
+  warehouseName?: string;
   saleId?: string;
+  saleNumber?: string;
   sourceMovementId?: string;
   returnMovementId?: string;
   note?: string;
@@ -168,11 +172,17 @@ export class ReturnMapper {
    * @param line - The ReturnLine domain entity
    * @returns IReturnLineResponseData for API responses
    */
-  public static lineToResponseData(line: ReturnLine): IReturnLineResponseData {
+  public static lineToResponseData(
+    line: ReturnLine,
+    lineProducts?: Record<string, { name: string; sku: string }>
+  ): IReturnLineResponseData {
     const lineTotal = line.getTotalPrice();
+    const productInfo = lineProducts?.[line.productId];
     return {
       id: line.id,
       productId: line.productId,
+      productName: productInfo?.name,
+      productSku: productInfo?.sku,
       locationId: line.locationId,
       quantity: line.quantity.getNumericValue(),
       originalSalePrice: line.originalSalePrice?.getAmount(),
@@ -192,6 +202,7 @@ export class ReturnMapper {
    */
   public static toResponseData(returnEntity: Return): IReturnResponseData {
     const totalAmount = returnEntity.getTotalAmount();
+    const metadata = returnEntity.readMetadata;
     return {
       id: returnEntity.id,
       returnNumber: returnEntity.returnNumber.getValue(),
@@ -199,7 +210,9 @@ export class ReturnMapper {
       type: returnEntity.type.getValue(),
       reason: returnEntity.reason.getValue(),
       warehouseId: returnEntity.warehouseId,
+      warehouseName: metadata?.warehouseName,
       saleId: returnEntity.saleId,
+      saleNumber: metadata?.saleNumber,
       sourceMovementId: returnEntity.sourceMovementId,
       returnMovementId: returnEntity.returnMovementId,
       note: returnEntity.note,
@@ -211,7 +224,9 @@ export class ReturnMapper {
       updatedAt: returnEntity.updatedAt,
       totalAmount: totalAmount?.getAmount(),
       currency: totalAmount?.getCurrency(),
-      lines: returnEntity.getLines().map(line => ReturnMapper.lineToResponseData(line)),
+      lines: returnEntity
+        .getLines()
+        .map(line => ReturnMapper.lineToResponseData(line, metadata?.lineProducts)),
     };
   }
 

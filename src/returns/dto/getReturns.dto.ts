@@ -28,6 +28,15 @@ export class GetReturnsDto {
   limit?: number;
 
   @ApiProperty({
+    description: 'Search by return number',
+    example: 'RETURN-2026',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Search must be a string' })
+  search?: string;
+
+  @ApiProperty({
     description: 'Warehouse ID filter',
     example: 'warehouse-123',
     required: false,

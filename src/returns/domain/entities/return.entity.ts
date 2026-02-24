@@ -24,8 +24,16 @@ export interface IReturnProps {
   createdBy: string;
 }
 
+/** Transient read-model metadata (not persisted, populated by repository) */
+export interface IReturnReadMetadata {
+  warehouseName?: string;
+  saleNumber?: string;
+  lineProducts?: Record<string, { name: string; sku: string }>;
+}
+
 export class Return extends AggregateRoot<IReturnProps> {
   private lines: ReturnLine[] = [];
+  private _readMetadata?: IReturnReadMetadata;
 
   private constructor(props: IReturnProps, id?: string, orgId?: string) {
     super(props, id, orgId);
@@ -244,5 +252,15 @@ export class Return extends AggregateRoot<IReturnProps> {
 
   get createdBy(): string {
     return this.props.createdBy;
+  }
+
+  /** Set transient read-model metadata (populated by repository, not persisted) */
+  public setReadMetadata(metadata: IReturnReadMetadata): void {
+    this._readMetadata = metadata;
+  }
+
+  /** Get transient read-model metadata */
+  get readMetadata(): IReturnReadMetadata | undefined {
+    return this._readMetadata;
   }
 }

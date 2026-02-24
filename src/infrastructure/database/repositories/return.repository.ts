@@ -24,11 +24,22 @@ export class PrismaReturnRepository implements IReturnRepository {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Standard include for return queries - includes warehouse, sale, and product relations */
+  private readonly returnInclude = {
+    lines: {
+      include: {
+        product: { select: { id: true, name: true, sku: true } },
+      },
+    },
+    warehouse: { select: { id: true, name: true } },
+    sale: { select: { id: true, saleNumber: true } },
+  } as const;
+
   async findById(id: string, orgId: string): Promise<Return | null> {
     try {
       const returnData = await this.prisma.return.findUnique({
         where: { id },
-        include: { lines: true },
+        include: this.returnInclude,
       });
 
       if (!returnData || returnData.orgId !== orgId) return null;
@@ -48,7 +59,7 @@ export class PrismaReturnRepository implements IReturnRepository {
     try {
       const returnsData = await this.prisma.return.findMany({
         where: { orgId },
-        include: { lines: true },
+        include: this.returnInclude,
         orderBy: { createdAt: 'desc' },
       });
 
@@ -74,7 +85,7 @@ export class PrismaReturnRepository implements IReturnRepository {
       const [returnsData, total] = await Promise.all([
         this.prisma.return.findMany({
           where: { orgId },
-          include: { lines: true },
+          include: this.returnInclude,
           orderBy: { createdAt: 'desc' },
           skip,
           take: take + 1,
@@ -193,10 +204,18 @@ export class PrismaReturnRepository implements IReturnRepository {
           });
         }
 
-        // Fetch the complete return with lines
+        // Fetch the complete return with lines and relations
         const completeReturn = await tx.return.findUnique({
           where: { id: savedReturn.id },
-          include: { lines: true },
+          include: {
+            lines: {
+              include: {
+                product: { select: { id: true, name: true, sku: true } },
+              },
+            },
+            warehouse: { select: { id: true, name: true } },
+            sale: { select: { id: true, saleNumber: true } },
+          },
         });
 
         if (!completeReturn) {
@@ -300,7 +319,7 @@ export class PrismaReturnRepository implements IReturnRepository {
     try {
       const returnData = await this.prisma.return.findFirst({
         where: { returnNumber, orgId },
-        include: { lines: true },
+        include: this.returnInclude,
       });
 
       if (!returnData) return null;
@@ -320,7 +339,7 @@ export class PrismaReturnRepository implements IReturnRepository {
     try {
       const returnsData = await this.prisma.return.findMany({
         where: { status, orgId },
-        include: { lines: true },
+        include: this.returnInclude,
         orderBy: { createdAt: 'desc' },
       });
 
@@ -339,7 +358,7 @@ export class PrismaReturnRepository implements IReturnRepository {
     try {
       const returnsData = await this.prisma.return.findMany({
         where: { type, orgId },
-        include: { lines: true },
+        include: this.returnInclude,
         orderBy: { createdAt: 'desc' },
       });
 
@@ -358,7 +377,7 @@ export class PrismaReturnRepository implements IReturnRepository {
     try {
       const returnsData = await this.prisma.return.findMany({
         where: { saleId, orgId },
-        include: { lines: true },
+        include: this.returnInclude,
         orderBy: { createdAt: 'desc' },
       });
 
@@ -377,7 +396,7 @@ export class PrismaReturnRepository implements IReturnRepository {
     try {
       const returnsData = await this.prisma.return.findMany({
         where: { sourceMovementId: movementId, orgId },
-        include: { lines: true },
+        include: this.returnInclude,
         orderBy: { createdAt: 'desc' },
       });
 
@@ -402,7 +421,7 @@ export class PrismaReturnRepository implements IReturnRepository {
             lte: endDate,
           },
         },
-        include: { lines: true },
+        include: this.returnInclude,
         orderBy: { createdAt: 'desc' },
       });
 
@@ -462,7 +481,7 @@ export class PrismaReturnRepository implements IReturnRepository {
     try {
       const returnData = await this.prisma.return.findFirst({
         where: { returnMovementId: movementId, orgId },
-        include: { lines: true },
+        include: this.returnInclude,
       });
 
       if (!returnData) return null;
@@ -580,6 +599,8 @@ export class PrismaReturnRepository implements IReturnRepository {
     orgId: string;
     createdAt: Date;
     updatedAt: Date;
+    warehouse?: { id: string; name: string } | null;
+    sale?: { id: string; saleNumber: string } | null;
     lines: Array<{
       id: string;
       productId: string;
@@ -590,6 +611,7 @@ export class PrismaReturnRepository implements IReturnRepository {
       currency: string;
       extra: unknown;
       orgId: string;
+      product?: { id: string; name: string; sku: string } | null;
     }>;
   }): Return {
     const valueObjects = this.createReturnValueObjects(returnData);
@@ -601,7 +623,7 @@ export class PrismaReturnRepository implements IReturnRepository {
 
     // Use reconstitute with lines parameter to bypass addLine validation
     // This is correct because we are reconstituting from database, not adding new lines
-    return Return.reconstitute(
+    const entity = Return.reconstitute(
       {
         returnNumber: valueObjects.returnNumber,
         status: valueObjects.status,
@@ -620,6 +642,22 @@ export class PrismaReturnRepository implements IReturnRepository {
       returnData.orgId,
       lines
     );
+
+    // Set transient read metadata from joined relations
+    const lineProducts: Record<string, { name: string; sku: string }> = {};
+    for (const line of returnData.lines) {
+      if (line.product) {
+        lineProducts[line.productId] = { name: line.product.name, sku: line.product.sku };
+      }
+    }
+
+    entity.setReadMetadata({
+      warehouseName: returnData.warehouse?.name,
+      saleNumber: returnData.sale?.saleNumber,
+      lineProducts,
+    });
+
+    return entity;
   }
 
   async findBySpecification(
@@ -635,7 +673,7 @@ export class PrismaReturnRepository implements IReturnRepository {
       const [returnsData, total] = await Promise.all([
         this.prisma.return.findMany({
           where,
-          include: { lines: true },
+          include: this.returnInclude,
           skip,
           take,
           orderBy: { createdAt: 'desc' },

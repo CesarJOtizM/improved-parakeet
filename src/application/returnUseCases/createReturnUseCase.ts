@@ -38,6 +38,8 @@ export interface ICreateReturnRequest {
 export interface IReturnLineData {
   id: string;
   productId: string;
+  productName?: string;
+  productSku?: string;
   locationId?: string; // Optional for MVP - warehouse is the location
   quantity: number;
   originalSalePrice?: number;
@@ -53,7 +55,9 @@ export interface IReturnData {
   type: string;
   reason: string | null;
   warehouseId: string;
+  warehouseName?: string;
   saleId?: string;
+  saleNumber?: string;
   sourceMovementId?: string;
   returnMovementId?: string;
   note?: string;
