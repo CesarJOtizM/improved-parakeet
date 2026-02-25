@@ -4,4 +4,5 @@ export {
   AuditLogByDateRangeSpecification,
   AuditLogByUserSpecification,
   AuditLogByEntityIdSpecification,
+  AuditLogByHttpMethodSpecification,
 } from './auditLogSpecifications';

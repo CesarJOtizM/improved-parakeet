@@ -67,6 +67,7 @@ export class AuditController {
       entityId: query.entityId,
       action: query.action,
       performedBy: query.performedBy,
+      httpMethod: query.httpMethod,
       startDate: query.startDate ? new Date(query.startDate) : undefined,
       endDate: query.endDate ? new Date(query.endDate) : undefined,
     });

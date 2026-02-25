@@ -457,6 +457,56 @@ export class ReportController {
     return resultToHttpResponse(result);
   }
 
+  @Get('inventory/abc-analysis/view')
+  @RequireReportPermission(REPORT_TYPES.ABC_ANALYSIS)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'View ABC analysis report' })
+  @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Report generated successfully',
+    type: ViewReportResponseDto,
+  })
+  async viewAbcAnalysis(
+    @Query() query: ViewReportQueryDto,
+    @Headers('X-Organization-ID') orgId: string,
+    @Headers('X-User-ID') userId: string
+  ): Promise<ViewReportResponseDto> {
+    this.logger.log('Viewing ABC analysis report', { orgId });
+    const result = await this.viewReportUseCase.execute({
+      type: REPORT_TYPES.ABC_ANALYSIS,
+      parameters: this.mapQueryToParameters(query),
+      orgId,
+      viewedBy: userId || 'system',
+    });
+    return resultToHttpResponse(result);
+  }
+
+  @Get('inventory/dead-stock/view')
+  @RequireReportPermission(REPORT_TYPES.DEAD_STOCK)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'View dead stock report' })
+  @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Report generated successfully',
+    type: ViewReportResponseDto,
+  })
+  async viewDeadStock(
+    @Query() query: ViewReportQueryDto,
+    @Headers('X-Organization-ID') orgId: string,
+    @Headers('X-User-ID') userId: string
+  ): Promise<ViewReportResponseDto> {
+    this.logger.log('Viewing dead stock report', { orgId });
+    const result = await this.viewReportUseCase.execute({
+      type: REPORT_TYPES.DEAD_STOCK,
+      parameters: this.mapQueryToParameters(query),
+      orgId,
+      viewedBy: userId || 'system',
+    });
+    return resultToHttpResponse(result);
+  }
+
   // ============================================================
   // STREAMING ENDPOINTS (GET - Returns NDJSON stream)
   // ============================================================
@@ -714,6 +764,36 @@ export class ReportController {
     await this.handleExport(REPORT_TYPES.RETURNS_BY_PRODUCT, dto, orgId, userId || 'system', res);
   }
 
+  @Post('inventory/abc-analysis/export')
+  @RequireExportPermission()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Export ABC analysis report' })
+  @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Report exported successfully' })
+  async exportAbcAnalysis(
+    @Body() dto: ExportReportDto,
+    @Headers('X-Organization-ID') orgId: string,
+    @Headers('X-User-ID') userId: string,
+    @Res() res: Response
+  ): Promise<void> {
+    await this.handleExport(REPORT_TYPES.ABC_ANALYSIS, dto, orgId, userId || 'system', res);
+  }
+
+  @Post('inventory/dead-stock/export')
+  @RequireExportPermission()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Export dead stock report' })
+  @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Report exported successfully' })
+  async exportDeadStock(
+    @Body() dto: ExportReportDto,
+    @Headers('X-Organization-ID') orgId: string,
+    @Headers('X-User-ID') userId: string,
+    @Res() res: Response
+  ): Promise<void> {
+    await this.handleExport(REPORT_TYPES.DEAD_STOCK, dto, orgId, userId || 'system', res);
+  }
+
   // ============================================================
   // AUDIT ENDPOINTS (GET - Report history)
   // ============================================================
@@ -807,6 +887,7 @@ export class ReportController {
       includeInactive: query.includeInactive,
       locationId: query.locationId,
       severity: query.severity as 'CRITICAL' | 'WARNING' | undefined,
+      deadStockDays: query.deadStockDays ? Number(query.deadStockDays) : undefined,
     };
   }
 

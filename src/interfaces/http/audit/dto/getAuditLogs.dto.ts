@@ -40,6 +40,11 @@ export class GetAuditLogsQueryDto {
   @IsString()
   performedBy?: string;
 
+  @ApiPropertyOptional({ description: 'HTTP method', example: 'POST' })
+  @IsOptional()
+  @IsString()
+  httpMethod?: string;
+
   @ApiPropertyOptional({
     description: 'Start date (ISO string)',
     example: '2024-01-01T00:00:00.000Z',

@@ -194,6 +194,38 @@ export interface IReturnsByProductItem {
   period: string;
 }
 
+export interface IAbcAnalysisItem {
+  productId: string;
+  productName: string;
+  sku: string;
+  category?: string;
+  totalRevenue: number;
+  totalQuantitySold: number;
+  revenuePercentage: number;
+  cumulativePercentage: number;
+  abcClassification: 'A' | 'B' | 'C';
+  salesCount: number;
+  averagePrice: number;
+  currency: string;
+  period: string;
+}
+
+export interface IDeadStockItem {
+  productId: string;
+  productName: string;
+  sku: string;
+  category?: string;
+  warehouseId: string;
+  warehouseName: string;
+  currentStock: number;
+  stockValue: number;
+  daysSinceLastSale: number;
+  lastSaleDate?: Date;
+  riskLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+  unit: string;
+  currency: string;
+}
+
 export interface IReportGenerationResult<T> {
   data: T[];
   metadata: {
@@ -267,6 +299,10 @@ export class ReportGenerationService {
         return this.generateCustomerReturnsReport(parameters, orgId);
       case REPORT_TYPES.RETURNS_SUPPLIER:
         return this.generateSupplierReturnsReport(parameters, orgId);
+      case REPORT_TYPES.ABC_ANALYSIS:
+        return this.generateAbcAnalysisReport(parameters, orgId);
+      case REPORT_TYPES.DEAD_STOCK:
+        return this.generateDeadStockReport(parameters, orgId);
       default:
         throw new Error(`Unknown report type: ${type}`);
     }
@@ -1482,6 +1518,239 @@ export class ReportGenerationService {
   }
 
   // Helper methods
+  /**
+   * 17. ABC Analysis Report
+   * Pareto analysis: sorts products by revenue, classifies A (top 80%), B (next 15%), C (remaining 5%)
+   */
+  public async generateAbcAnalysisReport(
+    parameters: IReportParametersInput,
+    orgId: string
+  ): Promise<IReportGenerationResult<IAbcAnalysisItem>> {
+    this.logger.log('Generating ABC analysis report', { orgId });
+
+    let sales;
+    if (parameters.dateRange) {
+      sales = await this.saleRepository.findByDateRange(
+        parameters.dateRange.startDate,
+        parameters.dateRange.endDate,
+        orgId
+      );
+    } else {
+      sales = await this.saleRepository.findAll(orgId);
+    }
+
+    const products = await this.productRepository.findAll(orgId);
+    const productMap = new Map(
+      products.map(p => [p.id, { name: p.name.getValue(), sku: p.sku.getValue() }])
+    );
+
+    // Aggregate revenue per product from confirmed sales
+    const productRevenueMap = new Map<
+      string,
+      { totalRevenue: number; totalQuantitySold: number; salesCount: number }
+    >();
+
+    const confirmedSales = sales.filter(s => s.status.getValue() === 'CONFIRMED');
+
+    for (const sale of confirmedSales) {
+      if (parameters.warehouseId && sale.warehouseId !== parameters.warehouseId) {
+        continue;
+      }
+
+      for (const line of sale.getLines()) {
+        if (parameters.productId && line.productId !== parameters.productId) {
+          continue;
+        }
+
+        const existing = productRevenueMap.get(line.productId) || {
+          totalRevenue: 0,
+          totalQuantitySold: 0,
+          salesCount: 0,
+        };
+
+        const lineRevenue = line.quantity.getNumericValue() * line.salePrice.getAmount();
+        existing.totalRevenue += lineRevenue;
+        existing.totalQuantitySold += line.quantity.getNumericValue();
+        existing.salesCount += 1;
+
+        productRevenueMap.set(line.productId, existing);
+      }
+    }
+
+    // Sort products by revenue descending
+    const sortedProducts = Array.from(productRevenueMap.entries()).sort(
+      (a, b) => b[1].totalRevenue - a[1].totalRevenue
+    );
+
+    const totalRevenue = sortedProducts.reduce((sum, [, stats]) => sum + stats.totalRevenue, 0);
+    const period = this.getPeriodString(parameters.dateRange);
+    const data: IAbcAnalysisItem[] = [];
+    let cumulativeRevenue = 0;
+
+    for (const [productId, stats] of sortedProducts) {
+      const productInfo = productMap.get(productId);
+      cumulativeRevenue += stats.totalRevenue;
+      const revenuePercentage = totalRevenue > 0 ? (stats.totalRevenue / totalRevenue) * 100 : 0;
+      const cumulativePercentage = totalRevenue > 0 ? (cumulativeRevenue / totalRevenue) * 100 : 0;
+
+      let abcClassification: 'A' | 'B' | 'C';
+      if (cumulativePercentage <= 80) {
+        abcClassification = 'A';
+      } else if (cumulativePercentage <= 95) {
+        abcClassification = 'B';
+      } else {
+        abcClassification = 'C';
+      }
+
+      const averagePrice =
+        stats.totalQuantitySold > 0 ? stats.totalRevenue / stats.totalQuantitySold : 0;
+
+      // Filter by category if specified
+      if (parameters.category) {
+        const product = products.find(p => p.id === productId);
+        const categoryNames = product?.categories?.map(c => c.name) ?? [];
+        if (product && !categoryNames.includes(parameters.category)) {
+          continue;
+        }
+      }
+
+      const product = products.find(p => p.id === productId);
+      const categoryName = product?.categories?.[0]?.name;
+
+      data.push({
+        productId,
+        productName: productInfo?.name || 'Unknown',
+        sku: productInfo?.sku || 'Unknown',
+        category: categoryName,
+        totalRevenue: stats.totalRevenue,
+        totalQuantitySold: stats.totalQuantitySold,
+        revenuePercentage,
+        cumulativePercentage,
+        abcClassification,
+        salesCount: stats.salesCount,
+        averagePrice,
+        currency: 'COP',
+        period,
+      });
+    }
+
+    return this.createResult(data, REPORT_TYPES.ABC_ANALYSIS, parameters, orgId);
+  }
+
+  /**
+   * 18. Dead Stock Report
+   * Products with stock > 0 but no sales in the last N days
+   */
+  public async generateDeadStockReport(
+    parameters: IReportParametersInput,
+    orgId: string
+  ): Promise<IReportGenerationResult<IDeadStockItem>> {
+    this.logger.log('Generating dead stock report', { orgId });
+
+    const deadStockDays = parameters.deadStockDays || 90;
+    const now = new Date();
+    const cutoffDate = new Date(now.getTime() - deadStockDays * 24 * 60 * 60 * 1000);
+
+    const products = await this.productRepository.findAll(orgId);
+    const warehouses = await this.warehouseRepository.findAll(orgId);
+    const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
+
+    // Get all confirmed sales to find last sale date per product
+    const allSales = await this.saleRepository.findAll(orgId);
+    const confirmedSales = allSales.filter(s => s.status.getValue() === 'CONFIRMED');
+
+    // Build map of last sale date per product
+    const lastSaleDateMap = new Map<string, Date>();
+    for (const sale of confirmedSales) {
+      for (const line of sale.getLines()) {
+        const existing = lastSaleDateMap.get(line.productId);
+        const saleDate = sale.createdAt;
+        if (!existing || saleDate > existing) {
+          lastSaleDateMap.set(line.productId, saleDate);
+        }
+      }
+    }
+
+    const data: IDeadStockItem[] = [];
+
+    for (const product of products) {
+      // Skip inactive unless explicitly requested
+      if (!parameters.includeInactive && product.status.getValue() !== 'ACTIVE') {
+        continue;
+      }
+
+      if (parameters.productId && product.id !== parameters.productId) {
+        continue;
+      }
+
+      const lastSaleDate = lastSaleDateMap.get(product.id);
+
+      // Only include products with no sale or last sale before cutoff
+      if (lastSaleDate && lastSaleDate >= cutoffDate) {
+        continue;
+      }
+
+      for (const warehouse of warehouses) {
+        if (parameters.warehouseId && warehouse.id !== parameters.warehouseId) {
+          continue;
+        }
+
+        const stockData = await this.stockRepository.getStockWithCost(
+          product.id,
+          warehouse.id,
+          orgId
+        );
+
+        if (!stockData || stockData.quantity.getNumericValue() <= 0) {
+          continue;
+        }
+
+        const quantity = stockData.quantity.getNumericValue();
+        const avgCost = stockData.averageCost.getAmount();
+        const stockValue = quantity * avgCost;
+
+        const daysSinceLastSale = lastSaleDate
+          ? Math.floor((now.getTime() - lastSaleDate.getTime()) / (1000 * 60 * 60 * 24))
+          : 999;
+
+        let riskLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+        if (!lastSaleDate || daysSinceLastSale > deadStockDays * 2) {
+          riskLevel = 'HIGH';
+        } else if (daysSinceLastSale > deadStockDays * 1.5) {
+          riskLevel = 'MEDIUM';
+        } else {
+          riskLevel = 'LOW';
+        }
+
+        data.push({
+          productId: product.id,
+          productName: product.name.getValue(),
+          sku: product.sku.getValue(),
+          category: parameters.category,
+          warehouseId: warehouse.id,
+          warehouseName: warehouseMap.get(warehouse.id) || 'Unknown',
+          currentStock: quantity,
+          stockValue,
+          daysSinceLastSale,
+          lastSaleDate,
+          riskLevel,
+          unit: product.unit?.getCode() || 'UNIT',
+          currency: 'COP',
+        });
+      }
+    }
+
+    // Sort by risk level (HIGH first) then by stock value descending
+    const riskOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+    data.sort((a, b) => {
+      const riskDiff = riskOrder[a.riskLevel] - riskOrder[b.riskLevel];
+      if (riskDiff !== 0) return riskDiff;
+      return b.stockValue - a.stockValue;
+    });
+
+    return this.createResult(data, REPORT_TYPES.DEAD_STOCK, parameters, orgId);
+  }
+
   private createResult<T>(
     data: T[],
     reportType: ReportTypeValue,

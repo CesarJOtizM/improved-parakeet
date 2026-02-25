@@ -694,6 +694,118 @@ export class ReportViewService {
           { key: 'createdBy', header: 'Created By', type: 'string', filterable: true },
         ];
 
+      case REPORT_TYPES.ABC_ANALYSIS:
+        return [
+          { key: 'sku', header: 'SKU', type: 'string', sortable: true, filterable: true },
+          {
+            key: 'productName',
+            header: 'Product',
+            type: 'string',
+            sortable: true,
+            filterable: true,
+          },
+          { key: 'category', header: 'Category', type: 'string', sortable: true, filterable: true },
+          {
+            key: 'abcClassification',
+            header: 'Classification',
+            type: 'string',
+            sortable: true,
+            filterable: true,
+          },
+          {
+            key: 'totalRevenue',
+            header: 'Revenue',
+            type: 'currency',
+            sortable: true,
+            align: 'right',
+          },
+          {
+            key: 'revenuePercentage',
+            header: 'Revenue %',
+            type: 'percentage',
+            sortable: true,
+            align: 'right',
+          },
+          {
+            key: 'cumulativePercentage',
+            header: 'Cumulative %',
+            type: 'percentage',
+            sortable: true,
+            align: 'right',
+          },
+          {
+            key: 'totalQuantitySold',
+            header: 'Qty Sold',
+            type: 'number',
+            sortable: true,
+            align: 'right',
+          },
+          {
+            key: 'averagePrice',
+            header: 'Avg Price',
+            type: 'currency',
+            sortable: true,
+            align: 'right',
+          },
+          {
+            key: 'salesCount',
+            header: 'Sales Count',
+            type: 'number',
+            sortable: true,
+            align: 'right',
+          },
+          { key: 'period', header: 'Period', type: 'string' },
+        ];
+
+      case REPORT_TYPES.DEAD_STOCK:
+        return [
+          {
+            key: 'riskLevel',
+            header: 'Risk Level',
+            type: 'string',
+            sortable: true,
+            filterable: true,
+          },
+          { key: 'sku', header: 'SKU', type: 'string', sortable: true, filterable: true },
+          {
+            key: 'productName',
+            header: 'Product',
+            type: 'string',
+            sortable: true,
+            filterable: true,
+          },
+          {
+            key: 'warehouseName',
+            header: 'Warehouse',
+            type: 'string',
+            sortable: true,
+            filterable: true,
+          },
+          {
+            key: 'currentStock',
+            header: 'Current Stock',
+            type: 'number',
+            sortable: true,
+            align: 'right',
+          },
+          { key: 'unit', header: 'Unit', type: 'string' },
+          {
+            key: 'stockValue',
+            header: 'Stock Value',
+            type: 'currency',
+            sortable: true,
+            align: 'right',
+          },
+          {
+            key: 'daysSinceLastSale',
+            header: 'Days Without Sale',
+            type: 'number',
+            sortable: true,
+            align: 'right',
+          },
+          { key: 'lastSaleDate', header: 'Last Sale', type: 'date', sortable: true },
+        ];
+
       default:
         return [];
     }
@@ -720,6 +832,8 @@ export class ReportViewService {
       [REPORT_TYPES.RETURNS_BY_SALE]: 'Returns by Sale Report',
       [REPORT_TYPES.RETURNS_CUSTOMER]: 'Customer Returns Report',
       [REPORT_TYPES.RETURNS_SUPPLIER]: 'Supplier Returns Report',
+      [REPORT_TYPES.ABC_ANALYSIS]: 'ABC Analysis Report',
+      [REPORT_TYPES.DEAD_STOCK]: 'Dead Stock Report',
     };
     return titles[type] || 'Report';
   }
@@ -844,6 +958,24 @@ export class ReportViewService {
           totalReturns: data.length,
           totalItems: this.sumField(data, 'totalItems'),
           totalValue: this.sumField(data, 'totalValue'),
+        };
+
+      case REPORT_TYPES.ABC_ANALYSIS:
+        return {
+          totalProducts: data.length,
+          classA: data.filter(d => d['abcClassification'] === 'A').length,
+          classB: data.filter(d => d['abcClassification'] === 'B').length,
+          classC: data.filter(d => d['abcClassification'] === 'C').length,
+          totalRevenue: this.sumField(data, 'totalRevenue'),
+        };
+
+      case REPORT_TYPES.DEAD_STOCK:
+        return {
+          totalProducts: data.length,
+          totalStockValue: this.sumField(data, 'stockValue'),
+          highRiskCount: data.filter(d => d['riskLevel'] === 'HIGH').length,
+          mediumRiskCount: data.filter(d => d['riskLevel'] === 'MEDIUM').length,
+          lowRiskCount: data.filter(d => d['riskLevel'] === 'LOW').length,
         };
 
       default:

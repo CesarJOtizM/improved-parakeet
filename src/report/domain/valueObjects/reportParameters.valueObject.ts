@@ -55,6 +55,7 @@ export interface IReportParametersInput {
   includeInactive?: boolean;
   locationId?: string;
   severity?: LowStockSeverityValue;
+  deadStockDays?: number;
 }
 
 export interface IReportParametersProps {

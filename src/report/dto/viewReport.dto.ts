@@ -10,9 +10,11 @@ import { Type } from 'class-transformer';
 import {
   IsDateString,
   IsIn,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
@@ -158,6 +160,15 @@ export class ReportParametersDto {
   @IsOptional()
   @IsIn(Object.values(LOW_STOCK_SEVERITY))
   severity?: string;
+
+  @ApiPropertyOptional({
+    description: 'Number of days without sales to consider stock as dead (default: 90)',
+    example: 90,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  deadStockDays?: number;
 }
 
 export class ViewReportQueryDto extends ReportParametersDto {

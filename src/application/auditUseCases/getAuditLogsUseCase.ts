@@ -5,6 +5,7 @@ import {
   AuditLogByDateRangeSpecification,
   AuditLogByEntityIdSpecification,
   AuditLogByEntityTypeSpecification,
+  AuditLogByHttpMethodSpecification,
   AuditLogByUserSpecification,
 } from '@shared/audit/domain/specifications';
 import { DomainError, Result, ok } from '@shared/domain/result';
@@ -22,6 +23,7 @@ export interface IGetAuditLogsRequest {
   entityId?: string;
   action?: string;
   performedBy?: string;
+  httpMethod?: string;
   startDate?: Date;
   endDate?: Date;
 }
@@ -84,6 +86,10 @@ export class GetAuditLogsUseCase {
 
     if (request.performedBy) {
       specifications.push(new AuditLogByUserSpecification(request.performedBy));
+    }
+
+    if (request.httpMethod) {
+      specifications.push(new AuditLogByHttpMethodSpecification(request.httpMethod));
     }
 
     if (request.startDate && request.endDate) {

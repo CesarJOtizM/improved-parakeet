@@ -89,6 +89,26 @@ export class AuditLogByUserSpecification extends PrismaSpecification<AuditLog> {
 }
 
 /**
+ * Specification for audit logs by HTTP method
+ */
+export class AuditLogByHttpMethodSpecification extends PrismaSpecification<AuditLog> {
+  constructor(private readonly httpMethod: string) {
+    super();
+  }
+
+  public isSatisfiedBy(auditLog: AuditLog): boolean {
+    return auditLog.httpMethod === this.httpMethod;
+  }
+
+  public toPrismaWhere(orgId: string): PrismaWhereInput {
+    return {
+      orgId: orgId || null,
+      httpMethod: this.httpMethod,
+    };
+  }
+}
+
+/**
  * Specification for audit logs by entity ID
  */
 export class AuditLogByEntityIdSpecification extends PrismaSpecification<AuditLog> {
