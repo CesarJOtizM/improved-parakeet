@@ -8,6 +8,7 @@ import { UpdateMovementUseCase } from '@application/movementUseCases/updateMovem
 import { VoidMovementUseCase } from '@application/movementUseCases/voidMovementUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
+import { PermissionGuard } from '@shared/guards/permission.guard';
 import {
   CreateMovementDto,
   GetMovementsQueryDto,
@@ -50,7 +51,7 @@ import type { Request } from 'express';
 
 @ApiTags('Inventory - Movements')
 @Controller('inventory/movements')
-@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
 @UseInterceptors(AuditInterceptor)
 @ApiBearerAuth()
 export class MovementsController {

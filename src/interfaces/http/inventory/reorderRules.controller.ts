@@ -4,6 +4,7 @@ import { GetReorderRulesUseCase } from '@application/reorderRuleUseCases/getReor
 import { UpdateReorderRuleUseCase } from '@application/reorderRuleUseCases/updateReorderRuleUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
+import { PermissionGuard } from '@shared/guards/permission.guard';
 import { CreateReorderRuleDto, UpdateReorderRuleDto } from '@stock/dto/reorderRule.dto';
 import {
   Body,
@@ -28,7 +29,7 @@ import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
 @ApiTags('Inventory - Reorder Rules')
 @Controller('inventory/stock/reorder-rules')
-@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
 @UseInterceptors(AuditInterceptor)
 @ApiBearerAuth()
 export class ReorderRulesController {

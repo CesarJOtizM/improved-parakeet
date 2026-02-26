@@ -4,6 +4,7 @@ import { GetProductsUseCase } from '@application/productUseCases/getProductsUseC
 import { UpdateProductUseCase } from '@application/productUseCases/updateProductUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
+import { PermissionGuard } from '@shared/guards/permission.guard';
 import {
   Body,
   Controller,
@@ -47,7 +48,7 @@ import type { Request } from 'express';
 
 @ApiTags('Inventory - Products')
 @Controller('inventory/products')
-@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
 @UseInterceptors(AuditInterceptor)
 @ApiBearerAuth()
 export class ProductsController {

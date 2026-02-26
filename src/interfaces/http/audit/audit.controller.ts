@@ -4,6 +4,7 @@ import { GetEntityHistoryUseCase } from '@application/auditUseCases/getEntityHis
 import { GetUserActivityUseCase } from '@application/auditUseCases/getUserActivityUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
+import { PermissionGuard } from '@shared/guards/permission.guard';
 import {
   Controller,
   Get,
@@ -32,7 +33,7 @@ import { GetAuditLogsQueryDto, GetAuditLogsResponseDto } from './dto/getAuditLog
 
 @ApiTags('Audit')
 @Controller('audit')
-@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class AuditController {
   private readonly logger = new Logger(AuditController.name);

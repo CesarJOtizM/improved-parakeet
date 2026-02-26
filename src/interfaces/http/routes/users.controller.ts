@@ -21,6 +21,7 @@ import { RateLimited } from '@auth/security/decorators/auth.decorators';
 import { AllowOrganizationAdmin } from '@auth/security/decorators/roleBasedAuth.decorator';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
+import { PermissionGuard } from '@shared/guards/permission.guard';
 import {
   Body,
   Controller,
@@ -55,7 +56,7 @@ import type { Request } from 'express';
 
 @ApiTags('Users')
 @Controller('users')
-@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class UsersController {
   private readonly logger = new Logger(UsersController.name);

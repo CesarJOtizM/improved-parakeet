@@ -5,6 +5,7 @@ import { GetCategoryByIdUseCase } from '@application/categoryUseCases/getCategor
 import { UpdateCategoryUseCase } from '@application/categoryUseCases/updateCategoryUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
+import { PermissionGuard } from '@shared/guards/permission.guard';
 import {
   Body,
   Controller,
@@ -30,7 +31,7 @@ import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
 @ApiTags('Inventory - Categories')
 @Controller('inventory/categories')
-@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
 @UseInterceptors(AuditInterceptor)
 @ApiBearerAuth()
 export class CategoriesController {

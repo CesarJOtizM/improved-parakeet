@@ -19,6 +19,8 @@ import {
   PreviewImportResponseDto,
   ProcessImportDto,
 } from '@import/dto';
+import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
+import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
 import {
   Body,
   Controller,
@@ -29,12 +31,15 @@ import {
   Param,
   Post,
   Query,
+  Req,
   Res,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiOperation,
@@ -43,13 +48,20 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
+import { OrgId } from '@shared/decorators/orgId.decorator';
+import { RequirePermissions } from '@shared/decorators/requirePermissions.decorator';
+import { PermissionGuard } from '@shared/guards/permission.guard';
 import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
+import type { IAuthenticatedUser } from '@shared/types/http.types';
 import type { ImportTypeValue } from '@import/domain';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 
 @ApiTags('Import')
 @Controller('imports')
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
+@ApiBearerAuth()
 export class ImportController {
   private readonly logger = new Logger(ImportController.name);
 
@@ -66,6 +78,7 @@ export class ImportController {
 
   @Post('preview')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.PRODUCTS_IMPORT)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Preview and validate import file without persisting' })
   @ApiConsumes('multipart/form-data')
@@ -89,11 +102,12 @@ export class ImportController {
   })
   @ApiResponse({ status: HttpStatus.OK, type: PreviewImportResponseDto })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid file or validation failed' })
-  async previewImport(@UploadedFile() file: Express.Multer.File, @Body() dto: PreviewImportDto) {
+  async previewImport(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() dto: PreviewImportDto,
+    @OrgId() orgId: string
+  ) {
     this.logger.log('Previewing import file', { type: dto.type, fileName: file?.originalname });
-
-    // TODO: Extract from JWT/context in production
-    const orgId = 'org-placeholder';
 
     const result = await this.previewImportUseCase.execute({
       type: dto.type as ImportTypeValue,
@@ -106,6 +120,7 @@ export class ImportController {
 
   @Post('execute')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.PRODUCTS_IMPORT)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({
     summary: 'Execute complete import process (validate + create + process) in one operation',
@@ -138,12 +153,16 @@ export class ImportController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Validation errors - import rejected',
   })
-  async executeImport(@UploadedFile() file: Express.Multer.File, @Body() dto: ExecuteImportDto) {
+  async executeImport(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() dto: ExecuteImportDto,
+    @OrgId() orgId: string,
+    @Req() req: Request
+  ) {
     this.logger.log('Executing import', { type: dto.type, fileName: file?.originalname });
 
-    // TODO: Extract from JWT/context in production
-    const orgId = 'org-placeholder';
-    const createdBy = 'user-placeholder';
+    const user = req.user as IAuthenticatedUser;
+    const createdBy = user.id;
 
     const result = await this.executeImportUseCase.execute({
       type: dto.type as ImportTypeValue,
@@ -158,20 +177,19 @@ export class ImportController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(SYSTEM_PERMISSIONS.PRODUCTS_IMPORT)
   @ApiOperation({ summary: 'Create a new import batch' })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'Import batch created successfully' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid request data' })
   async createImportBatch(
-    @Body() dto: CreateImportBatchDto
-    // In production, extract orgId from JWT and createdBy from user context
-    // @OrgId() orgId: string,
-    // @CurrentUser() user: User
+    @Body() dto: CreateImportBatchDto,
+    @OrgId() orgId: string,
+    @Req() req: Request
   ) {
     this.logger.log('Creating import batch', { type: dto.type, fileName: dto.fileName });
 
-    // TODO: Extract from JWT/context in production
-    const orgId = 'org-placeholder';
-    const createdBy = 'user-placeholder';
+    const user = req.user as IAuthenticatedUser;
+    const createdBy = user.id;
 
     const result = await this.createImportBatchUseCase.execute({
       type: dto.type as ImportTypeValue,
@@ -186,6 +204,7 @@ export class ImportController {
 
   @Post(':id/validate')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.PRODUCTS_IMPORT)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Validate an import batch with uploaded file' })
   @ApiConsumes('multipart/form-data')
@@ -208,12 +227,10 @@ export class ImportController {
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid file or validation failed' })
   async validateImportBatch(
     @Param('id') batchId: string,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
+    @OrgId() orgId: string
   ) {
     this.logger.log('Validating import batch', { batchId, fileName: file?.originalname });
-
-    // TODO: Extract from JWT/context in production
-    const orgId = 'org-placeholder';
 
     const result = await this.validateImportUseCase.execute({
       batchId,
@@ -226,16 +243,18 @@ export class ImportController {
 
   @Post(':id/process')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.PRODUCTS_IMPORT)
   @ApiOperation({ summary: 'Process a validated import batch' })
   @ApiParam({ name: 'id', description: 'Import batch ID' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Import batch processed successfully' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Import batch not found' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Batch not in VALIDATED status' })
-  async processImportBatch(@Param('id') batchId: string, @Body() dto: ProcessImportDto) {
+  async processImportBatch(
+    @Param('id') batchId: string,
+    @Body() dto: ProcessImportDto,
+    @OrgId() orgId: string
+  ) {
     this.logger.log('Processing import batch', { batchId, skipInvalidRows: dto.skipInvalidRows });
-
-    // TODO: Extract from JWT/context in production
-    const orgId = 'org-placeholder';
 
     const result = await this.processImportUseCase.execute({
       batchId,
@@ -248,15 +267,13 @@ export class ImportController {
 
   @Get(':id/status')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.PRODUCTS_IMPORT)
   @ApiOperation({ summary: 'Get import batch status' })
   @ApiParam({ name: 'id', description: 'Import batch ID' })
   @ApiResponse({ status: HttpStatus.OK, type: ImportStatusResponseDto })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Import batch not found' })
-  async getImportStatus(@Param('id') batchId: string) {
+  async getImportStatus(@Param('id') batchId: string, @OrgId() orgId: string) {
     this.logger.log('Getting import status', { batchId });
-
-    // TODO: Extract from JWT/context in production
-    const orgId = 'org-placeholder';
 
     const result = await this.getImportStatusUseCase.execute({
       batchId,
@@ -268,6 +285,7 @@ export class ImportController {
 
   @Get('templates/:type')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.PRODUCTS_IMPORT)
   @ApiOperation({ summary: 'Download import template for a specific type' })
   @ApiParam({
     name: 'type',
@@ -285,12 +303,10 @@ export class ImportController {
   async downloadTemplate(
     @Param('type') type: string,
     @Query('format') format: 'xlsx' | 'csv' = 'csv',
-    @Res() res: Response
+    @Res() res: Response,
+    @OrgId() orgId: string
   ): Promise<void> {
     this.logger.log('Downloading import template', { type, format });
-
-    // TODO: Extract from JWT/context in production
-    const orgId = 'org-placeholder';
 
     const result = await this.downloadImportTemplateUseCase.execute({
       type: type as ImportTypeValue,
@@ -312,6 +328,7 @@ export class ImportController {
 
   @Get(':id/errors')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.PRODUCTS_IMPORT)
   @ApiOperation({ summary: 'Get error report for an import batch' })
   @ApiParam({ name: 'id', description: 'Import batch ID' })
   @ApiQuery({
@@ -325,12 +342,10 @@ export class ImportController {
   async getErrorReport(
     @Param('id') batchId: string,
     @Query() query: DownloadErrorReportQueryDto,
-    @Res() res: Response
+    @Res() res: Response,
+    @OrgId() orgId: string
   ): Promise<void> {
     this.logger.log('Getting error report', { batchId, format: query.format });
-
-    // TODO: Extract from JWT/context in production
-    const orgId = 'org-placeholder';
 
     const result = await this.downloadErrorReportUseCase.execute({
       batchId,

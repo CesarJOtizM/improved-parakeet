@@ -7,6 +7,7 @@ import { ReceiveTransferUseCase } from '@application/transferUseCases/receiveTra
 import { RejectTransferUseCase } from '@application/transferUseCases/rejectTransferUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
+import { PermissionGuard } from '@shared/guards/permission.guard';
 import {
   Body,
   Controller,
@@ -40,7 +41,7 @@ import type { Request } from 'express';
 
 @ApiTags('Inventory - Transfers')
 @Controller('inventory/transfers')
-@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
 @UseInterceptors(AuditInterceptor)
 @ApiBearerAuth()
 export class TransfersController {

@@ -4,6 +4,7 @@ import { GetWarehousesUseCase } from '@application/warehouseUseCases/getWarehous
 import { UpdateWarehouseUseCase } from '@application/warehouseUseCases/updateWarehouseUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
+import { PermissionGuard } from '@shared/guards/permission.guard';
 import {
   Body,
   Controller,
@@ -46,7 +47,7 @@ import type { Request } from 'express';
 
 @ApiTags('Inventory - Warehouses')
 @Controller('inventory/warehouses')
-@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
 @UseInterceptors(AuditInterceptor)
 @ApiBearerAuth()
 export class WarehousesController {

@@ -44,6 +44,7 @@ import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { PermissionsGuard } from '@auth/security/guards/permissionsGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
 import { JwtStrategy } from '@auth/security/strategies/jwtStrategy';
+import { PermissionGuard } from '@shared/guards/permission.guard';
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import {
   OrganizationRepository,
@@ -132,6 +133,7 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     JwtAuthGuard,
     PermissionsGuard,
     RoleBasedAuthGuard,
+    PermissionGuard,
 
     // Passport strategies
     JwtStrategy,
@@ -210,6 +212,7 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     JwtAuthGuard,
     PermissionsGuard,
     RoleBasedAuthGuard,
+    PermissionGuard,
     JwtStrategy,
     DomainEventBus,
     EventIdempotencyService,

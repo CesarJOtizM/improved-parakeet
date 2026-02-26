@@ -35,12 +35,12 @@ export class PermissionGuard implements CanActivate {
       throw new ForbiddenException('User without assigned organization');
     }
 
-    // Get user permissions from request (set by auth middleware)
-    const userPermissions = request.userPermissions || [];
-    const userRoles = request.userRoles || [];
+    // Get user permissions from JWT payload (set by JwtAuthGuard on request.user)
+    const userPermissions = user.permissions || [];
+    const userRoles = user.roles || [];
 
     // Verify if user is super admin (has full access)
-    if (userRoles.includes('ADMIN')) {
+    if (userRoles.includes('ADMIN') || userRoles.includes('SYSTEM_ADMIN')) {
       return true;
     }
 

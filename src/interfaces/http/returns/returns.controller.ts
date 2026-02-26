@@ -8,6 +8,7 @@ import { RemoveReturnLineUseCase } from '@application/returnUseCases/removeRetur
 import { UpdateReturnUseCase } from '@application/returnUseCases/updateReturnUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
+import { PermissionGuard } from '@shared/guards/permission.guard';
 import {
   Body,
   Controller,
@@ -44,7 +45,7 @@ import type { Request } from 'express';
 
 @ApiTags('Returns')
 @Controller('returns')
-@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
 @UseInterceptors(AuditInterceptor)
 @ApiBearerAuth()
 export class ReturnsController {

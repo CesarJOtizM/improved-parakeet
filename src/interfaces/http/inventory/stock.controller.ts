@@ -1,6 +1,7 @@
 import { GetStockUseCase } from '@application/stockUseCases/getStockUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
+import { PermissionGuard } from '@shared/guards/permission.guard';
 import {
   Controller,
   Get,
@@ -20,7 +21,7 @@ import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
 @ApiTags('Inventory - Stock')
 @Controller('inventory/stock')
-@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
 @UseInterceptors(AuditInterceptor)
 @ApiBearerAuth()
 export class StockController {

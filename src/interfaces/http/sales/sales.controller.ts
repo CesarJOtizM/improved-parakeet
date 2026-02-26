@@ -14,6 +14,7 @@ import { StartPickingSaleUseCase } from '@application/saleUseCases/startPickingS
 import { UpdateSaleUseCase } from '@application/saleUseCases/updateSaleUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
+import { PermissionGuard } from '@shared/guards/permission.guard';
 import {
   Body,
   Controller,
@@ -50,7 +51,7 @@ import type { Request } from 'express';
 
 @ApiTags('Sales')
 @Controller('sales')
-@UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
 @UseInterceptors(AuditInterceptor)
 @ApiBearerAuth()
 export class SalesController {
