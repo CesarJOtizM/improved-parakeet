@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -8,9 +8,21 @@ import { NextFunction, Request, Response } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const logger = new Logger('Bootstrap');
 
   // Enable extended query parser for nested objects like dateRange[startDate]
   app.set('query parser', 'extended');
+
+  // API Versioning — Header-based so URLs remain stable
+  // Clients can send X-API-Version header; defaults to '1' if omitted
+  app.enableVersioning({
+    type: VersioningType.HEADER,
+    header: 'X-API-Version',
+    defaultVersion: '1',
+  });
+
+  // Graceful shutdown — NestJS lifecycle hooks (onModuleDestroy, beforeApplicationShutdown)
+  app.enableShutdownHooks();
 
   // Configuración global de validación
   app.useGlobalPipes(new ValidationPipe(validationConfig));
@@ -26,10 +38,11 @@ async function bootstrap() {
       'X-Organization-ID',
       'X-Organization-Slug',
       'X-User-ID',
+      'X-API-Version',
     ],
   });
 
-  // Configuración de rate limiting global
+  // Security headers
   app.use((_req: Request, res: Response, next: NextFunction) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
@@ -65,7 +78,9 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+  logger.log(`Application listening on port ${port}`);
 }
 
 bootstrap();
