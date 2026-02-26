@@ -108,7 +108,9 @@ export class DemoAuditLogsSeed {
         entityType: 'Sale',
         action: 'CREATE',
         performedBy: user(3),
-        metadata: { saleNumber: `VTA-${s}` } as Prisma.InputJsonValue,
+        metadata: {
+          saleNumber: `SALE-2025-${String(s).padStart(3, '0')}`,
+        } as Prisma.InputJsonValue,
         ipAddress: '192.168.1.150',
         userAgent: 'Mozilla/5.0',
         httpMethod: 'POST',
@@ -122,7 +124,9 @@ export class DemoAuditLogsSeed {
         entityType: 'Sale',
         action: 'CONFIRM',
         performedBy: user(1),
-        metadata: { saleNumber: `VTA-${s}` } as Prisma.InputJsonValue,
+        metadata: {
+          saleNumber: `SALE-2025-${String(s).padStart(3, '0')}`,
+        } as Prisma.InputJsonValue,
         ipAddress: '192.168.1.101',
         userAgent: 'Mozilla/5.0',
         httpMethod: 'POST',
@@ -136,7 +140,9 @@ export class DemoAuditLogsSeed {
         entityType: 'Sale',
         action: 'COMPLETE',
         performedBy: user(1),
-        metadata: { saleNumber: `VTA-${s}` } as Prisma.InputJsonValue,
+        metadata: {
+          saleNumber: `SALE-2025-${String(s).padStart(3, '0')}`,
+        } as Prisma.InputJsonValue,
         ipAddress: '192.168.1.101',
         userAgent: 'Mozilla/5.0',
         httpMethod: 'POST',
@@ -180,7 +186,7 @@ export class DemoAuditLogsSeed {
         action: 'CREATE',
         performedBy: user(0),
         metadata: {
-          returnNumber: `DEV-${r}`,
+          returnNumber: `RETURN-2025-${String(r).padStart(3, '0')}`,
           type: r % 3 === 0 ? 'RETURN_SUPPLIER' : 'RETURN_CUSTOMER',
         } as Prisma.InputJsonValue,
         ipAddress: '192.168.1.100',

@@ -179,7 +179,7 @@ export class DemoSalesSeed {
     for (const dist of statusDist) {
       for (let i = 0; i < dist.count; i++) {
         saleIdx++;
-        const saleNumber = `VTA-2025-${String(saleIdx).padStart(4, '0')}`;
+        const saleNumber = `SALE-2025-${String(saleIdx).padStart(3, '0')}`;
         const dayOffset = dist.minDays + Math.floor(Math.random() * (dist.maxDays - dist.minDays));
         const createdAt = daysAgo(dayOffset);
         const customer = CUSTOMERS[saleIdx % CUSTOMERS.length];
@@ -264,6 +264,13 @@ export class DemoSalesSeed {
         });
       }
     }
+
+    // Sync DocumentNumberSequence so API-created sales continue from the right number
+    await this.prisma.documentNumberSequence.upsert({
+      where: { orgId_type_year: { orgId, type: 'SALE', year: 2025 } },
+      update: { lastSequence: saleIdx },
+      create: { orgId, type: 'SALE', year: 2025, lastSequence: saleIdx },
+    });
 
     return salesRecords;
   }

@@ -16,7 +16,8 @@ import { ReportController, ReportTemplateController } from '@interface/http/repo
 import { InventoryModule } from '@inventory/inventory.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
+import { createCacheModuleOptions } from '@shared/infrastructure/cache';
 import { ReturnsModule } from '@returns/returns.module';
 import { SalesModule } from '@sales/sales.module';
 
@@ -41,22 +42,7 @@ import { ReportLoggingInterceptor } from './interceptors/reportLogging.intercept
     ReturnsModule, // Import ReturnsModule to access ReturnRepository
     PrismaModule,
     ConfigModule,
-    CacheModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => {
-        const auth = configService.get('auth');
-        return {
-          store: 'redis',
-          host: auth?.redis?.host || 'localhost',
-          port: auth?.redis?.port || 6379,
-          password: auth?.redis?.password,
-          db: auth?.redis?.db || 0,
-          ttl: auth?.redis?.ttl || 3600,
-          max: 1000,
-        };
-      },
-      inject: [ConfigService],
-    }),
+    CacheModule.registerAsync(createCacheModuleOptions()),
   ],
   controllers: [ReportController, ReportTemplateController],
   providers: [

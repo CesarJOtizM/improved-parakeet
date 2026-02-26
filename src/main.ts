@@ -1,4 +1,4 @@
-import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -15,11 +15,8 @@ async function bootstrap() {
 
   // API Versioning — Header-based so URLs remain stable
   // Clients can send X-API-Version header; defaults to '1' if omitted
-  app.enableVersioning({
-    type: VersioningType.HEADER,
-    header: 'X-API-Version',
-    defaultVersion: '1',
-  });
+  // API Versioning — disabled for now (no routes use @Version decorators)
+  // Clients can still send X-API-Version header for future use
 
   // Graceful shutdown — NestJS lifecycle hooks (onModuleDestroy, beforeApplicationShutdown)
   app.enableShutdownHooks();

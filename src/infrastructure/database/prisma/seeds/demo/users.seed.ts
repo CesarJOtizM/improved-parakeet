@@ -2,7 +2,7 @@ import { PrismaClient } from '@infrastructure/database/generated/prisma';
 import { IUser } from '@shared/types/database.types';
 
 // bcrypt hash for "demo1234"
-const DEMO_PASSWORD_HASH = '$2b$12$pEquH59Tvv3q4r5Ko48yD.aXEKoo5q.zonfns67mKd8kcDWM7Z3ly';
+const DEMO_PASSWORD_HASH = '$2b$12$7uXtQhxjUIKJmqgwexPCxeRqytbhrRfwMN2V3LreerUJGBWQuDEDy';
 
 interface DemoUser {
   email: string;

@@ -68,7 +68,7 @@ import { PassportModule } from '@nestjs/passport';
 import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
 import { DomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.service';
 import { EventIdempotencyService } from '@shared/domain/events/eventIdempotency.service';
-import { FunctionalCacheService } from '@shared/infrastructure/cache';
+import { createCacheModuleOptions, FunctionalCacheService } from '@shared/infrastructure/cache';
 
 @Module({
   imports: [
@@ -83,22 +83,7 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
       },
       inject: [ConfigService],
     }),
-    CacheModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => {
-        const auth = configService.get('auth');
-        return {
-          store: 'redis',
-          host: auth?.redis?.host || 'localhost',
-          port: auth?.redis?.port || 6379,
-          password: auth?.redis?.password,
-          db: auth?.redis?.db || 0,
-          ttl: auth?.redis?.ttl || 3600, // Usar TTL de la configuración
-          max: 1000, // Máximo 1000 items en cache
-        };
-      },
-      inject: [ConfigService],
-    }),
+    CacheModule.registerAsync(createCacheModuleOptions()),
     ConfigModule.forFeature(authConfig),
   ],
   controllers: [

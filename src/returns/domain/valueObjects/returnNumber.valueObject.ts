@@ -14,8 +14,8 @@ export class ReturnNumber extends ValueObject<IReturnNumberProps> {
     if (year < 2000 || year > 9999) {
       throw new Error('Year must be between 2000 and 9999');
     }
-    if (sequence < 1 || sequence > 999) {
-      throw new Error('Sequence must be between 1 and 999');
+    if (sequence < 1 || sequence > 999999) {
+      throw new Error('Sequence must be between 1 and 999999');
     }
     const formattedSequence = String(sequence).padStart(3, '0');
     const value = `RETURN-${year}-${formattedSequence}`;
@@ -32,7 +32,7 @@ export class ReturnNumber extends ValueObject<IReturnNumberProps> {
     }
 
     const trimmed = props.value.trim();
-    const pattern = /^RETURN-\d{4}-\d{3}$/;
+    const pattern = /^RETURN-\d{4}-\d{3,6}$/;
 
     if (!pattern.test(trimmed)) {
       throw new Error('Return number must match format RETURN-YYYY-NNN');
@@ -49,8 +49,8 @@ export class ReturnNumber extends ValueObject<IReturnNumberProps> {
     }
 
     const sequence = parseInt(parts[2], 10);
-    if (isNaN(sequence) || sequence < 1 || sequence > 999) {
-      throw new Error('Sequence in return number must be between 001 and 999');
+    if (isNaN(sequence) || sequence < 1 || sequence > 999999) {
+      throw new Error('Sequence in return number must be between 001 and 999999');
     }
   }
 

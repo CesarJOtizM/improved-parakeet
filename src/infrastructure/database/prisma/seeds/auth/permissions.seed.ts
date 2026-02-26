@@ -284,6 +284,30 @@ export class PermissionsSeed {
         module: 'SALES',
         action: 'CANCEL',
       },
+      {
+        name: 'SALES:PICK',
+        description: 'Pick sales orders',
+        module: 'SALES',
+        action: 'PICK',
+      },
+      {
+        name: 'SALES:SHIP',
+        description: 'Ship sales orders',
+        module: 'SALES',
+        action: 'SHIP',
+      },
+      {
+        name: 'SALES:COMPLETE',
+        description: 'Complete sales orders',
+        module: 'SALES',
+        action: 'COMPLETE',
+      },
+      {
+        name: 'SALES:RETURN',
+        description: 'Process sales returns',
+        module: 'SALES',
+        action: 'RETURN',
+      },
 
       // Devoluciones
       {

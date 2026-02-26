@@ -32,7 +32,7 @@ export class SaleNumber extends ValueObject<ISaleNumberProps> {
     }
 
     const trimmed = props.value.trim();
-    const pattern = /^SALE-\d{4}-\d{3}$/;
+    const pattern = /^SALE-\d{4}-\d{3,6}$/;
 
     if (!pattern.test(trimmed)) {
       throw new Error('Sale number must match format SALE-YYYY-NNN');
@@ -49,8 +49,8 @@ export class SaleNumber extends ValueObject<ISaleNumberProps> {
     }
 
     const sequence = parseInt(parts[2], 10);
-    if (isNaN(sequence) || sequence < 1 || sequence > 999) {
-      throw new Error('Sequence in sale number must be between 001 and 999');
+    if (isNaN(sequence) || sequence < 1 || sequence > 999999) {
+      throw new Error('Sequence in sale number must be between 001 and 999999');
     }
   }
 

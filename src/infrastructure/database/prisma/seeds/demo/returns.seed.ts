@@ -134,7 +134,7 @@ export class DemoReturnsSeed {
     for (const def of defs) {
       for (let i = 0; i < def.count; i++) {
         retIdx++;
-        const returnNumber = `DEV-2025-${String(retIdx).padStart(4, '0')}`;
+        const returnNumber = `RETURN-2025-${String(retIdx).padStart(3, '0')}`;
         const dayOffset = def.minDays + Math.floor(Math.random() * (def.maxDays - def.minDays));
         const createdAt = daysAgo(dayOffset);
 
@@ -203,6 +203,13 @@ export class DemoReturnsSeed {
         records.push({ id: ret.id, returnNumber });
       }
     }
+
+    // Sync DocumentNumberSequence so API-created returns continue from the right number
+    await this.prisma.documentNumberSequence.upsert({
+      where: { orgId_type_year: { orgId, type: 'RETURN', year: 2025 } },
+      update: { lastSequence: retIdx },
+      create: { orgId, type: 'RETURN', year: 2025, lastSequence: retIdx },
+    });
 
     return records;
   }

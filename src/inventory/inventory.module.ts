@@ -58,11 +58,11 @@ import { NotificationService } from '@infrastructure/externalServices/notificati
 import { StockValidationJob } from '@infrastructure/jobs/stockValidationJob';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Module, OnModuleInit } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { OrganizationModule } from '@organization/organization.module';
 import { DomainEventBus } from '@shared/domain/events/domainEventBus.service';
-import { FunctionalCacheService } from '@shared/infrastructure/cache';
+import { createCacheModuleOptions, FunctionalCacheService } from '@shared/infrastructure/cache';
 
 @Module({
   imports: [
@@ -70,22 +70,7 @@ import { FunctionalCacheService } from '@shared/infrastructure/cache';
     OrganizationModule, // Import OrganizationModule to access OrganizationRepository
     ScheduleModule.forRoot(), // Import for scheduled jobs
     ConfigModule,
-    CacheModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => {
-        const auth = configService.get('auth');
-        return {
-          store: 'redis',
-          host: auth?.redis?.host || 'localhost',
-          port: auth?.redis?.port || 6379,
-          password: auth?.redis?.password,
-          db: auth?.redis?.db || 0,
-          ttl: auth?.redis?.ttl || 3600,
-          max: 1000,
-        };
-      },
-      inject: [ConfigService],
-    }),
+    CacheModule.registerAsync(createCacheModuleOptions()),
   ],
   providers: [
     // Repositories
