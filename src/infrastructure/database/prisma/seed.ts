@@ -4,9 +4,8 @@ import { resolve } from 'node:path';
 import { PrismaClient } from '@infrastructure/database/generated/prisma';
 import { AuthSeed } from '@infrastructure/database/prisma/seeds/auth';
 import { SystemAdminSeed } from '@infrastructure/database/prisma/seeds/auth/systemAdmin.seed';
-// import { InventorySeed } from '@infrastructure/database/prisma/seeds/inventory';
+import { DemoSeed } from '@infrastructure/database/prisma/seeds/demo';
 import { PrismaPg } from '@prisma/adapter-pg';
-// import { IInventorySeedResult, ISeedResult } from '@shared/types/database.types';
 import { ISeedResult } from '@shared/types/database.types';
 import { config } from 'dotenv';
 import { Pool } from 'pg';
@@ -72,10 +71,18 @@ const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });
 
-async function main() {
-  console.log('🌱 Iniciando seed de la base de datos...');
+// Check if --demo flag was passed
+const isDemo = process.argv.includes('--demo');
 
-  // Sembrar dominio de autenticación (roles y permisos del sistema)
+async function main() {
+  console.log('🌱 Iniciando seed de la base de datos...\n');
+
+  // ========================================
+  // 1) Datos maestros (siempre se ejecuta)
+  // ========================================
+  console.log('📋 Paso 1: Datos maestros (permisos, roles, system admin)\n');
+
+  // Crear roles y permisos del sistema
   const authSeed = new AuthSeed(prisma);
   const authResult: ISeedResult = await authSeed.seed();
 
@@ -84,38 +91,39 @@ async function main() {
   const systemAdmin = await systemAdminSeed.seed();
   console.log('✅ System admin creado:', systemAdmin.email);
 
-  // Comentado: Organización demo y datos de inventario
-  // Descomentar cuando se necesite crear datos de prueba
-  /*
-  // Crear organización de prueba
-  const organization = await prisma.organization.upsert({
-    where: { slug: 'demo-org' },
-    update: {},
-    create: {
-      name: 'Organización Demo',
-      slug: 'demo-org',
-      domain: 'demo.inventory.com',
-      isActive: true,
-    },
-  });
+  console.log('\n📊 Resumen datos maestros:');
+  console.log(`   - Roles del sistema: ${authResult.roles.length}`);
+  console.log(`   - Permisos del sistema: ${authResult.permissions.length}`);
+  console.log(`   - System Admin: ${systemAdmin.email}`);
 
-  console.log('✅ Organización demo creada:', organization.name);
+  // ========================================
+  // 2) Datos demo (solo con --demo flag)
+  // ========================================
+  if (isDemo) {
+    console.log('\n📋 Paso 2: Datos de demostración\n');
 
-  // Sembrar dominio de inventario para la organización demo
-  const inventorySeed = new InventorySeed(prisma);
-  const inventoryResult: IInventorySeedResult = await inventorySeed.seed(organization.id);
-  */
+    const demoSeed = new DemoSeed(prisma);
+    await demoSeed.seed();
 
-  console.log('🎉 Seed completado exitosamente!');
-  console.log('📊 Resumen:');
-  console.log(`   - System Admin: ${systemAdmin.email} (system@admin.com)`);
-  console.log(`   - Roles: ${authResult.roles.length}`);
-  console.log(`   - Permisos: ${authResult.permissions.length}`);
-  // console.log(`   - Organización Demo: ${organization.name}`);
-  // console.log(`   - Bodegas: ${inventoryResult.warehouses.length}`);
-  // console.log(`   - Productos: ${inventoryResult.products.length}`);
-  // console.log(`   - Stock inicial configurado`);
-  // console.log(`   - Movimientos de ejemplo creados`);
+    console.log('📊 Resumen demo:');
+    console.log('   - Organización: Nevada Tech Demo');
+    console.log(
+      '   - Usuarios demo: 7 (admin, supervisor, operador, vendedor, consultor, importador, inactivo)'
+    );
+    console.log('   - Credenciales: password "demo1234" para todos');
+    console.log('   - Productos: ~50 (electrónica, periféricos, redes, impresión, software)');
+    console.log('   - Bodegas: 5 (Bogotá x2, Medellín, Cali, Devoluciones)');
+    console.log('   - Ventas: ~100 (en diferentes estados del workflow, a lo largo de 1 año)');
+    console.log('   - Devoluciones: 20 (cliente y proveedor)');
+    console.log('   - Transferencias: 20 (entre bodegas)');
+    console.log('   - Movimientos: ~50 (entradas, salidas, ajustes)');
+    console.log('   - Logs de auditoría: 500+');
+  } else {
+    console.log('\n💡 Tip: Ejecuta con --demo para crear datos de demostración:');
+    console.log('   bun run db:seed -- --demo');
+  }
+
+  console.log('\n🎉 Seed completado exitosamente!');
 }
 
 main()

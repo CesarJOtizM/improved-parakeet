@@ -16,6 +16,7 @@ CREATE TABLE "organizations" (
     "slug" TEXT NOT NULL,
     "domain" TEXT,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "settings" JSONB DEFAULT '{}',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -126,7 +127,6 @@ CREATE TABLE "products" (
     "sku" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
-    "category" TEXT,
     "unit" TEXT NOT NULL,
     "barcode" TEXT,
     "brand" TEXT,
@@ -135,6 +135,8 @@ CREATE TABLE "products" (
     "currency" TEXT DEFAULT 'COP',
     "costMethod" TEXT NOT NULL DEFAULT 'AVG',
     "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "statusChangedBy" TEXT,
+    "statusChangedAt" TIMESTAMP(3),
     "orgId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -150,6 +152,8 @@ CREATE TABLE "warehouses" (
     "description" TEXT,
     "address" TEXT,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "statusChangedBy" TEXT,
+    "statusChangedAt" TIMESTAMP(3),
     "orgId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -212,6 +216,9 @@ CREATE TABLE "movements" (
     "reason" TEXT,
     "notes" TEXT,
     "postedAt" TIMESTAMP(3),
+    "postedBy" TEXT,
+    "returnedAt" TIMESTAMP(3),
+    "returnedBy" TEXT,
     "createdBy" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -243,6 +250,7 @@ CREATE TABLE "transfers" (
     "note" TEXT,
     "initiatedAt" TIMESTAMP(3),
     "receivedAt" TIMESTAMP(3),
+    "receivedBy" TEXT,
     "createdBy" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -274,7 +282,20 @@ CREATE TABLE "sales" (
     "externalReference" TEXT,
     "note" TEXT,
     "confirmedAt" TIMESTAMP(3),
+    "confirmedBy" TEXT,
     "cancelledAt" TIMESTAMP(3),
+    "cancelledBy" TEXT,
+    "pickedAt" TIMESTAMP(3),
+    "pickedBy" TEXT,
+    "shippedAt" TIMESTAMP(3),
+    "shippedBy" TEXT,
+    "trackingNumber" TEXT,
+    "shippingCarrier" TEXT,
+    "shippingNotes" TEXT,
+    "completedAt" TIMESTAMP(3),
+    "completedBy" TEXT,
+    "returnedAt" TIMESTAMP(3),
+    "returnedBy" TEXT,
     "movementId" TEXT,
     "createdBy" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
@@ -339,6 +360,20 @@ CREATE TABLE "return_lines" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "return_lines_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "categories" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "parentId" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "orgId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -462,6 +497,14 @@ CREATE TABLE "processed_events" (
     CONSTRAINT "processed_events_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "_ProductCategories" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_ProductCategories_AB_pkey" PRIMARY KEY ("A","B")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "organizations_slug_key" ON "organizations"("slug");
 
@@ -521,9 +564,6 @@ CREATE INDEX "products_orgId_idx" ON "products"("orgId");
 
 -- CreateIndex
 CREATE INDEX "products_orgId_isActive_idx" ON "products"("orgId", "isActive");
-
--- CreateIndex
-CREATE INDEX "products_orgId_category_idx" ON "products"("orgId", "category");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "products_sku_orgId_key" ON "products"("sku", "orgId");
@@ -634,6 +674,15 @@ CREATE INDEX "return_lines_productId_orgId_idx" ON "return_lines"("productId", "
 CREATE INDEX "return_lines_locationId_idx" ON "return_lines"("locationId");
 
 -- CreateIndex
+CREATE INDEX "categories_orgId_idx" ON "categories"("orgId");
+
+-- CreateIndex
+CREATE INDEX "categories_orgId_parentId_idx" ON "categories"("orgId", "parentId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "categories_name_orgId_key" ON "categories"("name", "orgId");
+
+-- CreateIndex
 CREATE INDEX "audit_logs_orgId_createdAt_idx" ON "audit_logs"("orgId", "createdAt");
 
 -- CreateIndex
@@ -704,6 +753,9 @@ CREATE INDEX "processed_events_processedAt_idx" ON "processed_events"("processed
 
 -- CreateIndex
 CREATE UNIQUE INDEX "processed_events_eventType_eventId_orgId_key" ON "processed_events"("eventType", "eventId", "orgId");
+
+-- CreateIndex
+CREATE INDEX "_ProductCategories_B_index" ON "_ProductCategories"("B");
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_orgId_fkey" FOREIGN KEY ("orgId") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -811,7 +863,19 @@ ALTER TABLE "return_lines" ADD CONSTRAINT "return_lines_productId_fkey" FOREIGN 
 ALTER TABLE "return_lines" ADD CONSTRAINT "return_lines_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "locations"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "categories" ADD CONSTRAINT "categories_orgId_fkey" FOREIGN KEY ("orgId") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "categories" ADD CONSTRAINT "categories_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "reports" ADD CONSTRAINT "reports_templateId_fkey" FOREIGN KEY ("templateId") REFERENCES "report_templates"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "import_rows" ADD CONSTRAINT "import_rows_importBatchId_fkey" FOREIGN KEY ("importBatchId") REFERENCES "import_batches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ProductCategories" ADD CONSTRAINT "_ProductCategories_A_fkey" FOREIGN KEY ("A") REFERENCES "categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ProductCategories" ADD CONSTRAINT "_ProductCategories_B_fkey" FOREIGN KEY ("B") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
