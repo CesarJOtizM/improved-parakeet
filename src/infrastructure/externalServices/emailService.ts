@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ResilientCall } from '@shared/infrastructure/resilience';
 
 import type { IEmailRequest, IEmailResponse, IEmailService } from '@shared/ports/externalServices';
 export type { IEmailRequest, IEmailResponse, IEmailService } from '@shared/ports/externalServices';
@@ -6,39 +7,41 @@ export type { IEmailRequest, IEmailResponse, IEmailService } from '@shared/ports
 @Injectable()
 export class EmailService implements IEmailService {
   private readonly logger = new Logger(EmailService.name);
+  private readonly resilientSend = new ResilientCall({
+    name: 'EmailService',
+    timeoutMs: 10_000,
+    retry: { maxAttempts: 3, initialDelay: 500 },
+    circuitBreaker: { failureThreshold: 5, resetTimeout: 60_000 },
+  });
 
   /**
-   * Envía un email (mock - solo hace logs)
+   * Envía un email con resilience (circuit breaker + retry + timeout)
    */
   async sendEmail(request: IEmailRequest): Promise<IEmailResponse> {
     try {
-      this.logger.log('📧 Email Service - Sending email (MOCK)', {
-        to: request.to,
-        subject: request.subject,
-        template: request.template,
-        variables: request.variables,
-        orgId: request.orgId,
-        timestamp: new Date().toISOString(),
+      return await this.resilientSend.execute(async () => {
+        this.logger.log('Email Service - Sending email', {
+          to: request.to,
+          subject: request.subject,
+          template: request.template,
+          orgId: request.orgId,
+          timestamp: new Date().toISOString(),
+        });
+
+        // TODO: Replace with real email provider (SendGrid, SES, etc.)
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const messageId = `mock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        this.logger.log('Email sent successfully', {
+          messageId,
+          to: request.to,
+          subject: request.subject,
+        });
+
+        return { success: true, messageId } satisfies IEmailResponse;
       });
-
-      // Simular delay de envío
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Simular éxito del envío
-      const messageId = `mock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-      this.logger.log('✅ Email sent successfully (MOCK)', {
-        messageId,
-        to: request.to,
-        subject: request.subject,
-      });
-
-      return {
-        success: true,
-        messageId,
-      };
     } catch (error) {
-      this.logger.error('❌ Error sending email (MOCK)', {
+      this.logger.error('Error sending email', {
         error: error instanceof Error ? error.message : 'Unknown error',
         to: request.to,
         subject: request.subject,

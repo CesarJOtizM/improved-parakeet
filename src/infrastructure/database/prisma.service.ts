@@ -6,6 +6,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
+  private isConnected = false;
 
   constructor(configService?: ConfigService) {
     // Set DATABASE_URL environment variable for Prisma
@@ -35,12 +36,16 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   async onModuleInit() {
     await this.$connect();
+    this.isConnected = true;
     this.logger.log('Database connection established');
   }
 
   async onModuleDestroy() {
-    await this.$disconnect();
-    this.logger.log('Database connection closed');
+    if (this.isConnected) {
+      await this.$disconnect();
+      this.isConnected = false;
+      this.logger.log('Database connection closed gracefully');
+    }
   }
 
   /**
