@@ -1,82 +1,50 @@
 import { Injectable, Logger } from '@nestjs/common';
+import ExcelJS from 'exceljs';
 
 import type {
+  IDocumentColumn,
   IDocumentGenerationRequest,
   IDocumentGenerationResponse,
   IDocumentGenerationService,
 } from '@shared/ports/externalServices';
 
-/**
- * Mock implementation of Document Generation Service
- *
- * This is a placeholder implementation that:
- * - Logs all generation requests for debugging
- * - Returns text-based placeholder content for PDF
- * - Returns CSV content with BOM for Excel (opens in Excel)
- *
- * For production, replace with:
- * - AWS Lambda with Puppeteer/Chrome for PDF
- * - AWS Lambda with ExcelJS for Excel
- * - External microservice
- * - Third-party APIs (DocRaptor, PDFShift, etc.)
- */
+const COLORS = {
+  primary: '1B4F72',
+  primaryLight: 'D4E6F1',
+  headerText: 'FFFFFF',
+  summaryLabel: '2C3E50',
+  summaryValue: '1B4F72',
+  border: 'BDC3C7',
+  evenRow: 'F8F9FA',
+  currencyPositive: '27AE60',
+  currencyNegative: 'E74C3C',
+};
+
 @Injectable()
 export class DocumentGenerationService implements IDocumentGenerationService {
   private readonly logger = new Logger(DocumentGenerationService.name);
 
   /**
    * Generate PDF document (MOCK - returns text-based placeholder)
-   *
-   * In production, this would call:
-   * - AWS Lambda with Puppeteer/Chrome
-   * - External PDF microservice
-   * - Third-party API (e.g., DocRaptor, PDFShift)
    */
   async generatePDF(request: IDocumentGenerationRequest): Promise<IDocumentGenerationResponse> {
     const startTime = Date.now();
 
     try {
-      this.logger.log('📄 Document Generation Service - Generating PDF (MOCK)', {
+      this.logger.log('Generating PDF (MOCK)', {
         title: request.title,
         reportType: request.metadata.reportType,
         rowCount: request.rows.length,
-        columnCount: request.columns.length,
-        orgId: request.metadata.orgId,
-        timestamp: new Date().toISOString(),
       });
 
-      // Simulate processing delay
       await new Promise(resolve => setTimeout(resolve, 150));
 
-      // Generate placeholder PDF content (text-based)
       const placeholderContent = this.generatePlaceholderPDF(request);
       const buffer = Buffer.from(placeholderContent, 'utf-8');
-
       const generationTime = Date.now() - startTime;
 
-      this.logger.log('✅ PDF generated successfully (MOCK)', {
-        title: request.title,
-        size: buffer.length,
-        generationTime: `${generationTime}ms`,
-      });
-
-      this.logger.warn(
-        '⚠️ PDF generation is using MOCK implementation. ' +
-          'For production, integrate with external service (AWS Lambda, PDFKit service, etc.)'
-      );
-
-      return {
-        success: true,
-        buffer,
-        generationTime,
-      };
+      return { success: true, buffer, generationTime };
     } catch (error) {
-      this.logger.error('❌ Error generating PDF (MOCK)', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        title: request.title,
-        orgId: request.metadata.orgId,
-      });
-
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -86,57 +54,185 @@ export class DocumentGenerationService implements IDocumentGenerationService {
   }
 
   /**
-   * Generate Excel document (MOCK - returns CSV with BOM)
-   *
-   * In production, this would call:
-   * - AWS Lambda with ExcelJS
-   * - External Excel microservice
-   * - Third-party API
+   * Generate styled Excel (.xlsx) document using ExcelJS
    */
   async generateExcel(request: IDocumentGenerationRequest): Promise<IDocumentGenerationResponse> {
     const startTime = Date.now();
 
     try {
-      this.logger.log('📊 Document Generation Service - Generating Excel (MOCK)', {
+      this.logger.log('Generating Excel document', {
         title: request.title,
         reportType: request.metadata.reportType,
         rowCount: request.rows.length,
         columnCount: request.columns.length,
-        orgId: request.metadata.orgId,
-        timestamp: new Date().toISOString(),
       });
 
-      // Simulate processing delay
-      await new Promise(resolve => setTimeout(resolve, 150));
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = request.options?.author ?? 'Nevada Inventory System';
+      workbook.created = new Date();
 
-      // Generate CSV content that Excel can open (with BOM for UTF-8)
-      const csvContent = this.generateCSVContent(request);
-      const bom = '\ufeff';
-      const buffer = Buffer.from(bom + csvContent, 'utf-8');
+      const sheet = workbook.addWorksheet('Report', {
+        views: [{ state: 'frozen', ySplit: 0 }],
+      });
 
+      let currentRow = 1;
+
+      // ── Title section ──
+      if (request.options?.includeSummary !== false) {
+        // Title row (merged across all columns)
+        const titleRow = sheet.getRow(currentRow);
+        titleRow.getCell(1).value = request.title;
+        titleRow.getCell(1).font = {
+          name: 'Calibri',
+          size: 16,
+          bold: true,
+          color: { argb: COLORS.primary },
+        };
+        titleRow.height = 30;
+        sheet.mergeCells(currentRow, 1, currentRow, request.columns.length);
+        currentRow++;
+
+        // Subtitle with date and report type
+        const subtitleRow = sheet.getRow(currentRow);
+        const dateStr = request.metadata.generatedAt.toISOString().split('T')[0];
+        subtitleRow.getCell(1).value = `${request.metadata.reportType} | Generated: ${dateStr}`;
+        subtitleRow.getCell(1).font = {
+          name: 'Calibri',
+          size: 10,
+          italic: true,
+          color: { argb: '7F8C8D' },
+        };
+        sheet.mergeCells(currentRow, 1, currentRow, request.columns.length);
+        currentRow++;
+
+        // Summary section
+        if (request.summary && Object.keys(request.summary).length > 0) {
+          currentRow++; // blank row
+
+          for (const [key, value] of Object.entries(request.summary)) {
+            const label = key.replace(/([A-Z])/g, ' $1').trim();
+            const row = sheet.getRow(currentRow);
+            row.getCell(1).value = label;
+            row.getCell(1).font = {
+              name: 'Calibri',
+              size: 10,
+              bold: true,
+              color: { argb: COLORS.summaryLabel },
+            };
+            row.getCell(2).value = typeof value === 'number' ? value : String(value);
+            row.getCell(2).font = {
+              name: 'Calibri',
+              size: 10,
+              bold: true,
+              color: { argb: COLORS.summaryValue },
+            };
+            row.getCell(2).alignment = { horizontal: 'left' };
+            currentRow++;
+          }
+        }
+
+        currentRow++; // blank row before data
+      }
+
+      // ── Header row ──
+      const headerRowNumber = currentRow;
+      if (request.options?.includeHeader !== false) {
+        const headerRow = sheet.getRow(currentRow);
+        headerRow.height = 24;
+
+        request.columns.forEach((col, i) => {
+          const cell = headerRow.getCell(i + 1);
+          cell.value = col.header;
+          cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.headerText } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.primary } };
+          cell.alignment = {
+            horizontal: this.getAlignment(col.type),
+            vertical: 'middle',
+          };
+          cell.border = {
+            bottom: { style: 'medium', color: { argb: COLORS.primary } },
+          };
+        });
+
+        // Freeze header row
+        sheet.views = [{ state: 'frozen', ySplit: currentRow, xSplit: 0 }];
+        currentRow++;
+      }
+
+      // ── Data rows ──
+      for (let rowIdx = 0; rowIdx < request.rows.length; rowIdx++) {
+        const dataRow = sheet.getRow(currentRow);
+        const isEven = rowIdx % 2 === 0;
+
+        request.columns.forEach((col, colIdx) => {
+          const cell = dataRow.getCell(colIdx + 1);
+          const rawValue = request.rows[rowIdx][col.key];
+          cell.value = this.formatCellValue(rawValue, col) as ExcelJS.CellValue;
+
+          // Font
+          cell.font = { name: 'Calibri', size: 10 };
+
+          // Number formats
+          if (col.type === 'currency') {
+            cell.numFmt = '#,##0.00';
+            if (typeof rawValue === 'number' && rawValue < 0) {
+              cell.font = { name: 'Calibri', size: 10, color: { argb: COLORS.currencyNegative } };
+            }
+          } else if (col.type === 'percentage') {
+            cell.numFmt = '0.00%';
+          } else if (col.type === 'number') {
+            cell.numFmt = '#,##0';
+          } else if (col.type === 'date') {
+            cell.numFmt = 'YYYY-MM-DD';
+          }
+
+          // Alignment
+          cell.alignment = { horizontal: this.getAlignment(col.type), vertical: 'middle' };
+
+          // Zebra striping
+          if (isEven) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.evenRow } };
+          }
+
+          // Light border
+          cell.border = {
+            bottom: { style: 'thin', color: { argb: COLORS.border } },
+          };
+        });
+
+        currentRow++;
+      }
+
+      // ── Column widths ──
+      request.columns.forEach((col, i) => {
+        const column = sheet.getColumn(i + 1);
+        column.width = col.width ?? Math.max(col.header.length + 4, 14);
+      });
+
+      // ── Auto-filter on header ──
+      if (request.options?.includeHeader !== false && request.rows.length > 0) {
+        sheet.autoFilter = {
+          from: { row: headerRowNumber, column: 1 },
+          to: { row: headerRowNumber + request.rows.length, column: request.columns.length },
+        };
+      }
+
+      // ── Write to buffer ──
+      const arrayBuffer = await workbook.xlsx.writeBuffer();
+      const buffer = Buffer.from(arrayBuffer);
       const generationTime = Date.now() - startTime;
 
-      this.logger.log('✅ Excel generated successfully (MOCK)', {
+      this.logger.log('Excel generated successfully', {
         title: request.title,
         size: buffer.length,
         generationTime: `${generationTime}ms`,
       });
 
-      this.logger.warn(
-        '⚠️ Excel generation is using MOCK implementation (CSV format). ' +
-          'For production, integrate with external service (AWS Lambda with ExcelJS, etc.)'
-      );
-
-      return {
-        success: true,
-        buffer,
-        generationTime,
-      };
+      return { success: true, buffer, generationTime };
     } catch (error) {
-      this.logger.error('❌ Error generating Excel (MOCK)', {
+      this.logger.error('Error generating Excel', {
         error: error instanceof Error ? error.message : 'Unknown error',
         title: request.title,
-        orgId: request.metadata.orgId,
       });
 
       return {
@@ -147,23 +243,49 @@ export class DocumentGenerationService implements IDocumentGenerationService {
     }
   }
 
-  /**
-   * Health check for the service
-   */
   async healthCheck(): Promise<boolean> {
-    this.logger.log('🏥 Document Generation Service health check (MOCK) - OK');
     return true;
   }
 
-  /**
-   * Generate placeholder PDF content (text-based report)
-   */
+  private getAlignment(type: string): 'left' | 'center' | 'right' {
+    switch (type) {
+      case 'number':
+      case 'currency':
+      case 'percentage':
+        return 'right';
+      case 'date':
+      case 'boolean':
+        return 'center';
+      default:
+        return 'left';
+    }
+  }
+
+  private formatCellValue(value: unknown, column: IDocumentColumn): unknown {
+    if (value === null || value === undefined) return '';
+
+    switch (column.type) {
+      case 'number':
+      case 'currency':
+        return typeof value === 'number' ? value : Number(value) || 0;
+      case 'percentage':
+        return typeof value === 'number' ? value / 100 : Number(value) / 100 || 0;
+      case 'date':
+        if (value instanceof Date) return value;
+        if (typeof value === 'string') return new Date(value);
+        return value;
+      case 'boolean':
+        return value ? 'Yes' : 'No';
+      default:
+        return String(value);
+    }
+  }
+
   private generatePlaceholderPDF(request: IDocumentGenerationRequest): string {
     const lines: string[] = [];
     const separator = '='.repeat(80);
     const subSeparator = '-'.repeat(80);
 
-    // Header
     lines.push(separator);
     lines.push(`REPORT: ${request.title}`);
     lines.push(`Type: ${request.metadata.reportType}`);
@@ -174,11 +296,7 @@ export class DocumentGenerationService implements IDocumentGenerationService {
     lines.push(`Organization: ${request.metadata.orgId}`);
     lines.push(separator);
     lines.push('');
-    lines.push('⚠️ THIS IS A MOCK PDF - Plain text format');
-    lines.push('For production, integrate with external PDF generation service.');
-    lines.push('');
 
-    // Summary
     if (request.options?.includeSummary !== false && request.summary) {
       lines.push('SUMMARY');
       lines.push(subSeparator);
@@ -189,24 +307,16 @@ export class DocumentGenerationService implements IDocumentGenerationService {
       lines.push('');
     }
 
-    // Data table
     lines.push('DATA');
     lines.push(subSeparator);
 
-    // Headers
     const headers = request.columns.map(col => col.header.padEnd(15)).join(' | ');
     lines.push(headers);
     lines.push(subSeparator);
 
-    // Rows (limit to 100 for mock)
     const displayRows = request.rows.slice(0, 100);
     for (const row of displayRows) {
-      const values = request.columns
-        .map(col => {
-          const value = row[col.key];
-          return String(value ?? '-').padEnd(15);
-        })
-        .join(' | ');
+      const values = request.columns.map(col => String(row[col.key] ?? '-').padEnd(15)).join(' | ');
       lines.push(values);
     }
 
@@ -220,61 +330,5 @@ export class DocumentGenerationService implements IDocumentGenerationService {
     lines.push(separator);
 
     return lines.join('\n');
-  }
-
-  /**
-   * Generate CSV content for Excel mock
-   */
-  private generateCSVContent(request: IDocumentGenerationRequest): string {
-    const lines: string[] = [];
-
-    // Headers
-    if (request.options?.includeHeader !== false) {
-      const headers = request.columns.map(col => this.escapeCSV(col.header));
-      lines.push(headers.join(','));
-    }
-
-    // Data rows
-    for (const row of request.rows) {
-      const values = request.columns.map(col => {
-        const value = row[col.key];
-        return this.formatCSVValue(value, col.type);
-      });
-      lines.push(values.join(','));
-    }
-
-    return lines.join('\n');
-  }
-
-  /**
-   * Escape value for CSV format
-   */
-  private escapeCSV(value: string): string {
-    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-      return `"${value.replace(/"/g, '""')}"`;
-    }
-    return value;
-  }
-
-  /**
-   * Format value for CSV based on column type
-   */
-  private formatCSVValue(value: unknown, type: string): string {
-    if (value === null || value === undefined) return '';
-
-    switch (type) {
-      case 'date':
-        return value instanceof Date
-          ? this.escapeCSV(value.toISOString().split('T')[0])
-          : this.escapeCSV(String(value));
-      case 'currency':
-        return typeof value === 'number' ? value.toFixed(2) : String(value);
-      case 'percentage':
-        return typeof value === 'number' ? `${value.toFixed(2)}%` : String(value);
-      case 'boolean':
-        return value ? 'Yes' : 'No';
-      default:
-        return this.escapeCSV(String(value));
-    }
   }
 }

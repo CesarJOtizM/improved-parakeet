@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 import type {
   IFileParsingService,
@@ -87,65 +87,57 @@ export class FileParsingService implements IFileParsingService {
 
     if (extension === '.csv') {
       return this.parseCSV(file.buffer);
-    } else {
-      return this.parseExcel(file.buffer);
     }
+    return this.parseExcel(file.buffer);
   }
 
-  private parseExcel(buffer: Buffer): IParsedFileData {
+  private async parseExcel(buffer: Buffer): Promise<IParsedFileData> {
     try {
-      const workbook = XLSX.read(buffer, { type: 'buffer' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer as unknown as ExcelJS.Buffer);
 
-      if (!worksheet) {
+      const worksheet = workbook.worksheets[0];
+      if (!worksheet || worksheet.rowCount === 0) {
         throw new Error('Excel file is empty or has no sheets');
       }
 
-      // Convert to JSON with header row
-      const data = XLSX.utils.sheet_to_json<unknown[]>(worksheet, {
-        header: 1,
-        defval: null,
-        raw: false, // Convert all values to strings for consistency
+      // First row is headers
+      const headerRow = worksheet.getRow(1);
+      const cleanHeaders: string[] = [];
+      headerRow.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+        const value = cell.text?.trim();
+        if (value) {
+          cleanHeaders[colNumber - 1] = value;
+        }
       });
 
-      if (data.length === 0) {
-        throw new Error('Excel file has no data');
-      }
-
-      // First row is headers
-      const headers = data[0] as unknown[];
-      if (!headers || headers.length === 0) {
-        throw new Error('Excel file has no headers');
-      }
-
-      // Clean headers (trim, remove nulls)
-      const cleanHeaders = headers
-        .map(h => (h ? String(h).trim() : null))
-        .filter((h): h is string => h !== null && h !== '');
-
-      if (cleanHeaders.length === 0) {
+      const filteredHeaders = cleanHeaders.filter(h => h !== undefined && h !== '');
+      if (filteredHeaders.length === 0) {
         throw new Error('Excel file has no valid headers');
       }
 
       // Convert rows to objects
-      const rows = data.slice(1).map((row: unknown[]) => {
+      const rows: Record<string, unknown>[] = [];
+      worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+        if (rowNumber === 1) return; // skip header
+
         const rowObj: Record<string, unknown> = {};
         cleanHeaders.forEach((header, colIndex) => {
-          const value = row[colIndex];
-          // Convert null/undefined to null, otherwise keep as is
-          rowObj[header] = value === undefined || value === null ? null : value;
+          if (!header) return;
+          const cell = row.getCell(colIndex + 1);
+          const value = cell.text?.trim();
+          rowObj[header] = value === undefined || value === '' ? null : value;
         });
-        return rowObj;
+        rows.push(rowObj);
       });
 
       this.logger.log('Excel file parsed successfully', {
-        headers: cleanHeaders.length,
+        headers: filteredHeaders.length,
         rows: rows.length,
       });
 
       return {
-        headers: cleanHeaders,
+        headers: filteredHeaders,
         rows,
         totalRows: rows.length,
         fileType: 'excel',
