@@ -83,6 +83,9 @@ export const SYSTEM_PERMISSIONS = {
   // Auditoría
   AUDIT_READ: 'AUDIT:READ',
   AUDIT_EXPORT: 'AUDIT:EXPORT',
+
+  // Configuración
+  SETTINGS_MANAGE: 'SETTINGS:MANAGE',
 } as const;
 
 // Constantes de configuración de seguridad

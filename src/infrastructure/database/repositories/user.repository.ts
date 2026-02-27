@@ -65,6 +65,11 @@ export class UserRepository implements UserRepositoryInterface {
           lastLoginAt: userData.lastLoginAt || undefined,
           failedLoginAttempts: userData.failedLoginAttempts ?? 0,
           lockedUntil: userData.lockedUntil || undefined,
+          phone: userData.phone || undefined,
+          timezone: userData.timezone || undefined,
+          language: userData.language || undefined,
+          jobTitle: userData.jobTitle || undefined,
+          department: userData.department || undefined,
           roles: userData.userRoles.map(ur => ur.role.name),
           permissions: userData.userRoles.flatMap(ur =>
             ur.role.permissions.map(rp => rp.permission.name)
@@ -132,6 +137,11 @@ export class UserRepository implements UserRepositoryInterface {
           lastLoginAt: userData.lastLoginAt || undefined,
           failedLoginAttempts: userData.failedLoginAttempts ?? 0,
           lockedUntil: userData.lockedUntil || undefined,
+          phone: userData.phone || undefined,
+          timezone: userData.timezone || undefined,
+          language: userData.language || undefined,
+          jobTitle: userData.jobTitle || undefined,
+          department: userData.department || undefined,
           roles: userData.userRoles.map(ur => ur.role.name),
           permissions: userData.userRoles.flatMap(ur =>
             ur.role.permissions.map(rp => rp.permission.name)
@@ -191,6 +201,11 @@ export class UserRepository implements UserRepositoryInterface {
           lastLoginAt: userData.lastLoginAt || undefined,
           failedLoginAttempts: userData.failedLoginAttempts ?? 0,
           lockedUntil: userData.lockedUntil || undefined,
+          phone: userData.phone || undefined,
+          timezone: userData.timezone || undefined,
+          language: userData.language || undefined,
+          jobTitle: userData.jobTitle || undefined,
+          department: userData.department || undefined,
           roles: userData.userRoles.map(ur => ur.role.name),
           permissions: userData.userRoles.flatMap(ur =>
             ur.role.permissions.map(rp => rp.permission.name)
@@ -458,6 +473,11 @@ export class UserRepository implements UserRepositoryInterface {
         lastLoginAt: user.lastLoginAt,
         failedLoginAttempts: user.failedLoginAttempts,
         lockedUntil: user.lockedUntil,
+        phone: user.phone ?? null,
+        timezone: user.timezone ?? null,
+        language: user.language ?? null,
+        jobTitle: user.jobTitle ?? null,
+        department: user.department ?? null,
         orgId: user.orgId,
       };
 

@@ -360,6 +360,14 @@ export class PermissionsSeed {
         module: 'AUDIT',
         action: 'EXPORT',
       },
+
+      // Configuración
+      {
+        name: 'SETTINGS:MANAGE',
+        description: 'Gestionar configuración del sistema (alertas, notificaciones)',
+        module: 'SETTINGS',
+        action: 'MANAGE',
+      },
     ];
 
     const permissions = [];

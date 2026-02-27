@@ -1,3 +1,4 @@
+import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Quantity } from '@inventory/stock';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -14,6 +15,16 @@ import type { IProductRepository } from '@product/domain/repositories/productRep
 import type { IReorderRuleRepository } from '@stock/domain/repositories/reorderRuleRepository.interface';
 import type { IStockRepository } from '@stock/domain/repositories/stockRepository.interface';
 import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
+
+const FREQUENCY_HOURS: Record<string, number> = {
+  EVERY_HOUR: 1,
+  EVERY_6_HOURS: 6,
+  EVERY_12_HOURS: 12,
+  EVERY_DAY: 24,
+  EVERY_WEEK: 168,
+  EVERY_2_WEEKS: 336,
+  EVERY_MONTH: 720,
+};
 
 interface IProductStockInfo {
   productId: string;
@@ -40,7 +51,8 @@ export class StockValidationJob {
     private readonly reorderRuleRepository: IReorderRuleRepository,
     @Inject('OrganizationRepository')
     private readonly organizationRepository: IOrganizationRepository,
-    private readonly eventBus: DomainEventBus
+    private readonly eventBus: DomainEventBus,
+    private readonly prisma: PrismaService
   ) {}
 
   /**
@@ -80,6 +92,29 @@ export class StockValidationJob {
     let alertCount = 0;
 
     try {
+      // Check AlertConfiguration for this org
+      const alertConfig = await this.prisma.alertConfiguration.findUnique({
+        where: { orgId },
+      });
+
+      // If alerts are explicitly disabled, skip
+      if (alertConfig && !alertConfig.isEnabled) {
+        this.logger.debug(`Alerts disabled for org ${orgId}, skipping`);
+        return 0;
+      }
+
+      // Check if enough time has passed since last run based on configured frequency
+      if (alertConfig?.lastRunAt) {
+        const frequencyHours = FREQUENCY_HOURS[alertConfig.cronFrequency] || 1;
+        const hoursSinceLastRun = (Date.now() - alertConfig.lastRunAt.getTime()) / (1000 * 60 * 60);
+        if (hoursSinceLastRun < frequencyHours) {
+          this.logger.debug(
+            `Skipping org ${orgId}: last run ${hoursSinceLastRun.toFixed(1)}h ago, frequency is every ${frequencyHours}h`
+          );
+          return 0;
+        }
+      }
+
       // Get all active products for this organization
       const products = await this.productRepository.findByStatus('ACTIVE', orgId);
 
@@ -106,8 +141,19 @@ export class StockValidationJob {
               orgId,
             });
 
-            // Emit LowStockAlert event if needed
+            // Emit LowStockAlert event if needed (respecting severity config)
             if (evaluation.shouldAlert) {
+              // Check if this severity is enabled in alert configuration
+              const severityEnabled =
+                !alertConfig ||
+                (evaluation.severity === 'LOW' && alertConfig.notifyLowStock) ||
+                (evaluation.severity === 'CRITICAL' && alertConfig.notifyCriticalStock) ||
+                (evaluation.severity === 'OUT_OF_STOCK' && alertConfig.notifyOutOfStock);
+
+              if (!severityEnabled) {
+                continue; // Skip this alert - severity not enabled
+              }
+
               const event = new LowStockAlertEvent(
                 product.id,
                 warehouse.id,
@@ -170,6 +216,13 @@ export class StockValidationJob {
             // Continue with next product-warehouse combination
           }
         }
+      }
+      // Update lastRunAt for this org
+      if (alertConfig) {
+        await this.prisma.alertConfiguration.update({
+          where: { orgId },
+          data: { lastRunAt: new Date() },
+        });
       }
     } catch (error) {
       this.logger.error(`Error validating stock for organization ${orgId}:`, error);

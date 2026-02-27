@@ -115,6 +115,70 @@ export class UsersController {
     return resultToHttpResponse(result);
   }
 
+  @Get('me')
+  @HttpCode(HttpStatus.OK)
+  @RateLimited('USER')
+  @ApiOperation({
+    summary: 'Get current user profile',
+    description: "Get the authenticated user's own profile. No special permissions required.",
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User profile retrieved successfully',
+  })
+  async getMyProfile(@Req() req: Request, @OrgId() orgId: string) {
+    const authUser = req.user as IAuthenticatedUser;
+    this.logger.log('Getting own profile', { userId: authUser.id, orgId });
+
+    const result = await this.getUserUseCase.execute({
+      userId: authUser.id,
+      orgId,
+    });
+    return resultToHttpResponse(result);
+  }
+
+  @Put('me')
+  @HttpCode(HttpStatus.OK)
+  @RateLimited('USER')
+  @ApiOperation({
+    summary: 'Update current user profile',
+    description:
+      "Update the authenticated user's own profile (name, phone, timezone, etc.). No special permissions required.",
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Profile updated successfully',
+    type: UpdateUserResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Validation failed',
+  })
+  async updateMyProfile(
+    @Body() updateUserDto: UpdateUserDto,
+    @OrgId() orgId: string,
+    @Req() req: Request
+  ): Promise<UpdateUserResponseDto> {
+    const authUser = req.user as IAuthenticatedUser;
+    this.logger.log('Updating own profile', { userId: authUser.id, orgId });
+
+    const request = {
+      userId: authUser.id,
+      orgId,
+      firstName: updateUserDto.firstName,
+      lastName: updateUserDto.lastName,
+      phone: updateUserDto.phone,
+      timezone: updateUserDto.timezone,
+      language: updateUserDto.language,
+      jobTitle: updateUserDto.jobTitle,
+      department: updateUserDto.department,
+      updatedBy: authUser.id,
+    };
+
+    const result = await this.updateUserUseCase.execute(request);
+    return resultToHttpResponse(result);
+  }
+
   @Get()
   @HttpCode(HttpStatus.OK)
   @RateLimited('USER')
@@ -233,6 +297,11 @@ export class UsersController {
       lastName: updateUserDto.lastName,
       username: updateUserDto.username,
       email: updateUserDto.email,
+      phone: updateUserDto.phone,
+      timezone: updateUserDto.timezone,
+      language: updateUserDto.language,
+      jobTitle: updateUserDto.jobTitle,
+      department: updateUserDto.department,
       updatedBy: user.id,
     };
 

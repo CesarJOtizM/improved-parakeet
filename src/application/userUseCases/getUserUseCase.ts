@@ -15,6 +15,11 @@ export interface IGetUserData {
   username: string;
   firstName: string;
   lastName: string;
+  phone?: string;
+  timezone?: string;
+  language?: string;
+  jobTitle?: string;
+  department?: string;
   status: string;
   roles: string[];
   permissions: string[];
@@ -50,6 +55,11 @@ export class GetUserUseCase {
         username: user.username,
         firstName: user.firstName,
         lastName: user.lastName,
+        phone: user.phone,
+        timezone: user.timezone,
+        language: user.language,
+        jobTitle: user.jobTitle,
+        department: user.department,
         status: user.status.getValue(),
         roles: user.roles || [],
         permissions: user.permissions || [],

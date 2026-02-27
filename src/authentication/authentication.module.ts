@@ -59,6 +59,7 @@ import { AuditController } from '@interface/http/audit/audit.controller';
 import { AuthController } from '@interface/http/routes/auth.controller';
 import { PasswordResetController } from '@interface/http/routes/passwordReset.controller';
 import { RolesController } from '@interface/http/routes/roles.controller';
+import { SettingsController } from '@interface/http/routes/settings.controller';
 import { UsersController } from '@interface/http/routes/users.controller';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Module, OnModuleInit } from '@nestjs/common';
@@ -92,6 +93,7 @@ import { createCacheModuleOptions, FunctionalCacheService } from '@shared/infras
     UsersController,
     RolesController,
     AuditController,
+    SettingsController,
   ],
   providers: [
     // Event Bus, Dispatcher and Idempotency

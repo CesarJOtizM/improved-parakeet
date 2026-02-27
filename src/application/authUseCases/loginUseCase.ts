@@ -30,6 +30,11 @@ export interface ILoginData {
     username: string;
     firstName: string;
     lastName: string;
+    phone?: string;
+    timezone?: string;
+    language?: string;
+    jobTitle?: string;
+    department?: string;
     roles: string[];
     permissions: string[];
   };
@@ -139,6 +144,11 @@ export class LoginUseCase {
             username: user.username,
             firstName: user.firstName,
             lastName: user.lastName,
+            phone: user.phone,
+            timezone: user.timezone,
+            language: user.language,
+            jobTitle: user.jobTitle,
+            department: user.department,
             roles: user.roles || [],
             permissions: user.permissions || [],
           },

@@ -1,3 +1,4 @@
+export * from './alertConfiguration.dto';
 export * from './assignRole.dto';
 export * from './assignPermissionsToRole.dto';
 export * from './changeUserStatus.dto';

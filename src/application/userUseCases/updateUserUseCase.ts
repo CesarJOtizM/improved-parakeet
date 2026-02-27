@@ -20,6 +20,11 @@ export interface IUpdateUserRequest {
   lastName?: string;
   username?: string;
   email?: string;
+  phone?: string;
+  timezone?: string;
+  language?: string;
+  jobTitle?: string;
+  department?: string;
   updatedBy: string;
 }
 
@@ -29,6 +34,11 @@ export interface IUpdateUserData {
   username: string;
   firstName: string;
   lastName: string;
+  phone?: string;
+  timezone?: string;
+  language?: string;
+  jobTitle?: string;
+  department?: string;
   status: string;
   orgId: string;
   updatedAt: Date;
@@ -97,6 +107,11 @@ export class UpdateUserUseCase {
       lastName: request.lastName,
       username: request.username,
       email: request.email,
+      phone: request.phone,
+      timezone: request.timezone,
+      language: request.language,
+      jobTitle: request.jobTitle,
+      department: request.department,
     });
 
     // Save updated user
@@ -113,6 +128,11 @@ export class UpdateUserUseCase {
         username: updatedUser.username,
         firstName: updatedUser.firstName,
         lastName: updatedUser.lastName,
+        phone: updatedUser.phone,
+        timezone: updatedUser.timezone,
+        language: updatedUser.language,
+        jobTitle: updatedUser.jobTitle,
+        department: updatedUser.department,
         status: updatedUser.status.getValue(),
         orgId: updatedUser.orgId,
         updatedAt: updatedUser.updatedAt,

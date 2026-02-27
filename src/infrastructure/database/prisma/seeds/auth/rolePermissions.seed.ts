@@ -27,7 +27,7 @@ export class RolePermissionsSeed {
             .map(p => ({ roleId: adminRole.id, permissionId: p.id }))
         : []),
 
-      // SUPERVISOR - Permisos amplios
+      // SUPERVISOR - Permisos amplios (sin gestión de usuarios, roles, org ni settings)
       ...(supervisorRole
         ? permissions
             .filter(
@@ -35,7 +35,8 @@ export class RolePermissionsSeed {
                 !p.name.includes('USERS:') &&
                 !p.name.includes('ROLES:') &&
                 !p.name.includes('ORGANIZATIONS:') &&
-                !p.name.includes('ORGANIZATION:UPDATE_SETTINGS')
+                !p.name.includes('ORGANIZATION:UPDATE_SETTINGS') &&
+                !p.name.includes('SETTINGS:')
             )
             .map(p => ({ roleId: supervisorRole.id, permissionId: p.id }))
         : []),

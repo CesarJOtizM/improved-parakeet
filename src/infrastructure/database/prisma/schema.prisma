@@ -33,10 +33,11 @@ model Organization {
   updatedAt DateTime @updatedAt
 
   // Relations
-  users      User[]
-  products   Product[]
-  warehouses Warehouse[]
-  categories Category[]
+  users              User[]
+  products           Product[]
+  warehouses         Warehouse[]
+  categories         Category[]
+  alertConfiguration AlertConfiguration?
 
   @@map("organizations")
 }
@@ -53,6 +54,11 @@ model User {
   lastLoginAt         DateTime?
   failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
+  phone               String?
+  timezone            String?   @default("UTC")
+  language            String?   @default("en")
+  jobTitle            String?
+  department          String?
   orgId               String
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
@@ -714,4 +720,24 @@ model ProcessedEvent {
   @@index([orgId, eventType])
   @@index([processedAt])
   @@map("processed_events")
+}
+
+// Alert Configuration (per organization - configures stock alert cron)
+model AlertConfiguration {
+  id                  String   @id @default(cuid())
+  orgId               String   @unique
+  cronFrequency       String   @default("EVERY_HOUR") // EVERY_HOUR, EVERY_6_HOURS, EVERY_12_HOURS, EVERY_DAY
+  notifyLowStock      Boolean  @default(true)
+  notifyCriticalStock Boolean  @default(true)
+  notifyOutOfStock    Boolean  @default(true)
+  recipientEmails     String   @default("")
+  isEnabled           Boolean  @default(true)
+  lastRunAt           DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@map("alert_configurations")
 }

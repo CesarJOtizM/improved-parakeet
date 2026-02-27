@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsIn,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class UpdateUserDto {
   @ApiProperty({
@@ -46,6 +54,57 @@ export class UpdateUserDto {
   @MinLength(2, { message: 'Last name must be at least 2 characters long' })
   @MaxLength(100, { message: 'Last name must be at most 100 characters long' })
   lastName?: string;
+
+  @ApiProperty({
+    description: 'Phone number',
+    example: '+1234567890',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Phone must be a string' })
+  @MaxLength(20, { message: 'Phone must be at most 20 characters long' })
+  phone?: string;
+
+  @ApiProperty({
+    description: 'User timezone (IANA format)',
+    example: 'America/Bogota',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Timezone must be a string' })
+  @MaxLength(50, { message: 'Timezone must be at most 50 characters long' })
+  timezone?: string;
+
+  @ApiProperty({
+    description: 'Preferred language',
+    example: 'en',
+    required: false,
+    enum: ['en', 'es'],
+  })
+  @IsOptional()
+  @IsString({ message: 'Language must be a string' })
+  @IsIn(['en', 'es'], { message: 'Language must be either "en" or "es"' })
+  language?: string;
+
+  @ApiProperty({
+    description: 'Job title',
+    example: 'Warehouse Manager',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Job title must be a string' })
+  @MaxLength(100, { message: 'Job title must be at most 100 characters long' })
+  jobTitle?: string;
+
+  @ApiProperty({
+    description: 'Department',
+    example: 'Operations',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Department must be a string' })
+  @MaxLength(100, { message: 'Department must be at most 100 characters long' })
+  department?: string;
 }
 
 export class UpdateUserResponseDto {
@@ -74,6 +133,11 @@ export class UpdateUserResponseDto {
     username: string;
     firstName: string;
     lastName: string;
+    phone?: string;
+    timezone?: string;
+    language?: string;
+    jobTitle?: string;
+    department?: string;
     status: string;
     orgId: string;
     updatedAt: Date;

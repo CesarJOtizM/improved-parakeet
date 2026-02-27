@@ -54,6 +54,7 @@ import {
   PrismaTransferRepository,
   PrismaWarehouseRepository,
 } from '@infrastructure/database/repositories';
+import { PrismaService } from '@infrastructure/database/prisma.service';
 import { NotificationService } from '@infrastructure/externalServices/notificationService';
 import { StockValidationJob } from '@infrastructure/jobs/stockValidationJob';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -163,6 +164,7 @@ import { createCacheModuleOptions, FunctionalCacheService } from '@shared/infras
     LowStockAlertEventHandler,
     StockThresholdExceededEventHandler,
     // Infrastructure services
+    PrismaService,
     NotificationService,
     // Cache service
     {

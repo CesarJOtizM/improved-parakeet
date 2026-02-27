@@ -16,6 +16,11 @@ export interface IUserProps {
   lastLoginAt?: Date;
   failedLoginAttempts: number;
   lockedUntil?: Date;
+  phone?: string;
+  timezone?: string;
+  language?: string;
+  jobTitle?: string;
+  department?: string;
   roles?: string[];
   permissions?: string[];
 }
@@ -55,6 +60,11 @@ export class User extends AggregateRoot<IUserProps> {
     if (props.firstName !== undefined) this.props.firstName = props.firstName;
     if (props.lastName !== undefined) this.props.lastName = props.lastName;
     if (props.username !== undefined) this.props.username = props.username;
+    if (props.phone !== undefined) this.props.phone = props.phone;
+    if (props.timezone !== undefined) this.props.timezone = props.timezone;
+    if (props.language !== undefined) this.props.language = props.language;
+    if (props.jobTitle !== undefined) this.props.jobTitle = props.jobTitle;
+    if (props.department !== undefined) this.props.department = props.department;
 
     this.updateTimestamp();
   }
@@ -204,6 +214,26 @@ export class User extends AggregateRoot<IUserProps> {
 
   get lockedUntil(): Date | undefined {
     return this.props.lockedUntil;
+  }
+
+  get phone(): string | undefined {
+    return this.props.phone;
+  }
+
+  get timezone(): string | undefined {
+    return this.props.timezone;
+  }
+
+  get language(): string | undefined {
+    return this.props.language;
+  }
+
+  get jobTitle(): string | undefined {
+    return this.props.jobTitle;
+  }
+
+  get department(): string | undefined {
+    return this.props.department;
   }
 
   get roles(): string[] {
