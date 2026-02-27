@@ -92,9 +92,17 @@ export class GetReturnsUseCase {
             aValue = a.returnNumber.getValue();
             bValue = b.returnNumber.getValue();
             break;
+          case 'type':
+            aValue = a.type.getValue();
+            bValue = b.type.getValue();
+            break;
           case 'status':
             aValue = a.status.getValue();
             bValue = b.status.getValue();
+            break;
+          case 'total':
+            aValue = a.getTotalAmount()?.getAmount() || 0;
+            bValue = b.getTotalAmount()?.getAmount() || 0;
             break;
           case 'createdAt':
             aValue = a.createdAt.getTime();

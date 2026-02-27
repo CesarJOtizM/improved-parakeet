@@ -41,7 +41,8 @@ export class ReportViewService {
   constructor(private readonly reportGenerationService: ReportGenerationService) {}
 
   /**
-   * Generate and return JSON data for frontend table display
+   * Generate and return JSON data for frontend table display.
+   * When no dateRange is provided, defaults to the current quarter to limit data volume.
    */
   public async viewReport(
     type: ReportTypeValue,
@@ -50,7 +51,16 @@ export class ReportViewService {
   ): Promise<IReportViewResult<unknown>> {
     this.logger.log('Viewing report', { type, orgId });
 
-    const result = await this.reportGenerationService.generateReport(type, parameters, orgId);
+    // Default to current quarter when no dateRange is specified
+    const effectiveParameters = parameters.dateRange
+      ? parameters
+      : { ...parameters, dateRange: this.getCurrentQuarterRange() };
+
+    const result = await this.reportGenerationService.generateReport(
+      type,
+      effectiveParameters,
+      orgId
+    );
 
     const columns = this.getColumnsForReportType(type);
     const title = this.getReportTitle(type);
@@ -988,5 +998,19 @@ export class ReportViewService {
       const value = item[field];
       return sum + (typeof value === 'number' ? value : 0);
     }, 0);
+  }
+
+  /**
+   * Returns the date range for the current quarter.
+   * Q1: Jan 1 – Mar 31, Q2: Apr 1 – Jun 30, Q3: Jul 1 – Sep 30, Q4: Oct 1 – Dec 31
+   */
+  private getCurrentQuarterRange(): { startDate: Date; endDate: Date } {
+    const now = new Date();
+    const year = now.getFullYear();
+    const quarter = Math.floor(now.getMonth() / 3);
+    const startMonth = quarter * 3;
+    const startDate = new Date(year, startMonth, 1);
+    const endDate = new Date(year, startMonth + 3, 0, 23, 59, 59, 999);
+    return { startDate, endDate };
   }
 }

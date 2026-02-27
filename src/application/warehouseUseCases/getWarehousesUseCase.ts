@@ -79,9 +79,17 @@ export class GetWarehousesUseCase {
             aValue = a.code.getValue();
             bValue = b.code.getValue();
             break;
+          case 'isActive':
+            aValue = a.isActive ? 1 : 0;
+            bValue = b.isActive ? 1 : 0;
+            break;
           case 'createdAt':
             aValue = a.createdAt.getTime();
             bValue = b.createdAt.getTime();
+            break;
+          case 'updatedAt':
+            aValue = a.updatedAt.getTime();
+            bValue = b.updatedAt.getTime();
             break;
           default:
             aValue = a.createdAt.getTime();

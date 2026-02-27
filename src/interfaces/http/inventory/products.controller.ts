@@ -121,7 +121,11 @@ export class ProductsController {
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'status', required: false, enum: ['ACTIVE', 'INACTIVE', 'DISCONTINUED'] })
   @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'sortBy', required: false, enum: ['name', 'sku', 'status', 'createdAt'] })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: ['name', 'sku', 'status', 'price', 'createdAt', 'updatedAt'],
+  })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiResponse({
     status: HttpStatus.OK,

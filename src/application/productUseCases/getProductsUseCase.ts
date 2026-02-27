@@ -117,9 +117,17 @@ export class GetProductsUseCase {
             aValue = a.status.getValue();
             bValue = b.status.getValue();
             break;
+          case 'price':
+            aValue = a.price?.getAmount() || 0;
+            bValue = b.price?.getAmount() || 0;
+            break;
           case 'createdAt':
             aValue = a.createdAt.getTime();
             bValue = b.createdAt.getTime();
+            break;
+          case 'updatedAt':
+            aValue = a.updatedAt.getTime();
+            bValue = b.updatedAt.getTime();
             break;
           default:
             aValue = a.createdAt.getTime();

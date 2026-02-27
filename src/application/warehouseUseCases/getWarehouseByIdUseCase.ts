@@ -33,34 +33,35 @@ export class GetWarehouseByIdUseCase {
       orgId: request.orgId,
     });
 
-    const warehouse = await this.warehouseRepository.findById(request.warehouseId, request.orgId);
+    // Fetch warehouse and pre-fetch user names in parallel for faster response
+    const [warehouse, userMap] = await Promise.all([
+      this.warehouseRepository.findById(request.warehouseId, request.orgId),
+      this.prisma.warehouse
+        .findUnique({
+          where: { id: request.warehouseId },
+          select: { statusChangedBy: true },
+        })
+        .then(async w => {
+          if (!w?.statusChangedBy) return null;
+          const user = await this.prisma.user.findUnique({
+            where: { id: w.statusChangedBy },
+            select: { firstName: true, lastName: true },
+          });
+          return user ? `${user.firstName} ${user.lastName}`.trim() : w.statusChangedBy;
+        }),
+    ]);
 
     if (!warehouse) {
       return err(new NotFoundError('Warehouse not found'));
     }
 
     const data = WarehouseMapper.toResponseData(warehouse);
-    const statusChangedByName = await this.resolveUserName(warehouse.statusChangedBy);
 
     return ok({
       success: true,
       message: 'Warehouse retrieved successfully',
-      data: { ...data, statusChangedBy: statusChangedByName },
+      data: { ...data, statusChangedBy: userMap },
       timestamp: new Date().toISOString(),
     });
-  }
-
-  private async resolveUserName(userId?: string | null): Promise<string | null> {
-    if (!userId) return null;
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { firstName: true, lastName: true },
-      });
-      if (!user) return userId;
-      return `${user.firstName} ${user.lastName}`.trim();
-    } catch {
-      return userId;
-    }
   }
 }

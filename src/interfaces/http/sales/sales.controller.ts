@@ -126,6 +126,18 @@ export class SalesController {
     summary: 'List sales',
     description: 'Get a list of sales with optional filters. Requires INVENTORY:VIEW permission.',
   })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'warehouseId', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, enum: ['DRAFT', 'CONFIRMED', 'CANCELLED'] })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: ['saleNumber', 'status', 'total', 'createdAt', 'confirmedAt'],
+  })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Sales retrieved successfully',

@@ -69,12 +69,12 @@ export class GetSalesDto {
   @ApiProperty({
     description: 'Sort by field',
     example: 'createdAt',
-    enum: ['saleNumber', 'status', 'createdAt', 'confirmedAt'],
+    enum: ['saleNumber', 'status', 'total', 'createdAt', 'confirmedAt'],
     required: false,
   })
   @IsOptional()
-  @IsEnum(['saleNumber', 'status', 'createdAt', 'confirmedAt'], {
-    message: 'Sort by must be one of: saleNumber, status, createdAt, confirmedAt',
+  @IsEnum(['saleNumber', 'status', 'total', 'createdAt', 'confirmedAt'], {
+    message: 'Sort by must be one of: saleNumber, status, total, createdAt, confirmedAt',
   })
   sortBy?: string;
 

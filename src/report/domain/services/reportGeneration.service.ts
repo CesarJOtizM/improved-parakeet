@@ -1,12 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@infrastructure/database/generated/prisma';
 
 import { IReportParametersInput, REPORT_TYPES, ReportTypeValue } from '../valueObjects';
 
+import { PrismaService } from '@infrastructure/database/prisma.service';
 import type { IMovementRepository } from '@movement/domain/ports/repositories';
 import type { IProductRepository } from '@product/domain/ports/repositories';
 import type { IReturnRepository } from '@returns/domain/ports/repositories';
 import type { ISaleRepository } from '@sale/domain/ports/repositories';
-import type { IStockRepository } from '@stock/domain/ports/repositories';
 import type { IWarehouseRepository } from '@warehouse/domain/ports/repositories';
 
 // Report data interfaces
@@ -248,13 +249,44 @@ export class ReportGenerationService {
     private readonly warehouseRepository: IWarehouseRepository,
     @Inject('MovementRepository')
     private readonly movementRepository: IMovementRepository,
-    @Inject('StockRepository')
-    private readonly stockRepository: IStockRepository,
     @Inject('SaleRepository')
     private readonly saleRepository: ISaleRepository,
     @Inject('ReturnRepository')
-    private readonly returnRepository: IReturnRepository
+    private readonly returnRepository: IReturnRepository,
+    private readonly prisma: PrismaService
   ) {}
+
+  /**
+   * Batch load all stock rows for an org in a single query.
+   * Returns a Map keyed by "productId-warehouseId" with quantity and unitCost.
+   * Replaces N+1 getStockWithCost() calls (P×W queries → 1 query).
+   */
+  private async batchLoadStock(
+    orgId: string,
+    warehouseId?: string,
+    productId?: string
+  ): Promise<Map<string, { quantity: number; unitCost: number }>> {
+    const rows = await this.prisma.$queryRaw<
+      Array<{ productId: string; warehouseId: string; quantity: number; unitCost: number }>
+    >`
+      SELECT "productId", "warehouseId",
+             COALESCE("quantity", 0)::float AS "quantity",
+             COALESCE("unitCost", 0)::float AS "unitCost"
+      FROM "stock"
+      WHERE "orgId" = ${orgId}
+        ${warehouseId ? Prisma.sql`AND "warehouseId" = ${warehouseId}` : Prisma.empty}
+        ${productId ? Prisma.sql`AND "productId" = ${productId}` : Prisma.empty}
+    `;
+
+    const map = new Map<string, { quantity: number; unitCost: number }>();
+    for (const row of rows) {
+      map.set(`${row.productId}-${row.warehouseId}`, {
+        quantity: row.quantity,
+        unitCost: row.unitCost,
+      });
+    }
+    return map;
+  }
 
   /**
    * Generate a report based on type and parameters
@@ -341,37 +373,30 @@ export class ReportGenerationService {
   ): Promise<IReportGenerationResult<IAvailableInventoryItem>> {
     this.logger.log('Generating available inventory report', { orgId });
 
-    const products = await this.productRepository.findAll(orgId);
-    const warehouses = await this.warehouseRepository.findAll(orgId);
+    const [products, warehouses, stockMap] = await Promise.all([
+      this.productRepository.findAll(orgId),
+      this.warehouseRepository.findAll(orgId),
+      this.batchLoadStock(orgId, parameters.warehouseId, parameters.productId),
+    ]);
     const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
 
     const data: IAvailableInventoryItem[] = [];
 
     for (const product of products) {
-      // Filter by product if specified
       if (parameters.productId && product.id !== parameters.productId) {
         continue;
       }
-
-      // Skip inactive products unless includeInactive is true
       if (!parameters.includeInactive && product.status.getValue() !== 'ACTIVE') {
         continue;
       }
 
       for (const warehouse of warehouses) {
-        // Filter by warehouse if specified
         if (parameters.warehouseId && warehouse.id !== parameters.warehouseId) {
           continue;
         }
 
-        const stockData = await this.stockRepository.getStockWithCost(
-          product.id,
-          warehouse.id,
-          orgId,
-          parameters.locationId
-        );
-
-        if (stockData && stockData.quantity.getNumericValue() > 0) {
+        const stock = stockMap.get(`${product.id}-${warehouse.id}`);
+        if (stock && stock.quantity > 0) {
           data.push({
             productId: product.id,
             productName: product.name.getValue(),
@@ -379,11 +404,11 @@ export class ReportGenerationService {
             warehouseId: warehouse.id,
             warehouseName: warehouseMap.get(warehouse.id) || 'Unknown',
             locationId: parameters.locationId,
-            quantity: stockData.quantity.getNumericValue(),
+            quantity: stock.quantity,
             unit: product.unit.getValue().code,
-            averageCost: stockData.averageCost.getAmount(),
-            totalValue: stockData.quantity.getNumericValue() * stockData.averageCost.getAmount(),
-            currency: stockData.averageCost.getCurrency(),
+            averageCost: stock.unitCost,
+            totalValue: stock.quantity * stock.unitCost,
+            currency: 'COP',
           });
         }
       }
@@ -402,21 +427,20 @@ export class ReportGenerationService {
   ): Promise<IReportGenerationResult<IMovementHistoryItem>> {
     this.logger.log('Generating movement history report', { orgId });
 
-    let movements;
-    if (parameters.dateRange) {
-      movements = await this.movementRepository.findByDateRange(
-        parameters.dateRange.startDate,
-        parameters.dateRange.endDate,
-        orgId
-      );
-    } else {
-      movements = await this.movementRepository.findAll(orgId);
-    }
+    const movementsPromise = parameters.dateRange
+      ? this.movementRepository.findByDateRange(
+          parameters.dateRange.startDate,
+          parameters.dateRange.endDate,
+          orgId
+        )
+      : this.movementRepository.findAll(orgId);
 
-    const warehouses = await this.warehouseRepository.findAll(orgId);
+    const [movements, warehouses, products] = await Promise.all([
+      movementsPromise,
+      this.warehouseRepository.findAll(orgId),
+      this.productRepository.findAll(orgId),
+    ]);
     const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
-
-    const products = await this.productRepository.findAll(orgId);
     const productMap = new Map(
       products.map(p => [p.id, { name: p.name.getValue(), sku: p.sku.getValue() }])
     );
@@ -478,39 +502,31 @@ export class ReportGenerationService {
   ): Promise<IReportGenerationResult<IValuationItem>> {
     this.logger.log('Generating valuation report', { orgId });
 
-    const products = await this.productRepository.findAll(orgId);
-    const warehouses = await this.warehouseRepository.findAll(orgId);
+    const [products, warehouses, stockMap] = await Promise.all([
+      this.productRepository.findAll(orgId),
+      this.warehouseRepository.findAll(orgId),
+      this.batchLoadStock(orgId, parameters.warehouseId, parameters.productId),
+    ]);
     const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
 
     const data: IValuationItem[] = [];
 
     for (const product of products) {
-      // Filter by product if specified
       if (parameters.productId && product.id !== parameters.productId) {
         continue;
       }
-
-      // Filter by category if specified
       if (parameters.category) {
-        // Assuming category is stored somehow - simplified for now
         continue;
       }
 
       for (const warehouse of warehouses) {
-        // Filter by warehouse if specified
         if (parameters.warehouseId && warehouse.id !== parameters.warehouseId) {
           continue;
         }
 
-        const stockData = await this.stockRepository.getStockWithCost(
-          product.id,
-          warehouse.id,
-          orgId
-        );
-
-        if (stockData && stockData.quantity.getNumericValue() > 0) {
-          const totalValue =
-            stockData.quantity.getNumericValue() * stockData.averageCost.getAmount();
+        const stock = stockMap.get(`${product.id}-${warehouse.id}`);
+        if (stock && stock.quantity > 0) {
+          const totalValue = stock.quantity * stock.unitCost;
 
           data.push({
             productId: product.id,
@@ -519,10 +535,10 @@ export class ReportGenerationService {
             category: parameters.category,
             warehouseId: warehouse.id,
             warehouseName: warehouseMap.get(warehouse.id) || 'Unknown',
-            quantity: stockData.quantity.getNumericValue(),
-            averageCost: stockData.averageCost.getAmount(),
+            quantity: stock.quantity,
+            averageCost: stock.unitCost,
             totalValue,
-            currency: stockData.averageCost.getCurrency(),
+            currency: 'COP',
           });
         }
       }
@@ -541,35 +557,31 @@ export class ReportGenerationService {
   ): Promise<IReportGenerationResult<ILowStockItem>> {
     this.logger.log('Generating low stock report', { orgId });
 
-    const products = await this.productRepository.findLowStock(orgId);
-    const warehouses = await this.warehouseRepository.findAll(orgId);
+    const [products, warehouses, stockMap] = await Promise.all([
+      this.productRepository.findLowStock(orgId),
+      this.warehouseRepository.findAll(orgId),
+      this.batchLoadStock(orgId, parameters.warehouseId),
+    ]);
     const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
 
     const data: ILowStockItem[] = [];
 
     for (const product of products) {
       for (const warehouse of warehouses) {
-        // Filter by warehouse if specified
         if (parameters.warehouseId && warehouse.id !== parameters.warehouseId) {
           continue;
         }
 
-        const quantity = await this.stockRepository.getStockQuantity(
-          product.id,
-          warehouse.id,
-          orgId
-        );
+        const stock = stockMap.get(`${product.id}-${warehouse.id}`);
+        const currentStock = stock?.quantity ?? 0;
 
-        // Simplified - assuming minimum stock is configured elsewhere
-        const minimumStock = 10; // Default value
-        const reorderPoint = 15; // Default value
-        const currentStock = quantity.getNumericValue();
+        const minimumStock = 10;
+        const reorderPoint = 15;
 
         if (currentStock < minimumStock) {
           const deficit = minimumStock - currentStock;
           const severity = currentStock === 0 ? 'CRITICAL' : 'WARNING';
 
-          // Filter by severity if specified
           if (parameters.severity && severity !== parameters.severity) {
             continue;
           }
@@ -604,18 +616,18 @@ export class ReportGenerationService {
   ): Promise<IReportGenerationResult<IMovementsSummaryItem>> {
     this.logger.log('Generating movements summary report', { orgId });
 
-    let movements;
-    if (parameters.dateRange) {
-      movements = await this.movementRepository.findByDateRange(
-        parameters.dateRange.startDate,
-        parameters.dateRange.endDate,
-        orgId
-      );
-    } else {
-      movements = await this.movementRepository.findPostedMovements(orgId);
-    }
+    const movementsPromise = parameters.dateRange
+      ? this.movementRepository.findByDateRange(
+          parameters.dateRange.startDate,
+          parameters.dateRange.endDate,
+          orgId
+        )
+      : this.movementRepository.findPostedMovements(orgId);
 
-    const warehouses = await this.warehouseRepository.findAll(orgId);
+    const [movements, warehouses] = await Promise.all([
+      movementsPromise,
+      this.warehouseRepository.findAll(orgId),
+    ]);
     const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
 
     // Group by type and warehouse
@@ -682,25 +694,25 @@ export class ReportGenerationService {
   ): Promise<IReportGenerationResult<IFinancialReportItem>> {
     this.logger.log('Generating financial report', { orgId });
 
-    const warehouses = await this.warehouseRepository.findAll(orgId);
-    const products = await this.productRepository.findAll(orgId);
+    const salesPromise = parameters.dateRange
+      ? this.saleRepository.findByDateRange(
+          parameters.dateRange.startDate,
+          parameters.dateRange.endDate,
+          orgId
+        )
+      : this.saleRepository.findAll(orgId);
 
-    let sales;
-    if (parameters.dateRange) {
-      sales = await this.saleRepository.findByDateRange(
-        parameters.dateRange.startDate,
-        parameters.dateRange.endDate,
-        orgId
-      );
-    } else {
-      sales = await this.saleRepository.findAll(orgId);
-    }
+    const [warehouses, products, sales, stockMap] = await Promise.all([
+      this.warehouseRepository.findAll(orgId),
+      this.productRepository.findAll(orgId),
+      salesPromise,
+      this.batchLoadStock(orgId, parameters.warehouseId),
+    ]);
 
     const data: IFinancialReportItem[] = [];
     const period = this.getPeriodString(parameters.dateRange);
 
     for (const warehouse of warehouses) {
-      // Filter by warehouse if specified
       if (parameters.warehouseId && warehouse.id !== parameters.warehouseId) {
         continue;
       }
@@ -709,16 +721,11 @@ export class ReportGenerationService {
       const totalCost = 0;
       let totalRevenue = 0;
 
-      // Calculate inventory value
+      // Calculate inventory value from batch-loaded stock map
       for (const product of products) {
-        const stockData = await this.stockRepository.getStockWithCost(
-          product.id,
-          warehouse.id,
-          orgId
-        );
-        if (stockData) {
-          totalInventoryValue +=
-            stockData.quantity.getNumericValue() * stockData.averageCost.getAmount();
+        const stock = stockMap.get(`${product.id}-${warehouse.id}`);
+        if (stock) {
+          totalInventoryValue += stock.quantity * stock.unitCost;
         }
       }
 
@@ -728,8 +735,6 @@ export class ReportGenerationService {
         if (sale.status.getValue() === 'CONFIRMED') {
           for (const line of sale.getLines()) {
             totalRevenue += line.quantity.getNumericValue() * line.salePrice.getAmount();
-            // Note: SaleLine does not have unitCost, cost calculation would require
-            // fetching product cost separately if needed
           }
         }
       }
@@ -764,8 +769,11 @@ export class ReportGenerationService {
   ): Promise<IReportGenerationResult<ITurnoverItem>> {
     this.logger.log('Generating turnover report', { orgId });
 
-    const products = await this.productRepository.findAll(orgId);
-    const warehouses = await this.warehouseRepository.findAll(orgId);
+    const [products, warehouses, stockMap] = await Promise.all([
+      this.productRepository.findAll(orgId),
+      this.warehouseRepository.findAll(orgId),
+      this.batchLoadStock(orgId, parameters.warehouseId, parameters.productId),
+    ]);
     const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
 
     const data: ITurnoverItem[] = [];
@@ -773,17 +781,12 @@ export class ReportGenerationService {
     const daysInPeriod = this.getDaysInPeriod(parameters.dateRange);
 
     for (const product of products) {
-      // Filter by product if specified
       if (parameters.productId && product.id !== parameters.productId) {
         continue;
       }
 
-      // Calculate COGS for this product
-      // Note: SaleLine does not have unitCost, COGS calculation would require
-      // fetching product cost separately if needed
       const cogs = 0;
 
-      // Calculate average inventory (simplified)
       let totalInventory = 0;
       let warehouseCount = 0;
       for (const warehouse of warehouses) {
@@ -791,14 +794,9 @@ export class ReportGenerationService {
           continue;
         }
 
-        const stockData = await this.stockRepository.getStockWithCost(
-          product.id,
-          warehouse.id,
-          orgId
-        );
-        if (stockData) {
-          totalInventory +=
-            stockData.quantity.getNumericValue() * stockData.averageCost.getAmount();
+        const stock = stockMap.get(`${product.id}-${warehouse.id}`);
+        if (stock) {
+          totalInventory += stock.quantity * stock.unitCost;
           warehouseCount++;
         }
       }
@@ -807,7 +805,6 @@ export class ReportGenerationService {
       const turnoverRate = averageInventory > 0 ? cogs / averageInventory : 0;
       const daysOfInventory = turnoverRate > 0 ? daysInPeriod / turnoverRate : daysInPeriod;
 
-      // Classify based on turnover rate
       let classification: 'SLOW_MOVING' | 'NORMAL' | 'FAST_MOVING';
       if (turnoverRate < 1) {
         classification = 'SLOW_MOVING';
@@ -851,18 +848,18 @@ export class ReportGenerationService {
   ): Promise<IReportGenerationResult<ISalesReportItem>> {
     this.logger.log('Generating sales report', { orgId });
 
-    let sales;
-    if (parameters.dateRange) {
-      sales = await this.saleRepository.findByDateRange(
-        parameters.dateRange.startDate,
-        parameters.dateRange.endDate,
-        orgId
-      );
-    } else {
-      sales = await this.saleRepository.findAll(orgId);
-    }
+    const salesPromise = parameters.dateRange
+      ? this.saleRepository.findByDateRange(
+          parameters.dateRange.startDate,
+          parameters.dateRange.endDate,
+          orgId
+        )
+      : this.saleRepository.findAll(orgId);
 
-    const warehouses = await this.warehouseRepository.findAll(orgId);
+    const [sales, warehouses] = await Promise.all([
+      salesPromise,
+      this.warehouseRepository.findAll(orgId),
+    ]);
     const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
 
     const data: ISalesReportItem[] = [];
@@ -918,18 +915,18 @@ export class ReportGenerationService {
   ): Promise<IReportGenerationResult<ISalesByProductItem>> {
     this.logger.log('Generating sales by product report', { orgId });
 
-    let sales;
-    if (parameters.dateRange) {
-      sales = await this.saleRepository.findByDateRange(
-        parameters.dateRange.startDate,
-        parameters.dateRange.endDate,
-        orgId
-      );
-    } else {
-      sales = await this.saleRepository.findAll(orgId);
-    }
+    const salesPromise = parameters.dateRange
+      ? this.saleRepository.findByDateRange(
+          parameters.dateRange.startDate,
+          parameters.dateRange.endDate,
+          orgId
+        )
+      : this.saleRepository.findAll(orgId);
 
-    const products = await this.productRepository.findAll(orgId);
+    const [sales, products] = await Promise.all([
+      salesPromise,
+      this.productRepository.findAll(orgId),
+    ]);
     const productMap = new Map(
       products.map(p => [p.id, { name: p.name.getValue(), sku: p.sku.getValue() }])
     );
@@ -1015,18 +1012,18 @@ export class ReportGenerationService {
   ): Promise<IReportGenerationResult<ISalesByWarehouseItem>> {
     this.logger.log('Generating sales by warehouse report', { orgId });
 
-    let sales;
-    if (parameters.dateRange) {
-      sales = await this.saleRepository.findByDateRange(
-        parameters.dateRange.startDate,
-        parameters.dateRange.endDate,
-        orgId
-      );
-    } else {
-      sales = await this.saleRepository.findAll(orgId);
-    }
+    const salesPromise = parameters.dateRange
+      ? this.saleRepository.findByDateRange(
+          parameters.dateRange.startDate,
+          parameters.dateRange.endDate,
+          orgId
+        )
+      : this.saleRepository.findAll(orgId);
 
-    const warehouses = await this.warehouseRepository.findAll(orgId);
+    const [sales, warehouses] = await Promise.all([
+      salesPromise,
+      this.warehouseRepository.findAll(orgId),
+    ]);
     const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
 
     const warehouseSalesMap = new Map<
@@ -1088,18 +1085,18 @@ export class ReportGenerationService {
   ): Promise<IReportGenerationResult<IReturnsReportItem>> {
     this.logger.log('Generating returns report', { orgId });
 
-    let returns;
-    if (parameters.dateRange) {
-      returns = await this.returnRepository.findByDateRange(
-        parameters.dateRange.startDate,
-        parameters.dateRange.endDate,
-        orgId
-      );
-    } else {
-      returns = await this.returnRepository.findAll(orgId);
-    }
+    const returnsPromise = parameters.dateRange
+      ? this.returnRepository.findByDateRange(
+          parameters.dateRange.startDate,
+          parameters.dateRange.endDate,
+          orgId
+        )
+      : this.returnRepository.findAll(orgId);
 
-    const warehouses = await this.warehouseRepository.findAll(orgId);
+    const [returns, warehouses] = await Promise.all([
+      returnsPromise,
+      this.warehouseRepository.findAll(orgId),
+    ]);
     const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
 
     const data: IReturnsReportItem[] = [];
@@ -1165,28 +1162,23 @@ export class ReportGenerationService {
   ): Promise<IReportGenerationResult<IReturnsByTypeItem>> {
     this.logger.log('Generating returns by type report', { orgId });
 
-    let returns;
-    if (parameters.dateRange) {
-      returns = await this.returnRepository.findByDateRange(
-        parameters.dateRange.startDate,
-        parameters.dateRange.endDate,
-        orgId
-      );
-    } else {
-      returns = await this.returnRepository.findAll(orgId);
-    }
+    const returnsPromise = parameters.dateRange
+      ? this.returnRepository.findByDateRange(
+          parameters.dateRange.startDate,
+          parameters.dateRange.endDate,
+          orgId
+        )
+      : this.returnRepository.findAll(orgId);
 
-    // Get sales count for return rate calculation
-    let sales;
-    if (parameters.dateRange) {
-      sales = await this.saleRepository.findByDateRange(
-        parameters.dateRange.startDate,
-        parameters.dateRange.endDate,
-        orgId
-      );
-    } else {
-      sales = await this.saleRepository.findAll(orgId);
-    }
+    const salesPromise = parameters.dateRange
+      ? this.saleRepository.findByDateRange(
+          parameters.dateRange.startDate,
+          parameters.dateRange.endDate,
+          orgId
+        )
+      : this.saleRepository.findAll(orgId);
+
+    const [returns, sales] = await Promise.all([returnsPromise, salesPromise]);
 
     const typeStatsMap = new Map<
       string,
@@ -1275,33 +1267,30 @@ export class ReportGenerationService {
   ): Promise<IReportGenerationResult<IReturnsByProductItem>> {
     this.logger.log('Generating returns by product report', { orgId });
 
-    let returns;
-    if (parameters.dateRange) {
-      returns = await this.returnRepository.findByDateRange(
-        parameters.dateRange.startDate,
-        parameters.dateRange.endDate,
-        orgId
-      );
-    } else {
-      returns = await this.returnRepository.findAll(orgId);
-    }
+    const returnsPromise = parameters.dateRange
+      ? this.returnRepository.findByDateRange(
+          parameters.dateRange.startDate,
+          parameters.dateRange.endDate,
+          orgId
+        )
+      : this.returnRepository.findAll(orgId);
 
-    const products = await this.productRepository.findAll(orgId);
+    const salesPromise = parameters.dateRange
+      ? this.saleRepository.findByDateRange(
+          parameters.dateRange.startDate,
+          parameters.dateRange.endDate,
+          orgId
+        )
+      : this.saleRepository.findAll(orgId);
+
+    const [returns, products, sales] = await Promise.all([
+      returnsPromise,
+      this.productRepository.findAll(orgId),
+      salesPromise,
+    ]);
     const productMap = new Map(
       products.map(p => [p.id, { name: p.name.getValue(), sku: p.sku.getValue() }])
     );
-
-    // Get sales for return rate calculation
-    let sales;
-    if (parameters.dateRange) {
-      sales = await this.saleRepository.findByDateRange(
-        parameters.dateRange.startDate,
-        parameters.dateRange.endDate,
-        orgId
-      );
-    } else {
-      sales = await this.saleRepository.findAll(orgId);
-    }
 
     // Calculate quantity sold per product
     const productSalesMap = new Map<string, number>();
@@ -1415,16 +1404,16 @@ export class ReportGenerationService {
       throw new Error('Sale ID is required for returns by sale report');
     }
 
-    // Validate sale exists
-    const sale = await this.saleRepository.findById(parameters.saleId, orgId);
+    // Validate sale + fetch returns + warehouses in parallel
+    const [sale, returns, warehouses] = await Promise.all([
+      this.saleRepository.findById(parameters.saleId, orgId),
+      this.returnRepository.findBySaleId(parameters.saleId, orgId),
+      this.warehouseRepository.findAll(orgId),
+    ]);
+
     if (!sale) {
       throw new Error(`Sale with ID ${parameters.saleId} not found`);
     }
-
-    // Find returns by sale ID
-    const returns = await this.returnRepository.findBySaleId(parameters.saleId, orgId);
-
-    const warehouses = await this.warehouseRepository.findAll(orgId);
     const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
 
     const data: IReturnsReportItem[] = [];
@@ -1528,21 +1517,23 @@ export class ReportGenerationService {
   ): Promise<IReportGenerationResult<IAbcAnalysisItem>> {
     this.logger.log('Generating ABC analysis report', { orgId });
 
-    let sales;
-    if (parameters.dateRange) {
-      sales = await this.saleRepository.findByDateRange(
-        parameters.dateRange.startDate,
-        parameters.dateRange.endDate,
-        orgId
-      );
-    } else {
-      sales = await this.saleRepository.findAll(orgId);
-    }
+    const salesPromise = parameters.dateRange
+      ? this.saleRepository.findByDateRange(
+          parameters.dateRange.startDate,
+          parameters.dateRange.endDate,
+          orgId
+        )
+      : this.saleRepository.findAll(orgId);
 
-    const products = await this.productRepository.findAll(orgId);
+    const [sales, products] = await Promise.all([
+      salesPromise,
+      this.productRepository.findAll(orgId),
+    ]);
     const productMap = new Map(
       products.map(p => [p.id, { name: p.name.getValue(), sku: p.sku.getValue() }])
     );
+    // O(1) lookup map for full product entities (used for category filtering)
+    const productByIdMap = new Map(products.map(p => [p.id, p]));
 
     // Aggregate revenue per product from confirmed sales
     const productRevenueMap = new Map<
@@ -1607,14 +1598,14 @@ export class ReportGenerationService {
 
       // Filter by category if specified
       if (parameters.category) {
-        const product = products.find(p => p.id === productId);
+        const product = productByIdMap.get(productId);
         const categoryNames = product?.categories?.map(c => c.name) ?? [];
         if (product && !categoryNames.includes(parameters.category)) {
           continue;
         }
       }
 
-      const product = products.find(p => p.id === productId);
+      const product = productByIdMap.get(productId);
       const categoryName = product?.categories?.[0]?.name;
 
       data.push({
@@ -1651,18 +1642,22 @@ export class ReportGenerationService {
     const now = new Date();
     const cutoffDate = new Date(now.getTime() - deadStockDays * 24 * 60 * 60 * 1000);
 
-    const products = await this.productRepository.findAll(orgId);
-    const warehouses = await this.warehouseRepository.findAll(orgId);
+    // Fetch sales only from cutoff date forward (we only need to know if a sale exists after cutoff)
+    const [products, warehouses, stockMap, recentSales] = await Promise.all([
+      this.productRepository.findAll(orgId),
+      this.warehouseRepository.findAll(orgId),
+      this.batchLoadStock(orgId, parameters.warehouseId, parameters.productId),
+      this.saleRepository.findByDateRange(cutoffDate, now, orgId),
+    ]);
     const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
 
-    // Get all confirmed sales to find last sale date per product
-    const allSales = await this.saleRepository.findAll(orgId);
-    const confirmedSales = allSales.filter(s => s.status.getValue() === 'CONFIRMED');
-
-    // Build map of last sale date per product
+    // Build set of products that have sales after cutoff (these are NOT dead stock)
+    const recentlySoldProducts = new Set<string>();
     const lastSaleDateMap = new Map<string, Date>();
-    for (const sale of confirmedSales) {
+    const confirmedRecentSales = recentSales.filter(s => s.status.getValue() === 'CONFIRMED');
+    for (const sale of confirmedRecentSales) {
       for (const line of sale.getLines()) {
+        recentlySoldProducts.add(line.productId);
         const existing = lastSaleDateMap.get(line.productId);
         const saleDate = sale.createdAt;
         if (!existing || saleDate > existing) {
@@ -1674,19 +1669,15 @@ export class ReportGenerationService {
     const data: IDeadStockItem[] = [];
 
     for (const product of products) {
-      // Skip inactive unless explicitly requested
       if (!parameters.includeInactive && product.status.getValue() !== 'ACTIVE') {
         continue;
       }
-
       if (parameters.productId && product.id !== parameters.productId) {
         continue;
       }
 
-      const lastSaleDate = lastSaleDateMap.get(product.id);
-
-      // Only include products with no sale or last sale before cutoff
-      if (lastSaleDate && lastSaleDate >= cutoffDate) {
+      // Skip products that have recent sales (after cutoff)
+      if (recentlySoldProducts.has(product.id)) {
         continue;
       }
 
@@ -1695,19 +1686,13 @@ export class ReportGenerationService {
           continue;
         }
 
-        const stockData = await this.stockRepository.getStockWithCost(
-          product.id,
-          warehouse.id,
-          orgId
-        );
-
-        if (!stockData || stockData.quantity.getNumericValue() <= 0) {
+        const stock = stockMap.get(`${product.id}-${warehouse.id}`);
+        if (!stock || stock.quantity <= 0) {
           continue;
         }
 
-        const quantity = stockData.quantity.getNumericValue();
-        const avgCost = stockData.averageCost.getAmount();
-        const stockValue = quantity * avgCost;
+        const stockValue = stock.quantity * stock.unitCost;
+        const lastSaleDate = lastSaleDateMap.get(product.id);
 
         const daysSinceLastSale = lastSaleDate
           ? Math.floor((now.getTime() - lastSaleDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -1729,7 +1714,7 @@ export class ReportGenerationService {
           category: parameters.category,
           warehouseId: warehouse.id,
           warehouseName: warehouseMap.get(warehouse.id) || 'Unknown',
-          currentStock: quantity,
+          currentStock: stock.quantity,
           stockValue,
           daysSinceLastSale,
           lastSaleDate,

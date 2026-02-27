@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '@infrastructure/database/prisma.service';
 import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
@@ -18,14 +19,21 @@ export interface IGetTransfersRequest {
   sortOrder?: 'asc' | 'desc';
 }
 
-export type IGetTransfersResponse = IPaginatedResponse<ITransferData>;
+export interface ITransferListItemData extends ITransferData {
+  fromWarehouseName: string;
+  toWarehouseName: string;
+  totalQuantity: number;
+}
+
+export type IGetTransfersResponse = IPaginatedResponse<ITransferListItemData>;
 
 @Injectable()
 export class GetTransfersUseCase {
   private readonly logger = new Logger(GetTransfersUseCase.name);
 
   constructor(
-    @Inject('TransferRepository') private readonly transferRepository: ITransferRepository
+    @Inject('TransferRepository') private readonly transferRepository: ITransferRepository,
+    private readonly prisma: PrismaService
   ) {}
 
   async execute(
@@ -121,6 +129,19 @@ export class GetTransfersUseCase {
     const paginatedTransfers = transfers.slice(skip, skip + limit);
     const totalPages = Math.ceil(total / limit);
 
+    // Batch-load warehouse names for the paginated results
+    const warehouseIds = new Set<string>();
+    paginatedTransfers.forEach(t => {
+      warehouseIds.add(t.fromWarehouseId);
+      warehouseIds.add(t.toWarehouseId);
+    });
+
+    const warehouses = await this.prisma.warehouse.findMany({
+      where: { id: { in: [...warehouseIds] } },
+      select: { id: true, name: true },
+    });
+    const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
+
     return ok({
       success: true,
       message: 'Transfers retrieved successfully',
@@ -128,10 +149,15 @@ export class GetTransfersUseCase {
         id: transfer.id,
         fromWarehouseId: transfer.fromWarehouseId,
         toWarehouseId: transfer.toWarehouseId,
+        fromWarehouseName: warehouseMap.get(transfer.fromWarehouseId) || '',
+        toWarehouseName: warehouseMap.get(transfer.toWarehouseId) || '',
         status: transfer.status.getValue(),
         createdBy: transfer.createdBy,
         note: transfer.note,
         linesCount: transfer.getLines().length,
+        totalQuantity: transfer
+          .getLines()
+          .reduce((sum, l) => sum + l.quantity.getNumericValue(), 0),
         orgId: transfer.orgId!,
         createdAt: transfer.createdAt,
         updatedAt: transfer.updatedAt,

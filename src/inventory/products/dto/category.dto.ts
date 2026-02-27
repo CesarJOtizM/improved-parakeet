@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type, Transform } from 'class-transformer';
 import {
   IsBoolean,
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -93,4 +94,30 @@ export class GetCategoriesQueryDto {
   @Min(1)
   @Max(100)
   limit?: number;
+
+  @ApiProperty({
+    description: 'Sort by field',
+    example: 'name',
+    enum: ['name', 'isActive', 'productCount', 'createdAt', 'updatedAt'],
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @IsEnum(['name', 'isActive', 'productCount', 'createdAt', 'updatedAt'], {
+    message: 'SortBy must be one of: name, isActive, productCount, createdAt, updatedAt',
+  })
+  sortBy?: string;
+
+  @ApiProperty({
+    description: 'Sort order',
+    example: 'asc',
+    enum: ['asc', 'desc'],
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @IsEnum(['asc', 'desc'], {
+    message: 'SortOrder must be one of: asc, desc',
+  })
+  sortOrder?: 'asc' | 'desc';
 }

@@ -21,7 +21,14 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CreateCategoryDto, GetCategoriesQueryDto, UpdateCategoryDto } from '@product/dto';
 import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
 import { OrgId } from '@shared/decorators/orgId.decorator';
@@ -49,6 +56,17 @@ export class CategoriesController {
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(SYSTEM_PERMISSIONS.PRODUCTS_READ)
   @ApiOperation({ summary: 'Get all categories' })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'parentId', required: false, type: String })
+  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: ['name', 'isActive', 'productCount', 'createdAt', 'updatedAt'],
+  })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiResponse({ status: HttpStatus.OK, description: 'Categories retrieved successfully' })
   async getCategories(@Query() query: GetCategoriesQueryDto, @OrgId() orgId: string) {
     this.logger.log('Getting categories', { orgId, ...query });
@@ -60,6 +78,8 @@ export class CategoriesController {
       search: query.search,
       parentId: query.parentId,
       isActive: query.isActive,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
     });
 
     return resultToHttpResponse(result);

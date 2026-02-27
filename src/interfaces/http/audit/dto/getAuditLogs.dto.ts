@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsOptional, IsString, IsInt, Min, IsDateString } from 'class-validator';
+import { IsOptional, IsString, IsInt, Min, IsDateString, IsEnum } from 'class-validator';
 
 export class GetAuditLogsQueryDto {
   @ApiPropertyOptional({ description: 'Page number', example: 1, default: 1 })
@@ -60,6 +60,30 @@ export class GetAuditLogsQueryDto {
   @IsOptional()
   @IsDateString()
   endDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Sort by field',
+    example: 'createdAt',
+    enum: ['action', 'entityType', 'httpMethod', 'httpStatusCode', 'createdAt'],
+  })
+  @IsOptional()
+  @IsString()
+  @IsEnum(['action', 'entityType', 'httpMethod', 'httpStatusCode', 'createdAt'], {
+    message: 'SortBy must be one of: action, entityType, httpMethod, httpStatusCode, createdAt',
+  })
+  sortBy?: string;
+
+  @ApiPropertyOptional({
+    description: 'Sort order',
+    example: 'desc',
+    enum: ['asc', 'desc'],
+  })
+  @IsOptional()
+  @IsString()
+  @IsEnum(['asc', 'desc'], {
+    message: 'SortOrder must be one of: asc, desc',
+  })
+  sortOrder?: 'asc' | 'desc';
 }
 
 export class AuditLogItemDto {

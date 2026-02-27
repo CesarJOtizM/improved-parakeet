@@ -50,13 +50,13 @@ export class GetWarehousesQueryDto {
   @ApiProperty({
     description: 'Sort by field',
     example: 'name',
-    enum: ['name', 'code', 'createdAt'],
+    enum: ['name', 'code', 'isActive', 'createdAt', 'updatedAt'],
     required: false,
   })
   @IsOptional()
   @IsString({ message: 'SortBy must be a string' })
-  @IsEnum(['name', 'code', 'createdAt'], {
-    message: 'SortBy must be one of: name, code, createdAt',
+  @IsEnum(['name', 'code', 'isActive', 'createdAt', 'updatedAt'], {
+    message: 'SortBy must be one of: name, code, isActive, createdAt, updatedAt',
   })
   sortBy?: string;
 

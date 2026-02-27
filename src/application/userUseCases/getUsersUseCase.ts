@@ -10,6 +10,8 @@ export interface IGetUsersRequest {
   limit?: number;
   status?: string;
   search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface IUserListItem {
@@ -63,6 +65,50 @@ export class GetUsersUseCase {
           user.firstName.toLowerCase().includes(searchLower) ||
           user.lastName.toLowerCase().includes(searchLower)
       );
+    }
+
+    // Apply sorting
+    if (request.sortBy) {
+      const sortOrder = request.sortOrder || 'asc';
+      users.sort((a, b) => {
+        let aValue: string | number;
+        let bValue: string | number;
+
+        switch (request.sortBy) {
+          case 'email':
+            aValue = a.email;
+            bValue = b.email;
+            break;
+          case 'username':
+            aValue = a.username;
+            bValue = b.username;
+            break;
+          case 'firstName':
+            aValue = a.firstName;
+            bValue = b.firstName;
+            break;
+          case 'lastName':
+            aValue = a.lastName;
+            bValue = b.lastName;
+            break;
+          case 'status':
+            aValue = a.status.getValue();
+            bValue = b.status.getValue();
+            break;
+          case 'lastLoginAt':
+            aValue = a.lastLoginAt?.getTime() || 0;
+            bValue = b.lastLoginAt?.getTime() || 0;
+            break;
+          case 'createdAt':
+          default:
+            aValue = a.createdAt.getTime();
+            bValue = b.createdAt.getTime();
+        }
+
+        if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
     }
 
     // Apply pagination

@@ -55,6 +55,20 @@ export class StockController {
     type: Boolean,
     description: 'Filter products below minimum quantity (requires reorder rules)',
   })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: [
+      'productName',
+      'productSku',
+      'warehouseName',
+      'quantity',
+      'averageCost',
+      'totalValue',
+      'lastMovementAt',
+    ],
+  })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Stock retrieved successfully',
@@ -67,7 +81,9 @@ export class StockController {
     @OrgId() orgId: string,
     @Query('warehouseId') warehouseId?: string,
     @Query('productId') productId?: string,
-    @Query('lowStock') lowStock?: string
+    @Query('lowStock') lowStock?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc'
   ): Promise<unknown> {
     this.logger.log('Getting stock', { orgId, warehouseId, productId, lowStock });
 
@@ -76,6 +92,8 @@ export class StockController {
       warehouseId,
       productId,
       lowStock: lowStock === 'true',
+      sortBy,
+      sortOrder,
     });
 
     return resultToHttpResponse(result);

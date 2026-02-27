@@ -193,6 +193,12 @@ export class UsersController {
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'status', required: false, enum: ['ACTIVE', 'INACTIVE', 'LOCKED'] })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: ['email', 'username', 'firstName', 'lastName', 'status', 'createdAt', 'lastLoginAt'],
+  })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Users retrieved successfully',
@@ -214,6 +220,8 @@ export class UsersController {
       limit: query.limit,
       status: query.status,
       search: query.search,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
     };
 
     const result = await this.getUsersUseCase.execute(request);

@@ -13,6 +13,8 @@ export interface IGetCategoriesRequest {
   search?: string;
   parentId?: string;
   isActive?: boolean;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface ICategoryData {
@@ -77,23 +79,62 @@ export class GetCategoriesUseCase {
     // Count products per category (using categoryId FK)
     const allProducts = await this.productRepository.findAll(request.orgId);
 
-    const data: ICategoryData[] = paginatedCategories.map(category => {
-      const productCount = allProducts.filter(p =>
-        p.categories.some(c => c.id === category.id)
-      ).length;
+    // Build product count map once
+    const productCountMap = new Map<string, number>();
+    for (const category of paginatedCategories) {
+      productCountMap.set(
+        category.id,
+        allProducts.filter(p => p.categories.some(c => c.id === category.id)).length
+      );
+    }
 
-      return {
-        id: category.id,
-        name: category.name,
-        description: category.description,
-        parentId: category.parentId,
-        parentName: category.parentId ? categoryMap.get(category.parentId) : undefined,
-        isActive: category.isActive,
-        productCount,
-        createdAt: category.createdAt,
-        updatedAt: category.updatedAt,
-      };
-    });
+    const data: ICategoryData[] = paginatedCategories.map(category => ({
+      id: category.id,
+      name: category.name,
+      description: category.description,
+      parentId: category.parentId,
+      parentName: category.parentId ? categoryMap.get(category.parentId) : undefined,
+      isActive: category.isActive,
+      productCount: productCountMap.get(category.id) || 0,
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
+    }));
+
+    // Apply sorting
+    if (request.sortBy) {
+      const sortOrder = request.sortOrder || 'asc';
+      data.sort((a, b) => {
+        let aValue: string | number;
+        let bValue: string | number;
+
+        switch (request.sortBy) {
+          case 'name':
+            aValue = a.name;
+            bValue = b.name;
+            break;
+          case 'isActive':
+            aValue = a.isActive ? 1 : 0;
+            bValue = b.isActive ? 1 : 0;
+            break;
+          case 'productCount':
+            aValue = a.productCount;
+            bValue = b.productCount;
+            break;
+          case 'updatedAt':
+            aValue = a.updatedAt.getTime();
+            bValue = b.updatedAt.getTime();
+            break;
+          case 'createdAt':
+          default:
+            aValue = a.createdAt.getTime();
+            bValue = b.createdAt.getTime();
+        }
+
+        if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
 
     const totalPages = Math.ceil(total / limit);
 

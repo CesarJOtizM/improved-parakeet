@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class GetUsersQueryDto {
   @ApiProperty({
@@ -46,6 +46,33 @@ export class GetUsersQueryDto {
   @IsOptional()
   @IsString({ message: 'Search must be a string' })
   search?: string;
+
+  @ApiProperty({
+    description: 'Sort by field',
+    example: 'createdAt',
+    enum: ['email', 'username', 'firstName', 'lastName', 'status', 'createdAt', 'lastLoginAt'],
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'SortBy must be a string' })
+  @IsEnum(['email', 'username', 'firstName', 'lastName', 'status', 'createdAt', 'lastLoginAt'], {
+    message:
+      'SortBy must be one of: email, username, firstName, lastName, status, createdAt, lastLoginAt',
+  })
+  sortBy?: string;
+
+  @ApiProperty({
+    description: 'Sort order',
+    example: 'asc',
+    enum: ['asc', 'desc'],
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'SortOrder must be a string' })
+  @IsEnum(['asc', 'desc'], {
+    message: 'SortOrder must be one of: asc, desc',
+  })
+  sortOrder?: 'asc' | 'desc';
 }
 
 export class GetUsersResponseDto {

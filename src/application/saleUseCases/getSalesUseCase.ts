@@ -115,6 +115,10 @@ export class GetSalesUseCase {
             aValue = a.status.getValue();
             bValue = b.status.getValue();
             break;
+          case 'total':
+            aValue = a.getTotalAmount().getAmount();
+            bValue = b.getTotalAmount().getAmount();
+            break;
           case 'createdAt':
             aValue = a.createdAt.getTime();
             bValue = b.createdAt.getTime();

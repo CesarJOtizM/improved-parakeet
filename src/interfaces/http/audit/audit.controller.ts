@@ -52,6 +52,12 @@ export class AuditController {
     summary: 'Get audit logs',
     description: 'Retrieve audit logs with optional filters. Requires AUDIT:VIEW_LOGS permission.',
   })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: ['action', 'entityType', 'httpMethod', 'httpStatusCode', 'createdAt'],
+  })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiResponse({ status: HttpStatus.OK, type: GetAuditLogsResponseDto })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Forbidden' })
   async getAuditLogs(
@@ -71,6 +77,8 @@ export class AuditController {
       httpMethod: query.httpMethod,
       startDate: query.startDate ? new Date(query.startDate) : undefined,
       endDate: query.endDate ? new Date(query.endDate) : undefined,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
     });
     return resultToHttpResponse(result);
   }

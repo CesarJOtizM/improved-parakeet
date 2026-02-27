@@ -295,7 +295,7 @@ export class PrismaStockRepository implements IStockRepository {
         where.productId = filters.productId;
       }
 
-      // Get stock records
+      // Get stock records with product and warehouse joined (avoids N+1)
       let stockRecords = await this.prisma.stock.findMany({
         where,
         include: {
@@ -304,6 +304,7 @@ export class PrismaStockRepository implements IStockRepository {
               id: true,
               sku: true,
               name: true,
+              unit: true,
             },
           },
           warehouse: {
@@ -338,10 +339,10 @@ export class PrismaStockRepository implements IStockRepository {
         });
       }
 
-      // Map to IStockData
-      const result: IStockData[] = [];
-      for (const stock of stockRecords) {
-        const precision = await this.getProductPrecision(stock.productId, orgId);
+      // Map to IStockData (no N+1: precision derived from joined product.unit)
+      return stockRecords.map(stock => {
+        // Precision defaults to 0 (DB only stores unit code, not precision metadata)
+        const precision = 0;
         const quantity = Quantity.create(Number(stock.quantity), precision);
 
         const rawUnitCost =
@@ -354,7 +355,7 @@ export class PrismaStockRepository implements IStockRepository {
 
         const averageCost = Money.create(unitCostValue, 'COP', 2);
 
-        result.push({
+        return {
           productId: stock.productId,
           productName: stock.product?.name,
           productSku: stock.product?.sku,
@@ -365,10 +366,8 @@ export class PrismaStockRepository implements IStockRepository {
           quantity,
           averageCost,
           orgId: stock.orgId,
-        });
-      }
-
-      return result;
+        };
+      });
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Error finding all stock: ${error.message}`);

@@ -26,6 +26,8 @@ export interface IGetAuditLogsRequest {
   httpMethod?: string;
   startDate?: Date;
   endDate?: Date;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface IAuditLogListItem {
@@ -119,12 +121,49 @@ export class GetAuditLogsUseCase {
       };
     }
 
+    // Apply sorting
+    let sortedData = result.data;
+    if (request.sortBy) {
+      const sortOrder = request.sortOrder || 'asc';
+      sortedData = [...result.data].sort((a, b) => {
+        let aValue: string | number;
+        let bValue: string | number;
+
+        switch (request.sortBy) {
+          case 'action':
+            aValue = a.action.getValue();
+            bValue = b.action.getValue();
+            break;
+          case 'entityType':
+            aValue = a.entityType.getValue();
+            bValue = b.entityType.getValue();
+            break;
+          case 'httpMethod':
+            aValue = a.httpMethod || '';
+            bValue = b.httpMethod || '';
+            break;
+          case 'httpStatusCode':
+            aValue = a.httpStatusCode || 0;
+            bValue = b.httpStatusCode || 0;
+            break;
+          case 'createdAt':
+          default:
+            aValue = a.createdAt.getTime();
+            bValue = b.createdAt.getTime();
+        }
+
+        if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
     const totalPages = Math.ceil(result.total / limit);
 
     return ok({
       success: true,
       message: 'Audit logs retrieved successfully',
-      data: result.data.map(log => ({
+      data: sortedData.map(log => ({
         id: log.id,
         orgId: log.orgId || null,
         entityType: log.entityType.getValue(),

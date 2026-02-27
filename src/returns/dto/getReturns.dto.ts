@@ -90,12 +90,12 @@ export class GetReturnsDto {
   @ApiProperty({
     description: 'Sort by field',
     example: 'createdAt',
-    enum: ['returnNumber', 'status', 'createdAt', 'confirmedAt'],
+    enum: ['returnNumber', 'type', 'status', 'total', 'createdAt', 'confirmedAt'],
     required: false,
   })
   @IsOptional()
-  @IsEnum(['returnNumber', 'status', 'createdAt', 'confirmedAt'], {
-    message: 'Sort by must be one of: returnNumber, status, createdAt, confirmedAt',
+  @IsEnum(['returnNumber', 'type', 'status', 'total', 'createdAt', 'confirmedAt'], {
+    message: 'Sort by must be one of: returnNumber, type, status, total, createdAt, confirmedAt',
   })
   sortBy?: string;
 

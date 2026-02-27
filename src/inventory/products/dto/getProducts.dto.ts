@@ -53,13 +53,13 @@ export class GetProductsQueryDto {
   @ApiProperty({
     description: 'Sort by field',
     example: 'name',
-    enum: ['name', 'sku', 'status', 'createdAt'],
+    enum: ['name', 'sku', 'status', 'price', 'createdAt', 'updatedAt'],
     required: false,
   })
   @IsOptional()
   @IsString({ message: 'SortBy must be a string' })
-  @IsEnum(['name', 'sku', 'status', 'createdAt'], {
-    message: 'SortBy must be one of: name, sku, status, createdAt',
+  @IsEnum(['name', 'sku', 'status', 'price', 'createdAt', 'updatedAt'], {
+    message: 'SortBy must be one of: name, sku, status, price, createdAt, updatedAt',
   })
   sortBy?: string;
 

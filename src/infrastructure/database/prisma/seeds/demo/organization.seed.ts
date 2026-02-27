@@ -7,7 +7,15 @@ export class DemoOrganizationSeed {
   async seed(): Promise<IOrganization> {
     const org = await this.prisma.organization.upsert({
       where: { slug: 'nevada-demo' },
-      update: {},
+      update: {
+        settings: {
+          currency: 'COP',
+          timezone: 'America/Bogota',
+          language: 'es',
+          dateFormat: 'DD/MM/YYYY',
+          pickingEnabled: true,
+        },
+      },
       create: {
         name: 'Nevada Tech Demo',
         slug: 'nevada-demo',
@@ -18,6 +26,7 @@ export class DemoOrganizationSeed {
           timezone: 'America/Bogota',
           language: 'es',
           dateFormat: 'DD/MM/YYYY',
+          pickingEnabled: true,
         },
       },
     });
