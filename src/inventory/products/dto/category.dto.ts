@@ -7,7 +7,6 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  Max,
   MaxLength,
   Min,
   MinLength,
@@ -92,7 +91,6 @@ export class GetCategoriesQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100)
   limit?: number;
 
   @ApiProperty({

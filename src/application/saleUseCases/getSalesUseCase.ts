@@ -98,38 +98,57 @@ export class GetSalesUseCase {
       };
     }
 
-    // Apply sorting (in-memory for now, could be moved to Prisma orderBy)
-    let sortedSales = result.data;
+    const totalPages = Math.ceil(result.total / limit);
+
+    // Convert to response DTOs
+    const salesData = SaleMapper.toResponseDataList(result.data, true);
+
+    // Batch resolve warehouse and product names
+    await this.enrichWithNames(salesData, request.orgId);
+
+    // Apply sorting on enriched data (warehouseName, customerReference, items available)
     if (request.sortBy) {
       const sortOrder = request.sortOrder || 'asc';
-      sortedSales = [...result.data].sort((a: Sale, b: Sale) => {
+      salesData.sort((a, b) => {
         let aValue: string | number;
         let bValue: string | number;
 
         switch (request.sortBy) {
           case 'saleNumber':
-            aValue = a.saleNumber.getValue();
-            bValue = b.saleNumber.getValue();
+            aValue = a.saleNumber || '';
+            bValue = b.saleNumber || '';
             break;
           case 'status':
-            aValue = a.status.getValue();
-            bValue = b.status.getValue();
+            aValue = a.status || '';
+            bValue = b.status || '';
             break;
           case 'total':
-            aValue = a.getTotalAmount().getAmount();
-            bValue = b.getTotalAmount().getAmount();
+            aValue = a.totalAmount || 0;
+            bValue = b.totalAmount || 0;
+            break;
+          case 'warehouseName':
+            aValue = (a.warehouseName || '').toLowerCase();
+            bValue = (b.warehouseName || '').toLowerCase();
+            break;
+          case 'customerReference':
+            aValue = (a.customerReference || '').toLowerCase();
+            bValue = (b.customerReference || '').toLowerCase();
+            break;
+          case 'items':
+            aValue = a.lines?.length || 0;
+            bValue = b.lines?.length || 0;
             break;
           case 'createdAt':
-            aValue = a.createdAt.getTime();
-            bValue = b.createdAt.getTime();
+            aValue = new Date(a.createdAt).getTime();
+            bValue = new Date(b.createdAt).getTime();
             break;
           case 'confirmedAt':
-            aValue = a.confirmedAt?.getTime() || 0;
-            bValue = b.confirmedAt?.getTime() || 0;
+            aValue = a.confirmedAt ? new Date(a.confirmedAt).getTime() : 0;
+            bValue = b.confirmedAt ? new Date(b.confirmedAt).getTime() : 0;
             break;
           default:
-            aValue = a.createdAt.getTime();
-            bValue = b.createdAt.getTime();
+            aValue = new Date(a.createdAt).getTime();
+            bValue = new Date(b.createdAt).getTime();
         }
 
         if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
@@ -137,14 +156,6 @@ export class GetSalesUseCase {
         return 0;
       });
     }
-
-    const totalPages = Math.ceil(result.total / limit);
-
-    // Convert to response DTOs
-    const salesData = SaleMapper.toResponseDataList(sortedSales, true);
-
-    // Batch resolve warehouse and product names
-    await this.enrichWithNames(salesData, request.orgId);
 
     return ok({
       success: true,

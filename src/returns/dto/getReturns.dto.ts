@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsEnum, IsDateString, IsInt, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsDateString, IsInt, Min } from 'class-validator';
 
 export class GetReturnsDto {
   @ApiProperty({
@@ -25,7 +25,6 @@ export class GetReturnsDto {
   @Type(() => Number)
   @IsInt({ message: 'Limit must be an integer' })
   @Min(1, { message: 'Limit must be greater than 0' })
-  @Max(100, { message: 'Limit must be at most 100' })
   limit?: number;
 
   @ApiProperty({
@@ -91,13 +90,35 @@ export class GetReturnsDto {
   @ApiProperty({
     description: 'Sort by field',
     example: 'createdAt',
-    enum: ['returnNumber', 'type', 'status', 'total', 'createdAt', 'confirmedAt'],
+    enum: [
+      'returnNumber',
+      'type',
+      'status',
+      'total',
+      'warehouseName',
+      'items',
+      'createdAt',
+      'confirmedAt',
+    ],
     required: false,
   })
   @IsOptional()
-  @IsEnum(['returnNumber', 'type', 'status', 'total', 'createdAt', 'confirmedAt'], {
-    message: 'Sort by must be one of: returnNumber, type, status, total, createdAt, confirmedAt',
-  })
+  @IsEnum(
+    [
+      'returnNumber',
+      'type',
+      'status',
+      'total',
+      'warehouseName',
+      'items',
+      'createdAt',
+      'confirmedAt',
+    ],
+    {
+      message:
+        'Sort by must be one of: returnNumber, type, status, total, warehouseName, items, createdAt, confirmedAt',
+    }
+  )
   sortBy?: string;
 
   @ApiProperty({

@@ -80,41 +80,52 @@ export class GetReturnsUseCase {
       returns = returns.filter(r => r.returnNumber.getValue().toLowerCase().includes(searchLower));
     }
 
-    // Apply sorting
+    // Map entities to response DTOs (before sorting so warehouseName/lines are available)
+    const responseData = ReturnMapper.toResponseDataList(returns);
+
+    // Apply sorting on mapped data
     if (request.sortBy) {
       const sortOrder = request.sortOrder || 'asc';
-      returns.sort((a, b) => {
+      responseData.sort((a, b) => {
         let aValue: string | number;
         let bValue: string | number;
 
         switch (request.sortBy) {
           case 'returnNumber':
-            aValue = a.returnNumber.getValue();
-            bValue = b.returnNumber.getValue();
+            aValue = a.returnNumber || '';
+            bValue = b.returnNumber || '';
             break;
           case 'type':
-            aValue = a.type.getValue();
-            bValue = b.type.getValue();
+            aValue = a.type || '';
+            bValue = b.type || '';
             break;
           case 'status':
-            aValue = a.status.getValue();
-            bValue = b.status.getValue();
+            aValue = a.status || '';
+            bValue = b.status || '';
             break;
           case 'total':
-            aValue = a.getTotalAmount()?.getAmount() || 0;
-            bValue = b.getTotalAmount()?.getAmount() || 0;
+            aValue = a.totalAmount || 0;
+            bValue = b.totalAmount || 0;
+            break;
+          case 'warehouseName':
+            aValue = (a.warehouseName || '').toLowerCase();
+            bValue = (b.warehouseName || '').toLowerCase();
+            break;
+          case 'items':
+            aValue = a.lines?.length || 0;
+            bValue = b.lines?.length || 0;
             break;
           case 'createdAt':
-            aValue = a.createdAt.getTime();
-            bValue = b.createdAt.getTime();
+            aValue = new Date(a.createdAt).getTime();
+            bValue = new Date(b.createdAt).getTime();
             break;
           case 'confirmedAt':
-            aValue = a.confirmedAt?.getTime() || 0;
-            bValue = b.confirmedAt?.getTime() || 0;
+            aValue = a.confirmedAt ? new Date(a.confirmedAt).getTime() : 0;
+            bValue = b.confirmedAt ? new Date(b.confirmedAt).getTime() : 0;
             break;
           default:
-            aValue = a.createdAt.getTime();
-            bValue = b.createdAt.getTime();
+            aValue = new Date(a.createdAt).getTime();
+            bValue = new Date(b.createdAt).getTime();
         }
 
         if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
@@ -124,15 +135,14 @@ export class GetReturnsUseCase {
     }
 
     // Apply pagination
-    const total = returns.length;
-    const paginatedReturns = returns.slice(skip, skip + limit);
+    const total = responseData.length;
+    const paginatedData = responseData.slice(skip, skip + limit);
     const totalPages = Math.ceil(total / limit);
 
-    // Use mapper to convert entities to response DTOs
     return ok({
       success: true,
       message: 'Returns retrieved successfully',
-      data: ReturnMapper.toResponseDataList(paginatedReturns),
+      data: paginatedData,
       pagination: {
         page,
         limit,
