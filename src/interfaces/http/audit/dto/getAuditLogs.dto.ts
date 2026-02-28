@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsOptional, IsString, IsInt, Min, IsDateString, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsInt, Min, Max, IsDateString, IsEnum } from 'class-validator';
 
 export class GetAuditLogsQueryDto {
   @ApiPropertyOptional({ description: 'Page number', example: 1, default: 1 })
@@ -15,6 +15,7 @@ export class GetAuditLogsQueryDto {
   @Transform(({ value }) => parseInt(value))
   @IsInt()
   @Min(1)
+  @Max(100)
   limit?: number;
 
   @ApiPropertyOptional({ description: 'Entity type', example: 'User' })

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsEnum, IsDateString, IsInt, Min } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsDateString, IsInt, Min, Max } from 'class-validator';
 
 export class GetSalesDto {
   @ApiProperty({
@@ -25,6 +25,7 @@ export class GetSalesDto {
   @Type(() => Number)
   @IsInt({ message: 'Limit must be an integer' })
   @Min(1, { message: 'Limit must be greater than 0' })
+  @Max(100, { message: 'Limit must be at most 100' })
   limit?: number;
 
   @ApiProperty({
