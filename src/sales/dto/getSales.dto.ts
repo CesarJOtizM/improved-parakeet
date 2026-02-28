@@ -43,9 +43,7 @@ export class GetSalesDto {
     required: false,
   })
   @IsOptional()
-  @IsEnum(['DRAFT', 'CONFIRMED', 'CANCELLED'], {
-    message: 'Status must be one of: DRAFT, CONFIRMED, CANCELLED',
-  })
+  @IsString({ message: 'Status must be a string' })
   status?: string;
 
   @ApiProperty({
@@ -65,6 +63,15 @@ export class GetSalesDto {
   @IsOptional()
   @IsDateString({}, { message: 'End date must be a valid date string' })
   endDate?: string;
+
+  @ApiProperty({
+    description: 'Search by sale number or customer reference',
+    example: 'SALE-2025',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Search must be a string' })
+  search?: string;
 
   @ApiProperty({
     description: 'Sort by field',

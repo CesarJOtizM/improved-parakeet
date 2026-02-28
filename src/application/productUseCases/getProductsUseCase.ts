@@ -1,6 +1,9 @@
 import { QueryPagination } from '@infrastructure/database/utils/queryOptimizer';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ProductByStatusSpecification } from '@product/domain/specifications';
+import {
+  ProductByStatusSpecification,
+  ProductByCategoriesSpecification,
+} from '@product/domain/specifications';
 import { ProductMapper } from '@product/mappers';
 import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
@@ -15,6 +18,7 @@ export interface IGetProductsRequest {
   page?: number;
   limit?: number;
   status?: string;
+  categoryIds?: string[];
   search?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -51,6 +55,10 @@ export class GetProductsUseCase {
         request.status as 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED'
       );
       specifications.push(statusSpec);
+    }
+
+    if (request.categoryIds?.length) {
+      specifications.push(new ProductByCategoriesSpecification(request.categoryIds));
     }
 
     // Combine all specifications with AND logic

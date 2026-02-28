@@ -5,38 +5,48 @@ import { PrismaSpecification, PrismaWhereInput } from '@shared/domain/specificat
  * Specification for sales by status
  */
 export class SaleByStatusSpecification extends PrismaSpecification<Sale> {
-  constructor(private readonly status: 'DRAFT' | 'CONFIRMED' | 'CANCELLED') {
+  private readonly statuses: string[];
+
+  constructor(status: string) {
     super();
+    this.statuses = status.split(',').map(s => s.trim());
   }
 
   public isSatisfiedBy(sale: Sale): boolean {
-    return sale.status.getValue() === this.status;
+    return this.statuses.includes(sale.status.getValue());
   }
 
   public toPrismaWhere(orgId: string): PrismaWhereInput {
     return {
       orgId,
-      status: this.status,
+      status: this.statuses.length === 1 ? this.statuses[0] : { in: this.statuses },
     };
   }
 }
 
 /**
- * Specification for sales by warehouse
+ * Specification for sales by warehouse (supports comma-separated IDs)
  */
 export class SaleByWarehouseSpecification extends PrismaSpecification<Sale> {
-  constructor(private readonly warehouseId: string) {
+  private readonly warehouseIds: string[];
+
+  constructor(warehouseId: string) {
     super();
+    this.warehouseIds = warehouseId
+      .split(',')
+      .map(id => id.trim())
+      .filter(Boolean);
   }
 
   public isSatisfiedBy(sale: Sale): boolean {
-    return sale.warehouseId === this.warehouseId;
+    return this.warehouseIds.includes(sale.warehouseId);
   }
 
   public toPrismaWhere(orgId: string): PrismaWhereInput {
     return {
       orgId,
-      warehouseId: this.warehouseId,
+      warehouseId:
+        this.warehouseIds.length === 1 ? this.warehouseIds[0] : { in: this.warehouseIds },
     };
   }
 }
@@ -64,6 +74,35 @@ export class SaleByDateRangeSpecification extends PrismaSpecification<Sale> {
         gte: this.startDate,
         lte: this.endDate,
       },
+    };
+  }
+}
+
+/**
+ * Specification for free-text search on saleNumber, customerReference, or externalReference
+ */
+export class SaleBySearchSpecification extends PrismaSpecification<Sale> {
+  private readonly term: string;
+
+  constructor(search: string) {
+    super();
+    this.term = search.trim().toLowerCase();
+  }
+
+  public isSatisfiedBy(sale: Sale): boolean {
+    const saleNumber = (sale.saleNumber?.getValue() || '').toLowerCase();
+    const customerRef = (sale.customerReference || '').toLowerCase();
+    return saleNumber.includes(this.term) || customerRef.includes(this.term);
+  }
+
+  public toPrismaWhere(orgId: string): PrismaWhereInput {
+    return {
+      orgId,
+      OR: [
+        { saleNumber: { contains: this.term, mode: 'insensitive' } },
+        { customerReference: { contains: this.term, mode: 'insensitive' } },
+        { externalReference: { contains: this.term, mode: 'insensitive' } },
+      ],
     };
   }
 }

@@ -7,7 +7,7 @@ import type { IStockRepository } from '@stock/domain/repositories/stockRepositor
 
 export interface IGetStockRequest {
   orgId: string;
-  warehouseId?: string;
+  warehouseIds?: string[];
   productId?: string;
   lowStock?: boolean;
   sortBy?: string;
@@ -44,7 +44,7 @@ export class GetStockUseCase {
   async execute(request: IGetStockRequest): Promise<Result<IGetStockResponse, DomainError>> {
     this.logger.log('Getting stock', {
       orgId: request.orgId,
-      warehouseId: request.warehouseId,
+      warehouseIds: request.warehouseIds,
       productId: request.productId,
       lowStock: request.lowStock,
     });
@@ -52,7 +52,7 @@ export class GetStockUseCase {
     // Run stock records and last movement dates in parallel
     const [stockRecords, lastMovements] = await Promise.all([
       this.stockRepository.findAll(request.orgId, {
-        warehouseId: request.warehouseId,
+        warehouseIds: request.warehouseIds,
         productId: request.productId,
         lowStock: request.lowStock,
       }),

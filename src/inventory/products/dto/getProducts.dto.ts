@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsEnum, IsInt, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsOptional, IsString, IsEnum, IsInt, Min, IsArray } from 'class-validator';
 
 export class GetProductsQueryDto {
   @ApiProperty({
@@ -48,6 +48,24 @@ export class GetProductsQueryDto {
   @IsOptional()
   @IsString({ message: 'Search must be a string' })
   search?: string;
+
+  @ApiProperty({
+    description: 'Filter by category IDs (comma-separated)',
+    example: 'cat-id-1,cat-id-2',
+    required: false,
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string'
+      ? value
+          .split(',')
+          .map((v: string) => v.trim())
+          .filter(Boolean)
+      : value
+  )
+  @IsArray({ message: 'categoryIds must be an array' })
+  @IsString({ each: true, message: 'Each categoryId must be a string' })
+  categoryIds?: string[];
 
   @ApiProperty({
     description: 'Sort by field',

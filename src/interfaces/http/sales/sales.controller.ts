@@ -130,6 +130,12 @@ export class SalesController {
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'warehouseId', required: false, type: String })
   @ApiQuery({ name: 'status', required: false, enum: ['DRAFT', 'CONFIRMED', 'CANCELLED'] })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search by sale number, customer reference, or external reference',
+  })
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
   @ApiQuery({
@@ -151,6 +157,7 @@ export class SalesController {
       limit: query.limit,
       warehouseId: query.warehouseId,
       status: query.status,
+      search: query.search,
       startDate: query.startDate ? new Date(query.startDate) : undefined,
       endDate: query.endDate ? new Date(query.endDate) : undefined,
       sortBy: query.sortBy,

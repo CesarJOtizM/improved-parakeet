@@ -86,7 +86,8 @@ export class GetTransfersUseCase {
     }
 
     if (request.status && transfers.length > 0) {
-      transfers = transfers.filter(t => t.status.getValue() === request.status);
+      const allowedStatuses = request.status.split(',').map(s => s.trim());
+      transfers = transfers.filter(t => allowedStatuses.includes(t.status.getValue()));
     }
 
     // Apply sorting

@@ -115,8 +115,6 @@ export class ProductByCategorySpecification extends PrismaSpecification<Product>
   }
 
   public isSatisfiedBy(_product: Product): boolean {
-    // Product entity doesn't have category in props, but Prisma model does
-    // This is a limitation - category should be added to Product entity if needed
     return true;
   }
 
@@ -124,6 +122,26 @@ export class ProductByCategorySpecification extends PrismaSpecification<Product>
     return {
       orgId,
       categories: { some: { id: this.category } },
+    };
+  }
+}
+
+/**
+ * Specification for products by multiple categories (OR logic)
+ */
+export class ProductByCategoriesSpecification extends PrismaSpecification<Product> {
+  constructor(private readonly categoryIds: string[]) {
+    super();
+  }
+
+  public isSatisfiedBy(_product: Product): boolean {
+    return true;
+  }
+
+  public toPrismaWhere(orgId: string): PrismaWhereInput {
+    return {
+      orgId,
+      categories: { some: { id: { in: this.categoryIds } } },
     };
   }
 }

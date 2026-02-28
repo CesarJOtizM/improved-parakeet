@@ -126,6 +126,12 @@ export class ProductsController {
     required: false,
     enum: ['name', 'sku', 'status', 'price', 'createdAt', 'updatedAt'],
   })
+  @ApiQuery({
+    name: 'categoryIds',
+    required: false,
+    type: String,
+    description: 'Comma-separated category IDs',
+  })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -147,6 +153,7 @@ export class ProductsController {
       page: query.page,
       limit: query.limit,
       status: query.status,
+      categoryIds: query.categoryIds,
       search: query.search,
       sortBy: query.sortBy,
       sortOrder: query.sortOrder,

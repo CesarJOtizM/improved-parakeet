@@ -5,18 +5,21 @@ import { PrismaSpecification, PrismaWhereInput } from '@shared/domain/specificat
  * Specification for movements by status
  */
 export class MovementByStatusSpecification extends PrismaSpecification<Movement> {
-  constructor(private readonly status: 'DRAFT' | 'POSTED' | 'VOID' | 'RETURNED') {
+  private readonly statuses: string[];
+
+  constructor(status: string) {
     super();
+    this.statuses = status.split(',').map(s => s.trim());
   }
 
   public isSatisfiedBy(movement: Movement): boolean {
-    return movement.status.getValue() === this.status;
+    return this.statuses.includes(movement.status.getValue());
   }
 
   public toPrismaWhere(orgId: string): PrismaWhereInput {
     return {
       orgId,
-      status: this.status,
+      status: this.statuses.length === 1 ? this.statuses[0] : { in: this.statuses },
     };
   }
 }

@@ -52,9 +52,7 @@ export class GetReturnsDto {
     required: false,
   })
   @IsOptional()
-  @IsEnum(['DRAFT', 'CONFIRMED', 'CANCELLED'], {
-    message: 'Status must be one of: DRAFT, CONFIRMED, CANCELLED',
-  })
+  @IsString({ message: 'Status must be a string' })
   status?: string;
 
   @ApiProperty({
@@ -64,9 +62,7 @@ export class GetReturnsDto {
     required: false,
   })
   @IsOptional()
-  @IsEnum(['RETURN_CUSTOMER', 'RETURN_SUPPLIER'], {
-    message: 'Type must be one of: RETURN_CUSTOMER, RETURN_SUPPLIER',
-  })
+  @IsString({ message: 'Type must be a string' })
   type?: string;
 
   @ApiProperty({

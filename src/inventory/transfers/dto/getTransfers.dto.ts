@@ -53,9 +53,6 @@ export class GetTransfersQueryDto {
   })
   @IsOptional()
   @IsString({ message: 'Status must be a string' })
-  @IsEnum(['DRAFT', 'IN_TRANSIT', 'PARTIAL', 'RECEIVED', 'REJECTED', 'CANCELED'], {
-    message: 'Status must be one of: DRAFT, IN_TRANSIT, PARTIAL, RECEIVED, REJECTED, CANCELED',
-  })
   status?: string;
 
   @ApiProperty({

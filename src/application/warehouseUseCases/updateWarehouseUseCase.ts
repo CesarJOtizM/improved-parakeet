@@ -67,7 +67,7 @@ export class UpdateWarehouseUseCase {
 
       if (request.isActive === false && warehouse.isActive) {
         const stock = await this.stockRepository.findAll(request.orgId, {
-          warehouseId: request.warehouseId,
+          warehouseIds: [request.warehouseId],
         });
 
         const hasStock = stock.some(s => s.quantity.isPositive());

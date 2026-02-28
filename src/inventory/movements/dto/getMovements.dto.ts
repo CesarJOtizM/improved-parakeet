@@ -44,9 +44,6 @@ export class GetMovementsQueryDto {
   })
   @IsOptional()
   @IsString({ message: 'Status must be a string' })
-  @IsEnum(['DRAFT', 'POSTED', 'VOID', 'RETURNED'], {
-    message: 'Status must be one of: DRAFT, POSTED, VOID, RETURNED',
-  })
   status?: string;
 
   @ApiProperty({
@@ -57,9 +54,6 @@ export class GetMovementsQueryDto {
   })
   @IsOptional()
   @IsString({ message: 'Type must be a string' })
-  @IsEnum(['IN', 'OUT', 'ADJUST_IN', 'ADJUST_OUT', 'TRANSFER_OUT', 'TRANSFER_IN'], {
-    message: 'Type must be one of: IN, OUT, ADJUST_IN, ADJUST_OUT, TRANSFER_OUT, TRANSFER_IN',
-  })
   type?: string;
 
   @ApiProperty({

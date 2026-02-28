@@ -268,6 +268,12 @@ export class ReportGenerationService {
     warehouseId?: string,
     productId?: string
   ): Promise<Map<string, { quantity: number; unitCost: number }>> {
+    const warehouseIds = warehouseId
+      ? warehouseId
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean)
+      : [];
     const rows = await this.prisma.$queryRaw<
       Array<{ productId: string; warehouseId: string; quantity: number; unitCost: number }>
     >`
@@ -276,7 +282,7 @@ export class ReportGenerationService {
              COALESCE("unitCost", 0)::float AS "unitCost"
       FROM "stock"
       WHERE "orgId" = ${orgId}
-        ${warehouseId ? Prisma.sql`AND "warehouseId" = ${warehouseId}` : Prisma.empty}
+        ${warehouseIds.length > 0 ? Prisma.sql`AND "warehouseId" IN (${Prisma.join(warehouseIds)})` : Prisma.empty}
         ${productId ? Prisma.sql`AND "productId" = ${productId}` : Prisma.empty}
     `;
 
@@ -393,7 +399,14 @@ export class ReportGenerationService {
       }
 
       for (const warehouse of warehouses) {
-        if (parameters.warehouseId && warehouse.id !== parameters.warehouseId) {
+        if (
+          parameters.warehouseId &&
+          !parameters.warehouseId
+            .split(',')
+            .map(id => id.trim())
+            .filter(Boolean)
+            .includes(warehouse.id)
+        ) {
           continue;
         }
 
@@ -451,12 +464,26 @@ export class ReportGenerationService {
 
     for (const movement of movements) {
       // Filter by warehouse if specified
-      if (parameters.warehouseId && movement.warehouseId !== parameters.warehouseId) {
+      if (
+        parameters.warehouseId &&
+        !parameters.warehouseId
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean)
+          .includes(movement.warehouseId)
+      ) {
         continue;
       }
 
       // Filter by movement type if specified
-      if (parameters.movementType && movement.type.getValue() !== parameters.movementType) {
+      if (
+        parameters.movementType &&
+        !parameters.movementType
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean)
+          .includes(movement.type.getValue())
+      ) {
         continue;
       }
 
@@ -521,14 +548,26 @@ export class ReportGenerationService {
       // Filter by category if specified
       const categoryName = product.categories?.[0]?.name;
       if (parameters.category) {
+        const allowedCategories = parameters.category
+          .split(',')
+          .map(c => c.trim())
+          .filter(Boolean);
+        const categoryIds = product.categories?.map(c => c.id) ?? [];
         const categoryNames = product.categories?.map(c => c.name) ?? [];
-        if (!categoryNames.includes(parameters.category)) {
+        if (!allowedCategories.some(ac => categoryIds.includes(ac) || categoryNames.includes(ac))) {
           continue;
         }
       }
 
       for (const warehouse of warehouses) {
-        if (parameters.warehouseId && warehouse.id !== parameters.warehouseId) {
+        if (
+          parameters.warehouseId &&
+          !parameters.warehouseId
+            .split(',')
+            .map(id => id.trim())
+            .filter(Boolean)
+            .includes(warehouse.id)
+        ) {
           continue;
         }
 
@@ -576,7 +615,14 @@ export class ReportGenerationService {
 
     for (const product of products) {
       for (const warehouse of warehouses) {
-        if (parameters.warehouseId && warehouse.id !== parameters.warehouseId) {
+        if (
+          parameters.warehouseId &&
+          !parameters.warehouseId
+            .split(',')
+            .map(id => id.trim())
+            .filter(Boolean)
+            .includes(warehouse.id)
+        ) {
           continue;
         }
 
@@ -590,7 +636,14 @@ export class ReportGenerationService {
           const deficit = minimumStock - currentStock;
           const severity = currentStock === 0 ? 'CRITICAL' : 'WARNING';
 
-          if (parameters.severity && severity !== parameters.severity) {
+          if (
+            parameters.severity &&
+            !parameters.severity
+              .split(',')
+              .map(s => s.trim())
+              .filter(Boolean)
+              .includes(severity)
+          ) {
             continue;
           }
 
@@ -652,12 +705,26 @@ export class ReportGenerationService {
 
     for (const movement of movements) {
       // Filter by warehouse if specified
-      if (parameters.warehouseId && movement.warehouseId !== parameters.warehouseId) {
+      if (
+        parameters.warehouseId &&
+        !parameters.warehouseId
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean)
+          .includes(movement.warehouseId)
+      ) {
         continue;
       }
 
       // Filter by movement type if specified
-      if (parameters.movementType && movement.type.getValue() !== parameters.movementType) {
+      if (
+        parameters.movementType &&
+        !parameters.movementType
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean)
+          .includes(movement.type.getValue())
+      ) {
         continue;
       }
 
@@ -729,16 +796,32 @@ export class ReportGenerationService {
 
     // Filter products by category if specified
     const filteredProducts = parameters.category
-      ? products.filter(p => {
-          const categoryNames = p.categories?.map(c => c.name) ?? [];
-          return categoryNames.includes(parameters.category!);
-        })
+      ? (() => {
+          const allowedCategories = parameters
+            .category!.split(',')
+            .map(c => c.trim())
+            .filter(Boolean);
+          return products.filter(p => {
+            const categoryIds = p.categories?.map(c => c.id) ?? [];
+            const categoryNames = p.categories?.map(c => c.name) ?? [];
+            return allowedCategories.some(
+              ac => categoryIds.includes(ac) || categoryNames.includes(ac)
+            );
+          });
+        })()
       : products;
     // Get unique categories from filtered products
     const uniqueCategories = [...new Set(filteredProducts.map(p => productCategoryMap.get(p.id)!))];
 
     for (const warehouse of warehouses) {
-      if (parameters.warehouseId && warehouse.id !== parameters.warehouseId) {
+      if (
+        parameters.warehouseId &&
+        !parameters.warehouseId
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean)
+          .includes(warehouse.id)
+      ) {
         continue;
       }
 
@@ -838,7 +921,14 @@ export class ReportGenerationService {
     const productWarehouseCogsMap = new Map<string, number>();
     const confirmedSales = sales.filter(s => s.status.getValue() === 'CONFIRMED');
     for (const sale of confirmedSales) {
-      if (parameters.warehouseId && sale.warehouseId !== parameters.warehouseId) {
+      if (
+        parameters.warehouseId &&
+        !parameters.warehouseId
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean)
+          .includes(sale.warehouseId)
+      ) {
         continue;
       }
       for (const line of sale.getLines()) {
@@ -863,15 +953,27 @@ export class ReportGenerationService {
       // Filter by category if specified
       const categoryName = product.categories?.[0]?.name;
       if (parameters.category) {
+        const allowedCategories = parameters.category
+          .split(',')
+          .map(c => c.trim())
+          .filter(Boolean);
+        const categoryIds = product.categories?.map(c => c.id) ?? [];
         const categoryNames = product.categories?.map(c => c.name) ?? [];
-        if (!categoryNames.includes(parameters.category)) {
+        if (!allowedCategories.some(ac => categoryIds.includes(ac) || categoryNames.includes(ac))) {
           continue;
         }
       }
 
       // One row per product × warehouse
       for (const warehouse of warehouses) {
-        if (parameters.warehouseId && warehouse.id !== parameters.warehouseId) {
+        if (
+          parameters.warehouseId &&
+          !parameters.warehouseId
+            .split(',')
+            .map(id => id.trim())
+            .filter(Boolean)
+            .includes(warehouse.id)
+        ) {
           continue;
         }
 
@@ -942,13 +1044,23 @@ export class ReportGenerationService {
 
     for (const sale of sales) {
       // Filter by warehouse if specified
-      if (parameters.warehouseId && sale.warehouseId !== parameters.warehouseId) {
+      if (
+        parameters.warehouseId &&
+        !parameters.warehouseId
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean)
+          .includes(sale.warehouseId)
+      ) {
         continue;
       }
 
-      // Filter by status if specified
-      if (parameters.status && sale.status.getValue() !== parameters.status) {
-        continue;
+      // Filter by status if specified (supports comma-separated values)
+      if (parameters.status) {
+        const allowedStatuses = parameters.status.split(',').map(s => s.trim());
+        if (!allowedStatuses.includes(sale.status.getValue())) {
+          continue;
+        }
       }
 
       // Filter by customer reference if specified
@@ -1022,7 +1134,14 @@ export class ReportGenerationService {
 
     for (const sale of confirmedSales) {
       // Filter by warehouse if specified
-      if (parameters.warehouseId && sale.warehouseId !== parameters.warehouseId) {
+      if (
+        parameters.warehouseId &&
+        !parameters.warehouseId
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean)
+          .includes(sale.warehouseId)
+      ) {
         continue;
       }
 
@@ -1034,9 +1153,16 @@ export class ReportGenerationService {
 
         // Filter by category if specified
         if (parameters.category) {
+          const allowedCategories = parameters.category
+            .split(',')
+            .map(c => c.trim())
+            .filter(Boolean);
           const product = productByIdMap.get(line.productId);
+          const categoryIds = product?.categories?.map(c => c.id) ?? [];
           const categoryNames = product?.categories?.map(c => c.name) ?? [];
-          if (!categoryNames.includes(parameters.category)) {
+          if (
+            !allowedCategories.some(ac => categoryIds.includes(ac) || categoryNames.includes(ac))
+          ) {
             continue;
           }
         }
@@ -1121,7 +1247,14 @@ export class ReportGenerationService {
 
     for (const sale of confirmedSales) {
       // Filter by warehouse if specified
-      if (parameters.warehouseId && sale.warehouseId !== parameters.warehouseId) {
+      if (
+        parameters.warehouseId &&
+        !parameters.warehouseId
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean)
+          .includes(sale.warehouseId)
+      ) {
         continue;
       }
 
@@ -1217,20 +1350,34 @@ export class ReportGenerationService {
       // Filter by return type if specified
       // Convert RETURN_CUSTOMER/RETURN_SUPPLIER to CUSTOMER/SUPPLIER for comparison
       if (parameters.returnType) {
+        const allowedReturnTypes = parameters.returnType
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean);
         const returnTypeValue = returnEntity.type.getValue();
         const normalizedType = returnTypeValue === 'RETURN_CUSTOMER' ? 'CUSTOMER' : 'SUPPLIER';
-        if (normalizedType !== parameters.returnType) {
+        if (!allowedReturnTypes.includes(normalizedType)) {
           continue;
         }
       }
 
-      // Filter by status if specified
-      if (parameters.status && returnEntity.status.getValue() !== parameters.status) {
-        continue;
+      // Filter by status if specified (supports comma-separated values)
+      if (parameters.status) {
+        const allowedStatuses = parameters.status.split(',').map(s => s.trim());
+        if (!allowedStatuses.includes(returnEntity.status.getValue())) {
+          continue;
+        }
       }
 
       // Filter by warehouse if specified
-      if (parameters.warehouseId && returnEntity.warehouseId !== parameters.warehouseId) {
+      if (
+        parameters.warehouseId &&
+        !parameters.warehouseId
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean)
+          .includes(returnEntity.warehouseId)
+      ) {
         continue;
       }
 
@@ -1308,16 +1455,27 @@ export class ReportGenerationService {
 
     for (const returnEntity of returns) {
       // Filter by warehouse if specified
-      if (parameters.warehouseId && returnEntity.warehouseId !== parameters.warehouseId) {
+      if (
+        parameters.warehouseId &&
+        !parameters.warehouseId
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean)
+          .includes(returnEntity.warehouseId)
+      ) {
         continue;
       }
 
       // Filter by return type if specified
       // Convert RETURN_CUSTOMER/RETURN_SUPPLIER to CUSTOMER/SUPPLIER for comparison
       if (parameters.returnType) {
+        const allowedReturnTypes = parameters.returnType
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean);
         const returnTypeValue = returnEntity.type.getValue();
         const normalizedType = returnTypeValue === 'RETURN_CUSTOMER' ? 'CUSTOMER' : 'SUPPLIER';
-        if (normalizedType !== parameters.returnType) {
+        if (!allowedReturnTypes.includes(normalizedType)) {
           continue;
         }
       }
@@ -1434,16 +1592,27 @@ export class ReportGenerationService {
 
     for (const returnEntity of returns) {
       // Filter by warehouse if specified
-      if (parameters.warehouseId && returnEntity.warehouseId !== parameters.warehouseId) {
+      if (
+        parameters.warehouseId &&
+        !parameters.warehouseId
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean)
+          .includes(returnEntity.warehouseId)
+      ) {
         continue;
       }
 
       // Filter by return type if specified
       // Convert RETURN_CUSTOMER/RETURN_SUPPLIER to CUSTOMER/SUPPLIER for comparison
       if (parameters.returnType) {
+        const allowedReturnTypes = parameters.returnType
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean);
         const returnTypeValue = returnEntity.type.getValue();
         const normalizedType = returnTypeValue === 'RETURN_CUSTOMER' ? 'CUSTOMER' : 'SUPPLIER';
-        if (normalizedType !== parameters.returnType) {
+        if (!allowedReturnTypes.includes(normalizedType)) {
           continue;
         }
       }
@@ -1456,9 +1625,16 @@ export class ReportGenerationService {
 
         // Filter by category if specified
         if (parameters.category) {
+          const allowedCategories = parameters.category
+            .split(',')
+            .map(c => c.trim())
+            .filter(Boolean);
           const product = productByIdMap.get(line.productId);
+          const categoryIds = product?.categories?.map(c => c.id) ?? [];
           const categoryNames = product?.categories?.map(c => c.name) ?? [];
-          if (!categoryNames.includes(parameters.category)) {
+          if (
+            !allowedCategories.some(ac => categoryIds.includes(ac) || categoryNames.includes(ac))
+          ) {
             continue;
           }
         }
@@ -1672,7 +1848,14 @@ export class ReportGenerationService {
     const confirmedSales = sales.filter(s => s.status.getValue() === 'CONFIRMED');
 
     for (const sale of confirmedSales) {
-      if (parameters.warehouseId && sale.warehouseId !== parameters.warehouseId) {
+      if (
+        parameters.warehouseId &&
+        !parameters.warehouseId
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean)
+          .includes(sale.warehouseId)
+      ) {
         continue;
       }
 
@@ -1726,9 +1909,17 @@ export class ReportGenerationService {
 
       // Filter by category if specified
       if (parameters.category) {
+        const allowedCategories = parameters.category
+          .split(',')
+          .map(c => c.trim())
+          .filter(Boolean);
         const product = productByIdMap.get(productId);
+        const categoryIds = product?.categories?.map(c => c.id) ?? [];
         const categoryNames = product?.categories?.map(c => c.name) ?? [];
-        if (product && !categoryNames.includes(parameters.category)) {
+        if (
+          product &&
+          !allowedCategories.some(ac => categoryIds.includes(ac) || categoryNames.includes(ac))
+        ) {
           continue;
         }
       }
@@ -1811,8 +2002,13 @@ export class ReportGenerationService {
       // Filter by category if specified
       const categoryName = product.categories?.[0]?.name;
       if (parameters.category) {
+        const allowedCategories = parameters.category
+          .split(',')
+          .map(c => c.trim())
+          .filter(Boolean);
+        const categoryIds = product.categories?.map(c => c.id) ?? [];
         const categoryNames = product.categories?.map(c => c.name) ?? [];
-        if (!categoryNames.includes(parameters.category)) {
+        if (!allowedCategories.some(ac => categoryIds.includes(ac) || categoryNames.includes(ac))) {
           continue;
         }
       }
@@ -1823,7 +2019,14 @@ export class ReportGenerationService {
       }
 
       for (const warehouse of warehouses) {
-        if (parameters.warehouseId && warehouse.id !== parameters.warehouseId) {
+        if (
+          parameters.warehouseId &&
+          !parameters.warehouseId
+            .split(',')
+            .map(id => id.trim())
+            .filter(Boolean)
+            .includes(warehouse.id)
+        ) {
           continue;
         }
 

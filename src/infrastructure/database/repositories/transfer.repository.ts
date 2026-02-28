@@ -215,8 +215,12 @@ export class PrismaTransferRepository implements ITransferRepository {
 
   async findByStatus(status: string, orgId: string): Promise<Transfer[]> {
     try {
+      const statuses = status.split(',').map(s => s.trim());
       const transfersData = await this.prisma.transfer.findMany({
-        where: { status, orgId },
+        where: {
+          orgId,
+          status: statuses.length === 1 ? statuses[0] : { in: statuses },
+        },
         include: { lines: true },
       });
 

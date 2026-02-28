@@ -84,7 +84,7 @@ export class ReportParametersDto {
     example: 'CUSTOMER',
   })
   @IsOptional()
-  @IsIn(Object.values(RETURN_TYPE_OPTIONS))
+  @IsString()
   returnType?: string;
 
   @ApiPropertyOptional({
@@ -158,7 +158,7 @@ export class ReportParametersDto {
     example: 'CRITICAL',
   })
   @IsOptional()
-  @IsIn(Object.values(LOW_STOCK_SEVERITY))
+  @IsString()
   severity?: string;
 
   @ApiPropertyOptional({

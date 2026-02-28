@@ -4,6 +4,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Sale } from '@sale/domain/entities/sale.entity';
 import {
   SaleByDateRangeSpecification,
+  SaleBySearchSpecification,
   SaleByStatusSpecification,
   SaleByWarehouseSpecification,
 } from '@sale/domain/specifications';
@@ -22,6 +23,7 @@ export interface IGetSalesRequest {
   limit?: number;
   warehouseId?: string;
   status?: string;
+  search?: string;
   startDate?: Date;
   endDate?: Date;
   sortBy?: string;
@@ -66,9 +68,11 @@ export class GetSalesUseCase {
     }
 
     if (request.status) {
-      specifications.push(
-        new SaleByStatusSpecification(request.status as 'DRAFT' | 'CONFIRMED' | 'CANCELLED')
-      );
+      specifications.push(new SaleByStatusSpecification(request.status));
+    }
+
+    if (request.search) {
+      specifications.push(new SaleBySearchSpecification(request.search));
     }
 
     if (request.startDate && request.endDate) {

@@ -281,14 +281,10 @@ export class PrismaStockRepository implements IStockRepository {
   async findAll(orgId: string, filters?: IStockFilters): Promise<IStockData[]> {
     try {
       // Build where clause
-      const where: {
-        orgId: string;
-        warehouseId?: string;
-        productId?: string;
-      } = { orgId };
+      const where: Record<string, unknown> = { orgId };
 
-      if (filters?.warehouseId) {
-        where.warehouseId = filters.warehouseId;
+      if (filters?.warehouseIds?.length) {
+        where.warehouseId = { in: filters.warehouseIds };
       }
 
       if (filters?.productId) {

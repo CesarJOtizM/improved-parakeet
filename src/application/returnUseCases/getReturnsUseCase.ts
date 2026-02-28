@@ -63,15 +63,24 @@ export class GetReturnsUseCase {
 
     // Apply additional filters
     if (request.warehouseId && returns.length > 0) {
-      returns = returns.filter(r => r.warehouseId === request.warehouseId);
+      const allowedWarehouses = request.warehouseId
+        .split(',')
+        .map(id => id.trim())
+        .filter(Boolean);
+      returns = returns.filter(r => allowedWarehouses.includes(r.warehouseId));
     }
 
     if (request.status && returns.length > 0) {
-      returns = returns.filter(r => r.status.getValue() === request.status);
+      const allowedStatuses = request.status.split(',').map(s => s.trim());
+      returns = returns.filter(r => allowedStatuses.includes(r.status.getValue()));
     }
 
     if (request.type && returns.length > 0) {
-      returns = returns.filter(r => r.type.getValue() === request.type);
+      const allowedTypes = request.type
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean);
+      returns = returns.filter(r => allowedTypes.includes(r.type.getValue()));
     }
 
     // Apply search filter (by return number)

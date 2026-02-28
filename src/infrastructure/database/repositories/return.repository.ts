@@ -337,8 +337,12 @@ export class PrismaReturnRepository implements IReturnRepository {
 
   async findByStatus(status: string, orgId: string): Promise<Return[]> {
     try {
+      const statuses = status.split(',').map(s => s.trim());
       const returnsData = await this.prisma.return.findMany({
-        where: { status, orgId },
+        where: {
+          orgId,
+          status: statuses.length === 1 ? statuses[0] : { in: statuses },
+        },
         include: this.returnInclude,
         orderBy: { createdAt: 'desc' },
       });

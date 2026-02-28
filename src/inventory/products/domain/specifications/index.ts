@@ -1,4 +1,5 @@
 export {
+  ProductByCategoriesSpecification,
   ProductByCategorySpecification,
   ProductByDateRangeSpecification,
   ProductByStatusSpecification,

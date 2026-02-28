@@ -41,7 +41,7 @@ export class StockController {
     name: 'warehouseId',
     required: false,
     type: String,
-    description: 'Filter by warehouse ID',
+    description: 'Filter by warehouse ID (comma-separated for multiple)',
   })
   @ApiQuery({
     name: 'productId',
@@ -87,9 +87,16 @@ export class StockController {
   ): Promise<unknown> {
     this.logger.log('Getting stock', { orgId, warehouseId, productId, lowStock });
 
+    const warehouseIds = warehouseId
+      ? warehouseId
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean)
+      : undefined;
+
     const result = await this.getStockUseCase.execute({
       orgId,
-      warehouseId,
+      warehouseIds,
       productId,
       lowStock: lowStock === 'true',
       sortBy,
