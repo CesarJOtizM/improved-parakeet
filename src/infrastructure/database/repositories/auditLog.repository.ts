@@ -48,7 +48,9 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
         },
       });
 
-      return auditLogsData.map((data: Parameters<typeof this.toDomain>[0]) => this.toDomain(data));
+      return auditLogsData
+        .map((data: Parameters<typeof this.toDomain>[0]) => this.safeToDomain(data))
+        .filter((log): log is AuditLog => log !== null);
     } catch (error) {
       this.logger.error('Error finding all audit logs', { orgId, error });
       throw error;
@@ -129,7 +131,9 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
         skip: offset,
       });
 
-      return auditLogsData.map((data: Parameters<typeof this.toDomain>[0]) => this.toDomain(data));
+      return auditLogsData
+        .map((data: Parameters<typeof this.toDomain>[0]) => this.safeToDomain(data))
+        .filter((log): log is AuditLog => log !== null);
     } catch (error) {
       this.logger.error('Error finding audit logs by entity', {
         entityType: entityType.getValue(),
@@ -160,7 +164,9 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
         skip: offset,
       });
 
-      return auditLogsData.map((data: Parameters<typeof this.toDomain>[0]) => this.toDomain(data));
+      return auditLogsData
+        .map((data: Parameters<typeof this.toDomain>[0]) => this.safeToDomain(data))
+        .filter((log): log is AuditLog => log !== null);
     } catch (error) {
       this.logger.error('Error finding audit logs by user', { userId, orgId, error });
       throw error;
@@ -186,7 +192,9 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
         skip: offset,
       });
 
-      return auditLogsData.map((data: Parameters<typeof this.toDomain>[0]) => this.toDomain(data));
+      return auditLogsData
+        .map((data: Parameters<typeof this.toDomain>[0]) => this.safeToDomain(data))
+        .filter((log): log is AuditLog => log !== null);
     } catch (error) {
       this.logger.error('Error finding audit logs by action', {
         action: action.getValue(),
@@ -220,7 +228,9 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
         skip: offset,
       });
 
-      return auditLogsData.map((data: Parameters<typeof this.toDomain>[0]) => this.toDomain(data));
+      return auditLogsData
+        .map((data: Parameters<typeof this.toDomain>[0]) => this.safeToDomain(data))
+        .filter((log): log is AuditLog => log !== null);
     } catch (error) {
       this.logger.error('Error finding audit logs by date range', {
         orgId,
@@ -282,7 +292,9 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
         skip: offset,
       });
 
-      return auditLogsData.map((data: Parameters<typeof this.toDomain>[0]) => this.toDomain(data));
+      return auditLogsData
+        .map((data: Parameters<typeof this.toDomain>[0]) => this.safeToDomain(data))
+        .filter((log): log is AuditLog => log !== null);
     } catch (error) {
       this.logger.error('Error finding audit logs by filters', { orgId, filters, error });
       throw error;
@@ -355,9 +367,9 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
         this.prisma.auditLog.count({ where }),
       ]);
 
-      const auditLogs = auditLogsData.map((data: Parameters<typeof this.toDomain>[0]) =>
-        this.toDomain(data)
-      );
+      const auditLogs = auditLogsData
+        .map((data: Parameters<typeof this.toDomain>[0]) => this.safeToDomain(data))
+        .filter((log): log is AuditLog => log !== null);
 
       return {
         data: auditLogs,
@@ -403,6 +415,20 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
       data.id,
       data.orgId || undefined
     );
+  }
+
+  private safeToDomain(data: Parameters<typeof this.toDomain>[0]): AuditLog | null {
+    try {
+      return this.toDomain(data);
+    } catch (error) {
+      this.logger.warn('Skipping audit log with unrecognized value', {
+        id: data.id,
+        entityType: data.entityType,
+        action: data.action,
+        error: (error as Error).message,
+      });
+      return null;
+    }
   }
 
   private toPersistence(auditLog: AuditLog) {

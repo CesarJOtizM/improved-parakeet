@@ -9,6 +9,7 @@ export type AuditActionValue =
   | 'STATUS_CHANGED'
   | 'PERMISSION_CHANGED'
   | 'LOGIN'
+  | 'LOGIN_FAILED'
   | 'LOGOUT'
   | 'PASSWORD_RESET'
   | 'HTTP_REQUEST'
@@ -19,7 +20,12 @@ export type AuditActionValue =
   | 'RECEIVE'
   | 'REJECT'
   | 'CONFIRM'
-  | 'CANCEL';
+  | 'CANCEL'
+  | 'COMPLETE'
+  | 'EXPORT'
+  | 'GENERATE'
+  | 'ACTIVATE'
+  | 'DEACTIVATE';
 
 export interface IAuditActionProps {
   value: AuditActionValue;
@@ -45,6 +51,7 @@ export class AuditAction extends ValueObject<IAuditActionProps> {
       'STATUS_CHANGED',
       'PERMISSION_CHANGED',
       'LOGIN',
+      'LOGIN_FAILED',
       'LOGOUT',
       'PASSWORD_RESET',
       'HTTP_REQUEST',
@@ -56,6 +63,11 @@ export class AuditAction extends ValueObject<IAuditActionProps> {
       'REJECT',
       'CONFIRM',
       'CANCEL',
+      'COMPLETE',
+      'EXPORT',
+      'GENERATE',
+      'ACTIVATE',
+      'DEACTIVATE',
     ];
 
     if (!validActions.includes(props.value)) {
