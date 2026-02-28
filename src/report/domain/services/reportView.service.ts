@@ -654,7 +654,7 @@ export class ReportViewService {
             sortable: true,
             filterable: true,
           },
-          { key: 'saleId', header: 'Sale ID', type: 'string', sortable: true, filterable: true },
+          { key: 'saleId', header: 'Sale #', type: 'string', sortable: true, filterable: true },
           { key: 'totalItems', header: 'Items', type: 'number', sortable: true, align: 'right' },
           {
             key: 'totalValue',

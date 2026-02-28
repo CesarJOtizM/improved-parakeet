@@ -161,6 +161,7 @@ export interface IReturnsReportItem {
   warehouseId: string;
   warehouseName: string;
   saleId?: string;
+  saleNumber?: string;
   sourceMovementId?: string;
   totalItems: number;
   totalValue: number;
@@ -168,6 +169,7 @@ export interface IReturnsReportItem {
   currency: string;
   returnDate: Date;
   createdBy: string;
+  createdByName?: string;
 }
 
 export interface IReturnsByTypeItem {
@@ -515,8 +517,14 @@ export class ReportGenerationService {
       if (parameters.productId && product.id !== parameters.productId) {
         continue;
       }
+
+      // Filter by category if specified
+      const categoryName = product.categories?.[0]?.name;
       if (parameters.category) {
-        continue;
+        const categoryNames = product.categories?.map(c => c.name) ?? [];
+        if (!categoryNames.includes(parameters.category)) {
+          continue;
+        }
       }
 
       for (const warehouse of warehouses) {
@@ -532,7 +540,7 @@ export class ReportGenerationService {
             productId: product.id,
             productName: product.name.getValue(),
             sku: product.sku.getValue(),
-            category: parameters.category,
+            category: categoryName,
             warehouseId: warehouse.id,
             warehouseName: warehouseMap.get(warehouse.id) || 'Unknown',
             quantity: stock.quantity,
@@ -712,48 +720,87 @@ export class ReportGenerationService {
     const data: IFinancialReportItem[] = [];
     const period = this.getPeriodString(parameters.dateRange);
 
+    // Build product-to-category map
+    const productCategoryMap = new Map<string, string>();
+    for (const product of products) {
+      const catName = product.categories?.[0]?.name || 'Sin categoría';
+      productCategoryMap.set(product.id, catName);
+    }
+
+    // Filter products by category if specified
+    const filteredProducts = parameters.category
+      ? products.filter(p => {
+          const categoryNames = p.categories?.map(c => c.name) ?? [];
+          return categoryNames.includes(parameters.category!);
+        })
+      : products;
+    // Get unique categories from filtered products
+    const uniqueCategories = [...new Set(filteredProducts.map(p => productCategoryMap.get(p.id)!))];
+
     for (const warehouse of warehouses) {
       if (parameters.warehouseId && warehouse.id !== parameters.warehouseId) {
         continue;
       }
 
-      let totalInventoryValue = 0;
-      const totalCost = 0;
-      let totalRevenue = 0;
+      // Group by category within each warehouse
+      for (const category of uniqueCategories) {
+        const categoryProductIds = filteredProducts
+          .filter(p => productCategoryMap.get(p.id) === category)
+          .map(p => p.id);
+        const categoryProductIdSet = new Set(categoryProductIds);
 
-      // Calculate inventory value from batch-loaded stock map
-      for (const product of products) {
-        const stock = stockMap.get(`${product.id}-${warehouse.id}`);
-        if (stock) {
-          totalInventoryValue += stock.quantity * stock.unitCost;
-        }
-      }
+        let totalInventoryValue = 0;
+        let totalCost = 0;
+        let totalRevenue = 0;
 
-      // Calculate revenue from sales
-      const warehouseSales = sales.filter(s => s.warehouseId === warehouse.id);
-      for (const sale of warehouseSales) {
-        if (sale.status.getValue() === 'CONFIRMED') {
-          for (const line of sale.getLines()) {
-            totalRevenue += line.quantity.getNumericValue() * line.salePrice.getAmount();
+        // Calculate inventory value for this category's products
+        for (const productId of categoryProductIds) {
+          const stock = stockMap.get(`${productId}-${warehouse.id}`);
+          if (stock) {
+            totalInventoryValue += stock.quantity * stock.unitCost;
           }
         }
+
+        // Calculate revenue and COGS from sales for this category
+        const warehouseSales = sales.filter(s => s.warehouseId === warehouse.id);
+        for (const sale of warehouseSales) {
+          if (sale.status.getValue() === 'CONFIRMED') {
+            for (const line of sale.getLines()) {
+              if (!categoryProductIdSet.has(line.productId)) continue;
+
+              const qty = line.quantity.getNumericValue();
+              totalRevenue += qty * line.salePrice.getAmount();
+
+              // COGS = quantity sold × average unit cost from stock
+              const stock = stockMap.get(`${line.productId}-${warehouse.id}`);
+              if (stock) {
+                totalCost += qty * stock.unitCost;
+              }
+            }
+          }
+        }
+
+        // Skip rows with no data
+        if (totalInventoryValue === 0 && totalRevenue === 0 && totalCost === 0) {
+          continue;
+        }
+
+        const grossMargin = totalRevenue - totalCost;
+        const grossMarginPercentage = totalRevenue > 0 ? (grossMargin / totalRevenue) * 100 : 0;
+
+        data.push({
+          warehouseId: warehouse.id,
+          warehouseName: warehouse.name,
+          category,
+          totalInventoryValue,
+          totalCost,
+          totalRevenue,
+          grossMargin,
+          grossMarginPercentage,
+          currency: 'COP',
+          period,
+        });
       }
-
-      const grossMargin = totalRevenue - totalCost;
-      const grossMarginPercentage = totalRevenue > 0 ? (grossMargin / totalRevenue) * 100 : 0;
-
-      data.push({
-        warehouseId: warehouse.id,
-        warehouseName: warehouse.name,
-        category: parameters.category,
-        totalInventoryValue,
-        totalCost,
-        totalRevenue,
-        grossMargin,
-        grossMarginPercentage,
-        currency: 'COP',
-        period,
-      });
     }
 
     return this.createResult(data, REPORT_TYPES.FINANCIAL, parameters, orgId);
@@ -769,12 +816,40 @@ export class ReportGenerationService {
   ): Promise<IReportGenerationResult<ITurnoverItem>> {
     this.logger.log('Generating turnover report', { orgId });
 
-    const [products, warehouses, stockMap] = await Promise.all([
+    // Fetch sales for COGS calculation
+    const salesPromise = parameters.dateRange
+      ? this.saleRepository.findByDateRange(
+          parameters.dateRange.startDate,
+          parameters.dateRange.endDate,
+          orgId
+        )
+      : this.saleRepository.findAll(orgId);
+
+    const [products, warehouses, stockMap, sales] = await Promise.all([
       this.productRepository.findAll(orgId),
       this.warehouseRepository.findAll(orgId),
       this.batchLoadStock(orgId, parameters.warehouseId, parameters.productId),
+      salesPromise,
     ]);
     const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
+
+    // Calculate COGS per product+warehouse: quantity sold × average unit cost
+    const cogsKey = (productId: string, warehouseId: string) => `${productId}-${warehouseId}`;
+    const productWarehouseCogsMap = new Map<string, number>();
+    const confirmedSales = sales.filter(s => s.status.getValue() === 'CONFIRMED');
+    for (const sale of confirmedSales) {
+      if (parameters.warehouseId && sale.warehouseId !== parameters.warehouseId) {
+        continue;
+      }
+      for (const line of sale.getLines()) {
+        const qty = line.quantity.getNumericValue();
+        const stock = stockMap.get(`${line.productId}-${sale.warehouseId}`);
+        const unitCost = stock?.unitCost ?? 0;
+        const lineCogs = qty * unitCost;
+        const key = cogsKey(line.productId, sale.warehouseId);
+        productWarehouseCogsMap.set(key, (productWarehouseCogsMap.get(key) || 0) + lineCogs);
+      }
+    }
 
     const data: ITurnoverItem[] = [];
     const period = this.getPeriodString(parameters.dateRange);
@@ -785,53 +860,54 @@ export class ReportGenerationService {
         continue;
       }
 
-      const cogs = 0;
+      // Filter by category if specified
+      const categoryName = product.categories?.[0]?.name;
+      if (parameters.category) {
+        const categoryNames = product.categories?.map(c => c.name) ?? [];
+        if (!categoryNames.includes(parameters.category)) {
+          continue;
+        }
+      }
 
-      let totalInventory = 0;
-      let warehouseCount = 0;
+      // One row per product × warehouse
       for (const warehouse of warehouses) {
         if (parameters.warehouseId && warehouse.id !== parameters.warehouseId) {
           continue;
         }
 
         const stock = stockMap.get(`${product.id}-${warehouse.id}`);
-        if (stock) {
-          totalInventory += stock.quantity * stock.unitCost;
-          warehouseCount++;
+        const averageInventory = stock ? stock.quantity * stock.unitCost : 0;
+        const cogs = productWarehouseCogsMap.get(cogsKey(product.id, warehouse.id)) || 0;
+
+        const turnoverRate = averageInventory > 0 ? cogs / averageInventory : 0;
+        const daysOfInventory = turnoverRate > 0 ? daysInPeriod / turnoverRate : daysInPeriod;
+
+        let classification: 'SLOW_MOVING' | 'NORMAL' | 'FAST_MOVING';
+        if (turnoverRate < 1) {
+          classification = 'SLOW_MOVING';
+        } else if (turnoverRate < 4) {
+          classification = 'NORMAL';
+        } else {
+          classification = 'FAST_MOVING';
         }
-      }
 
-      const averageInventory = warehouseCount > 0 ? totalInventory / warehouseCount : 0;
-      const turnoverRate = averageInventory > 0 ? cogs / averageInventory : 0;
-      const daysOfInventory = turnoverRate > 0 ? daysInPeriod / turnoverRate : daysInPeriod;
-
-      let classification: 'SLOW_MOVING' | 'NORMAL' | 'FAST_MOVING';
-      if (turnoverRate < 1) {
-        classification = 'SLOW_MOVING';
-      } else if (turnoverRate < 4) {
-        classification = 'NORMAL';
-      } else {
-        classification = 'FAST_MOVING';
-      }
-
-      if (averageInventory > 0 || cogs > 0) {
-        data.push({
-          productId: product.id,
-          productName: product.name.getValue(),
-          sku: product.sku.getValue(),
-          category: parameters.category,
-          warehouseId: parameters.warehouseId,
-          warehouseName: parameters.warehouseId
-            ? warehouseMap.get(parameters.warehouseId)
-            : undefined,
-          cogs,
-          averageInventory,
-          turnoverRate,
-          daysOfInventory,
-          classification,
-          period,
-          currency: 'COP',
-        });
+        if (averageInventory > 0 || cogs > 0) {
+          data.push({
+            productId: product.id,
+            productName: product.name.getValue(),
+            sku: product.sku.getValue(),
+            category: categoryName,
+            warehouseId: warehouse.id,
+            warehouseName: warehouseMap.get(warehouse.id) || 'Unknown',
+            cogs,
+            averageInventory,
+            turnoverRate,
+            daysOfInventory,
+            classification,
+            period,
+            currency: 'COP',
+          });
+        }
       }
     }
 
@@ -930,6 +1006,7 @@ export class ReportGenerationService {
     const productMap = new Map(
       products.map(p => [p.id, { name: p.name.getValue(), sku: p.sku.getValue() }])
     );
+    const productByIdMap = new Map(products.map(p => [p.id, p]));
 
     const productSalesMap = new Map<
       string,
@@ -955,6 +1032,15 @@ export class ReportGenerationService {
           continue;
         }
 
+        // Filter by category if specified
+        if (parameters.category) {
+          const product = productByIdMap.get(line.productId);
+          const categoryNames = product?.categories?.map(c => c.name) ?? [];
+          if (!categoryNames.includes(parameters.category)) {
+            continue;
+          }
+        }
+
         const existing = productSalesMap.get(line.productId) || {
           totalQuantitySold: 0,
           totalRevenue: 0,
@@ -964,8 +1050,6 @@ export class ReportGenerationService {
 
         existing.totalQuantitySold += line.quantity.getNumericValue();
         existing.totalRevenue += line.quantity.getNumericValue() * line.salePrice.getAmount();
-        // Note: SaleLine does not have unitCost, cost calculation would require
-        // fetching product cost separately if needed
         existing.salesCount += 1;
 
         productSalesMap.set(line.productId, existing);
@@ -977,6 +1061,8 @@ export class ReportGenerationService {
 
     for (const [productId, stats] of productSalesMap) {
       const productInfo = productMap.get(productId);
+      const product = productByIdMap.get(productId);
+      const categoryName = product?.categories?.[0]?.name;
       const averagePrice = stats.salesCount > 0 ? stats.totalRevenue / stats.totalQuantitySold : 0;
       const averageCost = stats.salesCount > 0 ? stats.totalCost / stats.totalQuantitySold : 0;
       const margin = stats.totalRevenue - stats.totalCost;
@@ -986,7 +1072,7 @@ export class ReportGenerationService {
         productId,
         productName: productInfo?.name || 'Unknown',
         sku: productInfo?.sku || 'Unknown',
-        category: parameters.category,
+        category: categoryName,
         totalQuantitySold: stats.totalQuantitySold,
         totalRevenue: stats.totalRevenue,
         averagePrice,
@@ -1099,6 +1185,32 @@ export class ReportGenerationService {
     ]);
     const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
 
+    // Collect unique user IDs and sale IDs to resolve in batch
+    const userIds = new Set<string>();
+    const saleIds = new Set<string>();
+    for (const r of returns) {
+      if (r.createdBy) userIds.add(r.createdBy);
+      if (r.saleId) saleIds.add(r.saleId);
+    }
+
+    // Resolve user IDs to names and sale IDs to sale numbers via Prisma
+    const [users, sales] = await Promise.all([
+      userIds.size > 0
+        ? this.prisma.user.findMany({
+            where: { id: { in: [...userIds] } },
+            select: { id: true, firstName: true, lastName: true },
+          })
+        : [],
+      saleIds.size > 0
+        ? this.prisma.sale.findMany({
+            where: { id: { in: [...saleIds] } },
+            select: { id: true, saleNumber: true },
+          })
+        : [],
+    ]);
+    const userNameMap = new Map(users.map(u => [u.id, `${u.firstName} ${u.lastName}`.trim()]));
+    const saleNumberMap = new Map(sales.map(s => [s.id, s.saleNumber]));
+
     const data: IReturnsReportItem[] = [];
 
     for (const returnEntity of returns) {
@@ -1138,14 +1250,18 @@ export class ReportGenerationService {
         status: returnEntity.status.getValue(),
         warehouseId: returnEntity.warehouseId,
         warehouseName: warehouseMap.get(returnEntity.warehouseId) || 'Unknown',
-        saleId: returnEntity.saleId,
+        saleId: returnEntity.saleId
+          ? saleNumberMap.get(returnEntity.saleId) || returnEntity.saleId
+          : undefined,
+        saleNumber: returnEntity.saleId ? saleNumberMap.get(returnEntity.saleId) : undefined,
         sourceMovementId: returnEntity.sourceMovementId,
         totalItems,
         totalValue,
         reason: returnEntity.reason.getValue() ?? undefined,
         currency: 'COP',
         returnDate: returnEntity.createdAt,
-        createdBy: returnEntity.createdBy,
+        createdBy: userNameMap.get(returnEntity.createdBy) || returnEntity.createdBy,
+        createdByName: userNameMap.get(returnEntity.createdBy),
       });
     }
 
@@ -1291,6 +1407,7 @@ export class ReportGenerationService {
     const productMap = new Map(
       products.map(p => [p.id, { name: p.name.getValue(), sku: p.sku.getValue() }])
     );
+    const productByIdMap = new Map(products.map(p => [p.id, p]));
 
     // Calculate quantity sold per product
     const productSalesMap = new Map<string, number>();
@@ -1337,6 +1454,15 @@ export class ReportGenerationService {
           continue;
         }
 
+        // Filter by category if specified
+        if (parameters.category) {
+          const product = productByIdMap.get(line.productId);
+          const categoryNames = product?.categories?.map(c => c.name) ?? [];
+          if (!categoryNames.includes(parameters.category)) {
+            continue;
+          }
+        }
+
         const existing = productReturnsMap.get(line.productId) || {
           totalQuantityReturned: 0,
           totalValueReturned: 0,
@@ -1365,6 +1491,8 @@ export class ReportGenerationService {
 
     for (const [productId, stats] of productReturnsMap) {
       const productInfo = productMap.get(productId);
+      const product = productByIdMap.get(productId);
+      const categoryName = product?.categories?.[0]?.name;
       const quantitySold = productSalesMap.get(productId) || 0;
       const returnRate = quantitySold > 0 ? (stats.totalQuantityReturned / quantitySold) * 100 : 0;
       const topReasons = Array.from(stats.reasons.entries())
@@ -1376,7 +1504,7 @@ export class ReportGenerationService {
         productId,
         productName: productInfo?.name || 'Unknown',
         sku: productInfo?.sku || 'Unknown',
-        category: parameters.category,
+        category: categoryName,
         totalQuantityReturned: stats.totalQuantityReturned,
         totalValueReturned: stats.totalValueReturned,
         returnRate,
@@ -1642,26 +1770,30 @@ export class ReportGenerationService {
     const now = new Date();
     const cutoffDate = new Date(now.getTime() - deadStockDays * 24 * 60 * 60 * 1000);
 
-    // Fetch sales only from cutoff date forward (we only need to know if a sale exists after cutoff)
-    const [products, warehouses, stockMap, recentSales] = await Promise.all([
+    // Fetch ALL sales to find actual last sale dates, plus recent sales for cutoff filtering
+    const [products, warehouses, stockMap, allSales] = await Promise.all([
       this.productRepository.findAll(orgId),
       this.warehouseRepository.findAll(orgId),
       this.batchLoadStock(orgId, parameters.warehouseId, parameters.productId),
-      this.saleRepository.findByDateRange(cutoffDate, now, orgId),
+      this.saleRepository.findAll(orgId),
     ]);
     const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]));
 
-    // Build set of products that have sales after cutoff (these are NOT dead stock)
-    const recentlySoldProducts = new Set<string>();
+    // Build last sale date map from ALL confirmed sales
     const lastSaleDateMap = new Map<string, Date>();
-    const confirmedRecentSales = recentSales.filter(s => s.status.getValue() === 'CONFIRMED');
-    for (const sale of confirmedRecentSales) {
+    const recentlySoldProducts = new Set<string>();
+    const confirmedSales = allSales.filter(s => s.status.getValue() === 'CONFIRMED');
+    for (const sale of confirmedSales) {
       for (const line of sale.getLines()) {
-        recentlySoldProducts.add(line.productId);
+        // Track last sale date across all time
         const existing = lastSaleDateMap.get(line.productId);
         const saleDate = sale.createdAt;
         if (!existing || saleDate > existing) {
           lastSaleDateMap.set(line.productId, saleDate);
+        }
+        // Track if product was sold after cutoff (not dead stock)
+        if (saleDate >= cutoffDate) {
+          recentlySoldProducts.add(line.productId);
         }
       }
     }
@@ -1674,6 +1806,15 @@ export class ReportGenerationService {
       }
       if (parameters.productId && product.id !== parameters.productId) {
         continue;
+      }
+
+      // Filter by category if specified
+      const categoryName = product.categories?.[0]?.name;
+      if (parameters.category) {
+        const categoryNames = product.categories?.map(c => c.name) ?? [];
+        if (!categoryNames.includes(parameters.category)) {
+          continue;
+        }
       }
 
       // Skip products that have recent sales (after cutoff)
@@ -1711,7 +1852,7 @@ export class ReportGenerationService {
           productId: product.id,
           productName: product.name.getValue(),
           sku: product.sku.getValue(),
-          category: parameters.category,
+          category: categoryName,
           warehouseId: warehouse.id,
           warehouseName: warehouseMap.get(warehouse.id) || 'Unknown',
           currentStock: stock.quantity,
