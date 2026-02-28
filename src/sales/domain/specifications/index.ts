@@ -1,4 +1,5 @@
 export {
+  SaleAllSpecification,
   SaleByStatusSpecification,
   SaleByWarehouseSpecification,
   SaleByDateRangeSpecification,

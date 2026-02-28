@@ -2,6 +2,19 @@ import { Sale } from '@sale/domain/entities/sale.entity';
 import { PrismaSpecification, PrismaWhereInput } from '@shared/domain/specifications';
 
 /**
+ * Base specification that matches all sales in an org (for unfiltered paginated queries)
+ */
+export class SaleAllSpecification extends PrismaSpecification<Sale> {
+  public isSatisfiedBy(): boolean {
+    return true;
+  }
+
+  public toPrismaWhere(orgId: string): PrismaWhereInput {
+    return { orgId };
+  }
+}
+
+/**
  * Specification for sales by status
  */
 export class SaleByStatusSpecification extends PrismaSpecification<Sale> {

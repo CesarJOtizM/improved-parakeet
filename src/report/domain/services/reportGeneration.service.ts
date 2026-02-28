@@ -1111,9 +1111,10 @@ export class ReportGenerationService {
         )
       : this.saleRepository.findAll(orgId);
 
-    const [sales, products] = await Promise.all([
+    const [sales, products, stockMap] = await Promise.all([
       salesPromise,
       this.productRepository.findAll(orgId),
+      this.batchLoadStock(orgId, parameters.warehouseId),
     ]);
     const productMap = new Map(
       products.map(p => [p.id, { name: p.name.getValue(), sku: p.sku.getValue() }])
@@ -1174,8 +1175,15 @@ export class ReportGenerationService {
           salesCount: 0,
         };
 
-        existing.totalQuantitySold += line.quantity.getNumericValue();
-        existing.totalRevenue += line.quantity.getNumericValue() * line.salePrice.getAmount();
+        const qty = line.quantity.getNumericValue();
+        existing.totalQuantitySold += qty;
+        existing.totalRevenue += qty * line.salePrice.getAmount();
+
+        // Look up unit cost from stock (product + warehouse)
+        const stockKey = `${line.productId}-${sale.warehouseId}`;
+        const stockInfo = stockMap.get(stockKey);
+        existing.totalCost += qty * (stockInfo?.unitCost || 0);
+
         existing.salesCount += 1;
 
         productSalesMap.set(line.productId, existing);

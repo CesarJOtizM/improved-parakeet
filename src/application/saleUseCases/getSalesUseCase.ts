@@ -3,6 +3,7 @@ import { QueryPagination } from '@infrastructure/database/utils/queryOptimizer';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Sale } from '@sale/domain/entities/sale.entity';
 import {
+  SaleAllSpecification,
   SaleByDateRangeSpecification,
   SaleBySearchSpecification,
   SaleByStatusSpecification,
@@ -12,10 +13,8 @@ import { ISaleResponseData, SaleMapper } from '@sale/mappers';
 import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
 
-import type { IProductRepository } from '@product/domain/ports/repositories/iProductRepository.port';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
 import type { IPrismaSpecification } from '@shared/domain/specifications';
-import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
 
 export interface IGetSalesRequest {
   orgId: string;
@@ -40,10 +39,6 @@ export class GetSalesUseCase {
   constructor(
     @Inject('SaleRepository')
     private readonly saleRepository: ISaleRepository,
-    @Inject('WarehouseRepository')
-    private readonly warehouseRepository: IWarehouseRepository,
-    @Inject('ProductRepository')
-    private readonly productRepository: IProductRepository,
     private readonly prisma: PrismaService
   ) {}
 
@@ -52,16 +47,14 @@ export class GetSalesUseCase {
       orgId: request.orgId,
       page: request.page,
       limit: request.limit,
-      warehouseId: request.warehouseId,
-      status: request.status,
     });
 
     const page = request.page || 1;
     const limit = request.limit || 10;
     const { skip, take } = QueryPagination.fromPage(page, limit);
 
-    // Compose specifications based on filters
-    const specifications: IPrismaSpecification<Sale>[] = [];
+    // Compose specifications based on filters (always start with base)
+    const specifications: IPrismaSpecification<Sale>[] = [new SaleAllSpecification()];
 
     if (request.warehouseId) {
       specifications.push(new SaleByWarehouseSpecification(request.warehouseId));
@@ -79,38 +72,26 @@ export class GetSalesUseCase {
       specifications.push(new SaleByDateRangeSpecification(request.startDate, request.endDate));
     }
 
-    // Combine all specifications with AND logic
-    let result;
-    if (specifications.length > 0) {
-      const finalSpec = specifications.reduce<IPrismaSpecification<Sale>>(
-        (acc, spec) => acc.and(spec) as IPrismaSpecification<Sale>,
-        specifications[0]
-      );
-      result = await this.saleRepository.findBySpecification(finalSpec, request.orgId, {
-        skip,
-        take,
-      });
-    } else {
-      // Fallback to findAll for backward compatibility
-      const allSales = await this.saleRepository.findAll(request.orgId);
-      const total = allSales.length;
-      const paginatedSales = allSales.slice(skip, skip + take);
-      result = {
-        data: paginatedSales,
-        total,
-        hasMore: skip + take < total,
-      };
-    }
+    // Combine all specifications with AND logic — always paginated at DB level
+    const finalSpec = specifications.reduce<IPrismaSpecification<Sale>>(
+      (acc, spec) => acc.and(spec) as IPrismaSpecification<Sale>,
+      specifications[0]
+    );
+
+    const result = await this.saleRepository.findBySpecification(finalSpec, request.orgId, {
+      skip,
+      take,
+    });
 
     const totalPages = Math.ceil(result.total / limit);
 
     // Convert to response DTOs
     const salesData = SaleMapper.toResponseDataList(result.data, true);
 
-    // Batch resolve warehouse and product names
+    // Batch resolve warehouse, product, and user names (3 queries instead of N+1)
     await this.enrichWithNames(salesData, request.orgId);
 
-    // Apply sorting on enriched data (warehouseName, customerReference, items available)
+    // Apply sorting on enriched data
     if (request.sortBy) {
       const sortOrder = request.sortOrder || 'asc';
       salesData.sort((a, b) => {
@@ -178,22 +159,9 @@ export class GetSalesUseCase {
   }
 
   private async enrichWithNames(salesData: ISaleResponseData[], orgId: string): Promise<void> {
-    // Collect unique warehouse IDs
+    // Collect all unique IDs upfront
     const warehouseIds = [...new Set(salesData.map(s => s.warehouseId))];
-    const warehouseMap = new Map<string, string>();
 
-    for (const wId of warehouseIds) {
-      try {
-        const warehouse = await this.warehouseRepository.findById(wId, orgId);
-        if (warehouse) {
-          warehouseMap.set(wId, `${warehouse.name} (${warehouse.code.getValue()})`);
-        }
-      } catch {
-        this.logger.warn('Could not resolve warehouse', { warehouseId: wId });
-      }
-    }
-
-    // Collect unique product IDs from all lines
     const productIds = new Set<string>();
     for (const sale of salesData) {
       if (sale.lines) {
@@ -203,41 +171,59 @@ export class GetSalesUseCase {
       }
     }
 
-    const productMap = new Map<string, { name: string; sku: string }>();
-    for (const pId of productIds) {
-      try {
-        const product = await this.productRepository.findById(pId, orgId);
-        if (product) {
-          productMap.set(pId, { name: product.name.getValue(), sku: product.sku.getValue() });
-        }
-      } catch {
-        this.logger.warn('Could not resolve product', { productId: pId });
-      }
-    }
-
-    // Collect unique user IDs for confirmedBy/cancelledBy
     const userIds = new Set<string>();
     for (const sale of salesData) {
       if (sale.confirmedBy) userIds.add(sale.confirmedBy);
       if (sale.cancelledBy) userIds.add(sale.cancelledBy);
     }
 
-    const userMap = new Map<string, string>();
-    for (const userId of userIds) {
-      try {
-        const user = await this.prisma.user.findUnique({
-          where: { id: userId },
-          select: { firstName: true, lastName: true },
-        });
-        if (user) {
-          userMap.set(userId, `${user.firstName} ${user.lastName}`.trim());
-        }
-      } catch {
-        this.logger.warn('Could not resolve user', { userId });
-      }
-    }
+    // Run all 3 batch queries in parallel (instead of N+1 sequential queries)
+    const [warehouses, products, users] = await Promise.all([
+      warehouseIds.length > 0
+        ? this.prisma.warehouse.findMany({
+            where: { id: { in: warehouseIds }, orgId },
+            select: { id: true, name: true, code: true },
+          })
+        : Promise.resolve([]),
 
-    // Enrich the response data
+      productIds.size > 0
+        ? this.prisma.product.findMany({
+            where: { id: { in: [...productIds] }, orgId },
+            select: { id: true, name: true, sku: true },
+          })
+        : Promise.resolve([]),
+
+      userIds.size > 0
+        ? this.prisma.user.findMany({
+            where: { id: { in: [...userIds] } },
+            select: { id: true, firstName: true, lastName: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    // Build lookup maps
+    const warehouseMap = new Map(
+      warehouses.map((w: { id: string; name: string; code: string }) => [
+        w.id,
+        `${w.name} (${w.code})`,
+      ])
+    );
+
+    const productMap = new Map(
+      products.map((p: { id: string; name: string; sku: string }) => [
+        p.id,
+        { name: p.name, sku: p.sku },
+      ])
+    );
+
+    const userMap = new Map(
+      users.map((u: { id: string; firstName: string; lastName: string }) => [
+        u.id,
+        `${u.firstName} ${u.lastName}`.trim(),
+      ])
+    );
+
+    // Enrich — pure in-memory, zero DB calls
     for (const sale of salesData) {
       sale.warehouseName = warehouseMap.get(sale.warehouseId);
       if (sale.confirmedBy) {
