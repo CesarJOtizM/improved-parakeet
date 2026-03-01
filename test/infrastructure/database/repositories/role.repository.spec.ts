@@ -39,6 +39,7 @@ describe('RoleRepository', () => {
     mockPrismaService = {
       role: {
         findFirst: jest.fn(),
+        findUnique: jest.fn(),
         findMany: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
@@ -351,6 +352,7 @@ describe('RoleRepository', () => {
         'role-123',
         'org-123'
       );
+      mockPrismaService.role.findUnique.mockResolvedValue(mockRoleData);
       mockPrismaService.role.update.mockResolvedValue({
         ...mockRoleData,
         name: 'updated-admin',
@@ -361,6 +363,7 @@ describe('RoleRepository', () => {
 
       // Assert
       expect(result).not.toBeNull();
+      expect(mockPrismaService.role.findUnique).toHaveBeenCalledWith({ where: { id: 'role-123' } });
       expect(mockPrismaService.role.update).toHaveBeenCalled();
     });
 
@@ -376,23 +379,10 @@ describe('RoleRepository', () => {
         'org-123'
       );
 
-      // Role.create generates a UUID, so the repository will try to update first
-      // We need to mock findFirst to return null (role doesn't exist) if the repo checks
-      // But looking at the repository code, it checks `if (role.id)` which is always true
-      // and then updates. Since Role.create generates an ID, we need to mock update
-      // to handle "record not found" and create instead, OR the repo should use create
-      // when role.id exists but record doesn't exist in DB.
-
-      // Looking at RoleRepository.save(), it does:
-      // if (role.id) { update } else { create }
-      // Since Role.create() generates UUID, role.id always exists, so it tries update.
-      // The update will fail if record doesn't exist. Let's mock update to succeed
-      // but actually for new role test, we should test the create branch.
-      //
-      // The issue is that Role.create() always generates an ID.
-      // The repository code assumes role.id being falsy means new role.
-      // This is a design mismatch. For the test, we'll mock update to return the role.
-      mockPrismaService.role.update.mockResolvedValue({
+      // The save() method now uses findUnique to check if role exists.
+      // Return null to indicate the role doesn't exist yet, triggering create.
+      mockPrismaService.role.findUnique.mockResolvedValue(null);
+      mockPrismaService.role.create.mockResolvedValue({
         id: role.id,
         name: 'new-role',
         description: 'New role',
@@ -409,6 +399,7 @@ describe('RoleRepository', () => {
       // Assert
       expect(result).not.toBeNull();
       expect(result.name).toBe('new-role');
+      expect(mockPrismaService.role.create).toHaveBeenCalled();
     });
 
     it('Given: system role with orgId When: saving Then: should throw error', async () => {
@@ -458,6 +449,7 @@ describe('RoleRepository', () => {
         'role-123',
         'org-123'
       );
+      mockPrismaService.role.findUnique.mockResolvedValue(mockRoleData);
       mockPrismaService.role.update.mockRejectedValue(new Error('Update failed'));
 
       // Act & Assert

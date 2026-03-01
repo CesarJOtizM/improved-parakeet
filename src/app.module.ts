@@ -10,8 +10,11 @@ import { ReturnsHttpModule } from '@interface/http/returns/returnsHttp.module';
 import { SalesHttpModule } from '@interface/http/sales/salesHttp.module';
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { OrganizationModule } from '@organization/organization.module';
 import { ReportModule } from '@report/report.module';
+import { validate } from '@shared/config/env.validation';
+import { ResponseInterceptor } from '@shared/interceptors/responseInterceptor';
 import { SecurityMiddleware } from '@shared/middleware';
 import { CorrelationIdMiddleware } from '@shared/middlewares/correlationId.middleware';
 
@@ -21,9 +24,8 @@ import { TenantMiddleware } from './interfaces/http/middlewares/tenant.middlewar
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [
-        authConfig, // Cargar configuración de autenticación
-      ],
+      load: [authConfig],
+      validate,
     }),
     PrismaModule,
     HealthCheckModule,
@@ -37,7 +39,7 @@ import { TenantMiddleware } from './interfaces/http/middlewares/tenant.middlewar
     DashboardHttpModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [{ provide: APP_INTERCEPTOR, useClass: ResponseInterceptor }],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {

@@ -384,4 +384,341 @@ describe('PrismaStockRepository', () => {
       expect(result.getNumericValue()).toBe(100);
     });
   });
+
+  describe('updateStock - create new record', () => {
+    it('Given: no existing stock record When: updating stock Then: should create new stock record', async () => {
+      // Arrange
+      const quantity = Quantity.create(50, 0);
+      const cost = Money.create(20, 'COP', 2);
+      mockPrismaService.stock.findFirst.mockResolvedValue(null);
+      mockPrismaService.stock.create.mockResolvedValue({
+        id: 'new-stock-1',
+        productId: 'product-123',
+        warehouseId: 'warehouse-123',
+        orgId: 'org-123',
+        quantity: 50,
+        unitCost: 20,
+      });
+
+      // Act
+      await repository.updateStock('product-123', 'warehouse-123', 'org-123', quantity, cost);
+
+      // Assert
+      expect(mockPrismaService.stock.create).toHaveBeenCalledWith({
+        data: {
+          productId: 'product-123',
+          warehouseId: 'warehouse-123',
+          orgId: 'org-123',
+          locationId: null,
+          quantity: 50,
+          unitCost: 20,
+        },
+      });
+      expect(mockPrismaService.stock.update).not.toHaveBeenCalled();
+    });
+
+    it('Given: locationId provided When: creating new stock Then: should include locationId', async () => {
+      // Arrange
+      const quantity = Quantity.create(30, 0);
+      const cost = Money.create(15, 'COP', 2);
+      mockPrismaService.stock.findFirst.mockResolvedValue(null);
+      mockPrismaService.stock.create.mockResolvedValue({
+        id: 'new-stock-2',
+        productId: 'product-123',
+        warehouseId: 'warehouse-123',
+        orgId: 'org-123',
+        locationId: 'loc-1',
+        quantity: 30,
+        unitCost: 15,
+      });
+
+      // Act
+      await repository.updateStock(
+        'product-123',
+        'warehouse-123',
+        'org-123',
+        quantity,
+        cost,
+        'loc-1'
+      );
+
+      // Assert
+      expect(mockPrismaService.stock.create).toHaveBeenCalledWith({
+        data: {
+          productId: 'product-123',
+          warehouseId: 'warehouse-123',
+          orgId: 'org-123',
+          locationId: 'loc-1',
+          quantity: 30,
+          unitCost: 15,
+        },
+      });
+    });
+  });
+
+  describe('getStockQuantity - with locationId', () => {
+    it('Given: locationId provided When: getting stock quantity Then: should include locationId in query', async () => {
+      // Arrange
+      mockPrismaService.stock.findFirst.mockResolvedValue({
+        ...mockStockData,
+        locationId: 'loc-1',
+      });
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      // Act
+      const result = await repository.getStockQuantity(
+        'product-123',
+        'warehouse-123',
+        'org-123',
+        'loc-1'
+      );
+
+      // Assert
+      expect(result.getNumericValue()).toBe(100);
+      expect(mockPrismaService.stock.findFirst).toHaveBeenCalledWith({
+        where: {
+          productId: 'product-123',
+          warehouseId: 'warehouse-123',
+          orgId: 'org-123',
+          locationId: 'loc-1',
+        },
+      });
+    });
+  });
+
+  describe('getStockWithCost - with locationId', () => {
+    it('Given: locationId provided When: getting stock with cost Then: should include locationId in query', async () => {
+      // Arrange
+      mockPrismaService.stock.findFirst.mockResolvedValue(mockStockData);
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      // Act
+      const result = await repository.getStockWithCost(
+        'product-123',
+        'warehouse-123',
+        'org-123',
+        'loc-1'
+      );
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(mockPrismaService.stock.findFirst).toHaveBeenCalledWith({
+        where: {
+          productId: 'product-123',
+          warehouseId: 'warehouse-123',
+          orgId: 'org-123',
+          locationId: 'loc-1',
+        },
+      });
+    });
+
+    it('Given: stock with NaN unitCost When: getting stock Then: should return zero cost', async () => {
+      // Arrange
+      mockPrismaService.stock.findFirst.mockResolvedValue({
+        ...mockStockData,
+        unitCost: NaN,
+      });
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      // Act
+      const result = await repository.getStockWithCost('product-123', 'warehouse-123', 'org-123');
+
+      // Assert
+      expect(result?.averageCost.getAmount()).toBe(0);
+    });
+  });
+
+  describe('getStockWithCost - non-Error throw', () => {
+    it('Given: non-Error object thrown When: getting stock with cost Then: should still throw', async () => {
+      // Arrange
+      mockPrismaService.stock.findFirst.mockRejectedValue('string error');
+
+      // Act & Assert
+      await expect(
+        repository.getStockWithCost('product-123', 'warehouse-123', 'org-123')
+      ).rejects.toBe('string error');
+    });
+  });
+
+  describe('getStockQuantity - non-Error throw', () => {
+    it('Given: non-Error object thrown When: getting stock quantity Then: should still throw', async () => {
+      // Arrange
+      mockPrismaService.stock.findFirst.mockRejectedValue('string error');
+
+      // Act & Assert
+      await expect(
+        repository.getStockQuantity('product-123', 'warehouse-123', 'org-123')
+      ).rejects.toBe('string error');
+    });
+  });
+
+  describe('findAll', () => {
+    const mockStockWithRelations = {
+      id: 'stock-1',
+      productId: 'product-1',
+      warehouseId: 'warehouse-1',
+      orgId: 'org-123',
+      quantity: 50,
+      unitCost: 10,
+      locationId: null,
+      product: {
+        id: 'product-1',
+        sku: 'SKU-001',
+        name: 'Product One',
+        unit: 'EA',
+      },
+      warehouse: {
+        id: 'warehouse-1',
+        code: 'WH-001',
+        name: 'Main Warehouse',
+      },
+    };
+
+    it('Given: stock records exist When: finding all Then: should return stock data with product and warehouse info', async () => {
+      // Arrange
+      mockPrismaService.stock.findMany = jest.fn().mockResolvedValue([mockStockWithRelations]);
+
+      // Act
+      const result = await repository.findAll('org-123');
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(result[0].productId).toBe('product-1');
+      expect(result[0].productName).toBe('Product One');
+      expect(result[0].productSku).toBe('SKU-001');
+      expect(result[0].warehouseId).toBe('warehouse-1');
+      expect(result[0].warehouseName).toBe('Main Warehouse');
+      expect(result[0].warehouseCode).toBe('WH-001');
+      expect(result[0].quantity.getNumericValue()).toBe(50);
+      expect(result[0].averageCost.getAmount()).toBe(10);
+    });
+
+    it('Given: warehouseIds filter When: finding all Then: should filter by warehouse', async () => {
+      // Arrange
+      mockPrismaService.stock.findMany = jest.fn().mockResolvedValue([mockStockWithRelations]);
+
+      // Act
+      await repository.findAll('org-123', { warehouseIds: ['warehouse-1', 'warehouse-2'] });
+
+      // Assert
+      expect(mockPrismaService.stock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            warehouseId: { in: ['warehouse-1', 'warehouse-2'] },
+          }),
+        })
+      );
+    });
+
+    it('Given: productId filter When: finding all Then: should filter by product', async () => {
+      // Arrange
+      mockPrismaService.stock.findMany = jest.fn().mockResolvedValue([mockStockWithRelations]);
+
+      // Act
+      await repository.findAll('org-123', { productId: 'product-1' });
+
+      // Assert
+      expect(mockPrismaService.stock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            productId: 'product-1',
+          }),
+        })
+      );
+    });
+
+    it('Given: lowStock filter with reorder rules When: finding all Then: should filter by low stock', async () => {
+      // Arrange
+      const stockRecords = [
+        {
+          ...mockStockWithRelations,
+          quantity: 5, // Below minQty of 10
+        },
+        {
+          ...mockStockWithRelations,
+          id: 'stock-2',
+          productId: 'product-2',
+          quantity: 100, // Above minQty
+          product: { id: 'product-2', sku: 'SKU-002', name: 'Product Two', unit: 'EA' },
+        },
+      ];
+      mockPrismaService.stock.findMany = jest.fn().mockResolvedValue(stockRecords);
+
+      // Mock reorder rules - add mock for reorderRule
+      const mockReorderRule = {
+        findMany: jest.fn().mockResolvedValue([
+          { productId: 'product-1', warehouseId: 'warehouse-1', minQty: 10 },
+          { productId: 'product-2', warehouseId: 'warehouse-1', minQty: 10 },
+        ]),
+      };
+      (mockPrismaService as unknown as Record<string, unknown>).reorderRule = mockReorderRule;
+
+      // Act
+      const result = await repository.findAll('org-123', { lowStock: true });
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(result[0].productId).toBe('product-1');
+      expect(result[0].quantity.getNumericValue()).toBe(5);
+    });
+
+    it('Given: lowStock filter with no reorder rules When: finding all Then: should return empty', async () => {
+      // Arrange
+      mockPrismaService.stock.findMany = jest.fn().mockResolvedValue([mockStockWithRelations]);
+
+      const mockReorderRule = {
+        findMany: jest.fn().mockResolvedValue([]),
+      };
+      (mockPrismaService as unknown as Record<string, unknown>).reorderRule = mockReorderRule;
+
+      // Act
+      const result = await repository.findAll('org-123', { lowStock: true });
+
+      // Assert
+      expect(result).toHaveLength(0);
+    });
+
+    it('Given: stock with null unitCost When: finding all Then: should default to zero cost', async () => {
+      // Arrange
+      mockPrismaService.stock.findMany = jest
+        .fn()
+        .mockResolvedValue([{ ...mockStockWithRelations, unitCost: null }]);
+
+      // Act
+      const result = await repository.findAll('org-123');
+
+      // Assert
+      expect(result[0].averageCost.getAmount()).toBe(0);
+    });
+
+    it('Given: stock with Decimal unitCost object When: finding all Then: should convert correctly', async () => {
+      // Arrange
+      const decimalCost = { toNumber: () => 42.5 };
+      mockPrismaService.stock.findMany = jest
+        .fn()
+        .mockResolvedValue([{ ...mockStockWithRelations, unitCost: decimalCost }]);
+
+      // Act
+      const result = await repository.findAll('org-123');
+
+      // Assert
+      expect(result[0].averageCost.getAmount()).toBe(42.5);
+    });
+
+    it('Given: database error When: finding all Then: should throw error', async () => {
+      // Arrange
+      mockPrismaService.stock.findMany = jest.fn().mockRejectedValue(new Error('Query failed'));
+
+      // Act & Assert
+      await expect(repository.findAll('org-123')).rejects.toThrow('Query failed');
+    });
+
+    it('Given: non-Error database failure When: finding all Then: should still throw', async () => {
+      // Arrange
+      mockPrismaService.stock.findMany = jest.fn().mockRejectedValue('string error');
+
+      // Act & Assert
+      await expect(repository.findAll('org-123')).rejects.toBe('string error');
+    });
+  });
 });

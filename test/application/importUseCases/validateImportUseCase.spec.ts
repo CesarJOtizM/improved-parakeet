@@ -5,7 +5,11 @@ import { ImportType } from '@import/domain/valueObjects/importType.valueObject';
 import { ValidationResult } from '@import/domain/valueObjects/validationResult.valueObject';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
-import { BusinessRuleError, NotFoundError } from '@shared/domain/result/domainError';
+import {
+  BusinessRuleError,
+  NotFoundError,
+  ValidationError,
+} from '@shared/domain/result/domainError';
 
 import type { IImportBatchRepository } from '@import/domain';
 import type { IFileParsingService } from '@shared/ports/externalServices';
@@ -175,6 +179,170 @@ describe('ValidateImportUseCase', () => {
         },
         error => {
           expect(error).toBeInstanceOf(BusinessRuleError);
+        }
+      );
+    });
+
+    it('Given: invalid file format When: validating import Then: should return ValidationError', async () => {
+      // Arrange
+      const mockBatch = createMockBatch('PENDING');
+      mockRepository.findById.mockResolvedValue(mockBatch);
+
+      mockFileParsingService.validateFileFormat.mockReturnValue({
+        isValid: false,
+        errors: ['Unsupported file type', 'File too large'],
+      });
+
+      const request = {
+        batchId: mockBatchId,
+        file: mockFile,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+          expect(error.message).toBe('Unsupported file type, File too large');
+        }
+      );
+    });
+
+    it('Given: file structure validation fails When: validating import Then: should fail batch and return ValidationError', async () => {
+      // Arrange
+      const mockBatch = createMockBatch('PENDING');
+      mockRepository.findById.mockResolvedValue(mockBatch);
+      mockRepository.save.mockImplementation(async batch => batch);
+
+      mockFileParsingService.validateFileFormat.mockReturnValue({
+        isValid: true,
+        errors: [],
+      });
+
+      mockFileParsingService.parseFile.mockResolvedValue({
+        headers: ['wrong_column'],
+        rows: [],
+        totalRows: 0,
+        fileType: 'excel' as const,
+      });
+
+      const structureErrors = ['Missing required column: sku', 'Missing required column: name'];
+      jest
+        .spyOn(ImportValidationService, 'validateFileStructure')
+        .mockReturnValue(ValidationResult.invalid(structureErrors));
+
+      const failSpy = jest.spyOn(mockBatch, 'fail');
+
+      const request = {
+        batchId: mockBatchId,
+        file: mockFile,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      expect(failSpy).toHaveBeenCalledWith(
+        'File structure validation failed: Missing required column: sku, Missing required column: name'
+      );
+      expect(mockRepository.save).toHaveBeenCalled();
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+          expect(error.message).toContain('Missing required column: sku');
+        }
+      );
+    });
+
+    it('Given: file with valid and invalid rows When: validating import Then: should create rows and return counts', async () => {
+      // Arrange
+      const mockBatch = createMockBatch('PENDING');
+      mockRepository.findById.mockResolvedValue(mockBatch);
+      mockRepository.save.mockImplementation(async batch => batch);
+
+      mockFileParsingService.validateFileFormat.mockReturnValue({
+        isValid: true,
+        errors: [],
+      });
+
+      mockFileParsingService.parseFile.mockResolvedValue({
+        headers: ['sku', 'name', 'unit'],
+        rows: [
+          { sku: 'PROD-001', name: 'Product 1', unit: 'UNIT' },
+          { sku: '', name: '', unit: '' },
+          { sku: 'PROD-003', name: 'Product 3', unit: 'KG' },
+        ],
+        totalRows: 3,
+        fileType: 'excel' as const,
+      });
+
+      jest
+        .spyOn(ImportValidationService, 'validateFileStructure')
+        .mockReturnValue(ValidationResult.valid());
+
+      jest
+        .spyOn(ImportValidationService, 'validateRowData')
+        .mockReturnValueOnce(ValidationResult.valid())
+        .mockReturnValueOnce(ValidationResult.invalid(['SKU is required', 'Name is required']))
+        .mockReturnValueOnce(ValidationResult.valid());
+
+      const setRowsSpy = jest.spyOn(mockBatch, 'setRows');
+
+      const request = {
+        batchId: mockBatchId,
+        file: mockFile,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(setRowsSpy).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ props: expect.objectContaining({ rowNumber: 2 }) }),
+          expect.objectContaining({ props: expect.objectContaining({ rowNumber: 3 }) }),
+          expect.objectContaining({ props: expect.objectContaining({ rowNumber: 4 }) }),
+        ])
+      );
+      expect(ImportValidationService.validateRowData).toHaveBeenCalledTimes(3);
+    });
+
+    it('Given: repository throws error When: validating import Then: should return ValidationError from outer catch', async () => {
+      // Arrange
+      mockRepository.findById.mockRejectedValue(new Error('Database connection lost'));
+
+      const request = {
+        batchId: mockBatchId,
+        file: mockFile,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+          expect(error.message).toContain('Validation failed: Database connection lost');
         }
       );
     });

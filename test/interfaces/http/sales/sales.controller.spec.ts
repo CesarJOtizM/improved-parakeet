@@ -55,7 +55,11 @@ describe('SalesController', () => {
       mockAddSaleLineUseCase,
       mockRemoveSaleLineUseCase,
       mockGetSaleMovementUseCase,
-      mockGetReturnsBySaleUseCase
+      mockGetReturnsBySaleUseCase,
+      { execute: jest.fn() } as any, // startPickingSaleUseCase
+      { execute: jest.fn() } as any, // shipSaleUseCase
+      { execute: jest.fn() } as any, // completeSaleUseCase
+      { execute: jest.fn() } as any // markSaleReturnedUseCase
     );
   });
 
@@ -191,7 +195,7 @@ describe('SalesController', () => {
       );
 
       // Act
-      const result = await controller.confirmSale('sale-123', 'org-123');
+      const result = await controller.confirmSale('sale-123', 'org-123', mockRequest as any);
 
       // Assert
       expect(result.success).toBe(true);
@@ -212,9 +216,12 @@ describe('SalesController', () => {
       );
 
       // Act
-      const result = await controller.cancelSale('sale-123', 'org-123', {
-        reason: 'Customer request',
-      } as any);
+      const result = await controller.cancelSale(
+        'sale-123',
+        'Customer request',
+        'org-123',
+        mockRequest as any
+      );
 
       // Assert
       expect(result.success).toBe(true);

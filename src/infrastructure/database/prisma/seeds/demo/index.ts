@@ -45,33 +45,45 @@ export class DemoSeed {
     const products = await productsSeed.seed(orgId, categories);
     console.log('✅ Productos:', products.length);
 
-    // 6. Stock
-    const stockSeed = new DemoStockSeed(this.prisma);
-    await stockSeed.seed(orgId, products, warehouses);
-    console.log('✅ Stock inicial configurado');
-
     // Get the admin user for createdBy fields
     const adminUser = users.find(u => u.email === 'admin@nevada-demo.com')!;
 
-    // 7. Movements (IN, OUT, ADJUST)
+    // 6. Movements (IN, ADJUST — no OUT, those come from sales)
     const movementsSeed = new DemoMovementsSeed(this.prisma);
-    await movementsSeed.seed(orgId, products, warehouses, adminUser.id);
-    console.log('✅ Movimientos creados');
+    const movResult = await movementsSeed.seed(orgId, products, warehouses, adminUser.id);
+    console.log('✅ Movimientos creados (compras + ajustes)');
 
-    // 8. Sales
+    // Compute available stock: purchased + adjustIn - adjustOut
+    const available = new Map<string, number>();
+    movResult.purchasedQty.forEach((qty, key) => {
+      available.set(key, (available.get(key) || 0) + qty);
+    });
+    movResult.adjustInQty.forEach((qty, key) => {
+      available.set(key, (available.get(key) || 0) + qty);
+    });
+    movResult.adjustOutQty.forEach((qty, key) => {
+      available.set(key, (available.get(key) || 0) - qty);
+    });
+
+    // 7. Sales (creates Movement OUT per confirmed sale, decrements available)
     const salesSeed = new DemoSalesSeed(this.prisma);
-    const sales = await salesSeed.seed(orgId, products, warehouses, users);
-    console.log('✅ Ventas:', sales.length);
+    const sales = await salesSeed.seed(orgId, products, warehouses, users, available);
+    console.log('✅ Ventas:', sales.length, '(con movimientos OUT enlazados)');
 
-    // 9. Returns
+    // 8. Returns (uses actual sale lines for customer returns)
     const returnsSeed = new DemoReturnsSeed(this.prisma);
     const returns = await returnsSeed.seed(orgId, products, warehouses, sales, adminUser.id);
     console.log('✅ Devoluciones:', returns.length);
 
-    // 10. Transfers
+    // 9. Transfers
     const transfersSeed = new DemoTransfersSeed(this.prisma);
     const transfers = await transfersSeed.seed(orgId, products, warehouses, adminUser.id);
     console.log('✅ Transferencias:', transfers.length);
+
+    // 10. Stock (calculated from available = purchased + adjustIn - adjustOut - sold)
+    const stockSeed = new DemoStockSeed(this.prisma);
+    await stockSeed.seed(orgId, products, available);
+    console.log('✅ Stock calculado (consistente con compras y ventas)');
 
     // 11. Audit Logs
     const auditSeed = new DemoAuditLogsSeed(this.prisma);

@@ -63,9 +63,9 @@ describe('AuthConfig', () => {
     });
 
     describe('accessTokenExpiry', () => {
-      it('Given: no JWT_ACCESS_TOKEN_EXPIRY environment variable When: loading auth config Then: should use default expiry of 15m', () => {
+      it('Given: no JWT_ACCESS_TOKEN_EXPIRY environment variable When: loading auth config Then: should use default expiry of 8h', () => {
         // Arrange
-        const expectedExpiry = '15m';
+        const expectedExpiry = '8h';
 
         // Act
         const result = getConfig().jwt.accessTokenExpiry;
@@ -88,9 +88,9 @@ describe('AuthConfig', () => {
     });
 
     describe('refreshTokenExpiry', () => {
-      it('Given: no JWT_REFRESH_TOKEN_EXPIRY environment variable When: loading auth config Then: should use default expiry of 7d', () => {
+      it('Given: no JWT_REFRESH_TOKEN_EXPIRY environment variable When: loading auth config Then: should use default expiry of 15d', () => {
         // Arrange
-        const expectedExpiry = '7d';
+        const expectedExpiry = '15d';
 
         // Act
         const result = getConfig().jwt.refreshTokenExpiry;

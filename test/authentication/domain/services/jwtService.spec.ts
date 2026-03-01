@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { IJwtPayload, JwtService } from '@auth/domain/services/jwtService';
+import { ConfigService } from '@nestjs/config';
 import { JwtService as NestJwtService } from '@nestjs/jwt';
 
 describe('JwtService', () => {
   let jwtService: JwtService;
   let mockNestJwtService: jest.Mocked<NestJwtService>;
+  let mockConfigService: jest.Mocked<ConfigService>;
 
   const mockUserId = 'user-123';
   const mockOrgId = 'org-456';
@@ -24,10 +27,18 @@ describe('JwtService', () => {
       mergeJwtOptions: jest.fn(),
       overrideSecretFromOptions: jest.fn(),
       getSecretKey: jest.fn(),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
 
-    jwtService = new JwtService(mockNestJwtService);
+    mockConfigService = {
+      get: jest.fn().mockReturnValue({
+        jwt: {
+          accessTokenExpiry: '8h',
+          refreshTokenExpiry: '15d',
+        },
+      }),
+    } as any;
+
+    jwtService = new JwtService(mockNestJwtService, mockConfigService);
   });
 
   describe('generateTokenPair', () => {
@@ -89,7 +100,7 @@ describe('JwtService', () => {
           iat: expect.any(Number),
           jti: expect.stringMatching(/^jti_\d+_[a-z0-9]+$/),
         }),
-        { expiresIn: '15m' }
+        { expiresIn: '8h' }
       );
 
       expect(mockNestJwtService.signAsync).toHaveBeenCalledWith(
@@ -103,7 +114,7 @@ describe('JwtService', () => {
           iat: expect.any(Number),
           jti: expect.stringMatching(/^jti_\d+_[a-z0-9]+$/),
         }),
-        { expiresIn: '7d' }
+        { expiresIn: '15d' }
       );
     });
 
@@ -201,7 +212,7 @@ describe('JwtService', () => {
           iat: expect.any(Number),
           jti: expect.stringMatching(/^jti_\d+_[a-z0-9]+$/),
         }),
-        { expiresIn: '15m' }
+        { expiresIn: '8h' }
       );
     });
 

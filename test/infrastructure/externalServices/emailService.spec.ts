@@ -15,19 +15,13 @@ describe('EmailService', () => {
 
   it('sends email successfully', async () => {
     const service = new EmailService();
-    const timerSpy = jest
-      .spyOn(global, 'setTimeout')
-      .mockImplementation((handler: (...args: unknown[]) => void) => {
-        handler();
-        return 0 as unknown as NodeJS.Timeout;
-      });
 
+    // Let the real setTimeout run — the internal delay is only 100ms
+    // and the ResilientCall timeout is 10s, so no timeout will fire
     const result = await service.sendEmail(baseRequest);
 
     expect(result.success).toBe(true);
     expect(result.messageId).toBeDefined();
-
-    timerSpy.mockRestore();
   });
 
   it('builds welcome email request', async () => {

@@ -98,7 +98,6 @@ Sistema de inventarios diseñado para optimizar el control, registro y gestión 
 
 ### 🎨 Personalización
 
-- **Branding por organización**: Logos, colores, fuentes
 - **Configuraciones**: Timezone, moneda, formato de fecha
 - **Preferencias de usuario**: Configuraciones individuales
 
@@ -754,15 +753,17 @@ SOFTWARE.
 
 ## 📚 Documentación Adicional
 
-| Documento                                                | Descripción                        |
-| -------------------------------------------------------- | ---------------------------------- |
-| [Plan de Trabajo](docs/work_plan.md)                     | Roadmap detallado del proyecto     |
-| [Requerimientos](docs/Requirement.md)                    | Especificación de requerimientos   |
-| [Modelo de Datos](docs/data_model.md)                    | Estructura de la base de datos     |
-| [Guía de Testing](docs/testing-structure.md)             | Estructura y convenciones de tests |
-| [Result Monad Guide](docs/result-monad-guide.md)         | Guía del patrón Result<T, E>       |
-| [Documentación Técnica](docs/technical-documentation.md) | Arquitectura y patrones            |
-| [Colección Postman](docs/postman/)                       | Colecciones y documentación de API |
+| Documento                                                          | Descripción                        |
+| ------------------------------------------------------------------ | ---------------------------------- |
+| [Arquitectura](docs/technical/architecture.md)                     | Arquitectura detallada del sistema |
+| [Patrones de Diseno](docs/technical/patterns.md)                   | Patrones implementados (14+)       |
+| [API Reference](docs/technical/api-reference.md)                   | Referencia completa de endpoints   |
+| [Bounded Context Map](docs/technical/bounded-context-map.md)       | Mapa de contextos acotados (DDD)   |
+| [Result Monad Guide](docs/technical/result-monad-guide.md)         | Guia del patron Result<T, E>       |
+| [Modelo de Datos](docs/technical/data_model.md)                    | Estructura de la base de datos     |
+| [Guia de Testing](docs/technical/testing-structure.md)             | Estructura y convenciones de tests |
+| [Requerimientos](docs/Requirement.md)                              | Especificacion de requerimientos   |
+| [Coleccion Postman](docs/postman/)                                 | Colecciones y documentacion de API |
 
 ---
 

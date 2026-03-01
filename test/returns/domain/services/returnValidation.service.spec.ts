@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
 import { Return } from '@returns/domain/entities/return.entity';
@@ -118,6 +119,53 @@ describe('ReturnValidationService', () => {
       // Assert
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('Return must have at least one line before confirming');
+    });
+
+    it('Given: a DRAFT return with a line with non-positive quantity When: validating confirmation Then: should return invalid with per-product error', () => {
+      // Arrange
+      const returnEntity = Return.reconstitute(
+        {
+          returnNumber: ReturnNumber.fromString('RETURN-2024-004'),
+          status: ReturnStatus.create('DRAFT'),
+          type: ReturnType.create('RETURN_CUSTOMER'),
+          reason: ReturnReason.create('Defective product'),
+          warehouseId: mockWarehouseId,
+          saleId: mockSaleId,
+          createdBy: 'user-123',
+        },
+        'return-004',
+        mockOrgId,
+        [
+          ReturnLine.reconstitute(
+            {
+              productId: 'product-good',
+              locationId: 'location-123',
+              quantity: Quantity.create(5, 2),
+              originalSalePrice: SalePrice.create(100, 'USD'),
+              currency: 'USD',
+            },
+            'line-good',
+            mockOrgId
+          ),
+        ]
+      );
+
+      // Spy on getLines to return a mock line with non-positive quantity
+      const mockLine = {
+        productId: 'product-bad',
+        quantity: {
+          isPositive: () => false,
+          getNumericValue: () => 0,
+        },
+      };
+      jest.spyOn(returnEntity, 'getLines').mockReturnValue([mockLine] as unknown as ReturnLine[]);
+
+      // Act
+      const result = ReturnValidationService.validateReturnCanBeConfirmed(returnEntity);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Line with product product-bad must have positive quantity');
     });
   });
 
@@ -324,6 +372,193 @@ describe('ReturnValidationService', () => {
       expect(result.errors[0]).toContain('Error validating customer return quantity');
       expect(result.errors[0]).toContain('Database connection failed');
     });
+
+    it('Given: a customer return with quantities within sold amounts When: validating customer quantity Then: should return valid result', async () => {
+      // Arrange
+      const returnEntity = Return.reconstitute(
+        {
+          returnNumber: ReturnNumber.fromString('RETURN-2024-024'),
+          status: ReturnStatus.create('DRAFT'),
+          type: ReturnType.create('RETURN_CUSTOMER'),
+          reason: ReturnReason.create('Defective'),
+          warehouseId: mockWarehouseId,
+          saleId: mockSaleId,
+          createdBy: 'user-123',
+        },
+        'return-205',
+        mockOrgId,
+        [
+          ReturnLine.reconstitute(
+            {
+              productId: 'product-A',
+              locationId: 'location-123',
+              quantity: Quantity.create(2, 2),
+              originalSalePrice: SalePrice.create(50, 'USD'),
+              currency: 'USD',
+            },
+            'rline-A',
+            mockOrgId
+          ),
+        ]
+      );
+
+      // Mock sale with lines that have enough quantity
+      const mockSale = {
+        getLines: jest.fn().mockReturnValue([
+          {
+            productId: 'product-A',
+            quantity: { getNumericValue: () => 10 },
+          },
+        ]),
+      };
+      mockSaleRepository.findById.mockResolvedValue(mockSale as any);
+
+      // Act
+      const result = await ReturnValidationService.validateCustomerReturnQuantity(
+        returnEntity,
+        mockSaleRepository
+      );
+
+      // Assert
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+      expect(mockSaleRepository.findById).toHaveBeenCalledWith(mockSaleId, mockOrgId);
+    });
+
+    it('Given: a customer return with product not in sale lines When: validating customer quantity Then: should return invalid result', async () => {
+      // Arrange
+      const returnEntity = Return.reconstitute(
+        {
+          returnNumber: ReturnNumber.fromString('RETURN-2024-025'),
+          status: ReturnStatus.create('DRAFT'),
+          type: ReturnType.create('RETURN_CUSTOMER'),
+          reason: ReturnReason.create('Wrong item'),
+          warehouseId: mockWarehouseId,
+          saleId: mockSaleId,
+          createdBy: 'user-123',
+        },
+        'return-206',
+        mockOrgId,
+        [
+          ReturnLine.reconstitute(
+            {
+              productId: 'product-NOT-SOLD',
+              locationId: 'location-123',
+              quantity: Quantity.create(1, 2),
+              originalSalePrice: SalePrice.create(25, 'USD'),
+              currency: 'USD',
+            },
+            'rline-NS',
+            mockOrgId
+          ),
+        ]
+      );
+
+      // Mock sale with different products
+      const mockSale = {
+        getLines: jest.fn().mockReturnValue([
+          {
+            productId: 'product-OTHER',
+            quantity: { getNumericValue: () => 5 },
+          },
+        ]),
+      };
+      mockSaleRepository.findById.mockResolvedValue(mockSale as any);
+
+      // Act
+      const result = await ReturnValidationService.validateCustomerReturnQuantity(
+        returnEntity,
+        mockSaleRepository
+      );
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        `Product product-NOT-SOLD was not sold in sale ${mockSaleId}`
+      );
+    });
+
+    it('Given: a customer return with quantity exceeding sold quantity When: validating customer quantity Then: should return invalid result', async () => {
+      // Arrange
+      const returnEntity = Return.reconstitute(
+        {
+          returnNumber: ReturnNumber.fromString('RETURN-2024-026'),
+          status: ReturnStatus.create('DRAFT'),
+          type: ReturnType.create('RETURN_CUSTOMER'),
+          reason: ReturnReason.create('Defective'),
+          warehouseId: mockWarehouseId,
+          saleId: mockSaleId,
+          createdBy: 'user-123',
+        },
+        'return-207',
+        mockOrgId,
+        [
+          ReturnLine.reconstitute(
+            {
+              productId: 'product-B',
+              locationId: 'location-123',
+              quantity: Quantity.create(15, 2),
+              originalSalePrice: SalePrice.create(30, 'USD'),
+              currency: 'USD',
+            },
+            'rline-B',
+            mockOrgId
+          ),
+        ]
+      );
+
+      // Mock sale where only 10 units were sold
+      const mockSale = {
+        getLines: jest.fn().mockReturnValue([
+          {
+            productId: 'product-B',
+            quantity: { getNumericValue: () => 10 },
+          },
+        ]),
+      };
+      mockSaleRepository.findById.mockResolvedValue(mockSale as any);
+
+      // Act
+      const result = await ReturnValidationService.validateCustomerReturnQuantity(
+        returnEntity,
+        mockSaleRepository
+      );
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        'Cannot return 15 units of product product-B. Only 10 units were sold.'
+      );
+    });
+
+    it('Given: a customer return with non-Error thrown in catch block When: validating customer quantity Then: should return Unknown error message', async () => {
+      // Arrange
+      const returnEntity = Return.reconstitute(
+        {
+          returnNumber: ReturnNumber.fromString('RETURN-2024-027'),
+          status: ReturnStatus.create('DRAFT'),
+          type: ReturnType.create('RETURN_CUSTOMER'),
+          reason: ReturnReason.create('Defective'),
+          warehouseId: mockWarehouseId,
+          saleId: mockSaleId,
+          createdBy: 'user-123',
+        },
+        'return-208',
+        mockOrgId
+      );
+      mockSaleRepository.findById.mockRejectedValue('string error thrown');
+
+      // Act
+      const result = await ReturnValidationService.validateCustomerReturnQuantity(
+        returnEntity,
+        mockSaleRepository
+      );
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors[0]).toContain('Error validating customer return quantity');
+      expect(result.errors[0]).toContain('Unknown error');
+    });
   });
 
   describe('validateSupplierReturnQuantity', () => {
@@ -452,6 +687,309 @@ describe('ReturnValidationService', () => {
       expect(result.isValid).toBe(false);
       expect(result.errors[0]).toContain('Error validating supplier return quantity');
       expect(result.errors[0]).toContain('Connection timeout');
+    });
+
+    it('Given: a supplier return with source movement type not IN When: validating supplier quantity Then: should return invalid result', async () => {
+      // Arrange
+      const returnEntity = Return.reconstitute(
+        {
+          returnNumber: ReturnNumber.fromString('RETURN-2024-034'),
+          status: ReturnStatus.create('DRAFT'),
+          type: ReturnType.create('RETURN_SUPPLIER'),
+          reason: ReturnReason.create('Quality issue'),
+          warehouseId: mockWarehouseId,
+          sourceMovementId: mockMovementId,
+          createdBy: 'user-123',
+        },
+        'return-305',
+        mockOrgId,
+        [
+          ReturnLine.reconstitute(
+            {
+              productId: 'product-S1',
+              locationId: 'location-123',
+              quantity: Quantity.create(3, 2),
+              originalUnitCost: undefined,
+              currency: 'USD',
+            },
+            'rline-S1',
+            mockOrgId
+          ),
+        ]
+      );
+
+      // Mock movement with OUT type instead of IN
+      const mockMovement = {
+        type: { getValue: () => 'OUT' },
+        reason: 'PURCHASE',
+        getLines: jest.fn().mockReturnValue([
+          {
+            productId: 'product-S1',
+            quantity: { getNumericValue: () => 10 },
+          },
+        ]),
+      };
+      mockMovementRepository.findById.mockResolvedValue(mockMovement as any);
+
+      // Act
+      const result = await ReturnValidationService.validateSupplierReturnQuantity(
+        returnEntity,
+        mockMovementRepository
+      );
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        'Source movement must be an IN movement for supplier returns'
+      );
+    });
+
+    it('Given: a supplier return with source movement reason not PURCHASE When: validating supplier quantity Then: should return invalid result', async () => {
+      // Arrange
+      const returnEntity = Return.reconstitute(
+        {
+          returnNumber: ReturnNumber.fromString('RETURN-2024-035'),
+          status: ReturnStatus.create('DRAFT'),
+          type: ReturnType.create('RETURN_SUPPLIER'),
+          reason: ReturnReason.create('Quality issue'),
+          warehouseId: mockWarehouseId,
+          sourceMovementId: mockMovementId,
+          createdBy: 'user-123',
+        },
+        'return-306',
+        mockOrgId,
+        [
+          ReturnLine.reconstitute(
+            {
+              productId: 'product-S2',
+              locationId: 'location-123',
+              quantity: Quantity.create(2, 2),
+              originalUnitCost: undefined,
+              currency: 'USD',
+            },
+            'rline-S2',
+            mockOrgId
+          ),
+        ]
+      );
+
+      // Mock movement with IN type but wrong reason
+      const mockMovement = {
+        type: { getValue: () => 'IN' },
+        reason: 'ADJUSTMENT',
+        getLines: jest.fn().mockReturnValue([
+          {
+            productId: 'product-S2',
+            quantity: { getNumericValue: () => 10 },
+          },
+        ]),
+      };
+      mockMovementRepository.findById.mockResolvedValue(mockMovement as any);
+
+      // Act
+      const result = await ReturnValidationService.validateSupplierReturnQuantity(
+        returnEntity,
+        mockMovementRepository
+      );
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        'Source movement must have reason PURCHASE for supplier returns'
+      );
+    });
+
+    it('Given: a supplier return with product not in movement lines When: validating supplier quantity Then: should return invalid result', async () => {
+      // Arrange
+      const returnEntity = Return.reconstitute(
+        {
+          returnNumber: ReturnNumber.fromString('RETURN-2024-036'),
+          status: ReturnStatus.create('DRAFT'),
+          type: ReturnType.create('RETURN_SUPPLIER'),
+          reason: ReturnReason.create('Quality issue'),
+          warehouseId: mockWarehouseId,
+          sourceMovementId: mockMovementId,
+          createdBy: 'user-123',
+        },
+        'return-307',
+        mockOrgId,
+        [
+          ReturnLine.reconstitute(
+            {
+              productId: 'product-NOT-PURCHASED',
+              locationId: 'location-123',
+              quantity: Quantity.create(1, 2),
+              originalUnitCost: undefined,
+              currency: 'USD',
+            },
+            'rline-NP',
+            mockOrgId
+          ),
+        ]
+      );
+
+      // Mock movement with different products
+      const mockMovement = {
+        type: { getValue: () => 'IN' },
+        reason: 'PURCHASE',
+        getLines: jest.fn().mockReturnValue([
+          {
+            productId: 'product-OTHER',
+            quantity: { getNumericValue: () => 5 },
+          },
+        ]),
+      };
+      mockMovementRepository.findById.mockResolvedValue(mockMovement as any);
+
+      // Act
+      const result = await ReturnValidationService.validateSupplierReturnQuantity(
+        returnEntity,
+        mockMovementRepository
+      );
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        `Product product-NOT-PURCHASED was not purchased in movement ${mockMovementId}`
+      );
+    });
+
+    it('Given: a supplier return with quantity exceeding purchased quantity When: validating supplier quantity Then: should return invalid result', async () => {
+      // Arrange
+      const returnEntity = Return.reconstitute(
+        {
+          returnNumber: ReturnNumber.fromString('RETURN-2024-037'),
+          status: ReturnStatus.create('DRAFT'),
+          type: ReturnType.create('RETURN_SUPPLIER'),
+          reason: ReturnReason.create('Quality issue'),
+          warehouseId: mockWarehouseId,
+          sourceMovementId: mockMovementId,
+          createdBy: 'user-123',
+        },
+        'return-308',
+        mockOrgId,
+        [
+          ReturnLine.reconstitute(
+            {
+              productId: 'product-S3',
+              locationId: 'location-123',
+              quantity: Quantity.create(20, 2),
+              originalUnitCost: undefined,
+              currency: 'USD',
+            },
+            'rline-S3',
+            mockOrgId
+          ),
+        ]
+      );
+
+      // Mock movement where only 10 units were purchased
+      const mockMovement = {
+        type: { getValue: () => 'IN' },
+        reason: 'PURCHASE',
+        getLines: jest.fn().mockReturnValue([
+          {
+            productId: 'product-S3',
+            quantity: { getNumericValue: () => 10 },
+          },
+        ]),
+      };
+      mockMovementRepository.findById.mockResolvedValue(mockMovement as any);
+
+      // Act
+      const result = await ReturnValidationService.validateSupplierReturnQuantity(
+        returnEntity,
+        mockMovementRepository
+      );
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain(
+        'Cannot return 20 units of product product-S3. Only 10 units were purchased.'
+      );
+    });
+
+    it('Given: a supplier return with quantities within purchased amounts When: validating supplier quantity Then: should return valid result', async () => {
+      // Arrange
+      const returnEntity = Return.reconstitute(
+        {
+          returnNumber: ReturnNumber.fromString('RETURN-2024-038'),
+          status: ReturnStatus.create('DRAFT'),
+          type: ReturnType.create('RETURN_SUPPLIER'),
+          reason: ReturnReason.create('Quality issue'),
+          warehouseId: mockWarehouseId,
+          sourceMovementId: mockMovementId,
+          createdBy: 'user-123',
+        },
+        'return-309',
+        mockOrgId,
+        [
+          ReturnLine.reconstitute(
+            {
+              productId: 'product-S4',
+              locationId: 'location-123',
+              quantity: Quantity.create(3, 2),
+              originalUnitCost: undefined,
+              currency: 'USD',
+            },
+            'rline-S4',
+            mockOrgId
+          ),
+        ]
+      );
+
+      // Mock movement with enough purchased quantity
+      const mockMovement = {
+        type: { getValue: () => 'IN' },
+        reason: 'PURCHASE',
+        getLines: jest.fn().mockReturnValue([
+          {
+            productId: 'product-S4',
+            quantity: { getNumericValue: () => 10 },
+          },
+        ]),
+      };
+      mockMovementRepository.findById.mockResolvedValue(mockMovement as any);
+
+      // Act
+      const result = await ReturnValidationService.validateSupplierReturnQuantity(
+        returnEntity,
+        mockMovementRepository
+      );
+
+      // Assert
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+      expect(mockMovementRepository.findById).toHaveBeenCalledWith(mockMovementId, mockOrgId);
+    });
+
+    it('Given: a supplier return with non-Error thrown in catch block When: validating supplier quantity Then: should return Unknown error message', async () => {
+      // Arrange
+      const returnEntity = Return.reconstitute(
+        {
+          returnNumber: ReturnNumber.fromString('RETURN-2024-039'),
+          status: ReturnStatus.create('DRAFT'),
+          type: ReturnType.create('RETURN_SUPPLIER'),
+          reason: ReturnReason.create('Quality issue'),
+          warehouseId: mockWarehouseId,
+          sourceMovementId: mockMovementId,
+          createdBy: 'user-123',
+        },
+        'return-310',
+        mockOrgId
+      );
+      mockMovementRepository.findById.mockRejectedValue(42);
+
+      // Act
+      const result = await ReturnValidationService.validateSupplierReturnQuantity(
+        returnEntity,
+        mockMovementRepository
+      );
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors[0]).toContain('Error validating supplier return quantity');
+      expect(result.errors[0]).toContain('Unknown error');
     });
   });
 });

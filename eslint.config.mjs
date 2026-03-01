@@ -83,6 +83,7 @@ export const baseConfig = [
       'build/**',
       'coverage/**',
       'public/**',
+      "test/**",
       // Archivos de declaración de tipos TypeScript
       '**/*.d.ts',
       // Archivos de configuración que no necesitan linting

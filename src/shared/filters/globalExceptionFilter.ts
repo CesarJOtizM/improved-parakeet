@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import * as Sentry from '@sentry/node';
 import { createErrorResponse } from '@shared/utils/responseUtils';
 import { Request, Response } from 'express';
 
@@ -37,7 +38,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
       message = 'Internal server error';
 
-      // Log error for debugging
+      Sentry.captureException(exception);
       this.logger.error(
         `Unhandled error: ${exception}`,
         exception instanceof Error ? exception.stack : undefined

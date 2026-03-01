@@ -9,6 +9,7 @@ import { ProductMapper } from '@product/mappers';
 
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
+import type { PrismaService } from '@infrastructure/database/prisma.service';
 
 describe('GetMovementsUseCase', () => {
   const mockOrgId = 'test-org-id';
@@ -16,6 +17,7 @@ describe('GetMovementsUseCase', () => {
   let useCase: GetMovementsUseCase;
   let mockMovementRepository: jest.Mocked<IMovementRepository>;
   let mockProductRepository: jest.Mocked<IProductRepository>;
+  let mockPrisma: jest.Mocked<PrismaService>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -51,7 +53,19 @@ describe('GetMovementsUseCase', () => {
       existsBySku: jest.fn(),
     } as jest.Mocked<IProductRepository>;
 
-    useCase = new GetMovementsUseCase(mockMovementRepository, mockProductRepository);
+    mockPrisma = {
+      warehouse: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      product: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      user: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+    } as unknown as jest.Mocked<PrismaService>;
+
+    useCase = new GetMovementsUseCase(mockMovementRepository, mockProductRepository, mockPrisma);
   });
 
   describe('execute', () => {

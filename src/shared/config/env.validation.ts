@@ -28,8 +28,8 @@ export class EnvironmentVariables {
   NODE_ENV: Environment = Environment.Development;
 
   @IsEnum(Environment)
-  @IsNotEmpty()
-  BUN_ENV: Environment = Environment.Development;
+  @IsOptional()
+  BUN_ENV?: Environment = Environment.Development;
 
   @IsNumber()
   @Min(1)
@@ -38,8 +38,8 @@ export class EnvironmentVariables {
   PORT: number = 3000;
 
   @IsString()
-  @IsNotEmpty()
-  APP_VERSION: string = '1.0.0';
+  @IsOptional()
+  APP_VERSION?: string = '1.0.0';
 
   // =============================================================================
   // DATABASE CONFIGURATION
@@ -48,6 +48,10 @@ export class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   DATABASE_URL!: string;
+
+  @IsString()
+  @IsOptional()
+  DIRECT_DATABASE_URL?: string;
 
   @IsString()
   @IsOptional()
@@ -79,8 +83,8 @@ export class EnvironmentVariables {
   // =============================================================================
 
   @IsString()
-  @IsNotEmpty()
-  REDIS_URL!: string;
+  @IsOptional()
+  REDIS_URL?: string;
 
   @IsString()
   @IsOptional()
@@ -394,6 +398,14 @@ export class EnvironmentVariables {
   TEST_REDIS_URL?: string;
 
   // =============================================================================
+  // SENTRY / ERROR TRACKING
+  // =============================================================================
+
+  @IsString()
+  @IsOptional()
+  SENTRY_DSN?: string;
+
+  // =============================================================================
   // PRISMA CONFIGURATION
   // =============================================================================
 
@@ -416,7 +428,6 @@ export function validate(config: Record<string, unknown>): EnvironmentVariables 
   const errors = validateSync(validatedConfig, {
     skipMissingProperties: false,
     whitelist: true,
-    forbidNonWhitelisted: true,
   });
 
   if (errors.length > 0) {

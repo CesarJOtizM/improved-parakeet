@@ -67,7 +67,17 @@ describe('MovementsController', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockGetMovementsUseCase as any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mockPostMovementUseCase as any
+      { execute: jest.fn() } as any, // getMovementByIdUseCase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockPostMovementUseCase as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { execute: jest.fn() } as any, // updateMovementUseCase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { execute: jest.fn() } as any, // deleteMovementUseCase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { execute: jest.fn() } as any, // voidMovementUseCase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { execute: jest.fn() } as any // markMovementReturnedUseCase
     );
   });
 
@@ -149,7 +159,11 @@ describe('MovementsController', () => {
       );
 
       // Act
-      const result = await controller.postMovement('movement-123', 'org-123');
+      const result = await controller.postMovement(
+        'movement-123',
+        'org-123',
+        mockRequest as Request
+      );
 
       // Assert
       expect(result.success).toBe(true);
@@ -164,7 +178,9 @@ describe('MovementsController', () => {
       );
 
       // Act & Assert
-      await expect(controller.postMovement('non-existent', 'org-123')).rejects.toThrow();
+      await expect(
+        controller.postMovement('non-existent', 'org-123', mockRequest as Request)
+      ).rejects.toThrow();
     });
   });
 });

@@ -5,6 +5,10 @@ import { ProductMapper } from '@product/mappers';
 import { NotFoundError } from '@shared/domain/result/domainError';
 
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
+import type { IStockRepository } from '@stock/domain/ports/repositories/iStockRepository.port';
+import type { IReorderRuleRepository } from '@stock/domain/ports/repositories/iReorderRuleRepository.port';
+import type { IMovementRepository } from '@movement/domain/ports/repositories/iMovementRepository.port';
+import type { PrismaService } from '@infrastructure/database/prisma.service';
 
 describe('GetProductByIdUseCase', () => {
   const mockOrgId = 'test-org-id';
@@ -12,6 +16,10 @@ describe('GetProductByIdUseCase', () => {
 
   let useCase: GetProductByIdUseCase;
   let mockProductRepository: jest.Mocked<IProductRepository>;
+  let mockStockRepository: jest.Mocked<IStockRepository>;
+  let mockReorderRuleRepository: jest.Mocked<IReorderRuleRepository>;
+  let mockMovementRepository: jest.Mocked<IMovementRepository>;
+  let mockPrisma: jest.Mocked<PrismaService>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -31,7 +39,53 @@ describe('GetProductByIdUseCase', () => {
       existsBySku: jest.fn(),
     } as jest.Mocked<IProductRepository>;
 
-    useCase = new GetProductByIdUseCase(mockProductRepository);
+    mockStockRepository = {
+      getStockQuantity: jest.fn(),
+      getStockWithCost: jest.fn(),
+      updateStock: jest.fn(),
+      incrementStock: jest.fn(),
+      decrementStock: jest.fn(),
+      findAll: jest.fn().mockResolvedValue([]),
+    } as jest.Mocked<IStockRepository>;
+
+    mockReorderRuleRepository = {
+      findAll: jest.fn().mockResolvedValue([]),
+      findById: jest.fn(),
+      findByProductAndWarehouse: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    } as jest.Mocked<IReorderRuleRepository>;
+
+    mockMovementRepository = {
+      save: jest.fn(),
+      findById: jest.fn(),
+      findAll: jest.fn(),
+      findBySpecification: jest.fn(),
+      exists: jest.fn(),
+      delete: jest.fn(),
+      findByWarehouse: jest.fn(),
+      findByStatus: jest.fn(),
+      findByType: jest.fn(),
+      findByDateRange: jest.fn(),
+      findByProduct: jest.fn().mockResolvedValue([]),
+      findDraftMovements: jest.fn(),
+      findPostedMovements: jest.fn(),
+    } as jest.Mocked<IMovementRepository>;
+
+    mockPrisma = {
+      user: {
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
+    } as unknown as jest.Mocked<PrismaService>;
+
+    useCase = new GetProductByIdUseCase(
+      mockProductRepository,
+      mockStockRepository,
+      mockReorderRuleRepository,
+      mockMovementRepository,
+      mockPrisma
+    );
   });
 
   describe('execute', () => {

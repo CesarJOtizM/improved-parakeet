@@ -9,8 +9,12 @@ import {
   identity,
   map,
   noop,
+  omit,
+  pick,
+  prop,
   reduce,
   some,
+  tap,
 } from '@shared/utils/functional/helpers';
 
 describe('Functional Helpers', () => {
@@ -204,6 +208,140 @@ describe('Functional Helpers', () => {
       expect(mockFn).toHaveBeenCalledWith(1, 0, array);
       expect(mockFn).toHaveBeenCalledWith(2, 1, array);
       expect(mockFn).toHaveBeenCalledWith(3, 2, array);
+    });
+  });
+
+  describe('tap', () => {
+    it('Given: side-effect function When: tapping Then: should call function and return original value', () => {
+      // Arrange
+      const sideEffect = jest.fn();
+      const value = { name: 'test' };
+
+      // Act
+      const result = tap(sideEffect)(value);
+
+      // Assert
+      expect(sideEffect).toHaveBeenCalledWith(value);
+      expect(result).toBe(value);
+    });
+
+    it('Given: tap with number When: tapping Then: should return same number', () => {
+      // Arrange
+      const log = jest.fn();
+
+      // Act
+      const result = tap(log)(42);
+
+      // Assert
+      expect(log).toHaveBeenCalledWith(42);
+      expect(result).toBe(42);
+    });
+  });
+
+  describe('prop', () => {
+    it('Given: key name When: accessing object Then: should return property value', () => {
+      // Arrange
+      const obj = { name: 'Alice', age: 30 };
+
+      // Act
+      const result = prop('name')(obj);
+
+      // Assert
+      expect(result).toBe('Alice');
+    });
+
+    it('Given: numeric key When: accessing object Then: should return property value', () => {
+      // Arrange
+      const obj = { name: 'Bob', age: 25 };
+
+      // Act
+      const result = prop('age')(obj);
+
+      // Assert
+      expect(result).toBe(25);
+    });
+  });
+
+  describe('pick', () => {
+    it('Given: keys to pick When: picking from object Then: should return object with only those keys', () => {
+      // Arrange
+      const obj = { a: 1, b: 2, c: 3, d: 4 };
+
+      // Act
+      const result = pick<typeof obj, 'a' | 'b'>(['a', 'b'])(obj);
+
+      // Assert
+      expect(result).toEqual({ a: 1, b: 2 });
+      expect(result).not.toHaveProperty('c');
+      expect(result).not.toHaveProperty('d');
+    });
+
+    it('Given: single key When: picking Then: should return object with that key', () => {
+      // Arrange
+      const obj = { name: 'test', value: 42 };
+
+      // Act
+      const result = pick<typeof obj, 'name'>(['name'])(obj);
+
+      // Assert
+      expect(result).toEqual({ name: 'test' });
+    });
+
+    it('Given: empty keys When: picking Then: should return empty object', () => {
+      // Arrange
+      const obj = { a: 1, b: 2 };
+
+      // Act
+      const result = pick<typeof obj, never>([])(obj);
+
+      // Assert
+      expect(result).toEqual({});
+    });
+  });
+
+  describe('omit', () => {
+    it('Given: keys to omit When: omitting from object Then: should return object without those keys', () => {
+      // Arrange
+      const obj = { a: 1, b: 2, c: 3, d: 4 };
+
+      // Act
+      const result = omit<typeof obj, 'c' | 'd'>(['c', 'd'])(obj);
+
+      // Assert
+      expect(result).toEqual({ a: 1, b: 2 });
+    });
+
+    it('Given: single key When: omitting Then: should return object without that key', () => {
+      // Arrange
+      const obj = { name: 'test', secret: 'hidden', value: 42 };
+
+      // Act
+      const result = omit<typeof obj, 'secret'>(['secret'])(obj);
+
+      // Assert
+      expect(result).toEqual({ name: 'test', value: 42 });
+    });
+
+    it('Given: empty keys When: omitting Then: should return copy of object', () => {
+      // Arrange
+      const obj = { a: 1, b: 2 };
+
+      // Act
+      const result = omit<typeof obj, never>([])(obj);
+
+      // Assert
+      expect(result).toEqual({ a: 1, b: 2 });
+    });
+
+    it('Given: original object When: omitting Then: should not mutate original', () => {
+      // Arrange
+      const obj = { a: 1, b: 2, c: 3 };
+
+      // Act
+      omit<typeof obj, 'c'>(['c'])(obj);
+
+      // Assert
+      expect(obj).toEqual({ a: 1, b: 2, c: 3 });
     });
   });
 });

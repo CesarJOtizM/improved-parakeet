@@ -23,11 +23,7 @@ describe('WarehouseMapper', () => {
     // Assert
     expect(result.code).toBe('WH-001');
     expect(result.address).toEqual({
-      street: undefined,
-      city: undefined,
-      state: undefined,
-      zipCode: undefined,
-      country: undefined,
+      street: '123 Main St',
     });
   });
 

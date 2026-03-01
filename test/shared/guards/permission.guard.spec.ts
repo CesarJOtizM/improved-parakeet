@@ -19,12 +19,18 @@ describe('PermissionGuard', () => {
     userPermissions: string[] = [],
     userRoles: string[] = []
   ): ExecutionContext => {
+    // The guard reads permissions and roles from request.user
+    const enrichedUser = user
+      ? {
+          ...user,
+          permissions: user.permissions ?? userPermissions,
+          roles: user.roles ?? userRoles,
+        }
+      : null;
     return {
       switchToHttp: () => ({
         getRequest: () => ({
-          user,
-          userPermissions,
-          userRoles,
+          user: enrichedUser,
         }),
       }),
       getHandler: () => jest.fn(),

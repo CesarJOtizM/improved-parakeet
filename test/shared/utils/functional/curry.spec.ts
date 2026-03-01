@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { curry } from '@shared/utils/functional/curry';
+import { curry, uncurry } from '@shared/utils/functional/curry';
 
 describe('curry', () => {
   it('Given: binary function When: currying Then: should allow partial application', () => {
@@ -61,6 +61,65 @@ describe('curry', () => {
 
     // Act
     const result = curriedDouble(5);
+
+    // Assert
+    expect(result).toBe(10);
+  });
+
+  it('Given: binary function When: calling curried with both args at once Then: should return result', () => {
+    // Arrange
+    const add = (a: number, b: number) => a + b;
+    const curriedAdd = curry(add) as unknown as (...args: number[]) => number;
+
+    // Act
+    const result = curriedAdd(5, 3);
+
+    // Assert
+    expect(result).toBe(8);
+  });
+});
+
+describe('uncurry', () => {
+  it('Given: curried binary function When: uncurrying Then: should accept all args at once', () => {
+    // Arrange
+    const add = (a: number, b: number) => a + b;
+    const curriedAdd = curry(add);
+    const uncurriedAdd = uncurry<[number, number], number>(
+      curriedAdd as unknown as (arg: unknown) => unknown
+    );
+
+    // Act
+    const result = uncurriedAdd(5, 3);
+
+    // Assert
+    expect(result).toBe(8);
+  });
+
+  it('Given: curried ternary function When: uncurrying Then: should accept all args at once', () => {
+    // Arrange
+    const sum3 = (a: number, b: number, c: number) => a + b + c;
+    const curriedSum3 = curry(sum3);
+    const uncurriedSum3 = uncurry<[number, number, number], number>(
+      curriedSum3 as unknown as (arg: unknown) => unknown
+    );
+
+    // Act
+    const result = uncurriedSum3(1, 2, 3);
+
+    // Assert
+    expect(result).toBe(6);
+  });
+
+  it('Given: curried unary function When: uncurrying Then: should work with single arg', () => {
+    // Arrange
+    const double = (x: number) => x * 2;
+    const curriedDouble = curry(double);
+    const uncurriedDouble = uncurry<[number], number>(
+      curriedDouble as unknown as (arg: unknown) => unknown
+    );
+
+    // Act
+    const result = uncurriedDouble(5);
 
     // Assert
     expect(result).toBe(10);

@@ -97,7 +97,7 @@ describe('Product Specifications', () => {
       const where = spec.toPrismaWhere(orgId);
 
       // Assert
-      expect(where).toEqual({ orgId, category: 'category-1' });
+      expect(where).toEqual({ orgId, categories: { some: { id: 'category-1' } } });
     });
   });
 });

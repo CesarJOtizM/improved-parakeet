@@ -8,6 +8,16 @@ function daysAgo(days: number): Date {
   return d;
 }
 
+export function qtyKey(productId: string, warehouseId: string): string {
+  return `${productId}|${warehouseId}`;
+}
+
+export interface MovementSeedResult {
+  purchasedQty: Map<string, number>;
+  adjustInQty: Map<string, number>;
+  adjustOutQty: Map<string, number>;
+}
+
 // Product groups for realistic purchase orders
 const PURCHASE_GROUPS = [
   {
@@ -135,13 +145,6 @@ const ADJUST_OUT_REASONS = [
   'Producto vencido / obsoleto',
 ];
 
-const OUT_REASONS = [
-  'Despacho venta corporativa',
-  'Salida por venta punto de venta',
-  'Entrega a proyecto especial',
-  'Despacho pedido en línea',
-];
-
 export class DemoMovementsSeed {
   constructor(private prisma: PrismaClient) {}
 
@@ -150,8 +153,11 @@ export class DemoMovementsSeed {
     products: IProduct[],
     warehouses: IWarehouse[],
     adminUserId: string
-  ): Promise<void> {
+  ): Promise<MovementSeedResult> {
     const findProduct = (prefix: string) => products.find(p => p.sku.startsWith(prefix));
+    const purchasedQty = new Map<string, number>();
+    const adjustInQty = new Map<string, number>();
+    const adjustOutQty = new Map<string, number>();
 
     let movIdx = 0;
 
@@ -206,67 +212,13 @@ export class DemoMovementsSeed {
         await this.prisma.movementLine.createMany({
           data: lines as NonNullable<(typeof lines)[0]>[],
         });
-      }
-    }
 
-    // === OUT movements: ~10 sale-related exits ===
-    const outDays = [300, 260, 220, 180, 150, 120, 90, 60, 30, 15];
-    const outProducts = [
-      ['LAP-DELL', 'MON-DELL', 'MOUSE-LOG-001', 'KB-LOG'],
-      ['LAP-HP', 'MOUSE-LOG-002', 'HEADSET-002'],
-      ['MON-SAM', 'CABLE-ETH', 'SW-TPLINK'],
-      ['LAP-LENOVO', 'MON-LG-001', 'DOCK-001'],
-      ['TAB-APPLE', 'CHRG-USBC', 'FUNDA-LAP'],
-      ['IMP-HP', 'TONER-HP', 'PAPEL-A4'],
-      ['LAP-DELL', 'MON-DELL', 'KB-MECH', 'HEADSET-001'],
-      ['MOUSE-LOG-001', 'KB-LOG', 'WEBCAM', 'HUB-USBC'],
-      ['LAP-HP', 'MON-SAM', 'MOUSE-LOG-002'],
-      ['SSD-SAM', 'HDD-EXT', 'USB-SAN', 'CABLE-USBC'],
-    ];
-
-    for (let i = 0; i < outDays.length; i++) {
-      movIdx++;
-      const day = outDays[i];
-
-      const mov = await this.prisma.movement.create({
-        data: {
-          type: 'OUT',
-          status: 'POSTED',
-          reference: `SAL-2025-${String(movIdx).padStart(3, '0')}`,
-          reason: OUT_REASONS[i % OUT_REASONS.length],
-          notes: `Salida de mercancía #${movIdx}`,
-          warehouseId: warehouses[i < 7 ? 0 : i < 9 ? 1 : 2].id,
-          postedAt: daysAgo(day),
-          postedBy: adminUserId,
-          createdBy: adminUserId,
-          orgId,
-          createdAt: daysAgo(day),
-        },
-      });
-
-      const lines = outProducts[i]
-        .map(sku => {
-          const prod = findProduct(sku);
-          if (!prod) return null;
-          const price =
-            typeof prod.price === 'object' && 'toNumber' in prod.price
-              ? (prod.price as { toNumber(): number }).toNumber()
-              : Number(prod.price);
-          return {
-            movementId: mov.id,
-            productId: prod.id,
-            quantity: 1 + (i % 5),
-            unitCost: Math.round(price * 0.65),
-            currency: 'COP',
-            orgId,
-          };
-        })
-        .filter(Boolean);
-
-      if (lines.length > 0) {
-        await this.prisma.movementLine.createMany({
-          data: lines as NonNullable<(typeof lines)[0]>[],
-        });
+        // Track purchased quantities
+        for (const line of lines) {
+          if (!line) continue;
+          const key = qtyKey(line.productId, warehouses[whIdx].id);
+          purchasedQty.set(key, (purchasedQty.get(key) || 0) + line.quantity);
+        }
       }
     }
 
@@ -321,6 +273,13 @@ export class DemoMovementsSeed {
         await this.prisma.movementLine.createMany({
           data: lines as NonNullable<(typeof lines)[0]>[],
         });
+
+        // Track adjust-in quantities
+        for (const line of lines) {
+          if (!line) continue;
+          const key = qtyKey(line.productId, warehouses[0].id);
+          adjustInQty.set(key, (adjustInQty.get(key) || 0) + line.quantity);
+        }
       }
     }
 
@@ -375,6 +334,13 @@ export class DemoMovementsSeed {
         await this.prisma.movementLine.createMany({
           data: lines as NonNullable<(typeof lines)[0]>[],
         });
+
+        // Track adjust-out quantities
+        for (const line of lines) {
+          if (!line) continue;
+          const key = qtyKey(line.productId, warehouses[0].id);
+          adjustOutQty.set(key, (adjustOutQty.get(key) || 0) + line.quantity);
+        }
       }
     }
 
@@ -406,7 +372,7 @@ export class DemoMovementsSeed {
         data: {
           type: def.type,
           status: 'DRAFT',
-          reference: `DRAFT-2025-${String(movIdx).padStart(3, '0')}`,
+          reference: `DRAFT-2026-${String(movIdx).padStart(3, '0')}`,
           reason: def.reason,
           warehouseId: warehouses[0].id,
           createdBy: adminUserId,
@@ -458,5 +424,7 @@ export class DemoMovementsSeed {
         },
       });
     }
+
+    return { purchasedQty, adjustInQty, adjustOutQty };
   }
 }

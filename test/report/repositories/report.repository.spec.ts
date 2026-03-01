@@ -279,4 +279,200 @@ describe('PrismaReportRepository', () => {
       expect(result[0].generatedBy).toBe('user-456');
     });
   });
+
+  describe('findAll', () => {
+    it('Given: reports exist When: finding all Then: should return all reports', async () => {
+      // Arrange
+      const mockData = [
+        {
+          id: 'report-1',
+          orgId: 'org-123',
+          type: REPORT_TYPES.SALES,
+          status: REPORT_STATUSES.COMPLETED,
+          parameters: {},
+          templateId: null,
+          generatedBy: 'user-123',
+          generatedAt: new Date(),
+          format: null,
+          exportedAt: null,
+          errorMessage: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: 'report-2',
+          orgId: 'org-123',
+          type: REPORT_TYPES.FINANCIAL,
+          status: REPORT_STATUSES.PENDING,
+          parameters: {},
+          templateId: null,
+          generatedBy: 'user-123',
+          generatedAt: null,
+          format: null,
+          exportedAt: null,
+          errorMessage: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      (mockPrismaService.report.findMany as jest.Mock).mockResolvedValue(mockData);
+
+      // Act
+      const result = await repository.findAll('org-123');
+
+      // Assert
+      expect(result).toHaveLength(2);
+      expect(result[0]).toBeInstanceOf(Report);
+      expect(result[1]).toBeInstanceOf(Report);
+    });
+
+    it('Given: no reports When: finding all Then: should return empty array', async () => {
+      // Arrange
+      (mockPrismaService.report.findMany as jest.Mock).mockResolvedValue([]);
+
+      // Act
+      const result = await repository.findAll('org-123');
+
+      // Assert
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('exists', () => {
+    it('Given: report exists When: checking existence Then: should return true', async () => {
+      // Arrange
+      (mockPrismaService.report.count as jest.Mock).mockResolvedValue(1);
+
+      // Act
+      const result = await repository.exists('report-123', 'org-123');
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('Given: report does not exist When: checking existence Then: should return false', async () => {
+      // Arrange
+      (mockPrismaService.report.count as jest.Mock).mockResolvedValue(0);
+
+      // Act
+      const result = await repository.exists('non-existent', 'org-123');
+
+      // Assert
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('delete', () => {
+    it('Given: existing report When: deleting Then: should soft delete', async () => {
+      // Arrange
+      (mockPrismaService.report.update as jest.Mock).mockResolvedValue({});
+
+      // Act
+      await repository.delete('report-123', 'org-123');
+
+      // Assert
+      expect(mockPrismaService.report.update).toHaveBeenCalledWith({
+        where: { id: 'report-123' },
+        data: { deletedAt: expect.any(Date) },
+      });
+    });
+  });
+
+  describe('findByTemplate', () => {
+    it('Given: reports with template When: finding by template Then: should return reports', async () => {
+      // Arrange
+      const mockData = [
+        {
+          id: 'report-1',
+          orgId: 'org-123',
+          type: REPORT_TYPES.SALES,
+          status: REPORT_STATUSES.COMPLETED,
+          parameters: {},
+          templateId: 'template-123',
+          generatedBy: 'user-123',
+          generatedAt: new Date(),
+          format: null,
+          exportedAt: null,
+          errorMessage: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      (mockPrismaService.report.findMany as jest.Mock).mockResolvedValue(mockData);
+
+      // Act
+      const result = await repository.findByTemplate('template-123', 'org-123');
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(result[0]).toBeInstanceOf(Report);
+    });
+  });
+
+  describe('findByStatus', () => {
+    it('Given: reports with status When: finding by status Then: should return matching reports', async () => {
+      // Arrange
+      const mockData = [
+        {
+          id: 'report-1',
+          orgId: 'org-123',
+          type: REPORT_TYPES.SALES,
+          status: REPORT_STATUSES.PENDING,
+          parameters: {},
+          templateId: null,
+          generatedBy: 'user-123',
+          generatedAt: null,
+          format: null,
+          exportedAt: null,
+          errorMessage: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      (mockPrismaService.report.findMany as jest.Mock).mockResolvedValue(mockData);
+
+      // Act
+      const result = await repository.findByStatus(REPORT_STATUSES.PENDING, 'org-123');
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(result[0].status.getValue()).toBe(REPORT_STATUSES.PENDING);
+    });
+  });
+
+  describe('toDomain with format', () => {
+    it('Given: report with format When: converting to domain Then: should include format', async () => {
+      // Arrange
+      const mockData = {
+        id: 'report-123',
+        orgId: 'org-123',
+        type: REPORT_TYPES.SALES,
+        status: REPORT_STATUSES.COMPLETED,
+        parameters: {},
+        templateId: 'template-1',
+        generatedBy: 'user-123',
+        generatedAt: new Date(),
+        format: 'PDF',
+        exportedAt: new Date(),
+        errorMessage: 'Some error',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      (mockPrismaService.report.findFirst as jest.Mock).mockResolvedValue(mockData);
+
+      // Act
+      const result = await repository.findById('report-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.format?.getValue()).toBe('PDF');
+      expect(result?.exportedAt).toBeDefined();
+      expect(result?.errorMessage).toBe('Some error');
+      expect(result?.templateId).toBe('template-1');
+    });
+  });
 });

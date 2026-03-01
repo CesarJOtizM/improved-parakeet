@@ -28,7 +28,7 @@ describe('Import Flow Integration Tests', () => {
   describe('Full Flow: Preview → Execute', () => {
     it('Given: valid file When: previewing then executing Then: should complete successfully', async () => {
       // Arrange
-      const file = generateValidProductsFile();
+      const file = await generateValidProductsFile();
       const type = ImportType.create('PRODUCTS');
 
       // Step 1: Parse file
@@ -96,7 +96,7 @@ describe('Import Flow Integration Tests', () => {
 
     it('Given: file with errors When: previewing Then: should return errors and reject execution', async () => {
       // Arrange
-      const file = generateProductsFileWithErrors();
+      const file = await generateProductsFileWithErrors();
       const type = ImportType.create('PRODUCTS');
 
       // Step 1: Parse file
@@ -158,7 +158,7 @@ describe('Import Flow Integration Tests', () => {
   describe('Full Flow: Manual (Create → Validate → Process)', () => {
     it('Given: valid file When: creating batch then validating then processing Then: should complete successfully', async () => {
       // Arrange
-      const file = generateValidProductsFile();
+      const file = await generateValidProductsFile();
       const type = ImportType.create('PRODUCTS');
 
       // Step 1: Create batch
@@ -227,7 +227,7 @@ describe('Import Flow Integration Tests', () => {
 
     it('Given: file with validation errors When: validating batch Then: should generate error report', async () => {
       // Arrange
-      const file = generateProductsFileWithErrors();
+      const file = await generateProductsFileWithErrors();
       const type = ImportType.create('PRODUCTS');
 
       // Step 1: Create batch
@@ -280,7 +280,7 @@ describe('Import Flow Integration Tests', () => {
 
     it('Given: validated batch with processing errors When: processing batch Then: should handle errors and generate report', async () => {
       // Arrange
-      const file = generateValidProductsFile();
+      const file = await generateValidProductsFile();
       const type = ImportType.create('PRODUCTS');
 
       // Step 1: Create and validate batch
@@ -347,7 +347,7 @@ describe('Import Flow Integration Tests', () => {
   describe('Full Flow: Real File Imports', () => {
     it('Given: valid products Excel file When: importing products Then: should complete successfully', async () => {
       // Arrange
-      const file = generateValidProductsFile();
+      const file = await generateValidProductsFile();
       const type = ImportType.create('PRODUCTS');
 
       // Parse
@@ -502,7 +502,7 @@ describe('Import Flow Integration Tests', () => {
 
     it('Given: products file with errors When: importing then downloading report Then: should generate error report', async () => {
       // Arrange
-      const file = generateProductsFileWithErrors();
+      const file = await generateProductsFileWithErrors();
       const type = ImportType.create('PRODUCTS');
 
       // Parse and validate
@@ -553,7 +553,7 @@ describe('Import Flow Integration Tests', () => {
 
     it('Given: valid movements file When: importing movements Then: should complete successfully', async () => {
       // Arrange
-      const file = generateValidMovementsFile();
+      const file = await generateValidMovementsFile();
       const type = ImportType.create('MOVEMENTS');
 
       // Parse

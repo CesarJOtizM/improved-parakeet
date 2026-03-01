@@ -8,8 +8,8 @@ import type { IMovementRepository } from '@movement/domain/ports/repositories';
 import type { IProductRepository } from '@product/domain/ports/repositories';
 import type { IReturnRepository } from '@returns/domain/ports/repositories';
 import type { ISaleRepository } from '@sale/domain/ports/repositories';
-import type { IStockRepository } from '@stock/domain/ports/repositories';
 import type { IWarehouseRepository } from '@warehouse/domain/ports/repositories';
+import type { PrismaService } from '@infrastructure/database/prisma.service';
 
 type MockFn<T> = jest.Mock<Promise<T>>;
 
@@ -27,7 +27,7 @@ const makeProduct = (overrides: Partial<Record<string, unknown>> = {}) => ({
   name: { getValue: () => 'Product 1' },
   sku: { getValue: () => 'SKU-1' },
   status: { getValue: () => 'ACTIVE' },
-  unit: { getValue: () => ({ code: 'EA' }) },
+  unit: { getValue: () => ({ code: 'EA' }), getCode: () => 'EA' },
   ...overrides,
 });
 
@@ -112,10 +112,19 @@ describe('ReportGenerationService', () => {
     findAll: jest.fn() as MockFn<unknown[]>,
     findPostedMovements: jest.fn() as MockFn<unknown[]>,
   } satisfies Pick<IMovementRepository, 'findByDateRange' | 'findAll' | 'findPostedMovements'>;
-  const stockRepository = {
-    getStockWithCost: jest.fn() as MockFn<unknown>,
-    getStockQuantity: jest.fn() as MockFn<unknown>,
-  } satisfies Pick<IStockRepository, 'getStockWithCost' | 'getStockQuantity'>;
+  const prismaService = {
+    $queryRaw: jest.fn() as MockFn<unknown[]>,
+    user: {
+      findMany: jest.fn().mockResolvedValue([
+        { id: 'user-1', firstName: 'John', lastName: 'Doe' },
+        { id: 'user-2', firstName: 'Jane', lastName: 'Smith' },
+        { id: 'user-3', firstName: 'Bob', lastName: 'Wilson' },
+      ]),
+    },
+    sale: {
+      findMany: jest.fn().mockResolvedValue([{ id: 'sale-1', saleNumber: 'S-001' }]),
+    },
+  };
   const saleRepository = {
     findByDateRange: jest.fn() as MockFn<unknown[]>,
     findAll: jest.fn() as MockFn<unknown[]>,
@@ -131,9 +140,9 @@ describe('ReportGenerationService', () => {
     productRepository as unknown as IProductRepository,
     warehouseRepository as unknown as IWarehouseRepository,
     movementRepository as unknown as IMovementRepository,
-    stockRepository as unknown as IStockRepository,
     saleRepository as unknown as ISaleRepository,
-    returnRepository as unknown as IReturnRepository
+    returnRepository as unknown as IReturnRepository,
+    prismaService as unknown as PrismaService
   );
 
   beforeEach(() => {
@@ -152,11 +161,9 @@ describe('ReportGenerationService', () => {
     movementRepository.findAll.mockResolvedValue([movement]);
     movementRepository.findPostedMovements.mockResolvedValue([movement]);
 
-    stockRepository.getStockWithCost.mockResolvedValue({
-      quantity: makeQuantity(5),
-      averageCost: makeMoney(10),
-    });
-    stockRepository.getStockQuantity.mockResolvedValue(makeQuantity(0));
+    prismaService.$queryRaw.mockResolvedValue([
+      { productId: 'product-1', warehouseId: 'warehouse-1', quantity: 5, unitCost: 10 },
+    ]);
 
     const sale = makeSale();
     saleRepository.findByDateRange.mockResolvedValue([sale]);
@@ -270,5 +277,224 @@ describe('ReportGenerationService', () => {
     // Assert
     expect(customer.metadata.reportType).toBe(REPORT_TYPES.RETURNS_CUSTOMER);
     expect(supplier.metadata.reportType).toBe(REPORT_TYPES.RETURNS_SUPPLIER);
+  });
+
+  describe('ABC Analysis Report', () => {
+    it('Given: confirmed sales When: generating ABC analysis Then: should classify products by revenue', async () => {
+      // Arrange
+      const parameters = {};
+
+      // Act
+      const result = await service.generateReport(REPORT_TYPES.ABC_ANALYSIS, parameters, orgId);
+
+      // Assert
+      expect(result.metadata.reportType).toBe(REPORT_TYPES.ABC_ANALYSIS);
+      expect(Array.isArray(result.data)).toBe(true);
+      expect(result.data.length).toBeGreaterThanOrEqual(1);
+      const item = result.data[0] as {
+        abcClassification: string;
+        revenuePercentage: number;
+        cumulativePercentage: number;
+      };
+      expect(['A', 'B', 'C']).toContain(item.abcClassification);
+      expect(item.cumulativePercentage).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Dead Stock Report', () => {
+    it('Given: products with no recent sales When: generating dead stock Then: should return dead stock items', async () => {
+      // Arrange
+      // The default mock has sale for product-1, but product-inactive has no sales and stock
+      // Ensure stock exists for inactive product
+      prismaService.$queryRaw.mockResolvedValue([
+        { productId: 'product-inactive', warehouseId: 'warehouse-1', quantity: 10, unitCost: 5 },
+      ]);
+      saleRepository.findAll.mockResolvedValue([]); // No sales at all
+
+      const parameters = { includeInactive: true };
+
+      // Act
+      const result = await service.generateReport(REPORT_TYPES.DEAD_STOCK, parameters, orgId);
+
+      // Assert
+      expect(result.metadata.reportType).toBe(REPORT_TYPES.DEAD_STOCK);
+      expect(Array.isArray(result.data)).toBe(true);
+    });
+
+    it('Given: custom deadStockDays When: generating dead stock Then: should use custom threshold', async () => {
+      // Arrange
+      prismaService.$queryRaw.mockResolvedValue([
+        { productId: 'product-1', warehouseId: 'warehouse-1', quantity: 20, unitCost: 10 },
+      ]);
+      saleRepository.findAll.mockResolvedValue([]); // No sales
+
+      const parameters = { deadStockDays: 30, includeInactive: true };
+
+      // Act
+      const result = await service.generateReport(REPORT_TYPES.DEAD_STOCK, parameters, orgId);
+
+      // Assert
+      expect(result.metadata.reportType).toBe(REPORT_TYPES.DEAD_STOCK);
+      expect(Array.isArray(result.data)).toBe(true);
+    });
+  });
+
+  describe('Unknown report type', () => {
+    it('Given: unknown report type When: generating report Then: should throw error', async () => {
+      // Arrange
+      const parameters = {};
+
+      // Act & Assert
+      await expect(
+        service.generateReport('UNKNOWN_TYPE' as never, parameters, orgId)
+      ).rejects.toThrow('Unknown report type: UNKNOWN_TYPE');
+    });
+  });
+
+  describe('Report stream with multiple batches', () => {
+    it('Given: data larger than batch size When: streaming Then: should yield multiple batches', async () => {
+      // Arrange
+      // Mock lots of stock records so inventory report has many items
+      const manyStockRows = [];
+      const manyProducts = [];
+      const manyWarehouses = [];
+      for (let i = 0; i < 5; i++) {
+        manyProducts.push(makeProduct({ id: `prod-${i}` }));
+      }
+      for (let i = 0; i < 3; i++) {
+        manyWarehouses.push(makeWarehouse({ id: `wh-${i}`, name: `Warehouse ${i}` }));
+      }
+      for (const p of manyProducts) {
+        for (const w of manyWarehouses) {
+          manyStockRows.push({
+            productId: (p as { id: string }).id,
+            warehouseId: (w as { id: string }).id,
+            quantity: 10,
+            unitCost: 5,
+          });
+        }
+      }
+      productRepository.findAll.mockResolvedValue(manyProducts);
+      warehouseRepository.findAll.mockResolvedValue(manyWarehouses);
+      prismaService.$queryRaw.mockResolvedValue(manyStockRows);
+
+      const parameters = {};
+
+      // Act - use batch size of 3 so we get multiple batches from 15 items
+      const batches: unknown[][] = [];
+      for await (const batch of service.generateReportStream(
+        REPORT_TYPES.AVAILABLE_INVENTORY,
+        parameters,
+        orgId,
+        3
+      )) {
+        batches.push(batch);
+      }
+
+      // Assert
+      expect(batches.length).toBeGreaterThan(1);
+      const totalItems = batches.reduce((sum, b) => sum + b.length, 0);
+      expect(totalItems).toBe(15);
+    });
+  });
+
+  describe('Filters on available inventory', () => {
+    it('Given: warehouseId filter When: generating inventory Then: should filter by warehouse', async () => {
+      // Arrange
+      const parameters = { warehouseId: 'warehouse-1' };
+
+      // Act
+      const result = await service.generateReport(
+        REPORT_TYPES.AVAILABLE_INVENTORY,
+        parameters,
+        orgId
+      );
+
+      // Assert
+      expect(result.metadata.reportType).toBe(REPORT_TYPES.AVAILABLE_INVENTORY);
+      expect(Array.isArray(result.data)).toBe(true);
+      for (const item of result.data as Array<{ warehouseId: string }>) {
+        expect(item.warehouseId).toBe('warehouse-1');
+      }
+    });
+
+    it('Given: includeInactive flag When: generating inventory Then: should include inactive products', async () => {
+      // Arrange
+      prismaService.$queryRaw.mockResolvedValue([
+        { productId: 'product-1', warehouseId: 'warehouse-1', quantity: 5, unitCost: 10 },
+        { productId: 'product-inactive', warehouseId: 'warehouse-1', quantity: 3, unitCost: 7 },
+      ]);
+      const parameters = { includeInactive: true };
+
+      // Act
+      const result = await service.generateReport(
+        REPORT_TYPES.AVAILABLE_INVENTORY,
+        parameters,
+        orgId
+      );
+
+      // Assert
+      const productIds = (result.data as Array<{ productId: string }>).map(d => d.productId);
+      expect(productIds).toContain('product-inactive');
+    });
+  });
+
+  describe('Movement history with date range', () => {
+    it('Given: date range When: generating movement history Then: should use findByDateRange', async () => {
+      // Arrange
+      const parameters = {
+        dateRange: {
+          startDate: new Date('2024-01-01'),
+          endDate: new Date('2024-01-31'),
+        },
+      };
+
+      // Act
+      const result = await service.generateReport(REPORT_TYPES.MOVEMENT_HISTORY, parameters, orgId);
+
+      // Assert
+      expect(result.metadata.reportType).toBe(REPORT_TYPES.MOVEMENT_HISTORY);
+      expect(movementRepository.findByDateRange).toHaveBeenCalledWith(
+        parameters.dateRange.startDate,
+        parameters.dateRange.endDate,
+        orgId
+      );
+    });
+  });
+
+  describe('Period string helpers', () => {
+    it('Given: no date range When: generating report Then: period should be All Time', async () => {
+      // Arrange
+      const parameters = {};
+
+      // Act
+      const result = await service.generateReport(REPORT_TYPES.MOVEMENTS, parameters, orgId);
+
+      // Assert
+      const item = (result.data as Array<{ period: string }>)[0];
+      if (item) {
+        expect(item.period).toBe('All Time');
+      }
+    });
+
+    it('Given: date range When: generating report Then: period should include start and end dates', async () => {
+      // Arrange
+      const parameters = {
+        dateRange: {
+          startDate: new Date('2024-06-01'),
+          endDate: new Date('2024-06-30'),
+        },
+      };
+
+      // Act
+      const result = await service.generateReport(REPORT_TYPES.MOVEMENTS, parameters, orgId);
+
+      // Assert
+      const item = (result.data as Array<{ period: string }>)[0];
+      if (item) {
+        expect(item.period).toContain('2024-06-01');
+        expect(item.period).toContain('2024-06-30');
+      }
+    });
   });
 });

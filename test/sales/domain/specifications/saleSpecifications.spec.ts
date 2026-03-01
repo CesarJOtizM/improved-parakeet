@@ -1,8 +1,10 @@
 import { describe, expect, it } from '@jest/globals';
 import { Sale } from '@sale/domain/entities/sale.entity';
 import {
+  SaleAllSpecification,
   SaleByCustomerSpecification,
   SaleByDateRangeSpecification,
+  SaleBySearchSpecification,
   SaleByStatusSpecification,
   SaleByWarehouseSpecification,
 } from '@sale/domain/specifications/saleSpecifications';
@@ -43,6 +45,107 @@ describe('SaleSpecifications', () => {
 
     return sale;
   };
+
+  describe('SaleAllSpecification', () => {
+    describe('isSatisfiedBy', () => {
+      it('Given: any sale When: checking satisfaction Then: should always return true', () => {
+        // Arrange
+        const sale = createMockSale({ status: 'DRAFT' });
+        const specification = new SaleAllSpecification();
+
+        // Act
+        const result = specification.isSatisfiedBy(sale);
+
+        // Assert
+        expect(result).toBe(true);
+      });
+
+      it('Given: a CONFIRMED sale When: checking satisfaction Then: should still return true', () => {
+        // Arrange
+        const sale = createMockSale({ status: 'CONFIRMED' });
+        const specification = new SaleAllSpecification();
+
+        // Act
+        const result = specification.isSatisfiedBy(sale);
+
+        // Assert
+        expect(result).toBe(true);
+      });
+    });
+
+    describe('toPrismaWhere', () => {
+      it('Given: SaleAllSpecification When: converting to Prisma where Then: should return only orgId', () => {
+        // Arrange
+        const specification = new SaleAllSpecification();
+
+        // Act
+        const result = specification.toPrismaWhere(mockOrgId);
+
+        // Assert
+        expect(result).toEqual({ orgId: mockOrgId });
+      });
+    });
+  });
+
+  describe('SaleBySearchSpecification', () => {
+    describe('isSatisfiedBy', () => {
+      it('Given: a sale matching saleNumber When: checking satisfaction Then: should return true', () => {
+        // Arrange
+        const sale = createMockSale();
+        const specification = new SaleBySearchSpecification('SALE-2024-001');
+
+        // Act
+        const result = specification.isSatisfiedBy(sale);
+
+        // Assert
+        expect(result).toBe(true);
+      });
+
+      it('Given: a sale matching customerReference When: checking satisfaction Then: should return true', () => {
+        // Arrange
+        const sale = createMockSale({ customerReference: 'CUST-REF-ABC' });
+        const specification = new SaleBySearchSpecification('cust-ref');
+
+        // Act
+        const result = specification.isSatisfiedBy(sale);
+
+        // Assert
+        expect(result).toBe(true);
+      });
+
+      it('Given: a sale not matching search term When: checking satisfaction Then: should return false', () => {
+        // Arrange
+        const sale = createMockSale({ customerReference: undefined });
+        const specification = new SaleBySearchSpecification('NONEXISTENT');
+
+        // Act
+        const result = specification.isSatisfiedBy(sale);
+
+        // Assert
+        expect(result).toBe(false);
+      });
+    });
+
+    describe('toPrismaWhere', () => {
+      it('Given: search term When: converting to Prisma where Then: should return OR with contains clauses', () => {
+        // Arrange
+        const specification = new SaleBySearchSpecification('  Test Search  ');
+
+        // Act
+        const result = specification.toPrismaWhere(mockOrgId);
+
+        // Assert
+        expect(result).toEqual({
+          orgId: mockOrgId,
+          OR: [
+            { saleNumber: { contains: 'test search', mode: 'insensitive' } },
+            { customerReference: { contains: 'test search', mode: 'insensitive' } },
+            { externalReference: { contains: 'test search', mode: 'insensitive' } },
+          ],
+        });
+      });
+    });
+  });
 
   describe('SaleByStatusSpecification', () => {
     describe('isSatisfiedBy', () => {
@@ -111,6 +214,20 @@ describe('SaleSpecifications', () => {
           status: 'CONFIRMED',
         });
       });
+
+      it('Given: multi-status specification When: converting to Prisma where Then: should return { in: statuses }', () => {
+        // Arrange
+        const specification = new SaleByStatusSpecification('DRAFT, CONFIRMED');
+
+        // Act
+        const result = specification.toPrismaWhere(mockOrgId);
+
+        // Assert
+        expect(result).toEqual({
+          orgId: mockOrgId,
+          status: { in: ['DRAFT', 'CONFIRMED'] },
+        });
+      });
     });
   });
 
@@ -153,6 +270,22 @@ describe('SaleSpecifications', () => {
         expect(result).toEqual({
           orgId: mockOrgId,
           warehouseId: 'warehouse-specific',
+        });
+      });
+
+      it('Given: multi-warehouse specification When: converting to Prisma where Then: should return { in: warehouseIds }', () => {
+        // Arrange
+        const specification = new SaleByWarehouseSpecification(
+          'warehouse-1, warehouse-2, warehouse-3'
+        );
+
+        // Act
+        const result = specification.toPrismaWhere(mockOrgId);
+
+        // Assert
+        expect(result).toEqual({
+          orgId: mockOrgId,
+          warehouseId: { in: ['warehouse-1', 'warehouse-2', 'warehouse-3'] },
         });
       });
     });

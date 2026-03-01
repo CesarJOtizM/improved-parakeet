@@ -75,5 +75,101 @@ describe('DownloadImportTemplateUseCase', () => {
         }
       );
     });
+
+    it('Given: xlsx format When: downloading template Then: should fall back to CSV generation', async () => {
+      // Arrange
+      const csvBuffer = Buffer.from('sku,name,unit');
+      jest.spyOn(ImportTemplateService, 'generateCSVTemplateBuffer').mockReturnValue(csvBuffer);
+      jest
+        .spyOn(ImportTemplateService, 'getTemplateFilename')
+        .mockReturnValue('products-template.xlsx');
+      jest
+        .spyOn(ImportTemplateService, 'getMimeType')
+        .mockReturnValue('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      jest
+        .spyOn(ImportTemplateService, 'getColumnDescriptions')
+        .mockReturnValue('Column descriptions');
+
+      const request: IDownloadImportTemplateRequest = {
+        type: 'PRODUCTS' as const,
+        format: 'xlsx' as const,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data.content).toBe(csvBuffer);
+          expect(ImportTemplateService.generateCSVTemplateBuffer).toHaveBeenCalled();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: format not provided When: downloading template Then: should default to csv', async () => {
+      // Arrange
+      jest
+        .spyOn(ImportTemplateService, 'generateCSVTemplateBuffer')
+        .mockReturnValue(Buffer.from('test'));
+      jest
+        .spyOn(ImportTemplateService, 'getTemplateFilename')
+        .mockReturnValue('products-template.csv');
+      jest.spyOn(ImportTemplateService, 'getMimeType').mockReturnValue('text/csv');
+      jest
+        .spyOn(ImportTemplateService, 'getColumnDescriptions')
+        .mockReturnValue('Column descriptions');
+
+      const request: IDownloadImportTemplateRequest = {
+        type: 'PRODUCTS' as const,
+        orgId: mockOrgId,
+        // format intentionally omitted
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(ImportTemplateService.getTemplateFilename).toHaveBeenCalledWith(
+        expect.anything(),
+        'csv'
+      );
+      expect(ImportTemplateService.getMimeType).toHaveBeenCalledWith('csv');
+    });
+
+    it('Given: template service throws error When: downloading template Then: should return ValidationError from outer catch', async () => {
+      // Arrange
+      jest.spyOn(ImportTemplateService, 'generateCSVTemplateBuffer').mockImplementation(() => {
+        throw new Error('Template generation failed');
+      });
+
+      const request: IDownloadImportTemplateRequest = {
+        type: 'PRODUCTS' as const,
+        format: 'csv' as const,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+          expect(error.message).toBe('Failed to generate import template');
+        }
+      );
+    });
   });
 });

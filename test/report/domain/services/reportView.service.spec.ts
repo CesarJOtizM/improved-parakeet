@@ -185,4 +185,184 @@ describe('ReportViewService', () => {
     // Act & Assert
     expect(result).toEqual({ totalRecords: 2 });
   });
+
+  it('Given: dateRange parameter provided When: viewing report Then: should use provided dateRange without calling getCurrentQuarterRange', async () => {
+    // Arrange
+    const type = REPORT_TYPES.SALES;
+    const startDate = new Date('2024-06-01');
+    const endDate = new Date('2024-06-30');
+    const parameters = { warehouseId: 'warehouse-1', dateRange: { startDate, endDate } };
+    const generatedAt = new Date('2024-06-15');
+    reportGenerationService.generateReport.mockResolvedValue({
+      data: [{ totalAmount: 200, totalItems: 5 }],
+      metadata: {
+        reportType: type,
+        generatedAt,
+        parameters,
+        totalRecords: 1,
+        orgId: 'org-1',
+      },
+    });
+
+    // Act
+    const result = await service.viewReport(type, parameters, 'org-1');
+
+    // Assert
+    expect(reportGenerationService.generateReport).toHaveBeenCalledWith(type, parameters, 'org-1');
+    expect(result.metadata.reportType).toBe(type);
+    expect(result.rows).toHaveLength(1);
+    expect(result.summary).toEqual({
+      totalSales: 1,
+      totalAmount: 200,
+      totalItems: 5,
+    });
+  });
+
+  it('Given: RETURNS_BY_SALE data When: calculating summary Then: should compute totalReturns, totalItems, totalValue', () => {
+    // Arrange
+    const baseMeta = {
+      reportType: REPORT_TYPES.RETURNS_BY_SALE,
+      generatedAt: new Date('2024-01-15'),
+      parameters: {},
+      totalRecords: 0,
+      orgId: 'org-1',
+    };
+
+    // Act
+    const result = serviceAccess.calculateSummary(REPORT_TYPES.RETURNS_BY_SALE, {
+      data: [
+        { totalItems: 3, totalValue: 50 },
+        { totalItems: 2, totalValue: 30 },
+      ],
+      metadata: baseMeta,
+    });
+
+    // Assert
+    expect(result).toEqual({
+      totalReturns: 2,
+      totalItems: 5,
+      totalValue: 80,
+    });
+  });
+
+  it('Given: RETURNS_CUSTOMER data When: calculating summary Then: should compute totalReturns, totalItems, totalValue', () => {
+    // Arrange
+    const baseMeta = {
+      reportType: REPORT_TYPES.RETURNS_CUSTOMER,
+      generatedAt: new Date('2024-01-15'),
+      parameters: {},
+      totalRecords: 0,
+      orgId: 'org-1',
+    };
+
+    // Act
+    const result = serviceAccess.calculateSummary(REPORT_TYPES.RETURNS_CUSTOMER, {
+      data: [
+        { totalItems: 1, totalValue: 15 },
+        { totalItems: 4, totalValue: 60 },
+      ],
+      metadata: baseMeta,
+    });
+
+    // Assert
+    expect(result).toEqual({
+      totalReturns: 2,
+      totalItems: 5,
+      totalValue: 75,
+    });
+  });
+
+  it('Given: RETURNS_SUPPLIER data When: calculating summary Then: should compute totalReturns, totalItems, totalValue', () => {
+    // Arrange
+    const baseMeta = {
+      reportType: REPORT_TYPES.RETURNS_SUPPLIER,
+      generatedAt: new Date('2024-01-15'),
+      parameters: {},
+      totalRecords: 0,
+      orgId: 'org-1',
+    };
+
+    // Act
+    const result = serviceAccess.calculateSummary(REPORT_TYPES.RETURNS_SUPPLIER, {
+      data: [{ totalItems: 10, totalValue: 200 }],
+      metadata: baseMeta,
+    });
+
+    // Assert
+    expect(result).toEqual({
+      totalReturns: 1,
+      totalItems: 10,
+      totalValue: 200,
+    });
+  });
+
+  it('Given: ABC_ANALYSIS data When: calculating summary Then: should compute class counts and totalRevenue', () => {
+    // Arrange
+    const baseMeta = {
+      reportType: REPORT_TYPES.ABC_ANALYSIS,
+      generatedAt: new Date('2024-01-15'),
+      parameters: {},
+      totalRecords: 0,
+      orgId: 'org-1',
+    };
+
+    // Act
+    const result = serviceAccess.calculateSummary(REPORT_TYPES.ABC_ANALYSIS, {
+      data: [
+        { abcClassification: 'A', totalRevenue: 500 },
+        { abcClassification: 'A', totalRevenue: 300 },
+        { abcClassification: 'B', totalRevenue: 100 },
+        { abcClassification: 'C', totalRevenue: 20 },
+      ],
+      metadata: baseMeta,
+    });
+
+    // Assert
+    expect(result).toEqual({
+      totalProducts: 4,
+      classA: 2,
+      classB: 1,
+      classC: 1,
+      totalRevenue: 920,
+    });
+  });
+
+  it('Given: DEAD_STOCK data When: calculating summary Then: should compute risk counts and totalStockValue', () => {
+    // Arrange
+    const baseMeta = {
+      reportType: REPORT_TYPES.DEAD_STOCK,
+      generatedAt: new Date('2024-01-15'),
+      parameters: {},
+      totalRecords: 0,
+      orgId: 'org-1',
+    };
+
+    // Act
+    const result = serviceAccess.calculateSummary(REPORT_TYPES.DEAD_STOCK, {
+      data: [
+        { riskLevel: 'HIGH', stockValue: 1000 },
+        { riskLevel: 'HIGH', stockValue: 500 },
+        { riskLevel: 'MEDIUM', stockValue: 200 },
+        { riskLevel: 'LOW', stockValue: 50 },
+      ],
+      metadata: baseMeta,
+    });
+
+    // Assert
+    expect(result).toEqual({
+      totalProducts: 4,
+      totalStockValue: 1750,
+      highRiskCount: 2,
+      mediumRiskCount: 1,
+      lowRiskCount: 1,
+    });
+  });
+
+  it('Given: unknown report type When: requesting columns Then: should return empty array', () => {
+    // Arrange & Act
+    const columns = serviceAccess.getColumnsForReportType('TOTALLY_UNKNOWN_TYPE');
+
+    // Assert
+    expect(columns).toEqual([]);
+  });
 });

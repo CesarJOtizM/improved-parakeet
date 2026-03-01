@@ -96,7 +96,12 @@ describe('PrismaService', () => {
     it('Given: service When: destroying Then: should disconnect from database', async () => {
       // Arrange
       service = new PrismaService(mockConfigService);
+      mockConnect.mockResolvedValue(undefined as never);
       mockDisconnect.mockResolvedValue(undefined as never);
+
+      // First connect so isConnected is set to true
+      await service.onModuleInit();
+      mockDisconnect.mockClear();
 
       // Act
       await service.onModuleDestroy();

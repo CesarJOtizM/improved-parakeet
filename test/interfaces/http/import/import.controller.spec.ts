@@ -1,0 +1,423 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { ImportController } from '@interface/http/import/import.controller';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { ok, err } from '@shared/domain/result';
+import { ValidationError, NotFoundError } from '@shared/domain/result/domainError';
+
+describe('ImportController', () => {
+  let controller: ImportController;
+  let mockCreateImportBatchUseCase: any;
+  let mockValidateImportUseCase: any;
+  let mockProcessImportUseCase: any;
+  let mockGetImportStatusUseCase: any;
+  let mockDownloadImportTemplateUseCase: any;
+  let mockDownloadErrorReportUseCase: any;
+  let mockPreviewImportUseCase: any;
+  let mockExecuteImportUseCase: any;
+
+  const mockRequest = {
+    user: { id: 'user-123', email: 'test@test.com', orgId: 'org-123' },
+  };
+
+  const mockFile = {
+    originalname: 'products.csv',
+    mimetype: 'text/csv',
+    buffer: Buffer.from('sku,name\nSKU-001,Product 1'),
+    size: 100,
+  } as Express.Multer.File;
+
+  const mockBatchData = {
+    id: 'batch-123',
+    type: 'PRODUCTS',
+    status: 'PENDING',
+    fileName: 'products.csv',
+    orgId: 'org-123',
+    createdBy: 'user-123',
+  };
+
+  beforeEach(() => {
+    mockCreateImportBatchUseCase = { execute: jest.fn() };
+    mockValidateImportUseCase = { execute: jest.fn() };
+    mockProcessImportUseCase = { execute: jest.fn() };
+    mockGetImportStatusUseCase = { execute: jest.fn() };
+    mockDownloadImportTemplateUseCase = { execute: jest.fn() };
+    mockDownloadErrorReportUseCase = { execute: jest.fn() };
+    mockPreviewImportUseCase = { execute: jest.fn() };
+    mockExecuteImportUseCase = { execute: jest.fn() };
+
+    controller = new ImportController(
+      mockCreateImportBatchUseCase,
+      mockValidateImportUseCase,
+      mockProcessImportUseCase,
+      mockGetImportStatusUseCase,
+      mockDownloadImportTemplateUseCase,
+      mockDownloadErrorReportUseCase,
+      mockPreviewImportUseCase,
+      mockExecuteImportUseCase
+    );
+  });
+
+  describe('previewImport', () => {
+    it('Given: valid file and type When: previewing Then: should return preview data', async () => {
+      // Arrange
+      const dto = { type: 'PRODUCTS' };
+      const previewResponse = {
+        success: true,
+        data: {
+          totalRows: 10,
+          validRows: 8,
+          invalidRows: 2,
+          preview: [{ sku: 'SKU-001', name: 'Product 1' }],
+          errors: [],
+        },
+        message: 'Preview generated',
+        timestamp: new Date().toISOString(),
+      };
+      mockPreviewImportUseCase.execute.mockResolvedValue(ok(previewResponse));
+
+      // Act
+      const result = await controller.previewImport(mockFile, dto as any, 'org-123');
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.data.totalRows).toBe(10);
+      expect(mockPreviewImportUseCase.execute).toHaveBeenCalledWith({
+        type: 'PRODUCTS',
+        file: mockFile,
+        orgId: 'org-123',
+      });
+    });
+
+    it('Given: invalid file When: previewing Then: should throw validation error', async () => {
+      // Arrange
+      const dto = { type: 'PRODUCTS' };
+      mockPreviewImportUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Invalid file format'))
+      );
+
+      // Act & Assert
+      await expect(controller.previewImport(mockFile, dto as any, 'org-123')).rejects.toThrow();
+    });
+  });
+
+  describe('executeImport', () => {
+    it('Given: valid file and type When: executing import Then: should return import result', async () => {
+      // Arrange
+      const dto = { type: 'PRODUCTS', note: 'Test import' };
+      const executeResponse = {
+        success: true,
+        data: {
+          batchId: 'batch-123',
+          totalProcessed: 10,
+          successCount: 8,
+          errorCount: 2,
+        },
+        message: 'Import executed',
+        timestamp: new Date().toISOString(),
+      };
+      mockExecuteImportUseCase.execute.mockResolvedValue(ok(executeResponse));
+
+      // Act
+      const result = await controller.executeImport(
+        mockFile,
+        dto as any,
+        'org-123',
+        mockRequest as any
+      );
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.data.batchId).toBe('batch-123');
+      expect(mockExecuteImportUseCase.execute).toHaveBeenCalledWith({
+        type: 'PRODUCTS',
+        file: mockFile,
+        note: 'Test import',
+        createdBy: 'user-123',
+        orgId: 'org-123',
+      });
+    });
+
+    it('Given: validation errors in file When: executing import Then: should throw', async () => {
+      // Arrange
+      const dto = { type: 'PRODUCTS' };
+      mockExecuteImportUseCase.execute.mockResolvedValue(
+        err(new ValidationError('File contains validation errors'))
+      );
+
+      // Act & Assert
+      await expect(
+        controller.executeImport(mockFile, dto as any, 'org-123', mockRequest as any)
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('createImportBatch', () => {
+    it('Given: valid batch data When: creating Then: should return created batch', async () => {
+      // Arrange
+      const dto = { type: 'PRODUCTS', fileName: 'products.csv', note: 'Test batch' };
+      mockCreateImportBatchUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockBatchData,
+          message: 'Import batch created',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      const result = await controller.createImportBatch(dto as any, 'org-123', mockRequest as any);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.data.id).toBe('batch-123');
+      expect(mockCreateImportBatchUseCase.execute).toHaveBeenCalledWith({
+        type: 'PRODUCTS',
+        fileName: 'products.csv',
+        note: 'Test batch',
+        createdBy: 'user-123',
+        orgId: 'org-123',
+      });
+    });
+
+    it('Given: invalid batch data When: creating Then: should throw', async () => {
+      // Arrange
+      const dto = { type: '', fileName: '' };
+      mockCreateImportBatchUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Import type is required'))
+      );
+
+      // Act & Assert
+      await expect(
+        controller.createImportBatch(dto as any, 'org-123', mockRequest as any)
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('validateImportBatch', () => {
+    it('Given: valid batch and file When: validating Then: should return validation result', async () => {
+      // Arrange
+      const validationResponse = {
+        success: true,
+        data: { batchId: 'batch-123', status: 'VALIDATED', validRows: 10, invalidRows: 0 },
+        message: 'Batch validated',
+        timestamp: new Date().toISOString(),
+      };
+      mockValidateImportUseCase.execute.mockResolvedValue(ok(validationResponse));
+
+      // Act
+      const result = await controller.validateImportBatch('batch-123', mockFile, 'org-123');
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.data.status).toBe('VALIDATED');
+      expect(mockValidateImportUseCase.execute).toHaveBeenCalledWith({
+        batchId: 'batch-123',
+        file: mockFile,
+        orgId: 'org-123',
+      });
+    });
+
+    it('Given: non-existent batch When: validating Then: should throw not found', async () => {
+      // Arrange
+      mockValidateImportUseCase.execute.mockResolvedValue(
+        err(new NotFoundError('Import batch not found'))
+      );
+
+      // Act & Assert
+      await expect(
+        controller.validateImportBatch('non-existent', mockFile, 'org-123')
+      ).rejects.toThrow();
+    });
+
+    it('Given: invalid file When: validating Then: should throw validation error', async () => {
+      // Arrange
+      mockValidateImportUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Invalid file content'))
+      );
+
+      // Act & Assert
+      await expect(
+        controller.validateImportBatch('batch-123', mockFile, 'org-123')
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('processImportBatch', () => {
+    it('Given: validated batch When: processing Then: should return process result', async () => {
+      // Arrange
+      const dto = { skipInvalidRows: true };
+      const processResponse = {
+        success: true,
+        data: { batchId: 'batch-123', status: 'COMPLETED', processedRows: 10 },
+        message: 'Batch processed',
+        timestamp: new Date().toISOString(),
+      };
+      mockProcessImportUseCase.execute.mockResolvedValue(ok(processResponse));
+
+      // Act
+      const result = await controller.processImportBatch('batch-123', dto as any, 'org-123');
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.data.status).toBe('COMPLETED');
+      expect(mockProcessImportUseCase.execute).toHaveBeenCalledWith({
+        batchId: 'batch-123',
+        skipInvalidRows: true,
+        orgId: 'org-123',
+      });
+    });
+
+    it('Given: non-validated batch When: processing Then: should throw', async () => {
+      // Arrange
+      const dto = { skipInvalidRows: false };
+      mockProcessImportUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Batch is not in VALIDATED status'))
+      );
+
+      // Act & Assert
+      await expect(
+        controller.processImportBatch('batch-123', dto as any, 'org-123')
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('getImportStatus', () => {
+    it('Given: valid batch id When: getting status Then: should return status', async () => {
+      // Arrange
+      const statusResponse = {
+        success: true,
+        data: {
+          id: 'batch-123',
+          status: 'PROCESSING',
+          progress: 50,
+          totalRows: 100,
+          processedRows: 50,
+        },
+        message: 'Status retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetImportStatusUseCase.execute.mockResolvedValue(ok(statusResponse));
+
+      // Act
+      const result = await controller.getImportStatus('batch-123', 'org-123');
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.data.status).toBe('PROCESSING');
+      expect(mockGetImportStatusUseCase.execute).toHaveBeenCalledWith({
+        batchId: 'batch-123',
+        orgId: 'org-123',
+      });
+    });
+
+    it('Given: non-existent batch When: getting status Then: should throw not found', async () => {
+      // Arrange
+      mockGetImportStatusUseCase.execute.mockResolvedValue(
+        err(new NotFoundError('Import batch not found'))
+      );
+
+      // Act & Assert
+      await expect(controller.getImportStatus('non-existent', 'org-123')).rejects.toThrow();
+    });
+  });
+
+  describe('downloadTemplate', () => {
+    it('Given: valid type When: downloading template Then: should send file', async () => {
+      // Arrange
+      const templateData = {
+        data: {
+          filename: 'products_template.csv',
+          mimeType: 'text/csv',
+          content: Buffer.from('sku,name,description'),
+        },
+      };
+      mockDownloadImportTemplateUseCase.execute.mockResolvedValue(ok(templateData));
+
+      const mockRes = {
+        setHeader: jest.fn(),
+        send: jest.fn(),
+      };
+
+      // Act
+      await controller.downloadTemplate('PRODUCTS', 'csv', mockRes as any, 'org-123');
+
+      // Assert
+      expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'text/csv');
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        'Content-Disposition',
+        'attachment; filename="products_template.csv"'
+      );
+      expect(mockRes.send).toHaveBeenCalledWith(templateData.data.content);
+    });
+
+    it('Given: invalid type When: downloading template Then: should throw', async () => {
+      // Arrange
+      mockDownloadImportTemplateUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Invalid import type'))
+      );
+
+      const mockRes = {
+        setHeader: jest.fn(),
+        send: jest.fn(),
+      };
+
+      // Act & Assert - resultToHttpResponse will throw on error
+      await expect(
+        controller.downloadTemplate('INVALID', 'csv', mockRes as any, 'org-123')
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('getErrorReport', () => {
+    it('Given: batch with errors When: getting error report Then: should send file', async () => {
+      // Arrange
+      const errorReportData = {
+        data: {
+          filename: 'errors_batch-123.csv',
+          mimeType: 'text/csv',
+          content: Buffer.from('row,error\n1,Invalid SKU'),
+        },
+      };
+      mockDownloadErrorReportUseCase.execute.mockResolvedValue(ok(errorReportData));
+
+      const mockRes = {
+        setHeader: jest.fn(),
+        send: jest.fn(),
+      };
+
+      // Act
+      await controller.getErrorReport(
+        'batch-123',
+        { format: 'csv' } as any,
+        mockRes as any,
+        'org-123'
+      );
+
+      // Assert
+      expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'text/csv');
+      expect(mockRes.send).toHaveBeenCalledWith(errorReportData.data.content);
+    });
+
+    it('Given: non-existent batch When: getting error report Then: should throw', async () => {
+      // Arrange
+      mockDownloadErrorReportUseCase.execute.mockResolvedValue(
+        err(new NotFoundError('Import batch not found'))
+      );
+
+      const mockRes = {
+        setHeader: jest.fn(),
+        send: jest.fn(),
+      };
+
+      // Act & Assert
+      await expect(
+        controller.getErrorReport(
+          'non-existent',
+          { format: 'csv' } as any,
+          mockRes as any,
+          'org-123'
+        )
+      ).rejects.toThrow();
+    });
+  });
+});

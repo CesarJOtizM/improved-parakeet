@@ -361,6 +361,7 @@ describe('Security Config', () => {
         'Authorization',
         'X-Organization-ID',
         'X-Organization-Slug',
+        'X-User-ID',
       ]);
     });
   });
@@ -402,6 +403,7 @@ describe('Security Config', () => {
         'Authorization',
         'X-Organization-ID',
         'X-Organization-Slug',
+        'X-User-ID',
       ]);
     });
 
@@ -447,8 +449,8 @@ describe('Security Config', () => {
 
       // Assert
       expect(config.jwt.secret).toBe('your-super-secret-jwt-key-change-in-production');
-      expect(config.jwt.accessTokenExpiry).toBe('15m');
-      expect(config.jwt.refreshTokenExpiry).toBe('7d');
+      expect(config.jwt.accessTokenExpiry).toBe('8h');
+      expect(config.jwt.refreshTokenExpiry).toBe('15d');
       expect(config.jwt.saltRounds).toBe(12);
     });
 

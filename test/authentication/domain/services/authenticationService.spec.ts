@@ -734,8 +734,8 @@ describe('AuthenticationService', () => {
       const result = AuthenticationService.getTokenConfig();
 
       // Assert
-      expect(result.accessTokenExpiryMinutes).toBe(15);
-      expect(result.refreshTokenExpiryDays).toBe(7);
+      expect(result.accessTokenExpiryMinutes).toBe(480);
+      expect(result.refreshTokenExpiryDays).toBe(15);
     });
   });
 });

@@ -39,22 +39,8 @@ const SUPPLIER_RETURN_REASONS = [
   'Producto presenta oxidación prematura',
 ];
 
-const RETURN_PRODUCTS_CUSTOMER = [
-  ['MON-DELL'],
-  ['HEADSET-002'],
-  ['LAP-DELL'],
-  ['MOUSE-LOG-001'],
-  ['LAP-HP', 'MOUSE-LOG-002'],
-  ['WEBCAM'],
-  ['KB-MECH'],
-  ['MON-SAM'],
-  ['HEADSET-001'],
-  ['TAB-APPLE'],
-  ['LAP-LENOVO'],
-  ['PARLANTE'],
-];
-
-const RETURN_PRODUCTS_SUPPLIER = [
+// Products for supplier returns (these come from purchase orders, not sales)
+const SUPPLIER_RETURN_SKUS = [
   ['CABLE-HDMI'],
   ['TONER-HP'],
   ['MOUSE-LOG-002', 'CABLE-USBC'],
@@ -76,9 +62,8 @@ export class DemoReturnsSeed {
     adminUserId: string
   ): Promise<ReturnRecord[]> {
     const findProduct = (prefix: string) => products.find(p => p.sku.startsWith(prefix));
-    const completedSales = sales.filter(s => s.status === 'COMPLETED');
+    const completedSales = sales.filter(s => s.status === 'COMPLETED' && s.lines.length > 0);
     const records: ReturnRecord[] = [];
-    let retIdx = 0;
 
     // Distribution: 8 customer CONFIRMED, 4 supplier CONFIRMED, 3 customer DRAFT, 2 supplier DRAFT, 3 CANCELLED = 20
     const defs: {
@@ -131,26 +116,37 @@ export class DemoReturnsSeed {
       },
     ];
 
+    let retIdx = 0;
+    let seq2025 = 0;
+    let seq2026 = 0;
+
     for (const def of defs) {
       for (let i = 0; i < def.count; i++) {
         retIdx++;
-        const returnNumber = `RETURN-2025-${String(retIdx).padStart(3, '0')}`;
         const dayOffset = def.minDays + Math.floor(Math.random() * (def.maxDays - def.minDays));
         const createdAt = daysAgo(dayOffset);
+        const year = createdAt.getFullYear();
+
+        // Year-appropriate numbering
+        let returnNumber: string;
+        if (year <= 2025) {
+          seq2025++;
+          returnNumber = `RETURN-2025-${String(seq2025).padStart(3, '0')}`;
+        } else {
+          seq2026++;
+          returnNumber = `RETURN-2026-${String(seq2026).padStart(3, '0')}`;
+        }
 
         const isConfirmed = def.status === 'CONFIRMED';
         const isCancelled = def.status === 'CANCELLED';
 
-        // Customer returns link to a completed sale when available
-        const saleId =
+        // Customer returns link to a completed sale
+        const linkedSale =
           def.isCustomer && completedSales.length > 0
-            ? completedSales[retIdx % completedSales.length].id
+            ? completedSales[retIdx % completedSales.length]
             : null;
 
         const reasons = def.isCustomer ? CUSTOMER_RETURN_REASONS : SUPPLIER_RETURN_REASONS;
-        const productSkus = def.isCustomer
-          ? RETURN_PRODUCTS_CUSTOMER[retIdx % RETURN_PRODUCTS_CUSTOMER.length]
-          : RETURN_PRODUCTS_SUPPLIER[retIdx % RETURN_PRODUCTS_SUPPLIER.length];
 
         const ret = await this.prisma.return.upsert({
           where: { returnNumber_orgId: { returnNumber, orgId } },
@@ -161,7 +157,7 @@ export class DemoReturnsSeed {
             type: def.type,
             reason: reasons[retIdx % reasons.length],
             warehouseId: def.isCustomer ? warehouses[4].id : warehouses[0].id,
-            saleId: def.isCustomer ? saleId : null,
+            saleId: linkedSale ? linkedSale.id : null,
             note: `Devolución #${retIdx} - ${def.type === 'RETURN_CUSTOMER' ? 'Cliente' : 'Proveedor'}`,
             confirmedAt: isConfirmed ? new Date(createdAt.getTime() + 86400000 * 2) : null,
             cancelledAt: isCancelled ? new Date(createdAt.getTime() + 86400000) : null,
@@ -173,30 +169,72 @@ export class DemoReturnsSeed {
 
         const existingLines = await this.prisma.returnLine.count({ where: { returnId: ret.id } });
         if (existingLines === 0) {
-          const lines = productSkus
-            .map(sku => {
-              const prod = findProduct(sku);
-              if (!prod) return null;
+          let lines: NonNullable<ReturnLineData>[] = [];
+
+          if (def.isCustomer && linkedSale) {
+            // Use products from the actual sale lines
+            const numReturnLines =
+              1 + Math.floor(Math.random() * Math.min(2, linkedSale.lines.length));
+            const saleLinesToReturn = [...linkedSale.lines]
+              .sort(() => Math.random() - 0.5)
+              .slice(0, numReturnLines);
+
+            lines = saleLinesToReturn.map(sl => ({
+              returnId: ret.id,
+              productId: sl.productId,
+              quantity: Math.max(1, Math.min(1 + (retIdx % 3), sl.quantity)),
+              originalSalePrice: sl.salePrice,
+              originalUnitCost: null,
+              currency: 'COP',
+              orgId,
+            }));
+          } else if (!def.isCustomer) {
+            // Supplier returns: use predefined product SKUs
+            const productSkus = SUPPLIER_RETURN_SKUS[retIdx % SUPPLIER_RETURN_SKUS.length];
+            lines = productSkus
+              .map(sku => {
+                const prod = findProduct(sku);
+                if (!prod) return null;
+                const price =
+                  typeof prod.price === 'object' && 'toNumber' in prod.price
+                    ? (prod.price as { toNumber(): number }).toNumber()
+                    : Number(prod.price);
+                return {
+                  returnId: ret.id,
+                  productId: prod.id,
+                  quantity: 1 + (retIdx % 3),
+                  originalSalePrice: null,
+                  originalUnitCost: Math.round(price * 0.6),
+                  currency: 'COP',
+                  orgId,
+                };
+              })
+              .filter((l): l is NonNullable<typeof l> => l !== null);
+          } else {
+            // Customer return without linked sale (fallback — shouldn't normally happen)
+            // Use a generic product
+            const fallbackProd = findProduct('MOUSE-LOG-002');
+            if (fallbackProd) {
               const price =
-                typeof prod.price === 'object' && 'toNumber' in prod.price
-                  ? (prod.price as { toNumber(): number }).toNumber()
-                  : Number(prod.price);
-              return {
-                returnId: ret.id,
-                productId: prod.id,
-                quantity: 1 + (retIdx % 3),
-                originalSalePrice: def.isCustomer ? price : null,
-                originalUnitCost: !def.isCustomer ? Math.round(price * 0.6) : null,
-                currency: 'COP',
-                orgId,
-              };
-            })
-            .filter(Boolean);
+                typeof fallbackProd.price === 'object' && 'toNumber' in fallbackProd.price
+                  ? (fallbackProd.price as { toNumber(): number }).toNumber()
+                  : Number(fallbackProd.price);
+              lines = [
+                {
+                  returnId: ret.id,
+                  productId: fallbackProd.id,
+                  quantity: 1,
+                  originalSalePrice: price,
+                  originalUnitCost: null,
+                  currency: 'COP',
+                  orgId,
+                },
+              ];
+            }
+          }
 
           if (lines.length > 0) {
-            await this.prisma.returnLine.createMany({
-              data: lines as NonNullable<(typeof lines)[0]>[],
-            });
+            await this.prisma.returnLine.createMany({ data: lines });
           }
         }
 
@@ -204,13 +242,32 @@ export class DemoReturnsSeed {
       }
     }
 
-    // Sync DocumentNumberSequence so API-created returns continue from the right number
-    await this.prisma.documentNumberSequence.upsert({
-      where: { orgId_type_year: { orgId, type: 'RETURN', year: 2025 } },
-      update: { lastSequence: retIdx },
-      create: { orgId, type: 'RETURN', year: 2025, lastSequence: retIdx },
-    });
+    // Sync DocumentNumberSequence for both years
+    if (seq2025 > 0) {
+      await this.prisma.documentNumberSequence.upsert({
+        where: { orgId_type_year: { orgId, type: 'RETURN', year: 2025 } },
+        update: { lastSequence: seq2025 },
+        create: { orgId, type: 'RETURN', year: 2025, lastSequence: seq2025 },
+      });
+    }
+    if (seq2026 > 0) {
+      await this.prisma.documentNumberSequence.upsert({
+        where: { orgId_type_year: { orgId, type: 'RETURN', year: 2026 } },
+        update: { lastSequence: seq2026 },
+        create: { orgId, type: 'RETURN', year: 2026, lastSequence: seq2026 },
+      });
+    }
 
     return records;
   }
 }
+
+type ReturnLineData = {
+  returnId: string;
+  productId: string;
+  quantity: number;
+  originalSalePrice: number | null;
+  originalUnitCost: number | null;
+  currency: string;
+  orgId: string;
+};

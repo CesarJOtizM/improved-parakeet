@@ -4,12 +4,14 @@ import { Transfer } from '@transfer/domain/entities/transfer.entity';
 import { TransferStatus } from '@transfer/domain/valueObjects/transferStatus.valueObject';
 
 import type { ITransferRepository } from '@transfer/domain/repositories/transferRepository.interface';
+import type { PrismaService } from '@infrastructure/database/prisma.service';
 
 describe('GetTransfersUseCase', () => {
   const mockOrgId = 'test-org-id';
 
   let useCase: GetTransfersUseCase;
   let mockTransferRepository: jest.Mocked<ITransferRepository>;
+  let mockPrisma: jest.Mocked<PrismaService>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -29,7 +31,13 @@ describe('GetTransfersUseCase', () => {
       findPendingTransfers: jest.fn(),
     } as jest.Mocked<ITransferRepository>;
 
-    useCase = new GetTransfersUseCase(mockTransferRepository);
+    mockPrisma = {
+      warehouse: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+    } as unknown as jest.Mocked<PrismaService>;
+
+    useCase = new GetTransfersUseCase(mockTransferRepository, mockPrisma);
   });
 
   describe('execute', () => {
@@ -194,6 +202,187 @@ describe('GetTransfersUseCase', () => {
       // Assert
       expect(result.isOk()).toBe(true);
       expect(mockTransferRepository.findByDateRange).toHaveBeenCalled();
+    });
+
+    it('Given: sortBy status When: getting transfers Then: should sort by status value', async () => {
+      // Arrange
+      const transferDraft = createTransferWithDates({
+        fromWarehouseId: 'wh-a',
+        toWarehouseId: 'wh-b',
+        status: 'DRAFT',
+      });
+      const transferInTransit = createTransferWithDates({
+        fromWarehouseId: 'wh-c',
+        toWarehouseId: 'wh-d',
+        status: 'IN_TRANSIT',
+        initiatedAt: new Date(),
+      });
+      mockTransferRepository.findAll.mockResolvedValue([transferInTransit, transferDraft]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'status',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+          // DRAFT < IN_TRANSIT alphabetically
+          expect(value.data[0].status).toBe('DRAFT');
+          expect(value.data[1].status).toBe('IN_TRANSIT');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy createdAt When: getting transfers Then: should sort by createdAt', async () => {
+      // Arrange
+      const olderTransfer = createTransferWithDates({
+        fromWarehouseId: 'wh-old',
+        toWarehouseId: 'wh-b',
+        status: 'DRAFT',
+      });
+      const newerTransfer = createTransferWithDates({
+        fromWarehouseId: 'wh-new',
+        toWarehouseId: 'wh-d',
+        status: 'DRAFT',
+      });
+      mockTransferRepository.findAll.mockResolvedValue([olderTransfer, newerTransfer]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'createdAt',
+        sortOrder: 'desc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy unknown field When: getting transfers Then: should fallback to createdAt sort', async () => {
+      // Arrange
+      const transfer1 = createTransferWithDates({
+        fromWarehouseId: 'wh-1',
+        toWarehouseId: 'wh-2',
+        status: 'DRAFT',
+      });
+      const transfer2 = createTransferWithDates({
+        fromWarehouseId: 'wh-3',
+        toWarehouseId: 'wh-4',
+        status: 'DRAFT',
+      });
+      mockTransferRepository.findAll.mockResolvedValue([transfer1, transfer2]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'nonExistentField',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: warehouses exist When: getting transfers Then: should enrich with warehouse names', async () => {
+      // Arrange
+      const mockTransfers = [createMockTransfer()];
+      mockTransferRepository.findAll.mockResolvedValue(mockTransfers);
+
+      (mockPrisma.warehouse.findMany as jest.Mock).mockResolvedValue([
+        { id: 'warehouse-from-123', name: 'Source Warehouse' },
+        { id: 'warehouse-to-123', name: 'Destination Warehouse' },
+      ]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].fromWarehouseName).toBe('Source Warehouse');
+          expect(value.data[0].toWarehouseName).toBe('Destination Warehouse');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: page=2 When: getting transfers Then: hasPrev should be true', async () => {
+      // Arrange
+      const transfers = Array.from({ length: 15 }, (_, i) =>
+        createTransferWithDates({
+          fromWarehouseId: `wh-from-${i}`,
+          toWarehouseId: `wh-to-${i}`,
+          status: 'DRAFT',
+        })
+      );
+      mockTransferRepository.findAll.mockResolvedValue(transfers);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 2,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.pagination.hasPrev).toBe(true);
+          expect(value.pagination.page).toBe(2);
+          expect(value.data).toHaveLength(5);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
     });
   });
 });

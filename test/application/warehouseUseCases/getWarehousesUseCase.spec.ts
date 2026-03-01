@@ -212,5 +212,236 @@ describe('GetWarehousesUseCase', () => {
         }
       );
     });
+
+    it('Given: sortBy name When: getting warehouses Then: should sort by name ascending', async () => {
+      // Arrange
+      const mockWarehouses = [
+        createMockWarehouse('WH-002', 'Zeta Warehouse'),
+        createMockWarehouse('WH-001', 'Alpha Warehouse'),
+      ];
+      mockWarehouseRepository.findAll.mockResolvedValue(mockWarehouses);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'name',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+          expect(value.data[0].name).toBe('Alpha Warehouse');
+          expect(value.data[1].name).toBe('Zeta Warehouse');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy isActive When: getting warehouses Then: should sort by active status', async () => {
+      // Arrange
+      const mockWarehouses = [
+        createMockWarehouse('WH-001', 'Inactive Warehouse', false),
+        createMockWarehouse('WH-002', 'Active Warehouse', true),
+      ];
+      mockWarehouseRepository.findAll.mockResolvedValue(mockWarehouses);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'isActive',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+          // isActive false=0 < true=1, so inactive first in asc
+          expect(value.data[0].isActive).toBe(false);
+          expect(value.data[1].isActive).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy createdAt When: getting warehouses Then: should sort by creation date', async () => {
+      // Arrange
+      const mockWarehouses = [
+        createMockWarehouse('WH-001', 'Warehouse A'),
+        createMockWarehouse('WH-002', 'Warehouse B'),
+      ];
+      mockWarehouseRepository.findAll.mockResolvedValue(mockWarehouses);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'createdAt',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy updatedAt When: getting warehouses Then: should sort by update date', async () => {
+      // Arrange
+      const mockWarehouses = [
+        createMockWarehouse('WH-001', 'Warehouse A'),
+        createMockWarehouse('WH-002', 'Warehouse B'),
+      ];
+      mockWarehouseRepository.findAll.mockResolvedValue(mockWarehouses);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'updatedAt',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy unknown field When: getting warehouses Then: should fallback to createdAt sort', async () => {
+      // Arrange
+      const mockWarehouses = [
+        createMockWarehouse('WH-001', 'Warehouse A'),
+        createMockWarehouse('WH-002', 'Warehouse B'),
+      ];
+      mockWarehouseRepository.findAll.mockResolvedValue(mockWarehouses);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'unknownField',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortOrder desc When: getting warehouses Then: should reverse sort order', async () => {
+      // Arrange
+      const mockWarehouses = [
+        createMockWarehouse('WH-001', 'Alpha Warehouse'),
+        createMockWarehouse('WH-002', 'Zeta Warehouse'),
+      ];
+      mockWarehouseRepository.findAll.mockResolvedValue(mockWarehouses);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'name',
+        sortOrder: 'desc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+          // desc: Zeta > Alpha
+          expect(value.data[0].name).toBe('Zeta Warehouse');
+          expect(value.data[1].name).toBe('Alpha Warehouse');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: page 2 with multi-page data When: getting warehouses Then: should return hasPrev true', async () => {
+      // Arrange - create enough warehouses to span multiple pages
+      const mockWarehouses = [
+        createMockWarehouse('WH-001', 'Warehouse 1'),
+        createMockWarehouse('WH-002', 'Warehouse 2'),
+        createMockWarehouse('WH-003', 'Warehouse 3'),
+        createMockWarehouse('WH-004', 'Warehouse 4'),
+        createMockWarehouse('WH-005', 'Warehouse 5'),
+      ];
+      mockWarehouseRepository.findAll.mockResolvedValue(mockWarehouses);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 2,
+        limit: 2,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.pagination.page).toBe(2);
+          expect(value.pagination.hasPrev).toBe(true);
+          expect(value.pagination.hasNext).toBe(true);
+          expect(value.pagination.total).toBe(5);
+          expect(value.pagination.totalPages).toBe(3);
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

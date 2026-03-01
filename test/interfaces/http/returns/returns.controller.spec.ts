@@ -203,9 +203,12 @@ describe('ReturnsController', () => {
       );
 
       // Act
-      const result = await controller.cancelReturn('return-123', 'org-123', {
-        reason: 'Error',
-      } as any);
+      const result = await controller.cancelReturn(
+        'return-123',
+        'Error',
+        'org-123',
+        mockRequest as any
+      );
 
       // Assert
       expect(result.success).toBe(true);

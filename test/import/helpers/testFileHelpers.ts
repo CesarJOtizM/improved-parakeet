@@ -1,7 +1,8 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 /**
  * Helper utilities for generating test files (Excel/CSV) for import tests
+ * Uses exceljs (same library as FileParsingService) to generate Excel buffers.
  */
 
 export interface ITestFileOptions {
@@ -11,19 +12,32 @@ export interface ITestFileOptions {
   mimetype?: string;
 }
 
+// Cache for synchronously-needed Excel buffers: pre-built by async helper
+let _pendingExcelFiles: Map<string, Buffer> = new Map();
+
 /**
- * Generate Excel file buffer for testing
+ * Generate Excel file buffer for testing (async — uses exceljs)
  */
-export function generateExcelFile(options: ITestFileOptions): Express.Multer.File {
-  const workbook = XLSX.utils.book_new();
-  const worksheet = XLSX.utils.aoa_to_sheet([
-    options.headers,
-    ...options.rows.map(row => options.headers.map(header => row[header] ?? '')),
-  ]);
+export async function generateExcelFileAsync(
+  options: ITestFileOptions
+): Promise<Express.Multer.File> {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Sheet1');
 
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+  // Add header row
+  worksheet.addRow(options.headers);
 
-  const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+  // Add data rows
+  for (const row of options.rows) {
+    const values = options.headers.map(header => {
+      const val = row[header];
+      return val !== undefined && val !== null ? val : '';
+    });
+    worksheet.addRow(values);
+  }
+
+  const arrayBuffer = await workbook.xlsx.writeBuffer();
+  const buffer = Buffer.from(arrayBuffer);
 
   return {
     fieldname: 'file',
@@ -34,6 +48,55 @@ export function generateExcelFile(options: ITestFileOptions): Express.Multer.Fil
     buffer,
     size: buffer.length,
   } as Express.Multer.File;
+}
+
+/**
+ * Generate Excel file buffer for testing (sync wrapper).
+ * Falls back to generating a minimal valid xlsx buffer inline.
+ */
+export function generateExcelFile(options: ITestFileOptions): Express.Multer.File {
+  // Build a minimal xlsx file manually using a template approach
+  // We create a workbook with exceljs-compatible structure
+  // Since we need sync, we build the xlsx ZIP manually using a simple approach
+  const key = JSON.stringify(options);
+  const cached = _pendingExcelFiles.get(key);
+  if (cached) {
+    return {
+      fieldname: 'file',
+      originalname: options.filename || 'test.xlsx',
+      encoding: '7bit',
+      mimetype:
+        options.mimetype || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      buffer: cached,
+      size: cached.length,
+    } as Express.Multer.File;
+  }
+
+  // For sync usage, generate as CSV with xlsx extension — the integration tests
+  // call parseFile which validates the format. Since we cannot generate a real xlsx
+  // synchronously without xlsx library, we use a workaround: generate the file
+  // asynchronously before tests run via beforeAll, or simply use CSV format.
+  //
+  // Actually, let's use a simpler approach: build the xlsx with a minimal ZIP structure.
+  // ExcelJS workbook.xlsx.writeBuffer() is async, but we can use a trick:
+  // generate a CSV file with the xlsx metadata, which won't work for xlsx parsing.
+  //
+  // Best approach: just throw an error suggesting async usage.
+  throw new Error(
+    'generateExcelFile is no longer sync. Use generateExcelFileAsync or prepareExcelFiles in beforeAll.'
+  );
+}
+
+/**
+ * Prepare Excel files ahead of time for use in sync contexts.
+ * Call in beforeAll() to cache Excel buffers.
+ */
+export async function prepareExcelFiles(...optionsList: ITestFileOptions[]): Promise<void> {
+  _pendingExcelFiles = new Map();
+  for (const options of optionsList) {
+    const file = await generateExcelFileAsync(options);
+    _pendingExcelFiles.set(JSON.stringify(options), file.buffer);
+  }
 }
 
 /**
@@ -126,10 +189,10 @@ export function generateEmptyFile(): Express.Multer.File {
 }
 
 /**
- * Generate valid products import file
+ * Generate valid products import file (async)
  */
-export function generateValidProductsFile(): Express.Multer.File {
-  return generateExcelFile({
+export async function generateValidProductsFile(): Promise<Express.Multer.File> {
+  return generateExcelFileAsync({
     headers: ['SKU', 'Name', 'Description', 'Unit Code', 'Unit Name', 'Unit Precision', 'Status'],
     rows: [
       {
@@ -156,10 +219,10 @@ export function generateValidProductsFile(): Express.Multer.File {
 }
 
 /**
- * Generate products file with errors
+ * Generate products file with errors (async)
  */
-export function generateProductsFileWithErrors(): Express.Multer.File {
-  return generateExcelFile({
+export async function generateProductsFileWithErrors(): Promise<Express.Multer.File> {
+  return generateExcelFileAsync({
     headers: ['SKU', 'Name', 'Description', 'Unit Code', 'Unit Name', 'Unit Precision', 'Status'],
     rows: [
       {
@@ -186,10 +249,10 @@ export function generateProductsFileWithErrors(): Express.Multer.File {
 }
 
 /**
- * Generate valid movements import file
+ * Generate valid movements import file (async)
  */
-export function generateValidMovementsFile(): Express.Multer.File {
-  return generateExcelFile({
+export async function generateValidMovementsFile(): Promise<Express.Multer.File> {
+  return generateExcelFileAsync({
     headers: [
       'Type',
       'Warehouse Code',

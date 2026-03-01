@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { StockValidationJob } from '@infrastructure/jobs/stockValidationJob';
 import { Quantity } from '@inventory/stock/domain/valueObjects/quantity.valueObject';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
@@ -7,17 +8,19 @@ import { SafetyStock } from '@stock/domain/valueObjects/safetyStock.valueObject'
 
 describe('StockValidationJob', () => {
   let job: StockValidationJob;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockProductRepository: Record<string, jest.Mock<any>>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockStockRepository: Record<string, jest.Mock<any>>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockWarehouseRepository: Record<string, jest.Mock<any>>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockReorderRuleRepository: Record<string, jest.Mock<any>>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockOrganizationRepository: Record<string, jest.Mock<any>>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+  let mockPrismaService: Record<string, any>;
+
   let mockEventBus: Record<string, jest.Mock<any>>;
 
   const mockProduct = {
@@ -75,6 +78,13 @@ describe('StockValidationJob', () => {
       publish: jest.fn(),
     };
 
+    mockPrismaService = {
+      alertConfiguration: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        update: jest.fn().mockResolvedValue(null),
+      },
+    };
+
     job = new StockValidationJob(
       mockProductRepository,
       mockStockRepository,
@@ -83,7 +93,8 @@ describe('StockValidationJob', () => {
       mockOrganizationRepository,
       mockEventBus as unknown as Parameters<
         typeof StockValidationJob.prototype.validateStockLevels
-      >[0]
+      >[0],
+      mockPrismaService as any
     );
   });
 

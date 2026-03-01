@@ -144,5 +144,133 @@ describe('ProcessImportUseCase', () => {
         }
       );
     });
+
+    it('Given: processing fails with errorMessage When: processing import Then: should call batch.fail with errorMessage', async () => {
+      // Arrange
+      const mockBatch = createMockBatch('VALIDATED');
+      mockRepository.findById.mockResolvedValue(mockBatch);
+      mockRepository.save.mockImplementation(async batch => batch);
+
+      jest.spyOn(ImportProcessingService, 'processBatch').mockResolvedValue({
+        success: false,
+        processedCount: 8,
+        failedCount: 2,
+        results: [],
+        errorMessage: 'Failed to process 2 row(s)',
+      });
+
+      const failSpy = jest.spyOn(mockBatch, 'fail');
+
+      const request = {
+        batchId: mockBatchId,
+        orgId: mockOrgId,
+        skipInvalidRows: false,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(failSpy).toHaveBeenCalledWith('Failed to process 2 row(s)');
+      result.match(
+        value => {
+          expect(value.message).toBe('Import batch processing completed with errors');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: processing fails without errorMessage When: processing import Then: should call batch.fail with fallback message', async () => {
+      // Arrange
+      const mockBatch = createMockBatch('VALIDATED');
+      mockRepository.findById.mockResolvedValue(mockBatch);
+      mockRepository.save.mockImplementation(async batch => batch);
+
+      jest.spyOn(ImportProcessingService, 'processBatch').mockResolvedValue({
+        success: false,
+        processedCount: 0,
+        failedCount: 10,
+        results: [],
+        errorMessage: undefined,
+      });
+
+      const failSpy = jest.spyOn(mockBatch, 'fail');
+
+      const request = {
+        batchId: mockBatchId,
+        orgId: mockOrgId,
+        skipInvalidRows: true,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(failSpy).toHaveBeenCalledWith('Processing failed');
+    });
+
+    it('Given: repository throws error When: processing import Then: should return BusinessRuleError from outer catch', async () => {
+      // Arrange
+      mockRepository.findById.mockRejectedValue(new Error('Database connection failed'));
+
+      const request = {
+        batchId: mockBatchId,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(BusinessRuleError);
+          expect(error.message).toContain('Processing failed: Database connection failed');
+        }
+      );
+    });
+
+    it('Given: skipInvalidRows not provided When: processing import Then: should default to true', async () => {
+      // Arrange
+      const mockBatch = createMockBatch('VALIDATED');
+      mockRepository.findById.mockResolvedValue(mockBatch);
+      mockRepository.save.mockImplementation(async batch => batch);
+
+      const processBatchSpy = jest
+        .spyOn(ImportProcessingService, 'processBatch')
+        .mockResolvedValue({
+          success: true,
+          processedCount: 10,
+          failedCount: 0,
+          results: [],
+          errorMessage: undefined,
+        });
+
+      const request = {
+        batchId: mockBatchId,
+        orgId: mockOrgId,
+        // skipInvalidRows intentionally omitted
+      };
+
+      // Act
+      await useCase.execute(request);
+
+      // Assert
+      expect(processBatchSpy).toHaveBeenCalledWith(
+        mockBatch,
+        expect.any(Function),
+        expect.objectContaining({
+          skipInvalidRows: true,
+        })
+      );
+    });
   });
 });

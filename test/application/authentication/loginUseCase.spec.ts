@@ -7,7 +7,6 @@ import { IUserRepository } from '@auth/domain/repositories/userRepository.interf
 import { AuthenticationService } from '@auth/domain/services/authenticationService';
 import { JwtService } from '@auth/domain/services/jwtService';
 import { RateLimitService } from '@auth/domain/services/rateLimitService';
-import { TokenBlacklistService } from '@auth/domain/services/tokenBlacklistService';
 import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
 import { AuthenticationError, RateLimitError } from '@shared/domain/result';
@@ -16,7 +15,6 @@ describe('LoginUseCase', () => {
   let loginUseCase: LoginUseCase;
   let mockUserRepository: jest.Mocked<IUserRepository>;
   let mockJwtService: jest.Mocked<JwtService>;
-  let mockTokenBlacklistService: jest.Mocked<TokenBlacklistService>;
   let mockRateLimitService: jest.Mocked<RateLimitService>;
   let mockSessionRepository: jest.Mocked<ISessionRepository>;
 
@@ -61,20 +59,6 @@ describe('LoginUseCase', () => {
       nestJwtService: {} as jest.Mocked<JwtService>,
     } as any;
 
-    mockTokenBlacklistService = {
-      isTokenBlacklisted: jest.fn(),
-      blacklistToken: jest.fn(),
-      getBlacklistedToken: jest.fn(),
-      blacklistAllUserTokens: jest.fn(),
-      cleanupExpiredTokens: jest.fn(),
-      getBlacklistStats: jest.fn(),
-      addToUserTokensList: jest.fn(),
-      getUserTokensList: jest.fn(),
-      logger: { log: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
-      BLACKLIST_PREFIX: 'blacklist:',
-      USER_TOKENS_PREFIX: 'user_tokens:',
-      cacheManager: {} as jest.Mocked<Cache>,
-    } as any;
     mockRateLimitService = {
       checkRateLimit: jest.fn(),
       checkLoginRateLimit: jest.fn(),
@@ -120,7 +104,6 @@ describe('LoginUseCase', () => {
       mockUserRepository,
       mockSessionRepository,
       mockJwtService,
-      mockTokenBlacklistService,
       mockRateLimitService
     );
   });

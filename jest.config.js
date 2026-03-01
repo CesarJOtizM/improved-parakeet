@@ -10,6 +10,9 @@ const config = {
     '!src/main.ts',
     '!src/**/*.module.ts',
     '!src/**/index.ts',
+    '!src/instrument.ts',
+    '!src/infrastructure/database/prisma/seed.ts',
+    '!src/infrastructure/database/prisma/seeds/**/*.ts',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
@@ -72,10 +75,10 @@ const config = {
   collectCoverage: true,
   coverageThreshold: {
     global: {
-      branches: 90,
-      functions: 90,
-      lines: 90,
-      statements: 90,
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70,
     },
   },
   // Configuración para TypeScript

@@ -5,6 +5,7 @@ import { Address } from '@warehouse/domain/valueObjects/address.valueObject';
 import { WarehouseCode } from '@warehouse/domain/valueObjects/warehouseCode.valueObject';
 
 import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
+import type { PrismaService } from '@infrastructure/database/prisma.service';
 
 describe('GetWarehouseByIdUseCase', () => {
   const mockOrgId = 'test-org-id';
@@ -12,6 +13,7 @@ describe('GetWarehouseByIdUseCase', () => {
 
   let useCase: GetWarehouseByIdUseCase;
   let mockWarehouseRepository: jest.Mocked<IWarehouseRepository>;
+  let mockPrisma: jest.Mocked<PrismaService>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -28,7 +30,16 @@ describe('GetWarehouseByIdUseCase', () => {
       findActive: jest.fn(),
     } as jest.Mocked<IWarehouseRepository>;
 
-    useCase = new GetWarehouseByIdUseCase(mockWarehouseRepository);
+    mockPrisma = {
+      warehouse: {
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
+      user: {
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
+    } as unknown as jest.Mocked<PrismaService>;
+
+    useCase = new GetWarehouseByIdUseCase(mockWarehouseRepository, mockPrisma);
   });
 
   const createMockWarehouse = () =>

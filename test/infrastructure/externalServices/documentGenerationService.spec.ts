@@ -53,21 +53,16 @@ describe('DocumentGenerationService', () => {
 
   it('generates Excel response', async () => {
     const service = new DocumentGenerationService();
-    const timerSpy = jest
-      .spyOn(global, 'setTimeout')
-      .mockImplementation((handler: (...args: unknown[]) => void) => {
-        handler();
-        return 0 as unknown as NodeJS.Timeout;
-      });
 
     const result = await service.generateExcel(baseRequest);
 
     expect(result.success).toBe(true);
     expect(result.buffer).toBeInstanceOf(Buffer);
-    const content = result.buffer?.toString('utf-8');
-    expect(content).toContain('SKU,Quantity,Date');
-
-    timerSpy.mockRestore();
+    // ExcelJS generates a real .xlsx file (ZIP-based format starting with PK header)
+    expect(result.buffer!.length).toBeGreaterThan(0);
+    // Verify it's a valid ZIP/XLSX file (starts with PK signature: 0x50 0x4B)
+    expect(result.buffer![0]).toBe(0x50);
+    expect(result.buffer![1]).toBe(0x4b);
   });
 
   it('handles PDF generation errors', async () => {
