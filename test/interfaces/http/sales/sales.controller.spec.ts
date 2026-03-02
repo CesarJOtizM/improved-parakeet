@@ -124,11 +124,9 @@ describe('SalesController', () => {
       // Act
       const result = await controller.getSales(query as any, 'org-123');
 
-      // Assert - getSales returns Result directly, so we need to unwrap
-      expect(result.isOk()).toBe(true);
-      const value = result.unwrap();
-      expect(value.success).toBe(true);
-      expect(value.data).toHaveLength(1);
+      // Assert - resultToHttpResponse unwraps the Result, so we get the value directly
+      expect(result.success).toBe(true);
+      expect(result.data).toHaveLength(1);
     });
   });
 

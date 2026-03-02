@@ -109,11 +109,9 @@ describe('ReturnsController', () => {
       // Act
       const result = await controller.getReturns(query as any, 'org-123');
 
-      // Assert - getReturns returns Result directly, so we need to unwrap
-      expect(result.isOk()).toBe(true);
-      const value = result.unwrap();
-      expect(value.success).toBe(true);
-      expect((value.data as any).items || value.data).toHaveLength(1);
+      // Assert - resultToHttpResponse unwraps the Result, so we get the value directly
+      expect(result.success).toBe(true);
+      expect((result.data as any).items || result.data).toHaveLength(1);
     });
   });
 
