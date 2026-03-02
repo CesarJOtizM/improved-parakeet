@@ -46,6 +46,9 @@ export class AppModule {
     consumer.apply(CorrelationIdMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
     consumer.apply(ClientIpMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
     consumer.apply(SecurityMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
-    consumer.apply(TenantMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
+    consumer
+      .apply(TenantMiddleware)
+      .exclude({ path: 'health', method: RequestMethod.ALL })
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }
