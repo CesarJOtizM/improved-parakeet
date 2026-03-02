@@ -164,7 +164,8 @@ export class SalesController {
       sortOrder: query.sortOrder,
     };
 
-    return await this.getSalesUseCase.execute(request);
+    const result = await this.getSalesUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Get(':id')

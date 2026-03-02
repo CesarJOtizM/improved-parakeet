@@ -152,7 +152,8 @@ export class ReturnsController {
       sortOrder: query.sortOrder,
     };
 
-    return await this.getReturnsUseCase.execute(request);
+    const result = await this.getReturnsUseCase.execute(request);
+    return resultToHttpResponse(result);
   }
 
   @Get(':id')
