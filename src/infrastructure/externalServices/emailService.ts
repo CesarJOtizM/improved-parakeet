@@ -6,6 +6,8 @@ import { welcomeTemplate } from './templates/welcome.template';
 import { passwordResetTemplate } from './templates/passwordReset.template';
 import { accountActivationTemplate } from './templates/accountActivation.template';
 import { adminNotificationTemplate } from './templates/adminNotification.template';
+import { welcomeWithCredentialsTemplate } from './templates/welcomeWithCredentials.template';
+import { accountDeactivationTemplate } from './templates/accountDeactivation.template';
 
 import type { IEmailRequest, IEmailResponse, IEmailService } from '@shared/ports/externalServices';
 export type { IEmailRequest, IEmailResponse, IEmailService } from '@shared/ports/externalServices';
@@ -191,6 +193,54 @@ export class EmailService implements IEmailService {
       body: html,
       template: 'password-reset-otp',
       variables: { firstName, lastName, otpCode, expiryMinutes },
+      orgId,
+    });
+  }
+
+  async sendWelcomeWithCredentialsEmail(
+    email: string,
+    firstName: string,
+    lastName: string,
+    temporaryPassword: string,
+    orgId: string
+  ): Promise<IEmailResponse> {
+    const html = welcomeWithCredentialsTemplate({
+      firstName,
+      lastName,
+      email,
+      temporaryPassword,
+      loginUrl: 'https://app.nevadainventory.com/login',
+    });
+
+    return this.sendEmail({
+      to: email,
+      subject: 'Welcome to Nevada Inventory - Your Account Credentials',
+      body: html,
+      template: 'welcome-with-credentials',
+      variables: { firstName, lastName, email },
+      orgId,
+    });
+  }
+
+  async sendAccountDeactivationEmail(
+    email: string,
+    firstName: string,
+    lastName: string,
+    orgId: string,
+    reason?: string
+  ): Promise<IEmailResponse> {
+    const html = accountDeactivationTemplate({
+      firstName,
+      lastName,
+      reason,
+    });
+
+    return this.sendEmail({
+      to: email,
+      subject: 'Account Deactivated - Nevada Inventory',
+      body: html,
+      template: 'account-deactivation',
+      variables: { firstName, lastName },
       orgId,
     });
   }

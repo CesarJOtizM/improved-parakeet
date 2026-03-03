@@ -4,6 +4,7 @@ import { User } from '@auth/domain/entities/user.entity';
 import { IUserRepository } from '@auth/domain/repositories/userRepository.interface';
 import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
+import { EmailService } from '@infrastructure/externalServices';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ConflictError, ValidationError } from '@shared/domain/result/domainError';
 
@@ -14,6 +15,7 @@ describe('CreateUserUseCase', () => {
 
   let useCase: CreateUserUseCase;
   let mockUserRepository: jest.Mocked<IUserRepository>;
+  let mockEmailService: jest.Mocked<Pick<EmailService, 'sendWelcomeWithCredentialsEmail'>>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -40,7 +42,11 @@ describe('CreateUserUseCase', () => {
       findAll: jest.fn(),
     } as jest.Mocked<IUserRepository>;
 
-    useCase = new CreateUserUseCase(mockUserRepository);
+    mockEmailService = {
+      sendWelcomeWithCredentialsEmail: jest.fn<any>().mockResolvedValue({ success: true }),
+    };
+
+    useCase = new CreateUserUseCase(mockUserRepository, mockEmailService as any);
   });
 
   describe('execute', () => {
@@ -244,6 +250,76 @@ describe('CreateUserUseCase', () => {
         error => {
           expect(error).toBeInstanceOf(ValidationError);
         }
+      );
+    });
+
+    it('Given: valid user data When: creating user Then: should send welcome email with temporary password', async () => {
+      // Arrange
+      mockUserRepository.existsByEmail.mockResolvedValue(false);
+      mockUserRepository.existsByUsername.mockResolvedValue(false);
+
+      const userWithId = User.reconstitute(
+        {
+          email: Email.create(validRequest.email),
+          username: validRequest.username,
+          passwordHash: 'hashed-password' as any,
+          firstName: validRequest.firstName,
+          lastName: validRequest.lastName,
+          status: UserStatus.create('ACTIVE'),
+          failedLoginAttempts: 0,
+        },
+        mockUserId,
+        mockOrgId
+      );
+      mockUserRepository.save.mockResolvedValue(userWithId);
+
+      // Act
+      await useCase.execute(validRequest);
+
+      // Assert
+      expect(mockEmailService.sendWelcomeWithCredentialsEmail).toHaveBeenCalledWith(
+        validRequest.email,
+        validRequest.firstName,
+        validRequest.lastName,
+        validRequest.password,
+        validRequest.orgId
+      );
+    });
+
+    it('Given: valid user data When: email service fails Then: should succeed without throwing', async () => {
+      // Arrange
+      mockUserRepository.existsByEmail.mockResolvedValue(false);
+      mockUserRepository.existsByUsername.mockResolvedValue(false);
+
+      const userWithId = User.reconstitute(
+        {
+          email: Email.create(validRequest.email),
+          username: validRequest.username,
+          passwordHash: 'hashed-password' as any,
+          firstName: validRequest.firstName,
+          lastName: validRequest.lastName,
+          status: UserStatus.create('ACTIVE'),
+          failedLoginAttempts: 0,
+        },
+        mockUserId,
+        mockOrgId
+      );
+      mockUserRepository.save.mockResolvedValue(userWithId);
+      mockEmailService.sendWelcomeWithCredentialsEmail.mockRejectedValue(
+        new Error('SMTP connection failed')
+      );
+
+      // Act
+      const result = await useCase.execute(validRequest);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.message).toBe('User created successfully');
+        },
+        () => fail('Should not return error')
       );
     });
   });

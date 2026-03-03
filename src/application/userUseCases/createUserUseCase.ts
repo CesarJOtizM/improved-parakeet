@@ -3,6 +3,7 @@ import { AuthenticationService } from '@auth/domain/services/authenticationServi
 import { UserManagementService } from '@auth/domain/services/userManagementService';
 import { Email } from '@auth/domain/valueObjects/email.valueObject';
 import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
+import { EmailService } from '@infrastructure/externalServices';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   ConflictError,
@@ -44,7 +45,10 @@ export type ICreateUserResponse = IApiResponseSuccess<ICreateUserData>;
 export class CreateUserUseCase {
   private readonly logger = new Logger(CreateUserUseCase.name);
 
-  constructor(@Inject('UserRepository') private readonly userRepository: IUserRepository) {}
+  constructor(
+    @Inject('UserRepository') private readonly userRepository: IUserRepository,
+    private readonly emailService: EmailService
+  ) {}
 
   async execute(request: ICreateUserRequest): Promise<Result<ICreateUserResponse, DomainError>> {
     this.logger.log('Creating user', { email: request.email, orgId: request.orgId });
@@ -101,8 +105,22 @@ export class CreateUserUseCase {
 
     this.logger.log('User created successfully', { userId: savedUser.id, email: savedUser.email });
 
-    // Publish domain events (handled by repository or event dispatcher)
-    // Domain events are automatically collected and can be dispatched
+    // Send welcome email with temporary credentials (fire-and-forget)
+    try {
+      await this.emailService.sendWelcomeWithCredentialsEmail(
+        request.email,
+        request.firstName,
+        request.lastName,
+        request.password,
+        request.orgId
+      );
+      this.logger.log('Welcome email sent', { email: request.email });
+    } catch (error) {
+      this.logger.warn('Failed to send welcome email', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        email: request.email,
+      });
+    }
 
     return ok({
       success: true,

@@ -52,4 +52,18 @@ export interface IEmailService {
     orgId: string,
     expiryMinutes?: number
   ): Promise<IEmailResponse>;
+  sendWelcomeWithCredentialsEmail(
+    email: string,
+    firstName: string,
+    lastName: string,
+    temporaryPassword: string,
+    orgId: string
+  ): Promise<IEmailResponse>;
+  sendAccountDeactivationEmail(
+    email: string,
+    firstName: string,
+    lastName: string,
+    orgId: string,
+    reason?: string
+  ): Promise<IEmailResponse>;
 }
