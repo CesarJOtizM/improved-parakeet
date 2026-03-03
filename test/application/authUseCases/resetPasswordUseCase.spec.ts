@@ -68,6 +68,7 @@ describe('ResetPasswordUseCase', () => {
       errors: [],
     });
     jest.spyOn(AuthenticationService, 'verifyPassword').mockResolvedValue(false);
+    jest.spyOn(AuthenticationService, 'hashPassword').mockResolvedValue('hashed-password');
 
     useCase = new ResetPasswordUseCase(mockUserRepository, mockOtpRepository);
   });
@@ -100,6 +101,9 @@ describe('ResetPasswordUseCase', () => {
         configurable: true,
       });
       jest.spyOn(user, 'changePassword').mockImplementation(() => {
+        // Mock implementation
+      });
+      jest.spyOn(user, 'changePasswordHashed').mockImplementation(() => {
         // Mock implementation
       });
       return user;
@@ -155,7 +159,7 @@ describe('ResetPasswordUseCase', () => {
           throw new Error('Expected Ok result');
         }
       );
-      expect(mockUser.changePassword).toHaveBeenCalledWith(mockNewPassword);
+      expect(mockUser.changePasswordHashed).toHaveBeenCalled();
       expect(mockUserRepository.save).toHaveBeenCalledWith(mockUser);
       expect(mockOtp.verify).toHaveBeenCalledWith(mockOtpCode);
       expect(mockOtp.markAsUsed).toHaveBeenCalled();

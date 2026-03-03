@@ -68,7 +68,6 @@ export class Otp extends AggregateRoot<IOtpProps> {
     this.props.attempts += 1;
 
     if (this.props.code === code) {
-      this.props.isUsed = true;
       this.updateTimestamp();
       return true;
     }

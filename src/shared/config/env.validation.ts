@@ -328,6 +328,18 @@ export class EnvironmentVariables {
   // EXTERNAL SERVICES (OPTIONAL)
   // =============================================================================
 
+  // =============================================================================
+  // EMAIL - RESEND
+  // =============================================================================
+
+  @IsString()
+  @IsOptional()
+  RESEND_API_KEY?: string;
+
+  @IsString()
+  @IsOptional()
+  RESEND_FROM_EMAIL?: string;
+
   @IsString()
   @IsOptional()
   SMTP_HOST?: string;

@@ -91,6 +91,7 @@ export class CreateUserUseCase {
         lastName: request.lastName,
         status: UserStatus.create('ACTIVE'),
         failedLoginAttempts: 0,
+        mustChangePassword: true,
       },
       request.orgId
     );

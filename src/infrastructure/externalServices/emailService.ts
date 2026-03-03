@@ -1,5 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Resend } from 'resend';
 import { ResilientCall } from '@shared/infrastructure/resilience';
+import { welcomeTemplate } from './templates/welcome.template';
+import { passwordResetTemplate } from './templates/passwordReset.template';
+import { accountActivationTemplate } from './templates/accountActivation.template';
+import { adminNotificationTemplate } from './templates/adminNotification.template';
 
 import type { IEmailRequest, IEmailResponse, IEmailService } from '@shared/ports/externalServices';
 export type { IEmailRequest, IEmailResponse, IEmailService } from '@shared/ports/externalServices';
@@ -7,6 +13,8 @@ export type { IEmailRequest, IEmailResponse, IEmailService } from '@shared/ports
 @Injectable()
 export class EmailService implements IEmailService {
   private readonly logger = new Logger(EmailService.name);
+  private readonly resend: Resend | null;
+  private readonly fromEmail: string;
   private readonly resilientSend = new ResilientCall({
     name: 'EmailService',
     timeoutMs: 10_000,
@@ -14,31 +22,69 @@ export class EmailService implements IEmailService {
     circuitBreaker: { failureThreshold: 5, resetTimeout: 60_000 },
   });
 
-  /**
-   * Envía un email con resilience (circuit breaker + retry + timeout)
-   */
+  constructor(private readonly configService: ConfigService) {
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    this.fromEmail = this.configService.get<string>(
+      'RESEND_FROM_EMAIL',
+      'Nevada Inventory <onboarding@resend.dev>'
+    );
+
+    if (apiKey) {
+      this.resend = new Resend(apiKey);
+    } else {
+      this.resend = null;
+      this.logger.warn('RESEND_API_KEY not configured — emails will be logged but not sent');
+    }
+  }
+
   async sendEmail(request: IEmailRequest): Promise<IEmailResponse> {
     try {
       return await this.resilientSend.execute(async () => {
-        this.logger.log('Email Service - Sending email', {
+        this.logger.log('Sending email', {
           to: request.to,
           subject: request.subject,
           template: request.template,
           orgId: request.orgId,
-          timestamp: new Date().toISOString(),
         });
 
-        // TODO: Replace with real email provider (SendGrid, SES, etc.)
-        await new Promise(resolve => setTimeout(resolve, 100));
-        const messageId = `mock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        if (!this.resend) {
+          const mockId = `mock_${Date.now()}`;
+          this.logger.warn('Email not sent (no API key)', {
+            to: request.to,
+            subject: request.subject,
+            mockId,
+          });
+          return { success: true, messageId: mockId } satisfies IEmailResponse;
+        }
+
+        const idempotencyKey = `${request.template || 'generic'}/${request.orgId}/${Date.now()}`;
+
+        const { data, error } = await this.resend.emails.send({
+          from: this.fromEmail,
+          to: [request.to],
+          subject: request.subject,
+          html: request.body,
+          headers: {
+            'X-Idempotency-Key': idempotencyKey,
+          },
+          tags: [
+            { name: 'template', value: request.template || 'generic' },
+            { name: 'org_id', value: request.orgId },
+          ],
+        });
+
+        if (error) {
+          this.logger.error('Resend API error', { error, to: request.to });
+          return { success: false, error: error.message };
+        }
 
         this.logger.log('Email sent successfully', {
-          messageId,
+          messageId: data?.id,
           to: request.to,
           subject: request.subject,
         });
 
-        return { success: true, messageId } satisfies IEmailResponse;
+        return { success: true, messageId: data?.id } satisfies IEmailResponse;
       });
     } catch (error) {
       this.logger.error('Error sending email', {
@@ -55,35 +101,29 @@ export class EmailService implements IEmailService {
     }
   }
 
-  /**
-   * Sends welcome email for new user
-   */
   async sendWelcomeEmail(
     email: string,
     firstName: string,
     lastName: string,
     orgId: string
   ): Promise<IEmailResponse> {
-    const request: IEmailRequest = {
-      to: email,
-      subject: 'Welcome to the Inventory System',
-      body: `Hello ${firstName} ${lastName}, your account has been created successfully.`,
-      template: 'welcome',
-      variables: {
-        firstName,
-        lastName,
-        email,
-        activationUrl: `https://app.inventory.com/activate?email=${encodeURIComponent(email)}`,
-      },
-      orgId,
-    };
+    const html = welcomeTemplate({
+      firstName,
+      lastName,
+      email,
+      loginUrl: `https://app.nevadainventory.com/login`,
+    });
 
-    return this.sendEmail(request);
+    return this.sendEmail({
+      to: email,
+      subject: 'Welcome to Nevada Inventory',
+      body: html,
+      template: 'welcome',
+      variables: { firstName, lastName, email },
+      orgId,
+    });
   }
 
-  /**
-   * Sends new user notification email to admin
-   */
   async sendNewUserNotificationToAdmin(
     adminEmail: string,
     newUserEmail: string,
@@ -91,51 +131,45 @@ export class EmailService implements IEmailService {
     lastName: string,
     orgId: string
   ): Promise<IEmailResponse> {
-    const request: IEmailRequest = {
+    const html = adminNotificationTemplate({
+      newUserEmail,
+      firstName,
+      lastName,
+      activationUrl: `https://app.nevadainventory.com/dashboard/users`,
+    });
+
+    return this.sendEmail({
       to: adminEmail,
       subject: 'New User Registered - Requires Activation',
-      body: `A new user has registered: ${firstName} ${lastName} (${newUserEmail})`,
-      template: 'new-user-notification',
-      variables: {
-        newUserEmail,
-        firstName,
-        lastName,
-        activationUrl: `https://admin.inventory.com/users/activate?email=${encodeURIComponent(newUserEmail)}`,
-      },
+      body: html,
+      template: 'admin-notification',
+      variables: { newUserEmail, firstName, lastName },
       orgId,
-    };
-
-    return this.sendEmail(request);
+    });
   }
 
-  /**
-   * Sends account activation email
-   */
   async sendAccountActivationEmail(
     email: string,
     firstName: string,
     lastName: string,
     orgId: string
   ): Promise<IEmailResponse> {
-    const request: IEmailRequest = {
+    const html = accountActivationTemplate({
+      firstName,
+      lastName,
+      loginUrl: 'https://app.nevadainventory.com/login',
+    });
+
+    return this.sendEmail({
       to: email,
       subject: 'Your account has been activated',
-      body: `Hello ${firstName} ${lastName}, your account has been activated by the administrator.`,
+      body: html,
       template: 'account-activated',
-      variables: {
-        firstName,
-        lastName,
-        loginUrl: 'https://app.inventory.com/login',
-      },
+      variables: { firstName, lastName },
       orgId,
-    };
-
-    return this.sendEmail(request);
+    });
   }
 
-  /**
-   * Sends password reset OTP email
-   */
   async sendPasswordResetOtpEmail(
     email: string,
     firstName: string,
@@ -144,22 +178,20 @@ export class EmailService implements IEmailService {
     orgId: string,
     expiryMinutes: number = 15
   ): Promise<IEmailResponse> {
-    const request: IEmailRequest = {
-      to: email,
-      subject: 'Password Reset Code - Inventory System',
-      body: `Hello ${firstName} ${lastName}, you have requested a password reset. Your verification code is: ${otpCode}`,
-      template: 'password-reset-otp',
-      variables: {
-        firstName,
-        lastName,
-        otpCode,
-        expiryMinutes,
-        resetUrl: `https://app.inventory.com/reset-password?email=${encodeURIComponent(email)}`,
-        supportEmail: 'support@inventory.com',
-      },
-      orgId,
-    };
+    const html = passwordResetTemplate({
+      firstName,
+      lastName,
+      otpCode,
+      expiryMinutes,
+    });
 
-    return this.sendEmail(request);
+    return this.sendEmail({
+      to: email,
+      subject: 'Password Reset Code - Nevada Inventory',
+      body: html,
+      template: 'password-reset-otp',
+      variables: { firstName, lastName, otpCode, expiryMinutes },
+      orgId,
+    });
   }
 }

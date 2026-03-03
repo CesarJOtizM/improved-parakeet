@@ -1,3 +1,4 @@
+import { ChangePasswordUseCase } from '@application/authUseCases/changePasswordUseCase';
 import { AssignRoleToUserUseCase } from '@application/userUseCases/assignRoleToUserUseCase';
 import { ChangeUserStatusUseCase } from '@application/userUseCases/changeUserStatusUseCase';
 import { CreateUserUseCase } from '@application/userUseCases/createUserUseCase';
@@ -8,6 +9,7 @@ import { UpdateUserUseCase } from '@application/userUseCases/updateUserUseCase';
 import {
   AssignRoleDto,
   AssignRoleResponseDto,
+  ChangePasswordDto,
   ChangeUserStatusDto,
   ChangeUserStatusResponseDto,
   CreateUserDto,
@@ -68,7 +70,8 @@ export class UsersController {
     private readonly updateUserUseCase: UpdateUserUseCase,
     private readonly changeUserStatusUseCase: ChangeUserStatusUseCase,
     private readonly assignRoleToUserUseCase: AssignRoleToUserUseCase,
-    private readonly removeRoleFromUserUseCase: RemoveRoleFromUserUseCase
+    private readonly removeRoleFromUserUseCase: RemoveRoleFromUserUseCase,
+    private readonly changePasswordUseCase: ChangePasswordUseCase
   ) {}
 
   @Post()
@@ -176,6 +179,40 @@ export class UsersController {
     };
 
     const result = await this.updateUserUseCase.execute(request);
+    return resultToHttpResponse(result);
+  }
+
+  @Put('me/password')
+  @HttpCode(HttpStatus.OK)
+  @RateLimited('USER')
+  @ApiOperation({
+    summary: 'Change current user password',
+    description:
+      "Change the authenticated user's password. Requires current password verification. No special permissions required.",
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Password changed successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Validation failed or current password incorrect',
+  })
+  async changeMyPassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @OrgId() orgId: string,
+    @Req() req: Request
+  ) {
+    const authUser = req.user as IAuthenticatedUser;
+    this.logger.log('Changing own password', { userId: authUser.id, orgId });
+
+    const result = await this.changePasswordUseCase.execute({
+      userId: authUser.id,
+      orgId,
+      currentPassword: changePasswordDto.currentPassword,
+      newPassword: changePasswordDto.newPassword,
+      confirmPassword: changePasswordDto.confirmPassword,
+    });
     return resultToHttpResponse(result);
   }
 

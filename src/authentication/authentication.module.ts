@@ -8,6 +8,7 @@ import { LoginUseCase } from '@application/authUseCases/loginUseCase';
 import { LogoutUseCase } from '@application/authUseCases/logoutUseCase';
 import { RefreshTokenUseCase } from '@application/authUseCases/refreshTokenUseCase';
 import { RequestPasswordResetUseCase } from '@application/authUseCases/requestPasswordResetUseCase';
+import { ChangePasswordUseCase } from '@application/authUseCases/changePasswordUseCase';
 import { ResetPasswordUseCase } from '@application/authUseCases/resetPasswordUseCase';
 import { VerifyOtpUseCase } from '@application/authUseCases/verifyOtpUseCase';
 import {
@@ -132,6 +133,7 @@ import { createCacheModuleOptions, FunctionalCacheService } from '@shared/infras
     RequestPasswordResetUseCase,
     VerifyOtpUseCase,
     ResetPasswordUseCase,
+    ChangePasswordUseCase,
     // User management use cases
     CreateUserUseCase,
     GetUserUseCase,

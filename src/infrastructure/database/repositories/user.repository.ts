@@ -70,6 +70,7 @@ export class UserRepository implements UserRepositoryInterface {
           language: userData.language || undefined,
           jobTitle: userData.jobTitle || undefined,
           department: userData.department || undefined,
+          mustChangePassword: userData.mustChangePassword ?? false,
           roles: userData.userRoles.map(ur => ur.role.name),
           permissions: userData.userRoles.flatMap(ur =>
             ur.role.permissions.map(rp => rp.permission.name)
@@ -142,6 +143,7 @@ export class UserRepository implements UserRepositoryInterface {
           language: userData.language || undefined,
           jobTitle: userData.jobTitle || undefined,
           department: userData.department || undefined,
+          mustChangePassword: userData.mustChangePassword ?? false,
           roles: userData.userRoles.map(ur => ur.role.name),
           permissions: userData.userRoles.flatMap(ur =>
             ur.role.permissions.map(rp => rp.permission.name)
@@ -206,6 +208,7 @@ export class UserRepository implements UserRepositoryInterface {
           language: userData.language || undefined,
           jobTitle: userData.jobTitle || undefined,
           department: userData.department || undefined,
+          mustChangePassword: userData.mustChangePassword ?? false,
           roles: userData.userRoles.map(ur => ur.role.name),
           permissions: userData.userRoles.flatMap(ur =>
             ur.role.permissions.map(rp => rp.permission.name)
@@ -258,6 +261,7 @@ export class UserRepository implements UserRepositoryInterface {
             lastLoginAt: userData.lastLoginAt || undefined,
             failedLoginAttempts: userData.failedLoginAttempts ?? 0,
             lockedUntil: userData.lockedUntil || undefined,
+            mustChangePassword: userData.mustChangePassword ?? false,
             roles: userData.userRoles.map(ur => ur.role.name),
             permissions: userData.userRoles.flatMap(ur =>
               ur.role.permissions.map(rp => rp.permission.name)
@@ -318,6 +322,7 @@ export class UserRepository implements UserRepositoryInterface {
             lastLoginAt: userData.lastLoginAt || undefined,
             failedLoginAttempts: userData.failedLoginAttempts ?? 0,
             lockedUntil: userData.lockedUntil || undefined,
+            mustChangePassword: userData.mustChangePassword ?? false,
             roles: userData.userRoles.map(ur => ur.role.name),
             permissions: userData.userRoles.flatMap(ur =>
               ur.role.permissions.map(rp => rp.permission.name)
@@ -432,6 +437,7 @@ export class UserRepository implements UserRepositoryInterface {
             lastLoginAt: userData.lastLoginAt || undefined,
             failedLoginAttempts: userData.failedLoginAttempts ?? 0,
             lockedUntil: userData.lockedUntil || undefined,
+            mustChangePassword: userData.mustChangePassword ?? false,
             roles: userData.userRoles.map(ur => ur.role.name),
             permissions: userData.userRoles.flatMap(ur =>
               ur.role.permissions.map(rp => rp.permission.name)
@@ -478,6 +484,7 @@ export class UserRepository implements UserRepositoryInterface {
         language: user.language ?? null,
         jobTitle: user.jobTitle ?? null,
         department: user.department ?? null,
+        mustChangePassword: user.mustChangePassword,
         orgId: user.orgId,
       };
 
@@ -510,6 +517,7 @@ export class UserRepository implements UserRepositoryInterface {
               lastLoginAt: updatedUser.lastLoginAt || undefined,
               failedLoginAttempts: updatedUser.failedLoginAttempts ?? 0,
               lockedUntil: updatedUser.lockedUntil || undefined,
+              mustChangePassword: updatedUser.mustChangePassword ?? false,
               roles: user.roles,
               permissions: user.permissions,
             },
@@ -558,6 +566,7 @@ export class UserRepository implements UserRepositoryInterface {
           lastLoginAt: newUser.lastLoginAt || undefined,
           failedLoginAttempts: newUser.failedLoginAttempts ?? 0,
           lockedUntil: newUser.lockedUntil || undefined,
+          mustChangePassword: newUser.mustChangePassword ?? false,
           roles: user.roles,
           permissions: user.permissions,
         },

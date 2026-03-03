@@ -35,6 +35,7 @@ export interface ILoginData {
     language?: string;
     jobTitle?: string;
     department?: string;
+    mustChangePassword: boolean;
     roles: string[];
     permissions: string[];
   };
@@ -149,6 +150,7 @@ export class LoginUseCase {
             language: user.language,
             jobTitle: user.jobTitle,
             department: user.department,
+            mustChangePassword: user.mustChangePassword,
             roles: user.roles || [],
             permissions: user.permissions || [],
           },

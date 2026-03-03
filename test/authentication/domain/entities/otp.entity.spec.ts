@@ -167,7 +167,7 @@ describe('Otp Entity', () => {
   });
 
   describe('verify', () => {
-    it('Given: valid OTP with correct code When: verifying code Then: should return true and mark as used', () => {
+    it('Given: valid OTP with correct code When: verifying code Then: should return true without marking as used', () => {
       // Arrange
       const otp = Otp.create(mockEmail, 'PASSWORD_RESET', mockOrgId);
       const correctCode = otp.code;
@@ -178,7 +178,7 @@ describe('Otp Entity', () => {
 
       // Assert
       expect(result).toBe(true);
-      expect(otp.isUsed).toBe(true);
+      expect(otp.isUsed).toBe(false); // verify() no longer marks as used; markAsUsed() does
       expect(otp.attempts).toBe(initialAttempts + 1);
     });
 
@@ -409,8 +409,8 @@ describe('Otp Entity', () => {
       // Act
       otp.verify(otp.code);
 
-      // Assert
-      expect(otp.isUsed).toBe(true);
+      // Assert — verify() no longer marks as used
+      expect(otp.isUsed).toBe(false);
     });
   });
 });

@@ -1,100 +1,172 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { EmailService } from '@infrastructure/externalServices/emailService';
-import { describe, expect, it, jest } from '@jest/globals';
 
-import type { IEmailRequest } from '@shared/ports/externalServices';
+// Mock Resend SDK
+const mockSend = jest.fn();
+jest.mock('resend', () => ({
+  Resend: jest.fn().mockImplementation(() => ({
+    emails: { send: mockSend },
+  })),
+}));
 
 describe('EmailService', () => {
-  const baseRequest: IEmailRequest = {
-    to: 'user@example.com',
-    subject: 'Test Email',
-    body: 'Hello',
-    template: 'test',
-    variables: { name: 'User' },
-    orgId: 'org-1',
-  };
+  let service: EmailService;
+  let configService: ConfigService;
 
-  it('sends email successfully', async () => {
-    const service = new EmailService();
+  beforeEach(async () => {
+    mockSend.mockReset();
 
-    // Let the real setTimeout run — the internal delay is only 100ms
-    // and the ResilientCall timeout is 10s, so no timeout will fire
-    const result = await service.sendEmail(baseRequest);
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        EmailService,
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string, defaultVal?: string) => {
+              const map: Record<string, string> = {
+                RESEND_API_KEY: 're_test_123',
+                RESEND_FROM_EMAIL: 'Test <test@example.com>',
+              };
+              return map[key] ?? defaultVal;
+            }),
+          },
+        },
+      ],
+    }).compile();
 
-    expect(result.success).toBe(true);
-    expect(result.messageId).toBeDefined();
+    service = module.get<EmailService>(EmailService);
+    configService = module.get<ConfigService>(ConfigService);
   });
 
-  it('builds welcome email request', async () => {
-    const service = new EmailService();
-    const sendSpy = jest
-      .spyOn(service, 'sendEmail')
-      .mockResolvedValue({ success: true, messageId: 'm-1' });
+  describe('sendEmail', () => {
+    it('should send email successfully via Resend', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'msg_123' }, error: null });
 
-    const result = await service.sendWelcomeEmail('user@example.com', 'Test', 'User', 'org-1');
+      const result = await service.sendEmail({
+        to: 'user@example.com',
+        subject: 'Test',
+        body: '<p>Test</p>',
+        template: 'test',
+        orgId: 'org-1',
+      });
 
-    expect(result.success).toBe(true);
-    expect(sendSpy).toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.messageId).toBe('msg_123');
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: 'Test <test@example.com>',
+          to: ['user@example.com'],
+          subject: 'Test',
+          html: '<p>Test</p>',
+        })
+      );
+    });
 
-    sendSpy.mockRestore();
+    it('should handle Resend API error', async () => {
+      mockSend.mockResolvedValue({ data: null, error: { message: 'Invalid API key' } });
+
+      const result = await service.sendEmail({
+        to: 'user@example.com',
+        subject: 'Test',
+        body: '<p>Test</p>',
+        orgId: 'org-1',
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Invalid API key');
+    });
+
+    it('should include idempotency key and tags', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'msg_456' }, error: null });
+
+      await service.sendEmail({
+        to: 'user@example.com',
+        subject: 'Test',
+        body: '<p>Test</p>',
+        template: 'welcome',
+        orgId: 'org-2',
+      });
+
+      const callArgs = mockSend.mock.calls[0][0];
+      expect(callArgs.headers['X-Idempotency-Key']).toMatch(/^welcome\/org-2\//);
+      expect(callArgs.tags).toEqual(
+        expect.arrayContaining([
+          { name: 'template', value: 'welcome' },
+          { name: 'org_id', value: 'org-2' },
+        ])
+      );
+    });
   });
 
-  it('builds admin notification email request', async () => {
-    const service = new EmailService();
-    const sendSpy = jest
-      .spyOn(service, 'sendEmail')
-      .mockResolvedValue({ success: true, messageId: 'm-2' });
+  describe('sendWelcomeEmail', () => {
+    it('should generate HTML with user variables', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'msg_w' }, error: null });
 
-    const result = await service.sendNewUserNotificationToAdmin(
-      'admin@example.com',
-      'user@example.com',
-      'Test',
-      'User',
-      'org-1'
-    );
+      const result = await service.sendWelcomeEmail('john@test.com', 'John', 'Doe', 'org-1');
 
-    expect(result.success).toBe(true);
-    expect(sendSpy).toHaveBeenCalled();
-
-    sendSpy.mockRestore();
+      expect(result.success).toBe(true);
+      const callArgs = mockSend.mock.calls[0][0];
+      expect(callArgs.html).toContain('John');
+      expect(callArgs.html).toContain('Doe');
+      expect(callArgs.html).toContain('Nevada Inventory');
+    });
   });
 
-  it('builds activation email request', async () => {
-    const service = new EmailService();
-    const sendSpy = jest
-      .spyOn(service, 'sendEmail')
-      .mockResolvedValue({ success: true, messageId: 'm-3' });
+  describe('sendPasswordResetOtpEmail', () => {
+    it('should include OTP code in HTML', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'msg_otp' }, error: null });
 
-    const result = await service.sendAccountActivationEmail(
-      'user@example.com',
-      'Test',
-      'User',
-      'org-1'
-    );
+      const result = await service.sendPasswordResetOtpEmail(
+        'user@test.com',
+        'Jane',
+        'Smith',
+        '123456',
+        'org-1',
+        15
+      );
 
-    expect(result.success).toBe(true);
-    expect(sendSpy).toHaveBeenCalled();
-
-    sendSpy.mockRestore();
+      expect(result.success).toBe(true);
+      const callArgs = mockSend.mock.calls[0][0];
+      expect(callArgs.html).toContain('123456');
+      expect(callArgs.html).toContain('15 minutes');
+    });
   });
 
-  it('builds password reset otp email request', async () => {
-    const service = new EmailService();
-    const sendSpy = jest
-      .spyOn(service, 'sendEmail')
-      .mockResolvedValue({ success: true, messageId: 'm-4' });
+  describe('sendAccountActivationEmail', () => {
+    it('should generate activation HTML', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'msg_act' }, error: null });
 
-    const result = await service.sendPasswordResetOtpEmail(
-      'user@example.com',
-      'Test',
-      'User',
-      '123456',
-      'org-1',
-      10
-    );
+      const result = await service.sendAccountActivationEmail(
+        'user@test.com',
+        'Jane',
+        'Smith',
+        'org-1'
+      );
 
-    expect(result.success).toBe(true);
-    expect(sendSpy).toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      const callArgs = mockSend.mock.calls[0][0];
+      expect(callArgs.html).toContain('Account Activated');
+      expect(callArgs.html).toContain('Jane');
+    });
+  });
 
-    sendSpy.mockRestore();
+  describe('sendNewUserNotificationToAdmin', () => {
+    it('should include new user details in HTML', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'msg_admin' }, error: null });
+
+      const result = await service.sendNewUserNotificationToAdmin(
+        'admin@test.com',
+        'newuser@test.com',
+        'New',
+        'User',
+        'org-1'
+      );
+
+      expect(result.success).toBe(true);
+      const callArgs = mockSend.mock.calls[0][0];
+      expect(callArgs.html).toContain('New User');
+      expect(callArgs.html).toContain('newuser@test.com');
+    });
   });
 });

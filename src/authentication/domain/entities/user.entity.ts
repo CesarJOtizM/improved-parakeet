@@ -21,6 +21,7 @@ export interface IUserProps {
   language?: string;
   jobTitle?: string;
   department?: string;
+  mustChangePassword?: boolean;
   roles?: string[];
   permissions?: string[];
 }
@@ -73,6 +74,14 @@ export class User extends AggregateRoot<IUserProps> {
     this.props.passwordHash = Password.create(password);
     this.props.failedLoginAttempts = 0;
     this.props.lockedUntil = undefined;
+    this.updateTimestamp();
+  }
+
+  public changePasswordHashed(hashedPassword: string): void {
+    this.props.passwordHash = Password.createHashed(hashedPassword);
+    this.props.failedLoginAttempts = 0;
+    this.props.lockedUntil = undefined;
+    this.props.mustChangePassword = false;
     this.updateTimestamp();
   }
 
@@ -238,6 +247,10 @@ export class User extends AggregateRoot<IUserProps> {
 
   get roles(): string[] {
     return this.props.roles || [];
+  }
+
+  get mustChangePassword(): boolean {
+    return this.props.mustChangePassword ?? false;
   }
 
   get permissions(): string[] {

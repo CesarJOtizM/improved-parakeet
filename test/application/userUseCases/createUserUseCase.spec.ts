@@ -195,6 +195,38 @@ describe('CreateUserUseCase', () => {
       );
     });
 
+    it('Given: valid user data When: creating user Then: should set mustChangePassword to true', async () => {
+      // Arrange
+      mockUserRepository.existsByEmail.mockResolvedValue(false);
+      mockUserRepository.existsByUsername.mockResolvedValue(false);
+
+      let savedUserArg: User | null = null;
+      mockUserRepository.save.mockImplementation(async (user: User) => {
+        savedUserArg = user;
+        return User.reconstitute(
+          {
+            email: Email.create(validRequest.email),
+            username: validRequest.username,
+            passwordHash: user.passwordHash as any,
+            firstName: validRequest.firstName,
+            lastName: validRequest.lastName,
+            status: UserStatus.create('ACTIVE'),
+            failedLoginAttempts: 0,
+            mustChangePassword: true,
+          },
+          mockUserId,
+          mockOrgId
+        );
+      });
+
+      // Act
+      await useCase.execute(validRequest);
+
+      // Assert
+      expect(savedUserArg).not.toBeNull();
+      expect(savedUserArg!.mustChangePassword).toBe(true);
+    });
+
     it('Given: empty first name When: creating user Then: should return ValidationError result', async () => {
       // Arrange
       const invalidRequest = {

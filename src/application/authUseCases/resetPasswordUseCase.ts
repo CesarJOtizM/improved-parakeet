@@ -104,7 +104,8 @@ export class ResetPasswordUseCase {
       }
 
       // Cambiar la contraseña del usuario
-      user.changePassword(request.newPassword);
+      const hashedPassword = await AuthenticationService.hashPassword(request.newPassword);
+      user.changePasswordHashed(hashedPassword);
       await this.userRepository.save(user);
 
       // Marcar OTP como usado y guardar

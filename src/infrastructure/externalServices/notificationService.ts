@@ -3,6 +3,7 @@ import { ResilientCall } from '@shared/infrastructure/resilience';
 import { AlertSeverity } from '@stock/domain/services/alertService';
 
 import { EmailService } from './emailService';
+import { lowStockAlertTemplate } from './templates/lowStockAlert.template';
 
 import type {
   ILowStockAlertNotification,
@@ -20,10 +21,7 @@ export class NotificationService implements INotificationService {
     circuitBreaker: { failureThreshold: 10, resetTimeout: 120_000 },
   });
 
-  constructor(
-    // @ts-expect-error - EmailService is available for future implementation, currently unused
-    private readonly _emailService: EmailService
-  ) {}
+  constructor(private readonly emailService: EmailService) {}
 
   async sendLowStockAlert(notification: ILowStockAlertNotification): Promise<void> {
     await this.resilientNotify.execute(async () => {
@@ -35,18 +33,26 @@ export class NotificationService implements INotificationService {
       });
 
       const subject = this.getAlertSubject(notification.severity, 'Low Stock Alert');
-      const message = this.buildLowStockMessage(notification);
 
-      this.logger.warn('Low Stock Alert', {
-        subject,
-        message,
-        productId: notification.productId,
-        warehouseId: notification.warehouseId,
-        severity: notification.severity,
-        orgId: notification.orgId,
+      const html = lowStockAlertTemplate({
+        items: [
+          {
+            productId: notification.productId,
+            warehouseId: notification.warehouseId,
+            currentStock: notification.currentStock.getNumericValue(),
+            minQuantity: notification.minQuantity?.getNumericValue(),
+            severity: notification.severity,
+          },
+        ],
       });
 
-      // TODO: Implement actual email/WebSocket sending when ready
+      await this.emailService.sendEmail({
+        to: 'admin@nevadainventory.com',
+        subject,
+        body: html,
+        template: 'low-stock-alert',
+        orgId: notification.orgId,
+      });
     });
   }
 
@@ -62,56 +68,38 @@ export class NotificationService implements INotificationService {
       });
 
       const subject = 'Stock Threshold Exceeded Alert';
-      const message = this.buildStockThresholdExceededMessage(notification);
 
-      this.logger.warn('Stock Threshold Exceeded Alert', {
-        subject,
-        message,
-        productId: notification.productId,
-        warehouseId: notification.warehouseId,
-        orgId: notification.orgId,
+      const html = lowStockAlertTemplate({
+        items: [
+          {
+            productId: notification.productId,
+            warehouseId: notification.warehouseId,
+            currentStock: notification.currentStock.getNumericValue(),
+            severity: 'CRITICAL',
+          },
+        ],
       });
 
-      // TODO: Implement actual email/WebSocket sending when ready
+      await this.emailService.sendEmail({
+        to: 'admin@nevadainventory.com',
+        subject,
+        body: html,
+        template: 'stock-threshold-exceeded',
+        orgId: notification.orgId,
+      });
     });
   }
 
   private getAlertSubject(severity: AlertSeverity, baseSubject: string): string {
     switch (severity) {
       case 'OUT_OF_STOCK':
-        return `🚨 CRITICAL: ${baseSubject} - Out of Stock`;
+        return `CRITICAL: ${baseSubject} - Out of Stock`;
       case 'CRITICAL':
-        return `⚠️ CRITICAL: ${baseSubject}`;
+        return `CRITICAL: ${baseSubject}`;
       case 'LOW':
-        return `⚠️ ${baseSubject}`;
+        return baseSubject;
       default:
         return baseSubject;
     }
-  }
-
-  private buildLowStockMessage(notification: ILowStockAlertNotification): string {
-    const parts: string[] = [];
-    parts.push(`Product ID: ${notification.productId}`);
-    parts.push(`Warehouse ID: ${notification.warehouseId}`);
-    parts.push(`Current Stock: ${notification.currentStock.getNumericValue()}`);
-    if (notification.minQuantity) {
-      parts.push(`Minimum Quantity: ${notification.minQuantity.getNumericValue()}`);
-    }
-    if (notification.safetyStock) {
-      parts.push(`Safety Stock: ${notification.safetyStock.getNumericValue()}`);
-    }
-    parts.push(`Severity: ${notification.severity}`);
-    return parts.join('\n');
-  }
-
-  private buildStockThresholdExceededMessage(
-    notification: IStockThresholdExceededNotification
-  ): string {
-    const parts: string[] = [];
-    parts.push(`Product ID: ${notification.productId}`);
-    parts.push(`Warehouse ID: ${notification.warehouseId}`);
-    parts.push(`Current Stock: ${notification.currentStock.getNumericValue()}`);
-    parts.push(`Maximum Quantity: ${notification.maxQuantity.getNumericValue()}`);
-    return parts.join('\n');
   }
 }

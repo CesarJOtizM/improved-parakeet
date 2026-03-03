@@ -1,6 +1,7 @@
 export * from './alertConfiguration.dto';
 export * from './assignRole.dto';
 export * from './assignPermissionsToRole.dto';
+export * from './changePassword.dto';
 export * from './changeUserStatus.dto';
 export * from './createRole.dto';
 export * from './createUser.dto';
