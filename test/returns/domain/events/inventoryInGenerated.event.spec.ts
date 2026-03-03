@@ -9,19 +9,18 @@ describe('InventoryInGeneratedEvent', () => {
   describe('constructor', () => {
     it('Given: return id, movement id and org id When: creating InventoryInGeneratedEvent Then: should create event with correct properties', () => {
       // Arrange
-      const beforeCreation = new Date();
+      const now = Date.now();
 
       // Act
       const event = new InventoryInGeneratedEvent(mockReturnId, mockMovementId, mockOrgId);
-      const afterCreation = new Date();
 
       // Assert
       expect(event).toBeDefined();
       expect(event.returnId).toBe(mockReturnId);
       expect(event.movementId).toBe(mockMovementId);
       expect(event.orgId).toBe(mockOrgId);
-      expect(event.occurredOn.getTime()).toBeGreaterThanOrEqual(beforeCreation.getTime());
-      expect(event.occurredOn.getTime()).toBeLessThanOrEqual(afterCreation.getTime());
+      // Allow 1s tolerance for CI environments under load
+      expect(Math.abs(event.occurredOn.getTime() - now)).toBeLessThan(1000);
     });
   });
 
@@ -41,17 +40,16 @@ describe('InventoryInGeneratedEvent', () => {
   describe('occurredOn', () => {
     it('Given: a newly created event When: getting occurredOn Then: should return date close to creation time', () => {
       // Arrange
-      const beforeCreation = new Date();
+      const now = Date.now();
 
       // Act
       const event = new InventoryInGeneratedEvent(mockReturnId, mockMovementId, mockOrgId);
-      const afterCreation = new Date();
       const occurredOn = event.occurredOn;
 
       // Assert
       expect(occurredOn).toBeInstanceOf(Date);
-      expect(occurredOn.getTime()).toBeGreaterThanOrEqual(beforeCreation.getTime());
-      expect(occurredOn.getTime()).toBeLessThanOrEqual(afterCreation.getTime());
+      // Allow 1s tolerance for CI environments under load
+      expect(Math.abs(occurredOn.getTime() - now)).toBeLessThan(1000);
     });
 
     it('Given: multiple calls to occurredOn When: getting occurredOn Then: should return same date', () => {

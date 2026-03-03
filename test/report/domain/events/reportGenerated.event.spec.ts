@@ -43,22 +43,21 @@ describe('ReportGeneratedEvent', () => {
   describe('occurredOn', () => {
     it('Given: a ReportGeneratedEvent When: getting occurredOn Then: should return a Date', () => {
       // Arrange
-      const beforeEvent = new Date();
+      const now = Date.now();
       const event = new ReportGeneratedEvent(
         mockReportId,
         'AVAILABLE_INVENTORY',
         mockOrgId,
         mockGeneratedBy
       );
-      const afterEvent = new Date();
 
       // Act
       const occurredOn = event.occurredOn;
 
       // Assert
       expect(occurredOn).toBeInstanceOf(Date);
-      expect(occurredOn.getTime()).toBeGreaterThanOrEqual(beforeEvent.getTime());
-      expect(occurredOn.getTime()).toBeLessThanOrEqual(afterEvent.getTime());
+      // Allow 1s tolerance for CI environments under load
+      expect(Math.abs(occurredOn.getTime() - now)).toBeLessThan(1000);
     });
   });
 

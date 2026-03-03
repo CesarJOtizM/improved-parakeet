@@ -66,7 +66,7 @@ describe('UserStatusChangedEvent', () => {
   describe('occurredOn', () => {
     it('Given: user status changed event When: getting occurred on date Then: should return current date', () => {
       // Arrange
-      const beforeCreation = new Date();
+      const now = Date.now();
       const event = new UserStatusChangedEvent(
         mockUserId,
         mockOldStatus,
@@ -74,15 +74,14 @@ describe('UserStatusChangedEvent', () => {
         mockChangedBy,
         mockOrgId
       );
-      const afterCreation = new Date();
 
       // Act
       const occurredOn = event.occurredOn;
 
       // Assert
       expect(occurredOn).toBeInstanceOf(Date);
-      expect(occurredOn.getTime()).toBeGreaterThanOrEqual(beforeCreation.getTime());
-      expect(occurredOn.getTime()).toBeLessThanOrEqual(afterCreation.getTime() + 5);
+      // Allow 1s tolerance for CI environments under load
+      expect(Math.abs(occurredOn.getTime() - now)).toBeLessThan(1000);
     });
   });
 

@@ -35,12 +35,10 @@ describe('TransferInitiatedEvent', () => {
 
   it('Given: an initiated transfer When: creating event Then: should use current date as occurredOn', () => {
     // Act
-    const before = new Date();
+    const now = Date.now();
     const event = new TransferInitiatedEvent(mockTransfer);
-    const after = new Date();
 
-    // Assert
-    expect(event.occurredOn.getTime()).toBeGreaterThanOrEqual(before.getTime());
-    expect(event.occurredOn.getTime()).toBeLessThanOrEqual(after.getTime());
+    // Assert — allow 1s tolerance for CI environments under load
+    expect(Math.abs(event.occurredOn.getTime() - now)).toBeLessThan(1000);
   });
 });

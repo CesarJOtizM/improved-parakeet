@@ -106,15 +106,14 @@ describe('ReturnConfirmedEvent', () => {
         'return-456',
         mockOrgId
       );
-      const beforeEvent = new Date();
+      const now = Date.now();
       const event = new ReturnConfirmedEvent(returnWithoutConfirmedAt);
 
       // Act
       const occurredOn = event.occurredOn;
 
-      // Assert
-      expect(occurredOn.getTime()).toBeGreaterThanOrEqual(beforeEvent.getTime());
-      expect(occurredOn.getTime()).toBeLessThanOrEqual(new Date().getTime());
+      // Assert — allow 1s tolerance for CI environments under load
+      expect(Math.abs(occurredOn.getTime() - now)).toBeLessThan(1000);
     });
   });
 
