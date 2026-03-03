@@ -36,7 +36,6 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - run: bun run test:ci
-        continue-on-error: true
 
   build:
     runs-on: ubuntu-latest
