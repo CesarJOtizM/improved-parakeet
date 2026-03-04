@@ -5,11 +5,16 @@ import { SaleCreatedEvent } from '@sale/domain/events/saleCreated.event';
 import { SalePickingStartedEvent } from '@sale/domain/events/salePickingStarted.event';
 import { SaleCompletedEvent } from '@sale/domain/events/saleCompleted.event';
 import { SaleReturnedEvent } from '@sale/domain/events/saleReturned.event';
+import {
+  SaleLineSwappedEvent,
+  ISaleLineSwappedEventProps,
+} from '@sale/domain/events/saleLineSwapped.event';
 import { SaleShippedEvent } from '@sale/domain/events/saleShipped.event';
 import { SaleNumber } from '@sale/domain/valueObjects/saleNumber.valueObject';
 import { SaleStatus } from '@sale/domain/valueObjects/saleStatus.valueObject';
 import { AggregateRoot } from '@shared/domain/base/aggregateRoot.base';
 import { Money } from '@stock/domain/valueObjects/money.valueObject';
+import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 export interface ISaleProps {
   saleNumber: SaleNumber;
@@ -194,6 +199,57 @@ export class Sale extends AggregateRoot<ISaleProps> {
 
     // Emit SaleCancelledEvent
     const event = new SaleCancelledEvent(this, reason);
+    this.addDomainEvent(event);
+  }
+
+  public swapLine(
+    originalLineId: string,
+    replacementLine: SaleLine,
+    swapQuantity: number
+  ): { isPartial: boolean; newLineId?: string } {
+    if (!this.props.status.canSwapLine()) {
+      throw new Error('Sale line swap is only allowed in CONFIRMED or PICKING status');
+    }
+
+    const originalLine = this.lines.find(l => l.id === originalLineId);
+    if (!originalLine) {
+      throw new Error(`Line with id ${originalLineId} not found`);
+    }
+
+    if (swapQuantity <= 0) {
+      throw new Error('Swap quantity must be positive');
+    }
+
+    const originalQty = originalLine.quantity.getNumericValue();
+    if (swapQuantity > originalQty) {
+      throw new Error(`Swap quantity ${swapQuantity} exceeds line quantity ${originalQty}`);
+    }
+
+    const isPartial = swapQuantity < originalQty;
+
+    if (isPartial) {
+      // Partial swap: reduce original line quantity, add new line
+      const remainingQty = originalQty - swapQuantity;
+      originalLine.update({
+        quantity: Quantity.create(remainingQty),
+      });
+      this.lines.push(replacementLine);
+      this.updateTimestamp();
+      return { isPartial: true, newLineId: replacementLine.id };
+    } else {
+      // Full swap: replace the line's product and price in-place
+      originalLine.update({
+        quantity: replacementLine.quantity,
+        salePrice: replacementLine.salePrice,
+      });
+      // Note: productId change is handled at DB level since entity doesn't expose setter
+      this.updateTimestamp();
+      return { isPartial: false };
+    }
+  }
+
+  public emitSwapEvent(props: ISaleLineSwappedEventProps): void {
+    const event = new SaleLineSwappedEvent(props);
     this.addDomainEvent(event);
   }
 

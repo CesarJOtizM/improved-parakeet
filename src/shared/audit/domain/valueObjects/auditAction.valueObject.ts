@@ -25,7 +25,8 @@ export type AuditActionValue =
   | 'EXPORT'
   | 'GENERATE'
   | 'ACTIVATE'
-  | 'DEACTIVATE';
+  | 'DEACTIVATE'
+  | 'SWAP';
 
 export interface IAuditActionProps {
   value: AuditActionValue;
@@ -68,6 +69,7 @@ export class AuditAction extends ValueObject<IAuditActionProps> {
       'GENERATE',
       'ACTIVATE',
       'DEACTIVATE',
+      'SWAP',
     ];
 
     if (!validActions.includes(props.value)) {

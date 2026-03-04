@@ -203,14 +203,16 @@ model Product {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  organization Organization   @relation(fields: [orgId], references: [id])
-  categories   Category[]     @relation("ProductCategories")
-  movements    MovementLine[]
-  transfers    TransferLine[]
-  stock        Stock[]
-  reorderRules ReorderRule[]
-  saleLines    SaleLine[]
-  returnLines  ReturnLine[]
+  organization       Organization   @relation(fields: [orgId], references: [id])
+  categories         Category[]     @relation("ProductCategories")
+  movements          MovementLine[]
+  transfers          TransferLine[]
+  stock              Stock[]
+  reorderRules       ReorderRule[]
+  saleLines          SaleLine[]
+  returnLines        ReturnLine[]
+  swapsAsOriginal    SaleLineSwap[] @relation("SwapOriginalProduct")
+  swapsAsReplacement SaleLineSwap[] @relation("SwapReplacementProduct")
 
   @@unique([sku, orgId])
   @@index([orgId])
@@ -441,10 +443,11 @@ model Sale {
   updatedAt         DateTime  @updatedAt
 
   // Relations
-  warehouse Warehouse  @relation(fields: [warehouseId], references: [id])
-  movement  Movement?  @relation(fields: [movementId], references: [id])
+  warehouse Warehouse      @relation(fields: [warehouseId], references: [id])
+  movement  Movement?      @relation(fields: [movementId], references: [id])
   lines     SaleLine[]
   returns   Return[]
+  swaps     SaleLineSwap[]
 
   @@unique([saleNumber, orgId])
   @@index([status, orgId])
@@ -721,6 +724,41 @@ model ProcessedEvent {
   @@index([orgId, eventType])
   @@index([processedAt])
   @@map("processed_events")
+}
+
+// Sale Line Swaps (product swap in confirmed/picking sales)
+model SaleLineSwap {
+  id                   String   @id @default(cuid())
+  saleId               String
+  originalLineId       String
+  newLineId            String?
+  originalProductId    String
+  originalQuantity     Decimal  @db.Decimal(10, 6)
+  originalSalePrice    Decimal  @db.Decimal(10, 2)
+  originalCurrency     String
+  replacementProductId String
+  replacementQuantity  Decimal  @db.Decimal(10, 6)
+  replacementSalePrice Decimal  @db.Decimal(10, 2)
+  replacementCurrency  String
+  originalWarehouseId  String
+  sourceWarehouseId    String
+  isCrossWarehouse     Boolean  @default(false)
+  returnMovementId     String?
+  deductMovementId     String?
+  pricingStrategy      String // KEEP_ORIGINAL | NEW_PRICE
+  reason               String?
+  performedBy          String
+  orgId                String
+  createdAt            DateTime @default(now())
+
+  // Relations
+  sale               Sale    @relation(fields: [saleId], references: [id])
+  originalProduct    Product @relation("SwapOriginalProduct", fields: [originalProductId], references: [id])
+  replacementProduct Product @relation("SwapReplacementProduct", fields: [replacementProductId], references: [id])
+
+  @@index([saleId, orgId])
+  @@index([orgId, createdAt])
+  @@map("sale_line_swaps")
 }
 
 // Alert Configuration (per organization - configures stock alert cron)

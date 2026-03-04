@@ -47,6 +47,7 @@ describe('JwtStrategy', () => {
         username: 'testuser',
         roles: ['USER', 'ADMIN'],
         permissions: ['READ', 'WRITE'],
+        type: 'access',
         iat: validPayload.iat,
         jti: 'token-123',
       });

@@ -70,6 +70,40 @@ export class SaleValidationService {
   }
 
   /**
+   * Validates that a sale line can be swapped
+   */
+  public static validateSaleCanSwapLine(
+    sale: Sale,
+    lineId: string,
+    swapQuantity: number
+  ): IValidationResult {
+    const errors: string[] = [];
+
+    if (!sale.status.canSwapLine()) {
+      errors.push('Sale line swap is only allowed in CONFIRMED or PICKING status.');
+    }
+
+    const line = sale.getLines().find(l => l.id === lineId);
+    if (!line) {
+      errors.push(`Line with id ${lineId} not found in sale`);
+    } else {
+      if (swapQuantity <= 0) {
+        errors.push('Swap quantity must be greater than 0');
+      }
+      if (swapQuantity > line.quantity.getNumericValue()) {
+        errors.push(
+          `Swap quantity ${swapQuantity} exceeds line quantity ${line.quantity.getNumericValue()}`
+        );
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  }
+
+  /**
    * Validates that a sale can be cancelled
    */
   public static validateSaleCanBeCancelled(sale: Sale): IValidationResult {

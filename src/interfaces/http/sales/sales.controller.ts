@@ -11,6 +11,7 @@ import { CompleteSaleUseCase } from '@application/saleUseCases/completeSaleUseCa
 import { MarkSaleReturnedUseCase } from '@application/saleUseCases/markSaleReturnedUseCase';
 import { ShipSaleUseCase } from '@application/saleUseCases/shipSaleUseCase';
 import { StartPickingSaleUseCase } from '@application/saleUseCases/startPickingSaleUseCase';
+import { SwapSaleLineUseCase } from '@application/saleUseCases/swapSaleLineUseCase';
 import { UpdateSaleUseCase } from '@application/saleUseCases/updateSaleUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
@@ -39,7 +40,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { CreateSaleDto, UpdateSaleDto, GetSalesDto } from '@sale/dto';
+import { CreateSaleDto, UpdateSaleDto, GetSalesDto, SwapSaleLineDto } from '@sale/dto';
 import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
 import { OrgId } from '@shared/decorators/orgId.decorator';
 import { RequirePermissions } from '@shared/decorators/requirePermissions.decorator';
@@ -71,7 +72,8 @@ export class SalesController {
     private readonly startPickingSaleUseCase: StartPickingSaleUseCase,
     private readonly shipSaleUseCase: ShipSaleUseCase,
     private readonly completeSaleUseCase: CompleteSaleUseCase,
-    private readonly markSaleReturnedUseCase: MarkSaleReturnedUseCase
+    private readonly markSaleReturnedUseCase: MarkSaleReturnedUseCase,
+    private readonly swapSaleLineUseCase: SwapSaleLineUseCase
   ) {}
 
   @Post()
@@ -396,6 +398,54 @@ export class SalesController {
       saleId: id,
       orgId,
       userId: user.id,
+    });
+    return resultToHttpResponse(result);
+  }
+
+  @Post(':id/swap')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.SALES_SWAP)
+  @ApiOperation({
+    summary: 'Swap a sale line product',
+    description:
+      'Swap a product in a confirmed or picking sale. Supports full or partial swaps with atomic inventory adjustment.',
+  })
+  @ApiParam({ name: 'id', description: 'Sale ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Sale line swapped successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Sale cannot be swapped or insufficient stock',
+  })
+  async swapSaleLine(
+    @Param('id') id: string,
+    @Body() swapDto: SwapSaleLineDto,
+    @OrgId() orgId: string,
+    @Req() req: Request
+  ) {
+    const user = req.user as IAuthenticatedUser;
+    this.logger.log('Swapping sale line', {
+      saleId: id,
+      lineId: swapDto.lineId,
+      replacementProductId: swapDto.replacementProductId,
+      orgId,
+      performedBy: user.id,
+    });
+
+    const result = await this.swapSaleLineUseCase.execute({
+      saleId: id,
+      lineId: swapDto.lineId,
+      replacementProductId: swapDto.replacementProductId,
+      swapQuantity: swapDto.swapQuantity,
+      sourceWarehouseId: swapDto.sourceWarehouseId,
+      pricingStrategy: swapDto.pricingStrategy,
+      newSalePrice: swapDto.newSalePrice,
+      currency: swapDto.currency,
+      reason: swapDto.reason,
+      performedBy: user.id,
+      orgId,
     });
     return resultToHttpResponse(result);
   }

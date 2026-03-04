@@ -126,7 +126,7 @@ describe('Security Constants', () => {
       const permissions = Object.values(SYSTEM_PERMISSIONS);
 
       // Assert
-      expect(permissions).toHaveLength(49);
+      expect(permissions).toHaveLength(50);
     });
 
     it('Given: system permissions When: checking uniqueness Then: should have unique permission names', () => {

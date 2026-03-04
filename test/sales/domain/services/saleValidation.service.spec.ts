@@ -196,6 +196,113 @@ describe('SaleValidationService', () => {
     });
   });
 
+  describe('validateSaleCanSwapLine', () => {
+    it('Given: CONFIRMED sale with valid line and quantity When: validating swap Then: should return valid', () => {
+      const sale = Sale.reconstitute(
+        {
+          saleNumber: SaleNumber.fromString('SALE-2024-030'),
+          status: SaleStatus.create('CONFIRMED'),
+          warehouseId: mockWarehouseId,
+          confirmedAt: new Date(),
+          createdBy: 'user-123',
+        },
+        'sale-swap-1',
+        mockOrgId,
+        [
+          SaleLine.reconstitute(
+            {
+              productId: 'product-swap-1',
+              quantity: Quantity.create(5, 2),
+              salePrice: SalePrice.create(100, 'COP'),
+            },
+            'line-swap-1',
+            mockOrgId
+          ),
+        ]
+      );
+
+      const result = SaleValidationService.validateSaleCanSwapLine(sale, 'line-swap-1', 3);
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('Given: DRAFT sale When: validating swap Then: should return invalid', () => {
+      const sale = Sale.reconstitute(
+        {
+          saleNumber: SaleNumber.fromString('SALE-2024-031'),
+          status: SaleStatus.create('DRAFT'),
+          warehouseId: mockWarehouseId,
+          createdBy: 'user-123',
+        },
+        'sale-swap-2',
+        mockOrgId,
+        [
+          SaleLine.reconstitute(
+            {
+              productId: 'product-swap-2',
+              quantity: Quantity.create(5, 2),
+              salePrice: SalePrice.create(100, 'COP'),
+            },
+            'line-swap-2',
+            mockOrgId
+          ),
+        ]
+      );
+
+      const result = SaleValidationService.validateSaleCanSwapLine(sale, 'line-swap-2', 3);
+      expect(result.isValid).toBe(false);
+      expect(result.errors[0]).toContain('only allowed in CONFIRMED or PICKING');
+    });
+
+    it('Given: non-existent line When: validating swap Then: should return invalid', () => {
+      const sale = Sale.reconstitute(
+        {
+          saleNumber: SaleNumber.fromString('SALE-2024-032'),
+          status: SaleStatus.create('CONFIRMED'),
+          warehouseId: mockWarehouseId,
+          confirmedAt: new Date(),
+          createdBy: 'user-123',
+        },
+        'sale-swap-3',
+        mockOrgId,
+        []
+      );
+
+      const result = SaleValidationService.validateSaleCanSwapLine(sale, 'non-existent', 3);
+      expect(result.isValid).toBe(false);
+      expect(result.errors[0]).toContain('not found');
+    });
+
+    it('Given: swap quantity exceeding line quantity When: validating swap Then: should return invalid', () => {
+      const sale = Sale.reconstitute(
+        {
+          saleNumber: SaleNumber.fromString('SALE-2024-033'),
+          status: SaleStatus.create('CONFIRMED'),
+          warehouseId: mockWarehouseId,
+          confirmedAt: new Date(),
+          createdBy: 'user-123',
+        },
+        'sale-swap-4',
+        mockOrgId,
+        [
+          SaleLine.reconstitute(
+            {
+              productId: 'product-swap-4',
+              quantity: Quantity.create(3, 2),
+              salePrice: SalePrice.create(100, 'COP'),
+            },
+            'line-swap-4',
+            mockOrgId
+          ),
+        ]
+      );
+
+      const result = SaleValidationService.validateSaleCanSwapLine(sale, 'line-swap-4', 5);
+      expect(result.isValid).toBe(false);
+      expect(result.errors[0]).toContain('exceeds line quantity');
+    });
+  });
+
   describe('validateStockAvailability', () => {
     let mockStockRepository: jest.Mocked<IStockRepository>;
 

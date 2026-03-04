@@ -1,6 +1,7 @@
 import { SaleCancelledEventHandler } from '@application/eventHandlers/saleCancelledEventHandler';
 import { SaleConfirmedEventHandler } from '@application/eventHandlers/saleConfirmedEventHandler';
 import { SaleCreatedEventHandler } from '@application/eventHandlers/saleCreatedEventHandler';
+import { SaleLineSwappedEventHandler } from '@application/eventHandlers/saleLineSwappedEventHandler';
 import { AuthenticationModule } from '@auth/authentication.module';
 import { Module, OnModuleInit } from '@nestjs/common';
 import { ReturnsModule } from '@returns/returns.module';
@@ -16,14 +17,20 @@ import { SalesController } from './sales.controller';
     ReturnsModule,
   ],
   controllers: [SalesController],
-  providers: [SaleCreatedEventHandler, SaleConfirmedEventHandler, SaleCancelledEventHandler],
+  providers: [
+    SaleCreatedEventHandler,
+    SaleConfirmedEventHandler,
+    SaleCancelledEventHandler,
+    SaleLineSwappedEventHandler,
+  ],
 })
 export class SalesHttpModule implements OnModuleInit {
   constructor(
     private readonly eventBus: DomainEventBus,
     private readonly saleCreatedHandler: SaleCreatedEventHandler,
     private readonly saleConfirmedHandler: SaleConfirmedEventHandler,
-    private readonly saleCancelledHandler: SaleCancelledEventHandler
+    private readonly saleCancelledHandler: SaleCancelledEventHandler,
+    private readonly saleLineSwappedHandler: SaleLineSwappedEventHandler
   ) {}
 
   onModuleInit() {
@@ -31,5 +38,6 @@ export class SalesHttpModule implements OnModuleInit {
     this.eventBus.registerHandler('SaleCreated', this.saleCreatedHandler);
     this.eventBus.registerHandler('SaleConfirmed', this.saleConfirmedHandler);
     this.eventBus.registerHandler('SaleCancelled', this.saleCancelledHandler);
+    this.eventBus.registerHandler('SaleLineSwapped', this.saleLineSwappedHandler);
   }
 }

@@ -224,6 +224,33 @@ describe('SaleStatus', () => {
     });
   });
 
+  describe('canSwapLine', () => {
+    it('Given: CONFIRMED status When: checking canSwapLine Then: should return true', () => {
+      const status = SaleStatus.create('CONFIRMED');
+      expect(status.canSwapLine()).toBe(true);
+    });
+
+    it('Given: PICKING status When: checking canSwapLine Then: should return true', () => {
+      const status = SaleStatus.create('PICKING');
+      expect(status.canSwapLine()).toBe(true);
+    });
+
+    it('Given: DRAFT status When: checking canSwapLine Then: should return false', () => {
+      const status = SaleStatus.create('DRAFT');
+      expect(status.canSwapLine()).toBe(false);
+    });
+
+    it('Given: SHIPPED status When: checking canSwapLine Then: should return false', () => {
+      const status = SaleStatus.create('SHIPPED');
+      expect(status.canSwapLine()).toBe(false);
+    });
+
+    it('Given: COMPLETED status When: checking canSwapLine Then: should return false', () => {
+      const status = SaleStatus.create('COMPLETED');
+      expect(status.canSwapLine()).toBe(false);
+    });
+  });
+
   describe('canCancel', () => {
     it('Given: DRAFT status When: checking canCancel Then: should return true', () => {
       // Arrange

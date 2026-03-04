@@ -10,6 +10,7 @@ import { GetSalesUseCase } from '@application/saleUseCases/getSalesUseCase';
 import { RemoveSaleLineUseCase } from '@application/saleUseCases/removeSaleLineUseCase';
 import { ShipSaleUseCase } from '@application/saleUseCases/shipSaleUseCase';
 import { StartPickingSaleUseCase } from '@application/saleUseCases/startPickingSaleUseCase';
+import { SwapSaleLineUseCase } from '@application/saleUseCases/swapSaleLineUseCase';
 import { UpdateSaleUseCase } from '@application/saleUseCases/updateSaleUseCase';
 import { AuthenticationModule } from '@auth/authentication.module';
 import { PrismaSaleRepository } from '@infrastructure/database/repositories/sale.repository';
@@ -43,6 +44,7 @@ import { OrganizationModule } from '@organization/organization.module';
     ShipSaleUseCase,
     CompleteSaleUseCase,
     MarkSaleReturnedUseCase,
+    SwapSaleLineUseCase,
   ],
   exports: [
     // Export use cases for controller
@@ -59,6 +61,7 @@ import { OrganizationModule } from '@organization/organization.module';
     ShipSaleUseCase,
     CompleteSaleUseCase,
     MarkSaleReturnedUseCase,
+    SwapSaleLineUseCase,
     // Export repository for cross-module access (e.g., ReturnsModule)
     'SaleRepository',
   ],

@@ -81,6 +81,10 @@ export class SaleStatus extends ValueObject<{ value: SaleStatusValue }> {
     return this.props.value === 'COMPLETED' || this.props.value === 'SHIPPED';
   }
 
+  public canSwapLine(): boolean {
+    return this.props.value === 'CONFIRMED' || this.props.value === 'PICKING';
+  }
+
   public canCancel(): boolean {
     return (
       this.props.value === 'DRAFT' ||
