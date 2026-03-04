@@ -29,10 +29,47 @@ export interface IStockThresholdExceededNotification {
 }
 
 /**
+ * Stock alert digest item for low stock / out of stock / critical alerts
+ */
+export interface IStockAlertDigestItem {
+  productName: string;
+  sku: string;
+  warehouseName: string;
+  currentStock: number;
+  threshold: number;
+  severity: 'OUT_OF_STOCK' | 'CRITICAL' | 'LOW';
+}
+
+/**
+ * Stock alert digest item for overstock alerts
+ */
+export interface IOverstockAlertDigestItem {
+  productName: string;
+  sku: string;
+  warehouseName: string;
+  currentStock: number;
+  maxQuantity: number;
+}
+
+/**
+ * Stock alert digest notification data transfer object
+ */
+export interface IStockAlertDigestNotification {
+  orgId: string;
+  orgName: string;
+  recipientEmails: string[];
+  lowStockItems: IStockAlertDigestItem[];
+  overstockItems: IOverstockAlertDigestItem[];
+  generatedAt: Date;
+  language?: string;
+}
+
+/**
  * Notification service port interface
  * Output port for sending notifications following Hexagonal Architecture
  */
 export interface INotificationService {
   sendLowStockAlert(notification: ILowStockAlertNotification): Promise<void>;
   sendStockThresholdExceededAlert(notification: IStockThresholdExceededNotification): Promise<void>;
+  sendStockAlertDigest(notification: IStockAlertDigestNotification): Promise<void>;
 }

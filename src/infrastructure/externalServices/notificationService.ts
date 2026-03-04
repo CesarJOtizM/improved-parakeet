@@ -4,10 +4,13 @@ import { AlertSeverity } from '@stock/domain/services/alertService';
 
 import { EmailService } from './emailService';
 import { lowStockAlertTemplate } from './templates/lowStockAlert.template';
+import { stockAlertDigestTemplate } from './templates/stockAlertDigest.template';
+import { type EmailLanguage, t } from './templates/translations/email-translations';
 
 import type {
   ILowStockAlertNotification,
   INotificationService,
+  IStockAlertDigestNotification,
   IStockThresholdExceededNotification,
 } from './notificationService.interface';
 
@@ -85,6 +88,50 @@ export class NotificationService implements INotificationService {
         subject,
         body: html,
         template: 'stock-threshold-exceeded',
+        orgId: notification.orgId,
+      });
+    });
+  }
+
+  async sendStockAlertDigest(notification: IStockAlertDigestNotification): Promise<void> {
+    const totalAlerts = notification.lowStockItems.length + notification.overstockItems.length;
+
+    if (totalAlerts === 0 || notification.recipientEmails.length === 0) {
+      return;
+    }
+
+    await this.resilientNotify.execute(async () => {
+      const lang: EmailLanguage = notification.language === 'en' ? 'en' : 'es';
+
+      this.logger.log('Sending stock alert digest', {
+        orgId: notification.orgId,
+        orgName: notification.orgName,
+        language: lang,
+        lowStockCount: notification.lowStockItems.length,
+        overstockCount: notification.overstockItems.length,
+        recipients: notification.recipientEmails.length,
+      });
+
+      const hasCritical = notification.lowStockItems.some(
+        i => i.severity === 'OUT_OF_STOCK' || i.severity === 'CRITICAL'
+      );
+
+      const subjectKey = hasCritical ? 'subjectCritical' : 'subjectNormal';
+      const subject = `${t(lang, 'digest', subjectKey)} - ${totalAlerts} ${lang === 'es' ? 'alerta(s)' : 'alert(s)'}`;
+
+      const html = stockAlertDigestTemplate({
+        orgName: notification.orgName,
+        lowStockItems: notification.lowStockItems,
+        overstockItems: notification.overstockItems,
+        generatedAt: notification.generatedAt,
+        language: lang,
+      });
+
+      await this.emailService.sendEmail({
+        to: notification.recipientEmails,
+        subject,
+        body: html,
+        template: 'stock-alert-digest',
         orgId: notification.orgId,
       });
     });

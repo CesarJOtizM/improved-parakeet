@@ -3,5 +3,8 @@
 export type {
   ILowStockAlertNotification,
   INotificationService,
+  IOverstockAlertDigestItem,
+  IStockAlertDigestItem,
+  IStockAlertDigestNotification,
   IStockThresholdExceededNotification,
 } from '@shared/ports/externalServices';

@@ -1,12 +1,17 @@
+import { type EmailLanguage, t } from './translations/email-translations';
+
 export interface EmailLayoutOptions {
   title: string;
   preheader?: string;
+  language?: EmailLanguage;
 }
 
 export function emailLayout(options: EmailLayoutOptions, content: string): string {
-  const { title, preheader } = options;
+  const { title, preheader, language = 'es' } = options;
+  const lang = language;
+
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -40,8 +45,8 @@ ${content}
 <!-- Footer -->
 <tr>
 <td style="padding:24px 32px;background-color:#f8fafc;border-top:1px solid #e2e8f0;text-align:center;">
-<p style="margin:0 0 4px;font-size:12px;color:#94a3b8;">&copy; ${new Date().getFullYear()} Nevada Inventory. All rights reserved.</p>
-<p style="margin:0;font-size:12px;color:#94a3b8;">Need help? Contact <a href="mailto:support@nevadainventory.com" style="color:#6366f1;text-decoration:none;">support@nevadainventory.com</a></p>
+<p style="margin:0 0 4px;font-size:12px;color:#94a3b8;">&copy; ${new Date().getFullYear()} Nevada Inventory. ${t(lang, 'layout', 'allRightsReserved')}</p>
+<p style="margin:0;font-size:12px;color:#94a3b8;">${t(lang, 'layout', 'needHelp')} <a href="mailto:support@nevadainventory.com" style="color:#6366f1;text-decoration:none;">support@nevadainventory.com</a></p>
 </td>
 </tr>
 

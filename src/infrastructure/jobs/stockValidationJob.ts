@@ -1,4 +1,5 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
+import { NotificationService } from '@infrastructure/externalServices/notificationService';
 import { Quantity } from '@inventory/stock';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -10,6 +11,10 @@ import { MaxQuantity } from '@stock/domain/valueObjects/maxQuantity.valueObject'
 import { MinQuantity } from '@stock/domain/valueObjects/minQuantity.valueObject';
 import { SafetyStock } from '@stock/domain/valueObjects/safetyStock.valueObject';
 
+import type {
+  IOverstockAlertDigestItem,
+  IStockAlertDigestItem,
+} from '@shared/ports/externalServices';
 import type { IOrganizationRepository } from '@organization/domain/repositories/organizationRepository.interface';
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
 import type { IReorderRuleRepository } from '@stock/domain/repositories/reorderRuleRepository.interface';
@@ -52,7 +57,8 @@ export class StockValidationJob {
     @Inject('OrganizationRepository')
     private readonly organizationRepository: IOrganizationRepository,
     private readonly eventBus: DomainEventBus,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService
   ) {}
 
   /**
@@ -66,12 +72,12 @@ export class StockValidationJob {
 
       // Get all organizations (in a real implementation, this would come from an organization service)
       // For now, we'll process all products across all organizations
-      const orgIds = await this.getAllOrganizationIds();
+      const orgs = await this.getAllOrganizations();
 
       let totalAlerts = 0;
 
-      for (const orgId of orgIds) {
-        const alerts = await this.validateStockForOrganization(orgId);
+      for (const org of orgs) {
+        const alerts = await this.validateStockForOrganization(org.id, org.name, org.language);
         totalAlerts += alerts;
       }
 
@@ -88,7 +94,11 @@ export class StockValidationJob {
   /**
    * Validates stock levels for a specific organization
    */
-  private async validateStockForOrganization(orgId: string): Promise<number> {
+  private async validateStockForOrganization(
+    orgId: string,
+    orgName: string,
+    language: string = 'es'
+  ): Promise<number> {
     let alertCount = 0;
 
     try {
@@ -97,9 +107,9 @@ export class StockValidationJob {
         where: { orgId },
       });
 
-      // If alerts are explicitly disabled, skip
-      if (alertConfig && !alertConfig.isEnabled) {
-        this.logger.debug(`Alerts disabled for org ${orgId}, skipping`);
+      // Alerts are disabled by default — require explicit AlertConfiguration with isEnabled=true
+      if (!alertConfig || !alertConfig.isEnabled) {
+        this.logger.debug(`Alerts not enabled for org ${orgId}, skipping`);
         return 0;
       }
 
@@ -121,6 +131,10 @@ export class StockValidationJob {
       // Get all active warehouses for this organization
       const warehouses = await this.warehouseRepository.findActive(orgId);
 
+      // Accumulate digest items
+      const lowStockAlerts: IStockAlertDigestItem[] = [];
+      const overstockAlerts: IOverstockAlertDigestItem[] = [];
+
       // For each product-warehouse combination, check stock levels
       for (const product of products) {
         for (const warehouse of warehouses) {
@@ -128,7 +142,7 @@ export class StockValidationJob {
             const stockInfo = await this.getProductStockInfo(product.id, warehouse.id, orgId);
 
             if (!stockInfo) {
-              continue; // No stock record exists, skip
+              continue;
             }
 
             // Evaluate stock level using AlertService
@@ -143,15 +157,13 @@ export class StockValidationJob {
 
             // Emit LowStockAlert event if needed (respecting severity config)
             if (evaluation.shouldAlert) {
-              // Check if this severity is enabled in alert configuration
               const severityEnabled =
-                !alertConfig ||
                 (evaluation.severity === 'LOW' && alertConfig.notifyLowStock) ||
                 (evaluation.severity === 'CRITICAL' && alertConfig.notifyCriticalStock) ||
                 (evaluation.severity === 'OUT_OF_STOCK' && alertConfig.notifyOutOfStock);
 
               if (!severityEnabled) {
-                continue; // Skip this alert - severity not enabled
+                continue;
               }
 
               const event = new LowStockAlertEvent(
@@ -168,6 +180,16 @@ export class StockValidationJob {
               event.markForDispatch();
               await this.eventBus.publish(event);
               alertCount++;
+
+              // Accumulate for digest
+              lowStockAlerts.push({
+                productName: product.name.getValue(),
+                sku: product.sku.getValue(),
+                warehouseName: warehouse.name,
+                currentStock: stockInfo.currentStock.getNumericValue(),
+                threshold: stockInfo.minQuantity?.getNumericValue() ?? 0,
+                severity: evaluation.severity,
+              });
 
               this.logger.warn('Low stock alert generated', {
                 productId: product.id,
@@ -195,6 +217,15 @@ export class StockValidationJob {
                 await this.eventBus.publish(event);
                 alertCount++;
 
+                // Accumulate for digest
+                overstockAlerts.push({
+                  productName: product.name.getValue(),
+                  sku: product.sku.getValue(),
+                  warehouseName: warehouse.name,
+                  currentStock: stockInfo.currentStock.getNumericValue(),
+                  maxQuantity: stockInfo.maxQuantity.getNumericValue(),
+                });
+
                 this.logger.warn('Stock threshold exceeded alert generated', {
                   productId: product.id,
                   warehouseId: warehouse.id,
@@ -213,10 +244,33 @@ export class StockValidationJob {
                 orgId,
               }
             );
-            // Continue with next product-warehouse combination
           }
         }
       }
+
+      // Send consolidated digest email if there are alerts
+      if (lowStockAlerts.length > 0 || overstockAlerts.length > 0) {
+        const recipientEmails = this.parseRecipientEmails(alertConfig?.recipientEmails);
+
+        try {
+          await this.notificationService.sendStockAlertDigest({
+            orgId,
+            orgName,
+            recipientEmails,
+            lowStockItems: lowStockAlerts,
+            overstockItems: overstockAlerts,
+            generatedAt: new Date(),
+            language,
+          });
+        } catch (error) {
+          this.logger.error('Error sending stock alert digest email', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            orgId,
+            alertCount: lowStockAlerts.length + overstockAlerts.length,
+          });
+        }
+      }
+
       // Update lastRunAt for this org
       if (alertConfig) {
         await this.prisma.alertConfiguration.update({
@@ -282,18 +336,37 @@ export class StockValidationJob {
   }
 
   /**
-   * Gets all organization IDs
+   * Gets all active organizations with id and name
    */
-  private async getAllOrganizationIds(): Promise<string[]> {
+  private async getAllOrganizations(): Promise<{ id: string; name: string; language: string }[]> {
     try {
       const organizations = await this.organizationRepository.findActiveOrganizations();
-      return organizations.map(org => org.id);
+      return organizations.map(org => ({
+        id: org.id,
+        name: org.name,
+        language: (org.getSetting('language') as string) || 'es',
+      }));
     } catch (error) {
-      this.logger.error('Error getting organization IDs', {
+      this.logger.error('Error getting organizations', {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      // Fallback to empty array if there's an error
       return [];
     }
+  }
+
+  /**
+   * Parses comma-separated recipient emails string into an array
+   */
+  private parseRecipientEmails(recipientEmails?: string | null): string[] {
+    if (!recipientEmails || recipientEmails.trim() === '') {
+      return ['admin@nevadainventory.com'];
+    }
+
+    const emails = recipientEmails
+      .split(',')
+      .map(e => e.trim())
+      .filter(e => e.length > 0);
+
+    return emails.length > 0 ? emails : ['admin@nevadainventory.com'];
   }
 }

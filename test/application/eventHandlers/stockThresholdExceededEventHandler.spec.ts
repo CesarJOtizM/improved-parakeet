@@ -6,7 +6,6 @@ import { StockThresholdExceededEvent } from '@stock/domain/events/stockThreshold
 describe('StockThresholdExceededEventHandler', () => {
   let handler: StockThresholdExceededEventHandler;
   let loggerSpy: ReturnType<typeof jest.spyOn>;
-  let mockNotificationService: any;
 
   const createMockQuantity = (value: number): any => ({
     getNumericValue: () => value,
@@ -14,18 +13,12 @@ describe('StockThresholdExceededEventHandler', () => {
   });
 
   beforeEach(() => {
-    mockNotificationService = {
-      sendStockThresholdExceededAlert: jest.fn(),
-    } as any;
-    mockNotificationService.sendStockThresholdExceededAlert.mockResolvedValue(undefined);
-    handler = new StockThresholdExceededEventHandler(mockNotificationService);
-    // Spy on logger methods
+    handler = new StockThresholdExceededEventHandler();
     loggerSpy = jest.spyOn((handler as any).logger, 'log');
-    jest.spyOn((handler as any).logger, 'error');
   });
 
   describe('handle', () => {
-    it('Given: StockThresholdExceeded event When: handling event Then: should send notification', async () => {
+    it('Given: StockThresholdExceeded event When: handling event Then: should log the event', async () => {
       // Arrange
       const event = new StockThresholdExceededEvent(
         'product-123',
@@ -46,49 +39,21 @@ describe('StockThresholdExceededEventHandler', () => {
         currentStock: 150,
         maxQuantity: 100,
       });
-
-      expect(mockNotificationService.sendStockThresholdExceededAlert).toHaveBeenCalledWith({
-        productId: 'product-123',
-        warehouseId: 'warehouse-789',
-        currentStock: expect.any(Object),
-        maxQuantity: expect.any(Object),
-        orgId: 'org-123',
-      });
-
-      expect(loggerSpy).toHaveBeenCalledWith(
-        'Stock threshold exceeded notification sent successfully',
-        {
-          productId: 'product-123',
-          warehouseId: 'warehouse-789',
-        }
-      );
     });
 
-    it('Given: error occurs When: handling event Then: should log error without throwing', async () => {
+    it('Given: threshold exceeded event When: handling Then: should complete without errors', async () => {
       // Arrange
       const event = new StockThresholdExceededEvent(
-        'product-123',
+        'product-456',
         'warehouse-789',
-        createMockQuantity(150),
+        createMockQuantity(200),
         createMockQuantity(100),
         'org-123',
         new Date()
       );
 
-      mockNotificationService.sendStockThresholdExceededAlert.mockRejectedValue(
-        new Error('Notification error')
-      );
-      const errorLoggerSpy = jest.spyOn((handler as any).logger, 'error');
-
       // Act & Assert
       await expect(handler.handle(event)).resolves.toBeUndefined();
-
-      // Assert
-      expect(errorLoggerSpy).toHaveBeenCalledWith('Error handling StockThresholdExceeded event', {
-        error: 'Notification error',
-        productId: 'product-123',
-        warehouseId: 'warehouse-789',
-      });
     });
   });
 });

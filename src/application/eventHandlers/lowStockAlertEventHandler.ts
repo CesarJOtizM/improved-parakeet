@@ -1,4 +1,3 @@
-import { NotificationService } from '@infrastructure/externalServices/notificationService';
 import { Injectable, Logger } from '@nestjs/common';
 import { IDomainEventHandler } from '@shared/domain/events/domainEventBus.service';
 import { LowStockAlertEvent } from '@stock/domain/events/lowStockAlert.event';
@@ -6,8 +5,6 @@ import { LowStockAlertEvent } from '@stock/domain/events/lowStockAlert.event';
 @Injectable()
 export class LowStockAlertEventHandler implements IDomainEventHandler<LowStockAlertEvent> {
   private readonly logger = new Logger(LowStockAlertEventHandler.name);
-
-  constructor(private readonly notificationService: NotificationService) {}
 
   async handle(event: LowStockAlertEvent): Promise<void> {
     this.logger.log('Handling LowStockAlert event', {
@@ -17,30 +14,7 @@ export class LowStockAlertEventHandler implements IDomainEventHandler<LowStockAl
       currentStock: event.currentStock.getNumericValue(),
     });
 
-    try {
-      // Send notification based on severity
-      await this.notificationService.sendLowStockAlert({
-        productId: event.productId,
-        warehouseId: event.warehouseId,
-        currentStock: event.currentStock,
-        minQuantity: event.minQuantity,
-        safetyStock: event.safetyStock,
-        severity: event.severity,
-        orgId: event.orgId,
-      });
-
-      this.logger.log('Low stock alert notification sent successfully', {
-        productId: event.productId,
-        warehouseId: event.warehouseId,
-        severity: event.severity,
-      });
-    } catch (error) {
-      this.logger.error('Error handling LowStockAlert event', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        productId: event.productId,
-        warehouseId: event.warehouseId,
-      });
-      // Don't throw - we don't want notification errors to break event processing
-    }
+    // Email notifications are now handled via consolidated digest in StockValidationJob.
+    // This handler is kept for audit trail / logging purposes only.
   }
 }

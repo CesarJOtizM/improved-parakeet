@@ -2,7 +2,7 @@
  * Email request data transfer object
  */
 export interface IEmailRequest {
-  to: string;
+  to: string | string[];
   subject: string;
   body: string;
   template?: string;

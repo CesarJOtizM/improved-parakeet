@@ -23,9 +23,12 @@ describe('StockValidationJob', () => {
 
   let mockEventBus: Record<string, jest.Mock<any>>;
 
+  let mockNotificationService: Record<string, jest.Mock<any>>;
+
   const mockProduct = {
     id: 'product-123',
-    name: 'Test Product',
+    name: { getValue: () => 'Test Product' },
+    sku: { getValue: () => 'SKU-001' },
     orgId: 'org-123',
   };
 
@@ -41,6 +44,10 @@ describe('StockValidationJob', () => {
     id: 'org-123',
     name: 'Test Organization',
     isActive: true,
+    getSetting: (key: string) => {
+      const settings: Record<string, unknown> = { language: 'es' };
+      return settings[key];
+    },
   };
 
   const mockReorderRule = {
@@ -80,9 +87,22 @@ describe('StockValidationJob', () => {
 
     mockPrismaService = {
       alertConfiguration: {
-        findUnique: jest.fn().mockResolvedValue(null),
+        findUnique: jest.fn().mockResolvedValue({
+          orgId: 'org-123',
+          isEnabled: true,
+          cronFrequency: 'EVERY_HOUR',
+          notifyLowStock: true,
+          notifyCriticalStock: true,
+          notifyOutOfStock: true,
+          recipientEmails: '',
+          lastRunAt: null,
+        }),
         update: jest.fn().mockResolvedValue(null),
       },
+    };
+
+    mockNotificationService = {
+      sendStockAlertDigest: jest.fn().mockResolvedValue(undefined),
     };
 
     job = new StockValidationJob(
@@ -94,7 +114,8 @@ describe('StockValidationJob', () => {
       mockEventBus as unknown as Parameters<
         typeof StockValidationJob.prototype.validateStockLevels
       >[0],
-      mockPrismaService as any
+      mockPrismaService as any,
+      mockNotificationService as any
     );
   });
 
@@ -115,6 +136,7 @@ describe('StockValidationJob', () => {
       expect(mockProductRepository.findByStatus).toHaveBeenCalledWith('ACTIVE', 'org-123');
       expect(mockWarehouseRepository.findActive).toHaveBeenCalledWith('org-123');
       expect(mockEventBus.publish).not.toHaveBeenCalled();
+      expect(mockNotificationService.sendStockAlertDigest).not.toHaveBeenCalled();
     });
 
     it('Given: low stock levels When: validating Then: should emit low stock alert', async () => {
@@ -314,6 +336,45 @@ describe('StockValidationJob', () => {
       expect(mockEventBus.publish).toHaveBeenCalled();
     });
 
+    it('Given: no alertConfig for org When: validating Then: should skip without processing', async () => {
+      // Arrange
+      mockPrismaService.alertConfiguration.findUnique.mockResolvedValue(null);
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert — no products should be checked since alerts are disabled by default
+      expect(mockStockRepository.getStockQuantity).not.toHaveBeenCalled();
+      expect(mockNotificationService.sendStockAlertDigest).not.toHaveBeenCalled();
+    });
+
+    it('Given: alertConfig with isEnabled=false When: validating Then: should skip', async () => {
+      // Arrange
+      mockPrismaService.alertConfiguration.findUnique.mockResolvedValue({
+        orgId: 'org-123',
+        isEnabled: false,
+        cronFrequency: 'EVERY_HOUR',
+        notifyLowStock: true,
+        notifyCriticalStock: true,
+        notifyOutOfStock: true,
+        recipientEmails: '',
+        lastRunAt: null,
+      });
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert
+      expect(mockStockRepository.getStockQuantity).not.toHaveBeenCalled();
+      expect(mockNotificationService.sendStockAlertDigest).not.toHaveBeenCalled();
+    });
+
     it('Given: event bus error When: publishing alert Then: should continue processing', async () => {
       // Arrange
       mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
@@ -325,6 +386,168 @@ describe('StockValidationJob', () => {
 
       // Act - should not throw
       await expect(job.validateStockLevels()).resolves.not.toThrow();
+    });
+  });
+
+  describe('digest email', () => {
+    it('Given: low stock alerts When: processing completes Then: should call sendStockAlertDigest once', async () => {
+      // Arrange
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(5, 0));
+      mockReorderRuleRepository.findByProductAndWarehouse.mockResolvedValue(mockReorderRule);
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert
+      expect(mockNotificationService.sendStockAlertDigest).toHaveBeenCalledTimes(1);
+    });
+
+    it('Given: alerts generated When: sending digest Then: should include product names and warehouse names', async () => {
+      // Arrange
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(5, 0));
+      mockReorderRuleRepository.findByProductAndWarehouse.mockResolvedValue(mockReorderRule);
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      expect(digestCall.orgName).toBe('Test Organization');
+      expect(digestCall.lowStockItems).toHaveLength(1);
+      expect(digestCall.lowStockItems[0].productName).toBe('Test Product');
+      expect(digestCall.lowStockItems[0].sku).toBe('SKU-001');
+      expect(digestCall.lowStockItems[0].warehouseName).toBe('Main Warehouse');
+      expect(digestCall.lowStockItems[0].currentStock).toBe(5);
+    });
+
+    it('Given: overstock alerts When: sending digest Then: should include overstock items', async () => {
+      // Arrange
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(150, 0)); // Above maxQty of 100
+      mockReorderRuleRepository.findByProductAndWarehouse.mockResolvedValue(mockReorderRule);
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      expect(digestCall.overstockItems).toHaveLength(1);
+      expect(digestCall.overstockItems[0].productName).toBe('Test Product');
+      expect(digestCall.overstockItems[0].maxQuantity).toBe(100);
+    });
+
+    it('Given: alertConfig with recipientEmails When: sending digest Then: should parse recipients', async () => {
+      // Arrange
+      mockPrismaService.alertConfiguration.findUnique.mockResolvedValue({
+        orgId: 'org-123',
+        isEnabled: true,
+        cronFrequency: 'EVERY_HOUR',
+        notifyLowStock: true,
+        notifyCriticalStock: true,
+        notifyOutOfStock: true,
+        recipientEmails: 'alice@test.com, bob@test.com',
+        lastRunAt: null,
+      });
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(5, 0));
+      mockReorderRuleRepository.findByProductAndWarehouse.mockResolvedValue(mockReorderRule);
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      expect(digestCall.recipientEmails).toEqual(['alice@test.com', 'bob@test.com']);
+    });
+
+    it('Given: no recipientEmails configured When: sending digest Then: should fallback to admin email', async () => {
+      // Arrange
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(5, 0));
+      mockReorderRuleRepository.findByProductAndWarehouse.mockResolvedValue(mockReorderRule);
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      expect(digestCall.recipientEmails).toEqual(['admin@nevadainventory.com']);
+    });
+
+    it('Given: no alerts generated When: processing completes Then: should NOT send digest', async () => {
+      // Arrange
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(50, 0)); // Healthy stock
+      mockReorderRuleRepository.findByProductAndWarehouse.mockResolvedValue(mockReorderRule);
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert
+      expect(mockNotificationService.sendStockAlertDigest).not.toHaveBeenCalled();
+    });
+
+    it('Given: digest email fails When: sending Then: should not throw', async () => {
+      // Arrange
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(5, 0));
+      mockReorderRuleRepository.findByProductAndWarehouse.mockResolvedValue(mockReorderRule);
+      mockNotificationService.sendStockAlertDigest.mockRejectedValue(new Error('Email failed'));
+
+      // Act - should not throw
+      await expect(job.validateStockLevels()).resolves.not.toThrow();
+    });
+
+    it('Given: organization with language setting When: sending digest Then: should pass language to notification', async () => {
+      // Arrange
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(5, 0));
+      mockReorderRuleRepository.findByProductAndWarehouse.mockResolvedValue(mockReorderRule);
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      expect(digestCall.language).toBe('es');
+    });
+
+    it('Given: organization without language setting When: sending digest Then: should default to es', async () => {
+      // Arrange
+      const orgWithoutLang = {
+        ...mockOrganization,
+        getSetting: () => undefined,
+      };
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([orgWithoutLang]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(5, 0));
+      mockReorderRuleRepository.findByProductAndWarehouse.mockResolvedValue(mockReorderRule);
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      expect(digestCall.language).toBe('es');
     });
   });
 

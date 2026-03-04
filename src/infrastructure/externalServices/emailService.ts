@@ -63,7 +63,7 @@ export class EmailService implements IEmailService {
 
         const { data, error } = await this.resend.emails.send({
           from: this.fromEmail,
-          to: [request.to],
+          to: Array.isArray(request.to) ? request.to : [request.to],
           subject: request.subject,
           html: request.body,
           headers: {
