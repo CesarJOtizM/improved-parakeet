@@ -3,6 +3,7 @@ import { registerAs } from '@nestjs/config';
 export interface IAuthConfig {
   jwt: {
     secret: string;
+    refreshSecret: string;
     accessTokenExpiry: string;
     refreshTokenExpiry: string;
     saltRounds: number;
@@ -49,8 +50,10 @@ export default registerAs(
   (): IAuthConfig => ({
     jwt: {
       secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
-      accessTokenExpiry: process.env.JWT_ACCESS_TOKEN_EXPIRY || '8h',
-      refreshTokenExpiry: process.env.JWT_REFRESH_TOKEN_EXPIRY || '15d',
+      refreshSecret:
+        process.env.JWT_REFRESH_SECRET || 'your-super-secret-refresh-key-change-in-production',
+      accessTokenExpiry: process.env.JWT_ACCESS_TOKEN_EXPIRY || '30m',
+      refreshTokenExpiry: process.env.JWT_REFRESH_TOKEN_EXPIRY || '7d',
       saltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10),
     },
     redis: {

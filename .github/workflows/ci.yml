@@ -38,6 +38,16 @@ jobs:
       - run: bun run db:generate
       - run: bun run test:ci
 
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun audit --production || true
+
   build:
     runs-on: ubuntu-latest
     needs: lint

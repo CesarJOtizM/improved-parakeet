@@ -1,6 +1,10 @@
+import { randomUUID } from 'crypto';
+
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService as NestJwtService } from '@nestjs/jwt';
+
+export type TokenType = 'access' | 'refresh';
 
 export interface IJwtPayload {
   sub: string; // user_id
@@ -9,6 +13,7 @@ export interface IJwtPayload {
   username: string;
   roles: string[];
   permissions: string[];
+  type: TokenType; // token type claim
   iat: number;
   jti: string; // unique token id
 }
@@ -47,11 +52,19 @@ export class JwtService {
   ) {}
 
   private get accessTokenExpiry(): string {
-    return this.configService.get('auth')?.jwt?.accessTokenExpiry ?? '8h';
+    return this.configService.get('auth')?.jwt?.accessTokenExpiry ?? '30m';
   }
 
   private get refreshTokenExpiry(): string {
-    return this.configService.get('auth')?.jwt?.refreshTokenExpiry ?? '15d';
+    return this.configService.get('auth')?.jwt?.refreshTokenExpiry ?? '7d';
+  }
+
+  private get refreshTokenSecret(): string {
+    return (
+      this.configService.get('JWT_REFRESH_SECRET') ||
+      this.configService.get('auth')?.jwt?.refreshSecret ||
+      this.configService.get('auth')?.jwt?.secret + '-refresh'
+    );
   }
 
   /**
@@ -79,6 +92,7 @@ export class JwtService {
         username,
         roles,
         permissions,
+        type: 'access',
         iat: Math.floor(now.getTime() / 1000),
         jti: this.generateTokenId(),
       };
@@ -90,6 +104,7 @@ export class JwtService {
         username,
         roles,
         permissions,
+        type: 'refresh',
         iat: Math.floor(now.getTime() / 1000),
         jti: this.generateTokenId(),
       };
@@ -99,6 +114,7 @@ export class JwtService {
       });
       const refreshToken = await this.nestJwtService.signAsync(refreshTokenPayload, {
         expiresIn: refreshTokenExpiry as import('ms').StringValue,
+        secret: this.refreshTokenSecret,
       });
 
       return {
@@ -139,6 +155,7 @@ export class JwtService {
         username,
         roles,
         permissions,
+        type: 'access',
         iat: Math.floor(now.getTime() / 1000),
         jti: this.generateTokenId(),
       };
@@ -160,15 +177,38 @@ export class JwtService {
   }
 
   /**
-   * Verifica y decodifica un token JWT
+   * Verifica y decodifica un access token JWT
    */
   async verifyToken(token: string): Promise<IJwtPayloadWithExp> {
     try {
       const payload = await this.nestJwtService.verifyAsync<IJwtPayloadWithExp>(token);
+      if (payload.type && payload.type !== 'access') {
+        throw new Error('Expected access token but received refresh token');
+      }
       return payload;
     } catch (error) {
       throw new Error(
         `Invalid JWT token: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
+      );
+    }
+  }
+
+  /**
+   * Verifica y decodifica un refresh token JWT usando el secreto de refresh
+   */
+  async verifyRefreshToken(token: string): Promise<IJwtPayloadWithExp> {
+    try {
+      const payload = await this.nestJwtService.verifyAsync<IJwtPayloadWithExp>(token, {
+        secret: this.refreshTokenSecret,
+      });
+      if (payload.type && payload.type !== 'refresh') {
+        throw new Error('Expected refresh token but received access token');
+      }
+      return payload;
+    } catch (error) {
+      throw new Error(
+        `Invalid refresh token: ${error instanceof Error ? error.message : 'Unknown error'}`,
         { cause: error }
       );
     }
@@ -186,10 +226,10 @@ export class JwtService {
   }
 
   /**
-   * Genera un ID único para el token
+   * Genera un ID único criptográficamente seguro para el token
    */
   private generateTokenId(): string {
-    return `jti_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return randomUUID();
   }
 
   /**

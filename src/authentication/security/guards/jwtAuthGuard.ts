@@ -124,16 +124,9 @@ export class JwtAuthGuard implements CanActivate {
   }
 
   private getClientIp(request: Request): string {
-    // Obtener IP del cliente considerando proxies
-    const forwardedFor = request.headers['x-forwarded-for'];
-    const realIp = request.headers['x-real-ip'];
-
-    if (typeof forwardedFor === 'string') return forwardedFor;
-    if (typeof realIp === 'string') return realIp;
-    if (request.connection?.remoteAddress) return request.connection.remoteAddress;
-    if (request.socket?.remoteAddress) return request.socket.remoteAddress;
+    // Use req.ip which respects trust proxy setting
     if (request.ip) return request.ip;
-
+    if (request.socket?.remoteAddress) return request.socket.remoteAddress;
     return 'unknown';
   }
 }

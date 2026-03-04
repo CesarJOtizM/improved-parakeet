@@ -2,6 +2,7 @@
 // Tests unitarios para el controller HTTP siguiendo AAA y Given-When-Then
 
 import { HealthCheckApplicationService } from '@application/healthCheck/healthCheck.application.service';
+import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { HealthCheckController } from '@interface/http/healthCheck/healthCheck.controller';
 import { Test, TestingModule } from '@nestjs/testing';
 
@@ -26,7 +27,10 @@ describe('HealthCheckController', () => {
           useValue: mockHealthCheckService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<HealthCheckController>(HealthCheckController);
   });

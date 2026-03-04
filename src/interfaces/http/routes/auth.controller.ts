@@ -6,7 +6,6 @@ import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import {
   Body,
   Controller,
-  Get,
   Headers,
   HttpCode,
   HttpStatus,
@@ -88,10 +87,7 @@ export class AuthController {
     @OrgId() orgId: string,
     @Req() req: Request
   ): Promise<ILoginResponse> {
-    // Log both the decorator value and the middleware value for debugging
-    this.logger.log(
-      `Login attempt from IP: ${ipAddress} - Decorator orgId: ${orgId} - Middleware req.orgId: ${req.orgId}`
-    );
+    this.logger.debug(`Login attempt from IP: ${ipAddress} - orgId: ${req.orgId || orgId}`);
 
     // Use req.orgId from middleware if available (it's validated), otherwise fallback to decorator
     const finalOrgId = req.orgId || orgId;
@@ -251,19 +247,5 @@ export class AuthController {
 
     const result = await this.logoutUseCase.execute(request);
     return resultToHttpResponse(result);
-  }
-
-  @Get('test-orgid')
-  @Public()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Test orgId extraction',
-    description: 'Test endpoint to verify orgId extraction logic',
-  })
-  async testOrgId(@OrgId() orgId: string): Promise<{ orgId: string; defaultOrgId: string }> {
-    return {
-      orgId,
-      defaultOrgId: process.env.DEFAULT_ORG_ID || 'dev-org',
-    };
   }
 }

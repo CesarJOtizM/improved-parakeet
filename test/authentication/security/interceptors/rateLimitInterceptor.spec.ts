@@ -177,9 +177,8 @@ describe('RateLimitInterceptor', () => {
       expect(mockRateLimitService.checkRateLimit).not.toHaveBeenCalled();
     });
 
-    it('Given: x-forwarded-for header When: IP rate limiting Then: should use forwarded IP', async () => {
-      // Arrange
-      mockRequest.headers['x-forwarded-for'] = '192.168.1.1';
+    it('Given: IP rate limiting When: request has req.ip Then: should use req.ip (respects trust proxy)', async () => {
+      // Arrange - IP extraction now uses req.ip which respects Express trust proxy
       mockReflector.get.mockReturnValue({ enabled: true, type: 'IP' });
       mockRateLimitService.checkRateLimit.mockResolvedValue({
         allowed: true,
@@ -192,40 +191,23 @@ describe('RateLimitInterceptor', () => {
 
       // Assert
       expect(mockRateLimitService.checkRateLimit).toHaveBeenCalledWith(
-        '192.168.1.1',
+        '127.0.0.1',
         'IP',
         undefined
       );
     });
 
-    it('Given: x-real-ip header When: IP rate limiting Then: should use real IP', async () => {
-      // Arrange
-      mockRequest.headers['x-real-ip'] = '10.0.0.1';
-      mockReflector.get.mockReturnValue({ enabled: true, type: 'IP' });
-      mockRateLimitService.checkRateLimit.mockResolvedValue({
-        allowed: true,
-        remaining: 99,
-        resetTime: new Date(),
-      });
-
-      // Act
-      await interceptor.intercept(mockExecutionContext, mockCallHandler);
-
-      // Assert
-      expect(mockRateLimitService.checkRateLimit).toHaveBeenCalledWith('10.0.0.1', 'IP', undefined);
-    });
-
-    it('Given: rate limit service error When: checking rate limit Then: should allow request', async () => {
+    it('Given: rate limit service error When: checking rate limit Then: should fail closed with 503', async () => {
       // Arrange
       mockReflector.get.mockReturnValue({ enabled: true, type: 'IP' });
       mockRateLimitService.checkRateLimit.mockRejectedValue(new Error('Service error'));
       const errorLoggerSpy = jest.spyOn((interceptor as any).logger, 'error');
 
-      // Act
-      const result = await interceptor.intercept(mockExecutionContext, mockCallHandler);
+      // Act & Assert - fail closed: deny request when rate limiting service is unavailable
+      await expect(interceptor.intercept(mockExecutionContext, mockCallHandler)).rejects.toThrow(
+        HttpException
+      );
 
-      // Assert
-      expect(result).toBeDefined();
       expect(errorLoggerSpy).toHaveBeenCalledWith(
         'Rate limiting interceptor error:',
         expect.any(Error)

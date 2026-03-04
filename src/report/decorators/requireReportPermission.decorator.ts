@@ -1,4 +1,4 @@
-import { RequirePermissions } from '@auth/security/decorators/auth.decorators';
+import { RequirePermissions } from '@shared/decorators/requirePermissions.decorator';
 import { SetMetadata, applyDecorators } from '@nestjs/common';
 
 import { getRequiredPermissionForReport } from '../domain/constants/reportPermissions.constants';
@@ -14,20 +14,16 @@ export const SetReportType = (reportType: string) => {
 
 /**
  * Decorator to require appropriate permission for a report type
- * Automatically determines if the report is sensitive and requires REPORTS:READ_SENSITIVE
- * or just REPORTS:READ
+ * Uses the unified PermissionGuard via shared RequirePermissions decorator
  */
 export const RequireReportPermission = (reportType: string) => {
   const requiredPermission = getRequiredPermissionForReport(reportType);
-  return applyDecorators(
-    SetReportType(reportType),
-    RequirePermissions({ permissions: [requiredPermission] })
-  );
+  return applyDecorators(SetReportType(reportType), RequirePermissions(requiredPermission));
 };
 
 /**
  * Decorator to require export permission
  */
 export const RequireExportPermission = () => {
-  return RequirePermissions({ permissions: ['REPORTS:EXPORT'] });
+  return RequirePermissions('REPORTS:EXPORT');
 };

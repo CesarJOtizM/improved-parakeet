@@ -3,6 +3,8 @@ import { JwtService } from '@auth/domain/services/jwtService';
 import { ConfigService } from '@nestjs/config';
 import { JwtService as NestJwtService } from '@nestjs/jwt';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 describe('JwtService', () => {
   let jwtService: JwtService;
   let mockNestJwtService: jest.Mocked<NestJwtService>;
@@ -32,11 +34,21 @@ describe('JwtService', () => {
     } as any;
 
     mockConfigService = {
-      get: jest.fn().mockReturnValue({
-        jwt: {
-          accessTokenExpiry: '8h',
-          refreshTokenExpiry: '15d',
-        },
+      get: jest.fn().mockImplementation((key: string) => {
+        if (key === 'auth') {
+          return {
+            jwt: {
+              accessTokenExpiry: '8h',
+              refreshTokenExpiry: '15d',
+              secret: 'test-secret',
+              refreshSecret: 'test-refresh-secret',
+            },
+          };
+        }
+        if (key === 'JWT_REFRESH_SECRET') {
+          return undefined;
+        }
+        return undefined;
       }),
     } as any;
 
@@ -82,8 +94,9 @@ describe('JwtService', () => {
           username: mockUsername,
           roles: mockRoles,
           permissions: mockPermissions,
+          type: 'access',
           iat: expect.any(Number),
-          jti: expect.stringMatching(/^jti_\d+_[a-z0-9]+$/),
+          jti: expect.stringMatching(UUID_REGEX),
         }),
         { expiresIn: '8h' }
       );
@@ -97,10 +110,11 @@ describe('JwtService', () => {
           username: mockUsername,
           roles: mockRoles,
           permissions: mockPermissions,
+          type: 'refresh',
           iat: expect.any(Number),
-          jti: expect.stringMatching(/^jti_\d+_[a-z0-9]+$/),
+          jti: expect.stringMatching(UUID_REGEX),
         }),
-        { expiresIn: '15d' }
+        { expiresIn: '15d', secret: 'test-refresh-secret' }
       );
     });
 
@@ -154,8 +168,9 @@ describe('JwtService', () => {
           username: mockUsername,
           roles: mockRoles,
           permissions: mockPermissions,
+          type: 'access',
           iat: expect.any(Number),
-          jti: expect.stringMatching(/^jti_\d+_[a-z0-9]+$/),
+          jti: expect.stringMatching(UUID_REGEX),
         }),
         { expiresIn: '8h' }
       );
@@ -163,7 +178,7 @@ describe('JwtService', () => {
   });
 
   describe('verifyToken', () => {
-    it('Given: valid token When: verifying token Then: should return decoded payload', async () => {
+    it('Given: valid access token When: verifying token Then: should return decoded payload', async () => {
       // Arrange
       const mockToken = 'valid-token-123';
       const mockPayload = {
@@ -173,9 +188,10 @@ describe('JwtService', () => {
         username: mockUsername,
         roles: mockRoles,
         permissions: mockPermissions,
+        type: 'access',
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 900, // 15 minutes from now
-        jti: 'jti_123456789_abc123',
+        jti: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
       };
 
       mockNestJwtService.verifyAsync.mockResolvedValue(mockPayload);
@@ -186,6 +202,54 @@ describe('JwtService', () => {
       // Assert
       expect(result).toEqual(mockPayload);
       expect(mockNestJwtService.verifyAsync).toHaveBeenCalledWith(mockToken);
+    });
+
+    it('Given: refresh token When: verifying as access token Then: should throw error', async () => {
+      // Arrange
+      const mockToken = 'refresh-token-used-as-access';
+      const mockPayload = {
+        sub: mockUserId,
+        org_id: mockOrgId,
+        email: mockEmail,
+        username: mockUsername,
+        roles: mockRoles,
+        permissions: mockPermissions,
+        type: 'refresh',
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 900,
+        jti: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      };
+
+      mockNestJwtService.verifyAsync.mockResolvedValue(mockPayload);
+
+      // Act & Assert
+      await expect(jwtService.verifyToken(mockToken)).rejects.toThrow(
+        'Invalid JWT token: Expected access token but received refresh token'
+      );
+    });
+
+    it('Given: token without type field When: verifying token Then: should return decoded payload', async () => {
+      // Arrange - legacy tokens without type field should still pass
+      const mockToken = 'legacy-token-123';
+      const mockPayload = {
+        sub: mockUserId,
+        org_id: mockOrgId,
+        email: mockEmail,
+        username: mockUsername,
+        roles: mockRoles,
+        permissions: mockPermissions,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 900,
+        jti: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      };
+
+      mockNestJwtService.verifyAsync.mockResolvedValue(mockPayload);
+
+      // Act
+      const result = await jwtService.verifyToken(mockToken);
+
+      // Assert
+      expect(result).toEqual(mockPayload);
     });
 
     it('Given: invalid token When: verifying token Then: should throw error', async () => {
@@ -211,6 +275,106 @@ describe('JwtService', () => {
     });
   });
 
+  describe('verifyRefreshToken', () => {
+    it('Given: valid refresh token When: verifying refresh token Then: should return decoded payload', async () => {
+      // Arrange
+      const mockToken = 'valid-refresh-token-123';
+      const mockPayload = {
+        sub: mockUserId,
+        org_id: mockOrgId,
+        email: mockEmail,
+        username: mockUsername,
+        roles: mockRoles,
+        permissions: mockPermissions,
+        type: 'refresh',
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 604800, // 7 days
+        jti: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      };
+
+      mockNestJwtService.verifyAsync.mockResolvedValue(mockPayload);
+
+      // Act
+      const result = await jwtService.verifyRefreshToken(mockToken);
+
+      // Assert
+      expect(result).toEqual(mockPayload);
+      expect(mockNestJwtService.verifyAsync).toHaveBeenCalledWith(mockToken, {
+        secret: 'test-refresh-secret',
+      });
+    });
+
+    it('Given: access token When: verifying as refresh token Then: should throw error', async () => {
+      // Arrange
+      const mockToken = 'access-token-used-as-refresh';
+      const mockPayload = {
+        sub: mockUserId,
+        org_id: mockOrgId,
+        email: mockEmail,
+        username: mockUsername,
+        roles: mockRoles,
+        permissions: mockPermissions,
+        type: 'access',
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        jti: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      };
+
+      mockNestJwtService.verifyAsync.mockResolvedValue(mockPayload);
+
+      // Act & Assert
+      await expect(jwtService.verifyRefreshToken(mockToken)).rejects.toThrow(
+        'Invalid refresh token: Expected refresh token but received access token'
+      );
+    });
+
+    it('Given: token without type field When: verifying as refresh token Then: should return decoded payload', async () => {
+      // Arrange - legacy tokens without type field should still pass
+      const mockToken = 'legacy-refresh-token-123';
+      const mockPayload = {
+        sub: mockUserId,
+        org_id: mockOrgId,
+        email: mockEmail,
+        username: mockUsername,
+        roles: mockRoles,
+        permissions: mockPermissions,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 604800,
+        jti: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      };
+
+      mockNestJwtService.verifyAsync.mockResolvedValue(mockPayload);
+
+      // Act
+      const result = await jwtService.verifyRefreshToken(mockToken);
+
+      // Assert
+      expect(result).toEqual(mockPayload);
+    });
+
+    it('Given: invalid refresh token When: verifying refresh token Then: should throw error', async () => {
+      // Arrange
+      const mockToken = 'invalid-refresh-token-123';
+      mockNestJwtService.verifyAsync.mockRejectedValue(new Error('Invalid token signature'));
+
+      // Act & Assert
+      await expect(jwtService.verifyRefreshToken(mockToken)).rejects.toThrow(
+        'Invalid refresh token: Invalid token signature'
+      );
+    });
+
+    it('Given: expired refresh token When: verifying refresh token Then: should throw error', async () => {
+      // Arrange
+      const mockToken = 'expired-refresh-token-123';
+      mockNestJwtService.verifyAsync.mockRejectedValue(new Error('Token expired'));
+
+      // Act & Assert
+      await expect(jwtService.verifyRefreshToken(mockToken)).rejects.toThrow(
+        'Invalid refresh token: Token expired'
+      );
+    });
+  });
+
   describe('decodeToken', () => {
     it('Given: valid token When: decoding token Then: should return decoded payload', () => {
       // Arrange
@@ -222,9 +386,10 @@ describe('JwtService', () => {
         username: mockUsername,
         roles: mockRoles,
         permissions: mockPermissions,
+        type: 'access',
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 900,
-        jti: 'jti_123456789_abc123',
+        jti: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
       };
 
       mockNestJwtService.decode.mockReturnValue(mockPayload);
@@ -309,9 +474,10 @@ describe('JwtService', () => {
         username: mockUsername,
         roles: mockRoles,
         permissions: mockPermissions,
+        type: 'access' as const,
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 180, // 3 minutes from now
-        jti: 'jti_123456789_abc123',
+        jti: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
       };
 
       // Act
@@ -330,9 +496,10 @@ describe('JwtService', () => {
         username: mockUsername,
         roles: mockRoles,
         permissions: mockPermissions,
+        type: 'access' as const,
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 600, // 10 minutes from now
-        jti: 'jti_123456789_abc123',
+        jti: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
       };
 
       // Act
@@ -351,9 +518,10 @@ describe('JwtService', () => {
         username: mockUsername,
         roles: mockRoles,
         permissions: mockPermissions,
+        type: 'access' as const,
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) - 60, // 1 minute ago
-        jti: 'jti_123456789_abc123',
+        jti: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
       };
 
       // Act
@@ -372,9 +540,10 @@ describe('JwtService', () => {
         username: mockUsername,
         roles: mockRoles,
         permissions: mockPermissions,
+        type: 'access' as const,
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 300, // 5 minutes from now
-        jti: 'jti_123456789_abc123',
+        jti: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
       };
 
       // Act
@@ -386,14 +555,14 @@ describe('JwtService', () => {
   });
 
   describe('generateTokenId', () => {
-    it('Given: service When: generating token ID Then: should return unique ID', () => {
+    it('Given: service When: generating token ID Then: should return unique UUID', () => {
       // Act
       const result1 = (jwtService as unknown as { generateTokenId(): string }).generateTokenId();
       const result2 = (jwtService as unknown as { generateTokenId(): string }).generateTokenId();
 
       // Assert
-      expect(result1).toMatch(/^jti_\d+_[a-z0-9]+$/);
-      expect(result2).toMatch(/^jti_\d+_[a-z0-9]+$/);
+      expect(result1).toMatch(UUID_REGEX);
+      expect(result2).toMatch(UUID_REGEX);
       expect(result1).not.toBe(result2);
     });
   });

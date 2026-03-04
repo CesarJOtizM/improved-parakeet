@@ -15,12 +15,15 @@ describe('JwtStrategy', () => {
     username: 'testuser',
     roles: ['USER', 'ADMIN'],
     permissions: ['READ', 'WRITE'],
+    type: 'access',
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 3600,
     jti: 'token-123',
   };
 
   beforeEach(() => {
+    process.env.JWT_SECRET = 'test-secret-key-for-ci-only-32chars!';
+
     mockTokenBlacklistService = {
       isTokenBlacklisted: jest.fn(),
     };

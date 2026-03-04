@@ -1,4 +1,6 @@
 import './instrument';
+import helmet from 'helmet';
+
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -6,11 +8,13 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { validationConfig } from '@shared/config';
 import { GlobalExceptionFilter } from '@shared/filters/globalExceptionFilter';
 import { AppModule } from '@src/app.module';
-import { NextFunction, Request, Response } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const logger = new Logger('Bootstrap');
+
+  // Trust first proxy (e.g., Render, Vercel, load balancer)
+  app.set('trust proxy', 1);
 
   // Enable extended query parser for nested objects like dateRange[startDate]
   app.set('query parser', 'extended');
@@ -37,14 +41,25 @@ async function bootstrap() {
     ],
   });
 
-  // Security headers
-  app.use((_req: Request, res: Response, next: NextFunction) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-    next();
-  });
+  // Security headers via Helmet
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:'],
+          connectSrc: ["'self'"],
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          frameSrc: ["'none'"],
+        },
+      },
+      crossOriginEmbedderPolicy: false, // Disabled for API
+      hsts: { maxAge: 31536000, includeSubDomains: true },
+    })
+  );
 
   // Swagger — only enabled when SWAGGER_ENABLED=true (disabled by default in production)
   if (process.env.SWAGGER_ENABLED === 'true') {

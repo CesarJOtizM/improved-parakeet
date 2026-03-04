@@ -79,9 +79,11 @@ import { createCacheModuleOptions, FunctionalCacheService } from '@shared/infras
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const auth = configService.get('auth');
-        return {
-          secret: auth?.jwt?.secret || 'your-super-secret-jwt-key-change-in-production',
-        };
+        const secret = auth?.jwt?.secret;
+        if (!secret) {
+          throw new Error('JWT_SECRET environment variable is required');
+        }
+        return { secret };
       },
       inject: [ConfigService],
     }),

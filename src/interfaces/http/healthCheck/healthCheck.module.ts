@@ -2,13 +2,14 @@
 // Configura las dependencias del health check
 
 import { HealthCheckApplicationService } from '@application/healthCheck/healthCheck.application.service';
+import { AuthenticationModule } from '@auth/authentication.module';
 import { PrismaModule } from '@infrastructure/database/prisma.module';
 import { HealthCheckAdapter } from '@infrastructure/healthCheck/healthCheck.adapter';
 import { HealthCheckController } from '@interface/http/healthCheck/healthCheck.controller';
 import { Module } from '@nestjs/common';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, AuthenticationModule],
   controllers: [HealthCheckController],
   providers: [
     HealthCheckApplicationService,

@@ -57,10 +57,10 @@ export class RefreshTokenUseCase {
         return err(new RateLimitError('Too many refresh attempts. Please try again later.'));
       }
 
-      // Verificar y decodificar refresh token
+      // Verificar y decodificar refresh token (uses dedicated refresh secret)
       let refreshTokenPayload: IJwtPayloadWithExp;
       try {
-        refreshTokenPayload = await this.jwtService.verifyToken(request.refreshToken);
+        refreshTokenPayload = await this.jwtService.verifyRefreshToken(request.refreshToken);
       } catch (_error) {
         // SECURITY: Log details but return generic error
         this.logger.warn('Invalid refresh token provided');
@@ -131,18 +131,6 @@ export class RefreshTokenUseCase {
       activeSession.refreshToken(newTokenPair.accessToken);
       activeSession.update({ expiresAt: newTokenPair.refreshTokenExpiresAt });
       await this.sessionRepository.save(activeSession);
-
-      // Extraer JTI del nuevo refresh token para tracking
-      const newRefreshTokenPayload = this.jwtService.decodeToken(newTokenPair.refreshToken);
-      if (newRefreshTokenPayload) {
-        await this.tokenBlacklistService.blacklistToken(
-          newRefreshTokenPayload.jti,
-          user.id,
-          user.orgId,
-          newTokenPair.refreshTokenExpiresAt,
-          'SECURITY'
-        );
-      }
 
       this.logger.log(`Token refreshed successfully for user: ${user.id}`);
 

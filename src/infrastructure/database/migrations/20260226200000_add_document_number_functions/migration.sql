@@ -15,7 +15,7 @@ BEGIN
 
   RETURN 'SALE-' || p_year::TEXT || '-' || LPAD(v_sequence::TEXT, 3, '0');
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 -- CreateFunction: get_next_return_number
 -- Atomically increments the sequence for returns and returns a formatted return number
@@ -33,4 +33,4 @@ BEGIN
 
   RETURN 'RETURN-' || p_year::TEXT || '-' || LPAD(v_sequence::TEXT, 3, '0');
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;

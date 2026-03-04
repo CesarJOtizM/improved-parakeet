@@ -19,8 +19,8 @@ export interface ILoginCredentials {
 
 export class AuthenticationService {
   private static readonly SALT_ROUNDS = 12;
-  private static readonly ACCESS_TOKEN_EXPIRY_MINUTES = 8 * 60; // 8 horas
-  private static readonly REFRESH_TOKEN_EXPIRY_DAYS = 15;
+  private static readonly ACCESS_TOKEN_EXPIRY_MINUTES = 30; // 30 minutes
+  private static readonly REFRESH_TOKEN_EXPIRY_DAYS = 7;
 
   /**
    * Valida las credenciales de login de un usuario usando bcrypt
@@ -67,44 +67,6 @@ export class AuthenticationService {
    */
   public static validateJwtToken(token: JwtToken): boolean {
     return token.isValid();
-  }
-
-  /**
-   * Crea tokens de acceso y refresh con configuración estándar
-   */
-  public static createAuthTokens(
-    userId: string,
-    accessTokenExpiryMinutes: number = this.ACCESS_TOKEN_EXPIRY_MINUTES,
-    refreshTokenExpiryDays: number = this.REFRESH_TOKEN_EXPIRY_DAYS
-  ): {
-    accessToken: JwtToken;
-    refreshToken: JwtToken;
-  } {
-    // En un caso real, aquí se generaría el JWT real
-    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
-    const accessPayload = Buffer.from(
-      JSON.stringify({
-        sub: userId,
-        type: 'access',
-        iat: Date.now(),
-      })
-    ).toString('base64');
-    const refreshPayload = Buffer.from(
-      JSON.stringify({
-        sub: userId,
-        type: 'refresh',
-        iat: Date.now(),
-      })
-    ).toString('base64');
-    const signature = Buffer.from('signature').toString('base64');
-
-    const accessTokenValue = `${header}.${accessPayload}.${signature}`;
-    const refreshTokenValue = `${header}.${refreshPayload}.${signature}`;
-
-    const accessToken = JwtToken.createAccessToken(accessTokenValue, accessTokenExpiryMinutes);
-    const refreshToken = JwtToken.createRefreshToken(refreshTokenValue, refreshTokenExpiryDays);
-
-    return { accessToken, refreshToken };
   }
 
   /**

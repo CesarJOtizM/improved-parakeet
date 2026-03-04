@@ -5,7 +5,8 @@ import {
   GetReportsUseCase,
 } from '@application/reportUseCases';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
-import { PermissionsGuard } from '@auth/security/guards/permissionsGuard';
+import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
+import { PermissionGuard } from '@shared/guards/permission.guard';
 import {
   Controller,
   Get,
@@ -35,7 +36,7 @@ import type { Response } from 'express';
 
 @ApiTags('Reports')
 @Controller('reports')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
+@UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
 @UseInterceptors(ReportLoggingInterceptor)
 @ApiBearerAuth()
 export class ReportController {

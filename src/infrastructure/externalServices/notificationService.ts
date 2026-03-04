@@ -26,6 +26,12 @@ export class NotificationService implements INotificationService {
 
   constructor(private readonly emailService: EmailService) {}
 
+  private getAlertRecipient(): string {
+    return (
+      process.env.STOCK_ALERT_EMAIL || process.env.RESEND_FROM_EMAIL || 'admin@nevadainventory.com'
+    );
+  }
+
   async sendLowStockAlert(notification: ILowStockAlertNotification): Promise<void> {
     await this.resilientNotify.execute(async () => {
       this.logger.log('Sending low stock alert notification', {
@@ -50,7 +56,7 @@ export class NotificationService implements INotificationService {
       });
 
       await this.emailService.sendEmail({
-        to: 'admin@nevadainventory.com',
+        to: this.getAlertRecipient(),
         subject,
         body: html,
         template: 'low-stock-alert',
@@ -84,7 +90,7 @@ export class NotificationService implements INotificationService {
       });
 
       await this.emailService.sendEmail({
-        to: 'admin@nevadainventory.com',
+        to: this.getAlertRecipient(),
         subject,
         body: html,
         template: 'stock-threshold-exceeded',

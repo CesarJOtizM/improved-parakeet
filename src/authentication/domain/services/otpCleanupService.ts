@@ -1,3 +1,4 @@
+import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
@@ -7,7 +8,26 @@ import type { IOtpRepository } from '@auth/domain/repositories';
 export class OtpCleanupService {
   private readonly logger = new Logger(OtpCleanupService.name);
 
-  constructor(@Inject('OtpRepository') private readonly otpRepository: IOtpRepository) {}
+  constructor(
+    @Inject('OtpRepository') private readonly otpRepository: IOtpRepository,
+    private readonly prisma: PrismaService
+  ) {}
+
+  /**
+   * Gets all active organization IDs from the database
+   */
+  private async getActiveOrgIds(): Promise<string[]> {
+    try {
+      const orgs = await this.prisma.organization.findMany({
+        where: { isActive: true },
+        select: { id: true },
+      });
+      return orgs.map(o => o.id);
+    } catch (error) {
+      this.logger.warn('Failed to fetch orgs for OTP cleanup, falling back to default', error);
+      return ['default'];
+    }
+  }
 
   /**
    * Limpia OTPs expirados cada hora
@@ -17,9 +37,7 @@ export class OtpCleanupService {
     try {
       this.logger.log('Starting cleanup of expired OTPs...');
 
-      // Get all organizations (in a real case, this would come from an organization service)
-      const orgIds = ['default']; // For now, only one default organization
-
+      const orgIds = await this.getActiveOrgIds();
       let totalDeleted = 0;
 
       for (const orgId of orgIds) {
@@ -49,12 +67,10 @@ export class OtpCleanupService {
     try {
       this.logger.log('Starting cleanup of used OTPs...');
 
-      const orgIds = ['default'];
-
+      const orgIds = await this.getActiveOrgIds();
       let totalDeleted = 0;
 
       for (const orgId of orgIds) {
-        // Delete used OTPs that are older than 24 hours
         const deletedCount = await this.otpRepository.deleteUsedOtp(orgId, 24);
         totalDeleted += deletedCount;
 

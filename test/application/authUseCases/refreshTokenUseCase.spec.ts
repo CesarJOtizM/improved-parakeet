@@ -29,6 +29,7 @@ describe('RefreshTokenUseCase', () => {
 
     mockJwtService = {
       verifyToken: jest.fn(),
+      verifyRefreshToken: jest.fn(),
       generateTokenPair: jest.fn(),
       decodeToken: jest.fn(),
       refreshAccessToken: jest.fn(),
@@ -162,13 +163,14 @@ describe('RefreshTokenUseCase', () => {
         resetTime: new Date(Date.now() + 60000),
         blocked: false,
       });
-      mockJwtService.verifyToken.mockResolvedValue({
+      mockJwtService.verifyRefreshToken.mockResolvedValue({
         sub: mockUserId,
         org_id: mockOrgId,
         email: 'test@example.com',
         username: 'testuser',
         roles: [],
         permissions: [],
+        type: 'refresh',
         iat: Math.floor(Date.now() / 1000),
         jti: mockJti,
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -251,7 +253,7 @@ describe('RefreshTokenUseCase', () => {
         resetTime: new Date(Date.now() + 60000),
         blocked: false,
       });
-      mockJwtService.verifyToken.mockRejectedValue(new Error('Invalid token'));
+      mockJwtService.verifyRefreshToken.mockRejectedValue(new Error('Invalid token'));
 
       // Act
       const result = await useCase.execute(validRequest);
@@ -276,13 +278,14 @@ describe('RefreshTokenUseCase', () => {
         resetTime: new Date(Date.now() + 60000),
         blocked: false,
       });
-      mockJwtService.verifyToken.mockResolvedValue({
+      mockJwtService.verifyRefreshToken.mockResolvedValue({
         sub: mockUserId,
         org_id: mockOrgId,
         email: 'test@example.com',
         username: 'testuser',
         roles: [],
         permissions: [],
+        type: 'refresh',
         iat: Math.floor(Date.now() / 1000),
         jti: mockJti,
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -312,13 +315,14 @@ describe('RefreshTokenUseCase', () => {
         resetTime: new Date(Date.now() + 60000),
         blocked: false,
       });
-      mockJwtService.verifyToken.mockResolvedValue({
+      mockJwtService.verifyRefreshToken.mockResolvedValue({
         sub: mockUserId,
         org_id: mockOrgId,
         email: 'test@example.com',
         username: 'testuser',
         roles: [],
         permissions: [],
+        type: 'refresh',
         iat: Math.floor(Date.now() / 1000),
         jti: mockJti,
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -349,13 +353,14 @@ describe('RefreshTokenUseCase', () => {
         resetTime: new Date(Date.now() + 60000),
         blocked: false,
       });
-      mockJwtService.verifyToken.mockResolvedValue({
+      mockJwtService.verifyRefreshToken.mockResolvedValue({
         sub: mockUserId,
         org_id: mockOrgId,
         email: 'test@example.com',
         username: 'testuser',
         roles: [],
         permissions: [],
+        type: 'refresh',
         iat: Math.floor(Date.now() / 1000),
         jti: mockJti,
         exp: Math.floor(Date.now() / 1000) + 3600,
@@ -392,13 +397,14 @@ describe('RefreshTokenUseCase', () => {
         resetTime: new Date(Date.now() + 60000),
         blocked: false,
       });
-      mockJwtService.verifyToken.mockResolvedValue({
+      mockJwtService.verifyRefreshToken.mockResolvedValue({
         sub: mockUserId,
         org_id: mockOrgId,
         email: 'test@example.com',
         username: 'testuser',
         roles: [],
         permissions: [],
+        type: 'refresh',
         iat: Math.floor(Date.now() / 1000),
         jti: mockJti,
         exp: Math.floor(Date.now() / 1000) + 3600,

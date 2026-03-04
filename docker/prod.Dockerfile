@@ -1,5 +1,5 @@
 # Multi-stage build para optimizar el tamaño final
-FROM oven/bun:1-alpine AS builder
+FROM oven/bun:1.1-alpine AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY . .
 RUN bun run db:generate && bun run build
 
 # Production stage
-FROM oven/bun:1-alpine AS production
+FROM oven/bun:1.1-alpine AS production
 
 WORKDIR /app
 

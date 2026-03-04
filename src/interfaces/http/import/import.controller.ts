@@ -79,7 +79,7 @@ export class ImportController {
   @Post('preview')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(SYSTEM_PERMISSIONS.PRODUCTS_IMPORT)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
   @ApiOperation({ summary: 'Preview and validate import file without persisting' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -121,7 +121,7 @@ export class ImportController {
   @Post('execute')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(SYSTEM_PERMISSIONS.PRODUCTS_IMPORT)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
   @ApiOperation({
     summary: 'Execute complete import process (validate + create + process) in one operation',
   })
@@ -205,7 +205,7 @@ export class ImportController {
   @Post(':id/validate')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(SYSTEM_PERMISSIONS.PRODUCTS_IMPORT)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
   @ApiOperation({ summary: 'Validate an import batch with uploaded file' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({

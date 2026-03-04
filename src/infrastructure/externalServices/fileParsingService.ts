@@ -31,6 +31,10 @@ export class FileParsingService implements IFileParsingService {
   ];
   private readonly ALLOWED_EXTENSIONS = ['.xlsx', '.xls', '.csv'];
 
+  // Magic bytes for file type detection (independent of client-provided mimetype)
+  private readonly XLSX_SIGNATURE = [0x50, 0x4b, 0x03, 0x04]; // PK.. (ZIP/XLSX)
+  private readonly XLS_SIGNATURE = [0xd0, 0xcf, 0x11, 0xe0]; // OLE compound doc
+
   validateFileFormat(file: Express.Multer.File): IFileValidationResult {
     const errors: string[] = [];
 
@@ -55,9 +59,23 @@ export class FileParsingService implements IFileParsingService {
       errors.push(`Invalid file extension. Allowed: ${this.ALLOWED_EXTENSIONS.join(', ')}`);
     }
 
-    // Validate MIME type
+    // Validate MIME type (client-provided, first check)
     if (file.mimetype && !this.ALLOWED_MIME_TYPES.includes(file.mimetype)) {
       errors.push(`Invalid file type. Allowed: ${this.ALLOWED_MIME_TYPES.join(', ')}`);
+    }
+
+    // Validate file content via magic bytes (server-side, tamper-proof)
+    if (file.buffer && file.buffer.length >= 4) {
+      const detectedType = this.detectFileType(file.buffer);
+      if (extension === '.csv' && detectedType !== 'csv') {
+        errors.push('File content does not match CSV format (binary file detected)');
+      } else if ((extension === '.xlsx' || extension === '.xls') && detectedType === 'csv') {
+        errors.push('File content does not match Excel format (text file detected)');
+      } else if (extension === '.xlsx' && detectedType === 'xls') {
+        errors.push('File content indicates legacy .xls format but extension is .xlsx');
+      } else if (extension === '.xls' && detectedType === 'xlsx') {
+        errors.push('File content indicates .xlsx format but extension is .xls');
+      }
     }
 
     const fileType = extension === '.csv' ? 'csv' : 'excel';
@@ -68,6 +86,21 @@ export class FileParsingService implements IFileParsingService {
       fileType: errors.length === 0 ? fileType : undefined,
       maxSize: this.MAX_FILE_SIZE,
     };
+  }
+
+  private detectFileType(buffer: Buffer): 'xlsx' | 'xls' | 'csv' {
+    if (this.bufferStartsWith(buffer, this.XLSX_SIGNATURE)) {
+      return 'xlsx';
+    }
+    if (this.bufferStartsWith(buffer, this.XLS_SIGNATURE)) {
+      return 'xls';
+    }
+    return 'csv';
+  }
+
+  private bufferStartsWith(buffer: Buffer, signature: number[]): boolean {
+    if (buffer.length < signature.length) return false;
+    return signature.every((byte, i) => buffer[i] === byte);
   }
 
   async parseFile(file: Express.Multer.File): Promise<IParsedFileData> {

@@ -78,29 +78,31 @@ describe('TenantMiddleware', () => {
       expect(mockNext).toHaveBeenCalledWith();
     });
 
-    it('Given: orgId in query When: organization exists Then: should set context', async () => {
-      // Arrange
+    it('Given: orgId in query When: middleware runs Then: should ignore query param and not set context', async () => {
+      // Arrange - orgId in query should be ignored for security (prevent tenant-hopping)
       mockRequest.query = { orgId: 'org-123' };
-      mockPrismaService.organization.findFirst.mockResolvedValue(mockOrganization);
 
       // Act
       await middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert
-      expect((mockRequest as any).organization).toEqual(mockOrganization);
+      expect((mockRequest as any).organization).toBeUndefined();
+      expect((mockRequest as any).orgId).toBeUndefined();
+      expect(mockPrismaService.organization.findFirst).not.toHaveBeenCalled();
       expect(mockNext).toHaveBeenCalledWith();
     });
 
-    it('Given: orgId in body When: organization exists Then: should set context', async () => {
-      // Arrange
+    it('Given: orgId in body When: middleware runs Then: should ignore body param and not set context', async () => {
+      // Arrange - orgId in body should be ignored for security (prevent tenant-hopping)
       mockRequest.body = { orgId: 'org-123' };
-      mockPrismaService.organization.findFirst.mockResolvedValue(mockOrganization);
 
       // Act
       await middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert
-      expect((mockRequest as any).organization).toEqual(mockOrganization);
+      expect((mockRequest as any).organization).toBeUndefined();
+      expect((mockRequest as any).orgId).toBeUndefined();
+      expect(mockPrismaService.organization.findFirst).not.toHaveBeenCalled();
       expect(mockNext).toHaveBeenCalledWith();
     });
 

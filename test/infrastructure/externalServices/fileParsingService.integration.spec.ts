@@ -110,6 +110,60 @@ describe('FileParsingService Integration Tests', () => {
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('File is required');
     });
+
+    it('Given: CSV content with .xlsx extension When: validating format Then: should reject magic bytes mismatch', () => {
+      // Arrange - text content pretending to be xlsx
+      const csvContent = 'SKU,Name\nPROD-001,Test';
+      const buffer = Buffer.from(csvContent, 'utf-8');
+      const file = {
+        fieldname: 'file',
+        originalname: 'fake.xlsx',
+        encoding: '7bit',
+        mimetype: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        buffer,
+        size: buffer.length,
+      } as Express.Multer.File;
+
+      // Act
+      const result = service.validateFileFormat(file);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some(e => e.includes('does not match Excel format'))).toBe(true);
+    });
+
+    it('Given: binary Excel content with .csv extension When: validating format Then: should reject magic bytes mismatch', async () => {
+      // Arrange - real xlsx content with csv extension
+      const excelFile = await generateExcelFileAsync({
+        headers: ['SKU'],
+        rows: [{ SKU: 'TEST' }],
+        filename: 'fake.csv',
+        mimetype: 'text/csv',
+      });
+
+      // Act
+      const result = service.validateFileFormat(excelFile);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some(e => e.includes('does not match CSV format'))).toBe(true);
+    });
+
+    it('Given: valid xlsx magic bytes with .xlsx extension When: validating format Then: should pass', async () => {
+      // Arrange
+      const file = await generateExcelFileAsync({
+        headers: ['SKU', 'Name'],
+        rows: [{ SKU: 'PROD-001', Name: 'Test' }],
+        filename: 'valid.xlsx',
+      });
+
+      // Act
+      const result = service.validateFileFormat(file);
+
+      // Assert
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
   });
 
   describe('parseFile', () => {

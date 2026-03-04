@@ -314,95 +314,6 @@ describe('AuthenticationService', () => {
     });
   });
 
-  describe('createAuthTokens', () => {
-    it('Given: userId with default expiry When: creating auth tokens Then: should return access and refresh tokens', () => {
-      // Arrange
-      const userId = mockUserId;
-
-      // Act
-      const result = AuthenticationService.createAuthTokens(userId);
-
-      // Assert
-      expect(result.accessToken).toBeInstanceOf(JwtToken);
-      expect(result.refreshToken).toBeInstanceOf(JwtToken);
-      expect(result.accessToken.isAccessToken()).toBe(true);
-      expect(result.refreshToken.isRefreshToken()).toBe(true);
-      expect(result.accessToken.getValue()).toMatch(
-        /^[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+$/
-      ); // JWT format (base64 with padding)
-      expect(result.refreshToken.getValue()).toMatch(
-        /^[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+$/
-      ); // JWT format (base64 with padding)
-      // Verify that userId is encoded in the JWT payload
-      const accessTokenPayload = result.accessToken.getValue().split('.')[1];
-      const refreshTokenPayload = result.refreshToken.getValue().split('.')[1];
-      const decodedAccessPayload = JSON.parse(Buffer.from(accessTokenPayload, 'base64').toString());
-      const decodedRefreshPayload = JSON.parse(
-        Buffer.from(refreshTokenPayload, 'base64').toString()
-      );
-      expect(decodedAccessPayload.sub).toBe(userId);
-      expect(decodedRefreshPayload.sub).toBe(userId);
-    });
-
-    it('Given: multiple token generations When: creating auth tokens Then: should generate tokens with same structure', () => {
-      // Arrange
-      const userId = mockUserId;
-
-      // Act
-      const result1 = AuthenticationService.createAuthTokens(userId);
-      const result2 = AuthenticationService.createAuthTokens(userId);
-
-      // Assert
-      // Tokens may have same iat if generated quickly, but structure should be valid
-      expect(result1.accessToken).toBeInstanceOf(JwtToken);
-      expect(result2.accessToken).toBeInstanceOf(JwtToken);
-      expect(result1.refreshToken).toBeInstanceOf(JwtToken);
-      expect(result2.refreshToken).toBeInstanceOf(JwtToken);
-      // Verify tokens have correct format
-      expect(result1.accessToken.getValue()).toMatch(
-        /^[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+$/
-      );
-      expect(result2.accessToken.getValue()).toMatch(
-        /^[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+$/
-      );
-    });
-
-    it('Given: userId with custom expiry When: creating auth tokens Then: should return tokens with custom expiry', () => {
-      // Arrange
-      const userId = mockUserId;
-      const customAccessExpiry = 30; // 30 minutes
-      const customRefreshExpiry = 14; // 14 days
-
-      // Act
-      const result = AuthenticationService.createAuthTokens(
-        userId,
-        customAccessExpiry,
-        customRefreshExpiry
-      );
-
-      // Assert
-      expect(result.accessToken).toBeInstanceOf(JwtToken);
-      expect(result.refreshToken).toBeInstanceOf(JwtToken);
-      expect(result.accessToken.isAccessToken()).toBe(true);
-      expect(result.refreshToken.isRefreshToken()).toBe(true);
-      expect(result.accessToken.getValue()).toMatch(
-        /^[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+$/
-      ); // JWT format (base64 with padding)
-      expect(result.refreshToken.getValue()).toMatch(
-        /^[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+$/
-      ); // JWT format (base64 with padding)
-      // Verify that userId is encoded in the JWT payload
-      const accessTokenPayload = result.accessToken.getValue().split('.')[1];
-      const refreshTokenPayload = result.refreshToken.getValue().split('.')[1];
-      const decodedAccessPayload = JSON.parse(Buffer.from(accessTokenPayload, 'base64').toString());
-      const decodedRefreshPayload = JSON.parse(
-        Buffer.from(refreshTokenPayload, 'base64').toString()
-      );
-      expect(decodedAccessPayload.sub).toBe(userId);
-      expect(decodedRefreshPayload.sub).toBe(userId);
-    });
-  });
-
   describe('hashPassword', () => {
     it('Given: valid password When: hashing password Then: should return hashed password', async () => {
       // Arrange
@@ -734,8 +645,8 @@ describe('AuthenticationService', () => {
       const result = AuthenticationService.getTokenConfig();
 
       // Assert
-      expect(result.accessTokenExpiryMinutes).toBe(480);
-      expect(result.refreshTokenExpiryDays).toBe(15);
+      expect(result.accessTokenExpiryMinutes).toBe(30);
+      expect(result.refreshTokenExpiryDays).toBe(7);
     });
   });
 });

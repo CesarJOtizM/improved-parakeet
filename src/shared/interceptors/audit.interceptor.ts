@@ -14,6 +14,37 @@ import { catchError, tap } from 'rxjs/operators';
 import type { IAuditLogRepository } from '@shared/audit/domain/repositories/auditLogRepository.interface';
 import type { IAuthenticatedUser, IOrganizationContext } from '@shared/types/http.types';
 
+const SENSITIVE_FIELDS = new Set([
+  'password',
+  'newPassword',
+  'currentPassword',
+  'confirmPassword',
+  'otpCode',
+  'otp',
+  'accessToken',
+  'refreshToken',
+  'token',
+  'secret',
+  'apiKey',
+  'authorization',
+]);
+
+function redactSensitiveFields(obj: unknown): unknown {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(redactSensitiveFields);
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    if (SENSITIVE_FIELDS.has(key)) {
+      result[key] = '[REDACTED]';
+    } else if (typeof value === 'object' && value !== null) {
+      result[key] = redactSensitiveFields(value);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
   private readonly logger = new Logger(AuditInterceptor.name);
@@ -61,8 +92,8 @@ export class AuditInterceptor implements NestInterceptor {
             orgId: organization?.id,
             ipAddress: Array.isArray(ipAddress) ? ipAddress[0] : ipAddress,
             userAgent,
-            requestBody: { body, query, params },
-            responseBody: response,
+            requestBody: redactSensitiveFields({ body, query, params }),
+            responseBody: redactSensitiveFields(response),
           },
           this.auditRepository
         );
@@ -87,7 +118,7 @@ export class AuditInterceptor implements NestInterceptor {
             orgId: organization?.id,
             ipAddress: Array.isArray(ipAddress) ? ipAddress[0] : ipAddress,
             userAgent,
-            requestBody: { body, query, params },
+            requestBody: redactSensitiveFields({ body, query, params }),
             responseBody: { error: error.message },
           },
           this.auditRepository

@@ -24,6 +24,7 @@ describe('JwtAuthGuard', () => {
     username: 'testuser',
     roles: ['USER'],
     permissions: ['USERS:READ'],
+    type: 'access' as const,
     iat: Math.floor(Date.now() / 1000),
     jti: 'jti_123456789_abc123',
     exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
@@ -393,103 +394,16 @@ describe('JwtAuthGuard', () => {
   });
 
   describe('getClientIp', () => {
-    it('Given: request with x-forwarded-for When: getting client IP Then: should return forwarded IP', () => {
-      // Arrange
+    it('Given: request with ip property When: getting client IP Then: should return IP from trust proxy', () => {
+      // Arrange - uses req.ip which respects Express trust proxy setting
       const request = {
-        headers: { 'x-forwarded-for': '10.0.0.1' },
         ip: '192.168.1.1',
       };
 
       // Act
       const result = (
         jwtAuthGuard as unknown as {
-          getClientIp(request: {
-            headers: { 'x-forwarded-for'?: string; 'x-real-ip'?: string };
-            ip: string;
-          }): string;
-        }
-      ).getClientIp(request);
-
-      // Assert
-      expect(result).toBe('10.0.0.1');
-    });
-
-    it('Given: request with x-real-ip When: getting client IP Then: should return real IP', () => {
-      // Arrange
-      const request = {
-        headers: { 'x-real-ip': '10.0.0.2' },
-        ip: '192.168.1.1',
-      };
-
-      // Act
-      const result = (
-        jwtAuthGuard as unknown as {
-          getClientIp(request: {
-            headers: { 'x-forwarded-for'?: string; 'x-real-ip'?: string };
-            ip: string;
-          }): string;
-        }
-      ).getClientIp(request);
-
-      // Assert
-      expect(result).toBe('10.0.0.2');
-    });
-
-    it('Given: request with connection remote address When: getting client IP Then: should return connection IP', () => {
-      // Arrange
-      const request = {
-        headers: {},
-        connection: { remoteAddress: '10.0.0.3' },
-        ip: '192.168.1.1',
-      };
-
-      // Act
-      const result = (
-        jwtAuthGuard as unknown as {
-          getClientIp(request: {
-            headers: Record<string, unknown>;
-            connection: { remoteAddress: string };
-          }): string;
-        }
-      ).getClientIp(request);
-
-      // Assert
-      expect(result).toBe('10.0.0.3');
-    });
-
-    it('Given: request with socket remote address When: getting client IP Then: should return socket IP', () => {
-      // Arrange
-      const request = {
-        headers: {},
-        socket: { remoteAddress: '10.0.0.4' },
-        ip: '192.168.1.1',
-      };
-
-      // Act
-      const result = (
-        jwtAuthGuard as unknown as {
-          getClientIp(request: {
-            headers: Record<string, unknown>;
-            socket: { remoteAddress: string };
-          }): string;
-        }
-      ).getClientIp(request);
-
-      // Assert
-      expect(result).toBe('10.0.0.4');
-    });
-
-    it('Given: request with ip property When: getting client IP Then: should return IP property', () => {
-      // Arrange
-      const request = {
-        headers: {},
-        ip: '192.168.1.1',
-      };
-
-      // Act
-      const result = (
-        jwtAuthGuard as unknown as {
-          getClientIp(request: { headers: Record<string, unknown>; ip: string }): string;
+          getClientIp(request: { ip: string }): string;
         }
       ).getClientIp(request);
 
@@ -497,16 +411,31 @@ describe('JwtAuthGuard', () => {
       expect(result).toBe('192.168.1.1');
     });
 
-    it('Given: request without IP information When: getting client IP Then: should return unknown', () => {
+    it('Given: request with socket remote address When: getting client IP Then: should fallback to socket', () => {
       // Arrange
       const request = {
-        headers: {},
+        socket: { remoteAddress: '10.0.0.4' },
       };
 
       // Act
       const result = (
         jwtAuthGuard as unknown as {
-          getClientIp(request: { headers: Record<string, unknown> }): string;
+          getClientIp(request: { socket: { remoteAddress: string } }): string;
+        }
+      ).getClientIp(request);
+
+      // Assert
+      expect(result).toBe('10.0.0.4');
+    });
+
+    it('Given: request without IP information When: getting client IP Then: should return unknown', () => {
+      // Arrange
+      const request = {};
+
+      // Act
+      const result = (
+        jwtAuthGuard as unknown as {
+          getClientIp(request: Record<string, unknown>): string;
         }
       ).getClientIp(request);
 

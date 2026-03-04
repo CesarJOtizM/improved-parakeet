@@ -96,18 +96,8 @@ export class TenantMiddleware implements NestMiddleware {
       }
     }
 
-    // 4. From query parameter
-    if (req.query.orgId) {
-      this.logger.debug(`[TenantMiddleware] Found orgId in query: ${req.query.orgId}`);
-      return req.query.orgId as string;
-    }
-
-    // 5. From body (for POST/PUT requests)
-    // NOTE: Body might not be available if body parser hasn't run yet
-    if (req.body && req.body.orgId) {
-      this.logger.debug(`[TenantMiddleware] Found orgId in body: ${req.body.orgId}`);
-      return req.body.orgId as string;
-    }
+    // orgId from query params and body are intentionally NOT accepted
+    // to prevent tenant-hopping attacks (HIGH-3/MED-4)
 
     this.logger.debug('[TenantMiddleware] No orgId found in any source');
     return null;

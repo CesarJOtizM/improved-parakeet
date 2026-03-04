@@ -127,10 +127,10 @@ export class RateLimitService {
       };
     } catch (error) {
       this.logger.error(`Error checking rate limit for ${type}:${identifier}:`, error);
-      // En caso de error, permitir la solicitud por seguridad
+      // Fail closed: deny request when cache is unavailable
       return {
-        allowed: true,
-        remaining: 999,
+        allowed: false,
+        remaining: 0,
         resetTime: new Date(Date.now() + 60000),
         blocked: false,
       };

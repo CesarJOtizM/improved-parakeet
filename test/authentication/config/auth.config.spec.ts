@@ -6,6 +6,7 @@ describe('AuthConfig', () => {
   beforeEach(() => {
     // Limpiar variables de entorno antes de cada test
     delete process.env.JWT_SECRET;
+    delete process.env.JWT_REFRESH_SECRET;
     delete process.env.JWT_ACCESS_TOKEN_EXPIRY;
     delete process.env.JWT_REFRESH_TOKEN_EXPIRY;
     delete process.env.BCRYPT_SALT_ROUNDS;
@@ -62,10 +63,35 @@ describe('AuthConfig', () => {
       });
     });
 
-    describe('accessTokenExpiry', () => {
-      it('Given: no JWT_ACCESS_TOKEN_EXPIRY environment variable When: loading auth config Then: should use default expiry of 8h', () => {
+    describe('refreshSecret', () => {
+      it('Given: no JWT_REFRESH_SECRET environment variable When: loading auth config Then: should use default refresh secret', () => {
         // Arrange
-        const expectedExpiry = '8h';
+        const expectedRefreshSecret = 'your-super-secret-refresh-key-change-in-production';
+
+        // Act
+        const result = getConfig().jwt.refreshSecret;
+
+        // Assert
+        expect(result).toBe(expectedRefreshSecret);
+      });
+
+      it('Given: JWT_REFRESH_SECRET environment variable set When: loading auth config Then: should use environment refresh secret', () => {
+        // Arrange
+        const customRefreshSecret = 'custom-refresh-secret-key';
+        process.env.JWT_REFRESH_SECRET = customRefreshSecret;
+
+        // Act
+        const result = getConfig().jwt.refreshSecret;
+
+        // Assert
+        expect(result).toBe(customRefreshSecret);
+      });
+    });
+
+    describe('accessTokenExpiry', () => {
+      it('Given: no JWT_ACCESS_TOKEN_EXPIRY environment variable When: loading auth config Then: should use default expiry of 30m', () => {
+        // Arrange
+        const expectedExpiry = '30m';
 
         // Act
         const result = getConfig().jwt.accessTokenExpiry;
@@ -88,9 +114,9 @@ describe('AuthConfig', () => {
     });
 
     describe('refreshTokenExpiry', () => {
-      it('Given: no JWT_REFRESH_TOKEN_EXPIRY environment variable When: loading auth config Then: should use default expiry of 15d', () => {
+      it('Given: no JWT_REFRESH_TOKEN_EXPIRY environment variable When: loading auth config Then: should use default expiry of 7d', () => {
         // Arrange
-        const expectedExpiry = '15d';
+        const expectedExpiry = '7d';
 
         // Act
         const result = getConfig().jwt.refreshTokenExpiry;
@@ -548,6 +574,7 @@ describe('AuthConfig', () => {
       expect(result).toHaveProperty('rateLimit');
       expect(result).toHaveProperty('security');
       expect(result.jwt).toHaveProperty('secret');
+      expect(result.jwt).toHaveProperty('refreshSecret');
       expect(result.jwt).toHaveProperty('accessTokenExpiry');
       expect(result.jwt).toHaveProperty('refreshTokenExpiry');
       expect(result.jwt).toHaveProperty('saltRounds');

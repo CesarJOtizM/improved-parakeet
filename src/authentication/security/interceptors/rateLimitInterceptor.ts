@@ -56,7 +56,8 @@ export class RateLimitInterceptor implements NestInterceptor {
       if (!rateLimitResult.allowed) {
         // Agregar headers de rate limit a la respuesta
         const response = context.switchToHttp().getResponse();
-        response.setHeader('X-RateLimit-Limit', rateLimitResult.remaining);
+        const cfg = rateLimitMetadata.customConfig || { maxRequests: 100 };
+        response.setHeader('X-RateLimit-Limit', cfg.maxRequests);
         response.setHeader('X-RateLimit-Remaining', 0);
         response.setHeader('X-RateLimit-Reset', rateLimitResult.resetTime.toISOString());
 
@@ -89,10 +90,8 @@ export class RateLimitInterceptor implements NestInterceptor {
 
       // Agregar headers de rate limit exitoso
       const response = context.switchToHttp().getResponse();
-      response.setHeader(
-        'X-RateLimit-Limit',
-        rateLimitResult.remaining + rateLimitResult.remaining
-      );
+      const config = rateLimitMetadata.customConfig || { maxRequests: 100 };
+      response.setHeader('X-RateLimit-Limit', config.maxRequests);
       response.setHeader('X-RateLimit-Remaining', rateLimitResult.remaining);
       response.setHeader('X-RateLimit-Reset', rateLimitResult.resetTime.toISOString());
 
@@ -103,27 +102,20 @@ export class RateLimitInterceptor implements NestInterceptor {
       }
 
       this.logger.error('Rate limiting interceptor error:', error);
-      // En caso de error, permitir la solicitud por seguridad
-      return next.handle();
+      // Fail closed: deny request when rate limiting service is unavailable
+      throw new HttpException(
+        { message: 'Service temporarily unavailable', statusCode: HttpStatus.SERVICE_UNAVAILABLE },
+        HttpStatus.SERVICE_UNAVAILABLE
+      );
     }
   }
 
   private getIdentifier(request: Request, type: 'IP' | 'USER'): string | null {
     if (type === 'USER') {
-      // Para rate limiting por usuario, usar el ID del usuario si está autenticado
       return request.user?.id || null;
     } else {
-      // Para rate limiting por IP
-      const forwardedFor = request.headers['x-forwarded-for'];
-      const realIp = request.headers['x-real-ip'];
-
-      if (typeof forwardedFor === 'string') return forwardedFor;
-      if (typeof realIp === 'string') return realIp;
-      if (request.connection?.remoteAddress) return request.connection.remoteAddress;
-      if (request.socket?.remoteAddress) return request.socket.remoteAddress;
-      if (request.ip) return request.ip;
-
-      return 'unknown';
+      // Use req.ip which respects trust proxy setting
+      return request.ip || request.socket?.remoteAddress || 'unknown';
     }
   }
 }

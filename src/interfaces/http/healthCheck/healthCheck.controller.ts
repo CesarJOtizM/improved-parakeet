@@ -6,8 +6,9 @@ import {
   DetailedHealthCheckDto,
   HealthCheckResultDto,
 } from '@interface/http/healthCheck/dto/healthCheck.dto';
-import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
+import { Controller, Get, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import type { DetailedHealthCheck, HealthCheckResult } from '@healthCheck/types/healthCheck.types';
 
@@ -29,6 +30,8 @@ export class HealthCheckController {
   }
 
   @Get('detailed')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Detailed health check with system metrics' })
   @ApiResponse({
@@ -41,6 +44,8 @@ export class HealthCheckController {
   }
 
   @Get('full')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Full health check with domain orchestration' })
   @ApiResponse({
