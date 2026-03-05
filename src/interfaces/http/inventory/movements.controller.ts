@@ -137,6 +137,12 @@ export class MovementsController {
   @ApiQuery({ name: 'productId', required: false, type: String })
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
+  @ApiQuery({
+    name: 'companyId',
+    required: false,
+    type: String,
+    description: 'Filter by company ID',
+  })
   @ApiQuery({ name: 'sortBy', required: false, enum: ['type', 'status', 'createdAt', 'postedAt'] })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiResponse({
@@ -159,6 +165,7 @@ export class MovementsController {
       page: query.page,
       limit: query.limit,
       warehouseId: query.warehouseId,
+      companyId: query.companyId,
       status: query.status,
       type: query.type,
       productId: query.productId,

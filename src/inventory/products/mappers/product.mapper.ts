@@ -27,6 +27,7 @@ export interface IProductCreateInput {
   currency?: string;
   status?: 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED';
   costMethod?: 'AVG' | 'FIFO';
+  companyId?: string;
 }
 
 /**
@@ -96,6 +97,7 @@ export class ProductMapper {
           input.price != null ? Price.create(input.price, input.currency || 'COP', 2) : undefined,
         status,
         costMethod,
+        companyId: input.companyId,
       }))
       .mapErr((error): ValidationError => {
         // combine returns unknown, but we know it's ValidationError from our VOs

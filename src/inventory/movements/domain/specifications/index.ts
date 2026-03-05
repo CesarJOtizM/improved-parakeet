@@ -3,5 +3,6 @@ export {
   MovementByTypeSpecification,
   MovementByWarehouseSpecification,
   MovementByDateRangeSpecification,
+  MovementByCompanySpecification,
   MovementByProductSpecification,
 } from './movementSpecifications';

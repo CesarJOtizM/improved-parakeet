@@ -4,6 +4,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Sale } from '@sale/domain/entities/sale.entity';
 import {
   SaleAllSpecification,
+  SaleByCompanySpecification,
   SaleByDateRangeSpecification,
   SaleBySearchSpecification,
   SaleByStatusSpecification,
@@ -21,6 +22,7 @@ export interface IGetSalesRequest {
   page?: number;
   limit?: number;
   warehouseId?: string;
+  companyId?: string;
   status?: string;
   search?: string;
   startDate?: Date;
@@ -55,6 +57,10 @@ export class GetSalesUseCase {
 
     // Compose specifications based on filters (always start with base)
     const specifications: IPrismaSpecification<Sale>[] = [new SaleAllSpecification()];
+
+    if (request.companyId) {
+      specifications.push(new SaleByCompanySpecification(request.companyId));
+    }
 
     if (request.warehouseId) {
       specifications.push(new SaleByWarehouseSpecification(request.warehouseId));

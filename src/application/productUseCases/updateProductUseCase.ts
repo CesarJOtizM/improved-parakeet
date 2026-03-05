@@ -39,6 +39,7 @@ export interface IUpdateProductRequest {
   currency?: string;
   status?: 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED';
   costMethod?: 'AVG' | 'FIFO';
+  companyId?: string;
   orgId: string;
   updatedBy?: string;
 }
@@ -167,6 +168,10 @@ export class UpdateProductUseCase {
         }
 
         updateProps.costMethod = CostMethod.create(request.costMethod);
+      }
+
+      if (request.companyId !== undefined) {
+        updateProps.companyId = request.companyId || undefined;
       }
 
       // Update product (returns new instance)

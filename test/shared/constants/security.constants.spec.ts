@@ -121,12 +121,12 @@ describe('Security Constants', () => {
       expect(permissions).toContain('AUDIT:EXPORT');
     });
 
-    it('Given: system permissions When: checking count Then: should have exactly 49 permissions', () => {
+    it('Given: system permissions When: checking count Then: should have exactly 54 permissions', () => {
       // Arrange & Act
       const permissions = Object.values(SYSTEM_PERMISSIONS);
 
       // Assert
-      expect(permissions).toHaveLength(50);
+      expect(permissions).toHaveLength(54);
     });
 
     it('Given: system permissions When: checking uniqueness Then: should have unique permission names', () => {

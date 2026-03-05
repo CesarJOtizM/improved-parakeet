@@ -114,7 +114,10 @@ describe('PrismaProductRepository', () => {
       expect(result?.id).toBe('product-123');
       expect(mockPrismaService.product.findUnique).toHaveBeenCalledWith({
         where: { id: 'product-123' },
-        include: { categories: { select: { id: true, name: true } } },
+        include: {
+          categories: { select: { id: true, name: true } },
+          company: { select: { id: true, name: true } },
+        },
       });
     });
 
@@ -288,7 +291,10 @@ describe('PrismaProductRepository', () => {
       expect(result[0].id).toBe('product-123');
       expect(mockPrismaService.product.findMany).toHaveBeenCalledWith({
         where: { orgId: 'org-123' },
-        include: { categories: { select: { id: true, name: true } } },
+        include: {
+          categories: { select: { id: true, name: true } },
+          company: { select: { id: true, name: true } },
+        },
       });
     });
 

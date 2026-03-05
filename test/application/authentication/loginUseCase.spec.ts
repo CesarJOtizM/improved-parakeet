@@ -17,6 +17,7 @@ describe('LoginUseCase', () => {
   let mockJwtService: jest.Mocked<JwtService>;
   let mockRateLimitService: jest.Mocked<RateLimitService>;
   let mockSessionRepository: jest.Mocked<ISessionRepository>;
+  let mockOrganizationRepository: any;
 
   const mockOrgId = 'org-123';
   const mockUserId = 'user-123';
@@ -99,10 +100,26 @@ describe('LoginUseCase', () => {
       exists: jest.fn(),
     } as jest.Mocked<ISessionRepository>;
 
+    mockOrganizationRepository = {
+      findById: jest.fn().mockResolvedValue(null),
+      findBySlug: jest.fn(),
+      findByDomain: jest.fn(),
+      findActiveOrganizations: jest.fn(),
+      existsBySlug: jest.fn(),
+      existsByDomain: jest.fn(),
+      countActiveOrganizations: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      findAll: jest.fn(),
+      exists: jest.fn(),
+      delete: jest.fn(),
+    };
+
     // Create LoginUseCase instance
     loginUseCase = new LoginUseCase(
       mockUserRepository,
       mockSessionRepository,
+      mockOrganizationRepository,
       mockJwtService,
       mockRateLimitService
     );

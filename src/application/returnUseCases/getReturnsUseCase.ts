@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '@infrastructure/database/prisma.service';
 import { ReturnMapper } from '@returns/mappers';
 import { DomainError, ok, Result } from '@shared/domain/result';
 import { IPaginatedResponse } from '@shared/types/apiResponse.types';
@@ -12,6 +13,7 @@ export interface IGetReturnsRequest {
   limit?: number;
   search?: string;
   warehouseId?: string;
+  companyId?: string;
   status?: string;
   type?: string;
   startDate?: Date;
@@ -28,7 +30,8 @@ export class GetReturnsUseCase {
 
   constructor(
     @Inject('ReturnRepository')
-    private readonly returnRepository: IReturnRepository
+    private readonly returnRepository: IReturnRepository,
+    private readonly prisma: PrismaService
   ) {}
 
   async execute(request: IGetReturnsRequest): Promise<Result<IGetReturnsResponse, DomainError>> {
@@ -87,6 +90,20 @@ export class GetReturnsUseCase {
     if (request.search && returns.length > 0) {
       const searchLower = request.search.toLowerCase();
       returns = returns.filter(r => r.returnNumber.getValue().toLowerCase().includes(searchLower));
+    }
+
+    // Apply company filter (via return lines → product.companyId)
+    if (request.companyId && returns.length > 0) {
+      const matchingReturnIds = await this.prisma.return.findMany({
+        where: {
+          orgId: request.orgId,
+          id: { in: returns.map(r => r.id) },
+          lines: { some: { product: { companyId: request.companyId } } },
+        },
+        select: { id: true },
+      });
+      const matchingIdSet = new Set(matchingReturnIds.map(r => r.id));
+      returns = returns.filter(r => matchingIdSet.has(r.id));
     }
 
     // Map entities to response DTOs (before sorting so warehouseName/lines are available)

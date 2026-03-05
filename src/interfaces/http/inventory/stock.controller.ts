@@ -68,6 +68,12 @@ export class StockController {
       'lastMovementAt',
     ],
   })
+  @ApiQuery({
+    name: 'companyId',
+    required: false,
+    type: String,
+    description: 'Filter by company ID',
+  })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -82,6 +88,7 @@ export class StockController {
     @Query('warehouseId') warehouseId?: string,
     @Query('productId') productId?: string,
     @Query('lowStock') lowStock?: string,
+    @Query('companyId') companyId?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'asc' | 'desc'
   ): Promise<unknown> {
@@ -98,6 +105,7 @@ export class StockController {
       orgId,
       warehouseIds,
       productId,
+      companyId,
       lowStock: lowStock === 'true',
       sortBy,
       sortOrder,

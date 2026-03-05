@@ -37,6 +37,7 @@ model Organization {
   products           Product[]
   warehouses         Warehouse[]
   categories         Category[]
+  companies          Company[]
   alertConfiguration AlertConfiguration?
 
   @@map("organizations")
@@ -198,12 +199,14 @@ model Product {
   isActive          Boolean   @default(true)
   statusChangedBy   String?
   statusChangedAt   DateTime?
+  companyId         String?
   orgId             String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
   organization       Organization   @relation(fields: [orgId], references: [id])
+  company            Company?       @relation(fields: [companyId], references: [id])
   categories         Category[]     @relation("ProductCategories")
   movements          MovementLine[]
   transfers          TransferLine[]
@@ -217,6 +220,7 @@ model Product {
   @@unique([sku, orgId])
   @@index([orgId])
   @@index([orgId, isActive])
+  @@index([orgId, companyId])
   @@map("products")
 }
 
@@ -326,7 +330,7 @@ model ReorderRule {
 // Movements
 model Movement {
   id          String    @id @default(cuid())
-  type        String // IN, OUT, ADJUSTMENT
+  type        String // IN, OUT, ADJUST_IN, ADJUST_OUT, TRANSFER_IN, TRANSFER_OUT
   status      String    @default("DRAFT") // DRAFT, POSTED, VOID, RETURNED
   warehouseId String
   reference   String?
@@ -759,6 +763,28 @@ model SaleLineSwap {
   @@index([saleId, orgId])
   @@index([orgId, createdAt])
   @@map("sale_line_swaps")
+}
+
+// Companies (Business Lines within an organization)
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  code        String
+  description String?
+  isActive    Boolean  @default(true)
+  orgId       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [orgId], references: [id])
+  products     Product[]
+
+  @@unique([code, orgId])
+  @@unique([name, orgId])
+  @@index([orgId])
+  @@index([orgId, isActive])
+  @@map("companies")
 }
 
 // Alert Configuration (per organization - configures stock alert cron)

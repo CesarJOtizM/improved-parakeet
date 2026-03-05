@@ -66,6 +66,15 @@ export class GetReturnsDto {
   type?: string;
 
   @ApiProperty({
+    description: 'Filter by company ID',
+    example: 'clxyz...',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'CompanyId must be a string' })
+  companyId?: string;
+
+  @ApiProperty({
     description: 'Start date for date range filter',
     example: '2024-01-01T00:00:00Z',
     required: false,

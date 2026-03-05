@@ -6,6 +6,7 @@ import { DomainError, RateLimitError, Result, TokenError, err, ok } from '@share
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISessionRepository, IUserRepository } from '@auth/domain/repositories';
+import type { IOrganizationRepository } from '@organization/domain/ports/repositories/iOrganizationRepository.port';
 
 export interface IRefreshTokenRequest {
   refreshToken: string;
@@ -26,6 +27,7 @@ export interface IRefreshTokenData {
     lastName: string;
     roles: string[];
     permissions: string[];
+    orgSettings?: Record<string, unknown>;
   };
 }
 
@@ -40,7 +42,9 @@ export class RefreshTokenUseCase {
     private readonly tokenBlacklistService: TokenBlacklistService,
     private readonly rateLimitService: RateLimitService,
     @Inject('UserRepository') private readonly userRepository: IUserRepository,
-    @Inject('SessionRepository') private readonly sessionRepository: ISessionRepository
+    @Inject('SessionRepository') private readonly sessionRepository: ISessionRepository,
+    @Inject('OrganizationRepository')
+    private readonly organizationRepository: IOrganizationRepository
   ) {}
 
   async execute(
@@ -132,6 +136,17 @@ export class RefreshTokenUseCase {
       activeSession.update({ expiresAt: newTokenPair.refreshTokenExpiresAt });
       await this.sessionRepository.save(activeSession);
 
+      // Fetch organization settings
+      let orgSettings: Record<string, unknown> = {};
+      try {
+        const organization = await this.organizationRepository.findById(user.orgId);
+        if (organization) {
+          orgSettings = organization.settings;
+        }
+      } catch (settingsError) {
+        this.logger.warn('Could not fetch org settings for refresh response', settingsError);
+      }
+
       this.logger.log(`Token refreshed successfully for user: ${user.id}`);
 
       return ok({
@@ -150,6 +165,7 @@ export class RefreshTokenUseCase {
             lastName: user.lastName,
             roles: user.roles || [],
             permissions: user.permissions || [],
+            orgSettings,
           },
         },
         timestamp: new Date().toISOString(),

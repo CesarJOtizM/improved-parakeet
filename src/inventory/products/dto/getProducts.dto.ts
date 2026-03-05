@@ -68,6 +68,15 @@ export class GetProductsQueryDto {
   categoryIds?: string[];
 
   @ApiProperty({
+    description: 'Filter by company ID',
+    example: 'clxyz...',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'CompanyId must be a string' })
+  companyId?: string;
+
+  @ApiProperty({
     description: 'Sort by field',
     example: 'name',
     enum: ['name', 'sku', 'status', 'price', 'createdAt', 'updatedAt'],

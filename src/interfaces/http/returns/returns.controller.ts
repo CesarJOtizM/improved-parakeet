@@ -123,6 +123,12 @@ export class ReturnsController {
   @ApiQuery({ name: 'warehouseId', required: false, type: String })
   @ApiQuery({ name: 'status', required: false, enum: ['DRAFT', 'CONFIRMED', 'CANCELLED'] })
   @ApiQuery({ name: 'type', required: false, enum: ['RETURN_CUSTOMER', 'RETURN_SUPPLIER'] })
+  @ApiQuery({
+    name: 'companyId',
+    required: false,
+    type: String,
+    description: 'Filter by company ID',
+  })
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
   @ApiQuery({
@@ -144,6 +150,7 @@ export class ReturnsController {
       limit: query.limit,
       search: query.search,
       warehouseId: query.warehouseId,
+      companyId: query.companyId,
       status: query.status,
       type: query.type,
       startDate: query.startDate ? new Date(query.startDate) : undefined,

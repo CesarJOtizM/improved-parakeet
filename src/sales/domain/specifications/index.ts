@@ -4,5 +4,6 @@ export {
   SaleByWarehouseSpecification,
   SaleByDateRangeSpecification,
   SaleBySearchSpecification,
+  SaleByCompanySpecification,
   SaleByCustomerSpecification,
 } from './saleSpecifications';

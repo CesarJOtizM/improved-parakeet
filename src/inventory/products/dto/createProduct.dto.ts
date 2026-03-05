@@ -169,4 +169,13 @@ export class CreateProductDto {
     message: 'Cost method must be one of: AVG, FIFO',
   })
   costMethod?: 'AVG' | 'FIFO';
+
+  @ApiProperty({
+    description: 'Company ID (business line)',
+    example: 'clxyz...',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Company ID must be a string' })
+  companyId?: string;
 }

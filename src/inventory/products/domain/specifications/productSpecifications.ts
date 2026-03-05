@@ -145,3 +145,23 @@ export class ProductByCategoriesSpecification extends PrismaSpecification<Produc
     };
   }
 }
+
+/**
+ * Specification for products by company
+ */
+export class ProductByCompanySpecification extends PrismaSpecification<Product> {
+  constructor(private readonly companyId: string) {
+    super();
+  }
+
+  public isSatisfiedBy(product: Product): boolean {
+    return product.companyId === this.companyId;
+  }
+
+  public toPrismaWhere(orgId: string): PrismaWhereInput {
+    return {
+      orgId,
+      companyId: this.companyId,
+    };
+  }
+}

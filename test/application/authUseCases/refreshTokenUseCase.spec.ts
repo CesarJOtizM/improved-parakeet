@@ -23,6 +23,7 @@ describe('RefreshTokenUseCase', () => {
   let mockRateLimitService: jest.Mocked<RateLimitService>;
   let mockUserRepository: jest.Mocked<IUserRepository>;
   let mockSessionRepository: jest.Mocked<ISessionRepository>;
+  let mockOrganizationRepository: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -96,12 +97,28 @@ describe('RefreshTokenUseCase', () => {
       delete: jest.fn(),
     } as jest.Mocked<ISessionRepository>;
 
+    mockOrganizationRepository = {
+      findById: jest.fn<any>().mockResolvedValue(null),
+      findBySlug: jest.fn<any>(),
+      findByDomain: jest.fn<any>(),
+      findActiveOrganizations: jest.fn<any>(),
+      existsBySlug: jest.fn<any>(),
+      existsByDomain: jest.fn<any>(),
+      countActiveOrganizations: jest.fn<any>(),
+      create: jest.fn<any>(),
+      update: jest.fn<any>(),
+      findAll: jest.fn<any>(),
+      exists: jest.fn<any>(),
+      delete: jest.fn<any>(),
+    };
+
     useCase = new RefreshTokenUseCase(
       mockJwtService,
       mockTokenBlacklistService,
       mockRateLimitService,
       mockUserRepository,
-      mockSessionRepository
+      mockSessionRepository,
+      mockOrganizationRepository
     );
   });
 

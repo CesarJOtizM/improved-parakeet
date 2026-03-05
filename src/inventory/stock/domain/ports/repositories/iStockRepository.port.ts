@@ -22,6 +22,7 @@ export interface IStockData {
 export interface IStockFilters {
   warehouseIds?: string[];
   productId?: string;
+  companyId?: string;
   lowStock?: boolean; // Filter products below minimum quantity (from reorder rules)
 }
 

@@ -9,6 +9,7 @@ export interface IGetStockRequest {
   orgId: string;
   warehouseIds?: string[];
   productId?: string;
+  companyId?: string;
   lowStock?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -54,6 +55,7 @@ export class GetStockUseCase {
       this.stockRepository.findAll(request.orgId, {
         warehouseIds: request.warehouseIds,
         productId: request.productId,
+        companyId: request.companyId,
         lowStock: request.lowStock,
       }),
       this.getLastMovementDates(request.orgId),

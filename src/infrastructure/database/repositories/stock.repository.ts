@@ -291,6 +291,10 @@ export class PrismaStockRepository implements IStockRepository {
         where.productId = filters.productId;
       }
 
+      if (filters?.companyId) {
+        where.product = { companyId: filters.companyId };
+      }
+
       // Get stock records with product and warehouse joined (avoids N+1)
       let stockRecords = await this.prisma.stock.findMany({
         where,

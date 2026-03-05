@@ -32,6 +32,7 @@ export interface ICreateProductRequest {
   currency?: string;
   status?: 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED';
   costMethod?: 'AVG' | 'FIFO';
+  companyId?: string;
   orgId: string;
 }
 

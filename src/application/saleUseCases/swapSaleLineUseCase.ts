@@ -177,7 +177,7 @@ export class SwapSaleLineUseCase {
         // c) Create ADJUST_IN movement (return of original product)
         const returnMovement = await tx.movement.create({
           data: {
-            type: 'ADJUSTMENT',
+            type: 'ADJUST_IN',
             status: 'POSTED',
             warehouseId: originalWarehouseId,
             reference: `SWAP-RETURN-${sale.saleNumber.getValue()}`,
@@ -203,7 +203,7 @@ export class SwapSaleLineUseCase {
         // d) Create ADJUST_OUT movement (deduction of replacement product)
         const deductMovement = await tx.movement.create({
           data: {
-            type: 'ADJUSTMENT',
+            type: 'ADJUST_OUT',
             status: 'POSTED',
             warehouseId: request.sourceWarehouseId,
             reference: `SWAP-DEDUCT-${sale.saleNumber.getValue()}`,

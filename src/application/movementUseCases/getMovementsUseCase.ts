@@ -1,6 +1,7 @@
 import { QueryPagination } from '@infrastructure/database/utils/queryOptimizer';
 import { Movement } from '@movement/domain/entities/movement.entity';
 import {
+  MovementByCompanySpecification,
   MovementByDateRangeSpecification,
   MovementByProductSpecification,
   MovementByStatusSpecification,
@@ -23,6 +24,7 @@ export interface IGetMovementsRequest {
   page?: number;
   limit?: number;
   warehouseId?: string;
+  companyId?: string;
   status?: string;
   type?: string;
   productId?: string;
@@ -63,6 +65,10 @@ export class GetMovementsUseCase {
 
     // Compose specifications based on filters
     const specifications: IPrismaSpecification<Movement>[] = [];
+
+    if (request.companyId) {
+      specifications.push(new MovementByCompanySpecification(request.companyId));
+    }
 
     if (request.warehouseId) {
       specifications.push(new MovementByWarehouseSpecification(request.warehouseId));

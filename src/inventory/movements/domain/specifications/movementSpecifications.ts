@@ -100,6 +100,30 @@ export class MovementByDateRangeSpecification extends PrismaSpecification<Moveme
 }
 
 /**
+ * Specification for movements filtered by product company ID (via movement lines)
+ */
+export class MovementByCompanySpecification extends PrismaSpecification<Movement> {
+  constructor(private readonly companyId: string) {
+    super();
+  }
+
+  public isSatisfiedBy(): boolean {
+    return true; // Cannot check in-memory without loaded product relations
+  }
+
+  public toPrismaWhere(orgId: string): PrismaWhereInput {
+    return {
+      orgId,
+      lines: {
+        some: {
+          product: { companyId: this.companyId },
+        },
+      },
+    };
+  }
+}
+
+/**
  * Specification for movements by product (via movement lines)
  */
 export class MovementByProductSpecification extends PrismaSpecification<Movement> {

@@ -1,6 +1,14 @@
 import { GetDashboardMetricsUseCase } from '@application/dashboardUseCases';
-import { Controller, Get, HttpCode, HttpStatus, UseGuards, UseInterceptors } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Query,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
 import { PermissionGuard } from '@shared/guards/permission.guard';
@@ -19,8 +27,14 @@ export class DashboardController {
   @Get('metrics')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get dashboard metrics (aggregated)' })
-  async getMetrics(@OrgId() orgId: string) {
-    const result = await this.getDashboardMetricsUseCase.execute({ orgId });
+  @ApiQuery({
+    name: 'companyId',
+    required: false,
+    type: String,
+    description: 'Filter by company ID',
+  })
+  async getMetrics(@OrgId() orgId: string, @Query('companyId') companyId?: string) {
+    const result = await this.getDashboardMetricsUseCase.execute({ orgId, companyId });
     return resultToHttpResponse(result);
   }
 }

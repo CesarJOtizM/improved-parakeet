@@ -19,8 +19,8 @@
 </p>
 
 <p align="center">
-  <a href="#"><img src="https://img.shields.io/badge/tests-1948%20passing-success.svg" alt="Tests Passing" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/coverage-48.6%25-yellow.svg" alt="Coverage" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/tests-5288%20passing-success.svg" alt="Tests Passing" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/coverage-92%25-brightgreen.svg" alt="Coverage" /></a>
   <a href="#"><img src="https://img.shields.io/badge/build-passing-success.svg" alt="Build Status" /></a>
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-blue.svg" alt="TypeScript Strict" /></a>
 </p>
@@ -74,32 +74,55 @@ Sistema de inventarios diseñado para optimizar el control, registro y gestión 
 
 ### 📦 Gestión de Inventario
 
-- **Productos**: SKU único, categorías, unidades de medida, códigos de barras
+- **Productos**: SKU único, categorías, unidades de medida, códigos de barras, tracking de status
 - **Bodegas y Ubicaciones**: Gestión de múltiples bodegas con ubicaciones internas
-- **Movimientos**: Entradas, salidas y ajustes con validación de stock
+- **Movimientos**: Entradas, salidas y ajustes (IN/OUT/ADJUST_IN/ADJUST_OUT/TRANSFER_IN/TRANSFER_OUT) con workflow DRAFT → POSTED → VOID
 - **Transferencias**: Entre bodegas con estados (DRAFT, IN_TRANSIT, RECEIVED, REJECTED, CANCELLED)
+- **Empresas (Multi-Company)**: Líneas de negocio por organización, filtrado global por empresa
 - **Valorización**: Promedio Ponderado Móvil (PPM) automático
-- **Alertas de stock**: Notificaciones de stock bajo/máximo
+- **Alertas de stock**: Notificaciones configurables (frecuencia, destinatarios, tipos de alerta)
 
 ### 💰 Ventas y Devoluciones
 
-- **Ventas**: Creación, confirmación, cancelación con generación automática de movimientos
+- **Ventas**: Workflow completo DRAFT → CONFIRMED → PICKING → SHIPPED → COMPLETED con acciones por estado
 - **Numeración automática**: SALE-YYYY-NNN / RETURN-YYYY-NNN
-- **Devoluciones**: De clientes y a proveedores con validación de cantidades
+- **Devoluciones**: De clientes (RETURN_CUSTOMER) y a proveedores (RETURN_SUPPLIER) con tracking de precios originales
+- **Product Swap**: Intercambio de productos en ventas con ajustes automáticos de inventario (ADJUST_IN/ADJUST_OUT)
 - **Integración**: Generación automática de movimientos de inventario
 
-### 📊 Reportes e Importaciones
+### 📊 Reportes y Análisis
 
-- **Reportes**: Inventario, histórico, valorización, stock bajo
+- **17 tipos de reportes**: Inventario disponible, historial de movimientos, valorización, stock bajo, ABC Analysis (Pareto), Dead Stock, ventas por producto/bodega, devoluciones por tipo/producto, financiero, rotación
 - **Exportación**: PDF, Excel, CSV
+- **ABC Analysis**: Clasificación Pareto (A=top 80% ingresos, B=15%, C=5%)
+- **Dead Stock**: Productos sin ventas en N días con niveles de riesgo (HIGH/MEDIUM/LOW)
+- **Dashboard**: Endpoint dedicado `/dashboard/metrics` con 7 queries optimizadas (inventario, stock bajo, ventas mensuales, tendencia 7d, top productos, stock por bodega, actividad reciente)
+
+### 📥 Importaciones
+
 - **Importación masiva**: Productos, movimientos, bodegas desde Excel/CSV
 - **Flujo Preview/Execute**: Validación previa antes de importar
-- **Auditoría**: Registro completo de operaciones
 
-### 🎨 Personalización
+### 📋 Auditoría
 
-- **Configuraciones**: Timezone, moneda, formato de fecha
-- **Preferencias de usuario**: Configuraciones individuales
+- **Registro completo**: Todas las operaciones con entity type, action, HTTP method, usuario, timestamps
+- **Filtros avanzados**: Por tipo de entidad, acción, método HTTP, usuario, rango de fechas
+- **Consultas**: Actividad por usuario, historial por entidad
+
+### ⚙️ Configuración y Personalización
+
+- **Perfil de usuario**: phone, timezone, language, jobTitle, department
+- **Alertas de stock**: Configuración por organización (frecuencia cron, tipos de alerta, destinatarios, habilitación)
+- **Multi-Company**: Toggle por organización para habilitar líneas de negocio
+- **API Versioning**: Header-based (`X-API-Version`), default version 1
+
+### 🛡️ Resiliencia
+
+- **Circuit Breaker**: Protección contra fallos en cascada (CLOSED → OPEN → HALF_OPEN)
+- **Retry**: Exponential backoff con jitter para servicios externos
+- **Timeout**: Wrapper configurable por operación
+- **ResilientCall**: Composición de los tres patrones, aplicado a EmailService y NotificationService
+- **Graceful Shutdown**: Cierre ordenado de conexiones Prisma y procesos
 
 ---
 
@@ -391,7 +414,17 @@ curl http://localhost:3000/products \
 |                | `POST /sales/:id/confirm`  | Confirmar venta        |
 | **Returns**    | `GET /returns`             | Listar devoluciones    |
 |                | `POST /returns`            | Crear devolución       |
-| **Reports**    | `GET /reports`             | Generar reportes       |
+| **Reports**    | `GET /reports/{mod}/{name}/view` | Ver datos del reporte  |
+|                | `POST /reports/{mod}/{name}/export` | Exportar reporte    |
+| **Dashboard**  | `GET /dashboard/metrics`   | Métricas del dashboard |
+| **Audit**      | `GET /audit/logs`          | Listar logs            |
+|                | `GET /audit/logs/:id`      | Detalle de log         |
+|                | `GET /audit/users/:id/activity` | Actividad de usuario |
+|                | `GET /audit/entities/:type/:id/history` | Historial de entidad |
+| **Settings**   | `GET /settings/alerts`     | Config de alertas      |
+|                | `PUT /settings/alerts`     | Actualizar alertas     |
+| **Companies**  | `GET /inventory/companies` | Listar empresas        |
+|                | `POST /inventory/companies`| Crear empresa          |
 | **Imports**    | `POST /imports/preview`    | Preview de importación |
 |                | `POST /imports/execute`    | Ejecutar importación   |
 
@@ -527,17 +560,28 @@ src/
 │   ├── warehouses/     # Bodegas
 │   ├── movements/      # Movimientos de inventario
 │   ├── transfers/      # Transferencias entre bodegas
+│   ├── companies/      # Empresas (multi-company)
 │   └── stock/          # Control de stock
 ├── sales/              # 💰 Dominio de ventas
 ├── returns/            # 🔄 Dominio de devoluciones
 ├── authentication/     # 🔐 Autenticación y autorización
 ├── organization/       # 🏢 Multi-tenancy
-├── report/             # 📊 Reportes
+├── report/             # 📊 Reportes (17 tipos)
 ├── import/             # 📥 Importaciones
-├── application/        # 🚀 Casos de uso
+├── application/        # 🚀 Casos de uso (131+)
+│   ├── dashboardUseCases/  # Métricas del dashboard
+│   ├── auditUseCases/      # Logs de auditoría
+│   ├── companyUseCases/    # CRUD de empresas
+│   └── ...
 ├── infrastructure/     # 🔌 Adaptadores de salida (Prisma, Redis)
+│   └── resilience/     # CircuitBreaker, Retry, Timeout
 ├── interfaces/         # 🌐 Adaptadores de entrada (HTTP)
+│   ├── dashboard/      # Dashboard metrics controller
+│   ├── audit/          # Audit logs controller
+│   └── ...
 ├── shared/             # 🛠️ Utilidades compartidas
+│   ├── guards/         # PermissionGuard
+│   └── infrastructure/ # Cache, Resilience
 └── healthCheck/        # ❤️ Health checks
 ```
 
@@ -587,12 +631,23 @@ erDiagram
 
 ### Estadísticas de Tests
 
-| Tipo            | Archivos | Tests | Estado     |
-| --------------- | -------- | ----- | ---------- |
-| **Unitarios**   | 68+      | 1948+ | ✅ Passing |
-| **Integración** | 12+      | 100+  | ✅ Passing |
-| **E2E**         | 11+      | 50+   | ✅ Passing |
-| **Total**       | 91+      | 2100+ | ✅         |
+| Tipo            | Archivos | Tests  | Estado     |
+| --------------- | -------- | ------ | ---------- |
+| **Unitarios**   | 380+     | 5000+  | ✅ Passing |
+| **Integración** | 12+      | 100+   | ✅ Passing |
+| **E2E**         | 12+      | 100+   | ✅ Passing |
+| **Total**       | 404      | 5,288  | ✅         |
+
+### Cobertura de Código
+
+| Métrica        | Porcentaje |
+| -------------- | ---------- |
+| **Statements** | 92.07%     |
+| **Branches**   | 75.63%     |
+| **Functions**  | 93.22%     |
+| **Lines**      | 92.18%     |
+
+Threshold global: 70% (jest.config.js). Exclusiones: `instrument.ts`, `seed.ts`, `seeds/**/*.ts`.
 
 ### Ejecutar Tests
 

@@ -23,6 +23,11 @@ import { DeleteCategoryUseCase } from '@application/categoryUseCases/deleteCateg
 import { GetCategoriesUseCase } from '@application/categoryUseCases/getCategoriesUseCase';
 import { GetCategoryByIdUseCase } from '@application/categoryUseCases/getCategoryByIdUseCase';
 import { UpdateCategoryUseCase } from '@application/categoryUseCases/updateCategoryUseCase';
+import { CreateCompanyUseCase } from '@application/companyUseCases/createCompanyUseCase';
+import { DeleteCompanyUseCase } from '@application/companyUseCases/deleteCompanyUseCase';
+import { GetCompaniesUseCase } from '@application/companyUseCases/getCompaniesUseCase';
+import { GetCompanyByIdUseCase } from '@application/companyUseCases/getCompanyByIdUseCase';
+import { UpdateCompanyUseCase } from '@application/companyUseCases/updateCompanyUseCase';
 import { CreateProductUseCase } from '@application/productUseCases/createProductUseCase';
 import { GetProductByIdUseCase } from '@application/productUseCases/getProductByIdUseCase';
 import { GetProductsUseCase } from '@application/productUseCases/getProductsUseCase';
@@ -46,6 +51,7 @@ import { UpdateWarehouseUseCase } from '@application/warehouseUseCases/updateWar
 import { AuthenticationModule } from '@auth/authentication.module';
 import {
   PrismaCategoryRepository,
+  PrismaCompanyRepository,
   PrismaLocationRepository,
   PrismaMovementRepository,
   PrismaProductRepository,
@@ -78,6 +84,10 @@ import { createCacheModuleOptions, FunctionalCacheService } from '@shared/infras
     {
       provide: 'CategoryRepository',
       useClass: PrismaCategoryRepository,
+    },
+    {
+      provide: 'CompanyRepository',
+      useClass: PrismaCompanyRepository,
     },
     {
       provide: 'ProductRepository',
@@ -113,6 +123,12 @@ import { createCacheModuleOptions, FunctionalCacheService } from '@shared/infras
     CreateCategoryUseCase,
     UpdateCategoryUseCase,
     DeleteCategoryUseCase,
+    // Company Use Cases
+    GetCompaniesUseCase,
+    GetCompanyByIdUseCase,
+    CreateCompanyUseCase,
+    UpdateCompanyUseCase,
+    DeleteCompanyUseCase,
     // Product Use Cases
     CreateProductUseCase,
     GetProductsUseCase,
@@ -181,6 +197,11 @@ import { createCacheModuleOptions, FunctionalCacheService } from '@shared/infras
     CreateCategoryUseCase,
     UpdateCategoryUseCase,
     DeleteCategoryUseCase,
+    GetCompaniesUseCase,
+    GetCompanyByIdUseCase,
+    CreateCompanyUseCase,
+    UpdateCompanyUseCase,
+    DeleteCompanyUseCase,
     CreateProductUseCase,
     GetProductsUseCase,
     GetProductByIdUseCase,

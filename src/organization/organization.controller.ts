@@ -1,5 +1,6 @@
 import { CreateOrganizationUseCase } from '@application/organizationUseCases/createOrganizationUseCase';
 import { GetOrganizationByIdUseCase } from '@application/organizationUseCases/getOrganizationByIdUseCase';
+import { ToggleMultiCompanySettingUseCase } from '@application/organizationUseCases/toggleMultiCompanySettingUseCase';
 import { TogglePickingSettingUseCase } from '@application/organizationUseCases/togglePickingSettingUseCase';
 import { UpdateOrganizationUseCase } from '@application/organizationUseCases/updateOrganizationUseCase';
 import { RequireRoles } from '@auth/security/decorators/roleBasedAuth.decorator';
@@ -38,7 +39,8 @@ export class OrganizationController {
     private readonly createOrganizationUseCase: CreateOrganizationUseCase,
     private readonly getOrganizationByIdUseCase: GetOrganizationByIdUseCase,
     private readonly updateOrganizationUseCase: UpdateOrganizationUseCase,
-    private readonly togglePickingSettingUseCase: TogglePickingSettingUseCase
+    private readonly togglePickingSettingUseCase: TogglePickingSettingUseCase,
+    private readonly toggleMultiCompanySettingUseCase: ToggleMultiCompanySettingUseCase
   ) {}
 
   @Post()
@@ -253,6 +255,45 @@ export class OrganizationController {
     const result = await this.togglePickingSettingUseCase.execute({
       orgId: id,
       pickingEnabled: body.pickingEnabled,
+    });
+
+    return resultToHttpResponse(result);
+  }
+
+  @Patch(':id/settings/multi-company')
+  @UseGuards(JwtAuthGuard, RoleBasedAuthGuard)
+  @RequireRoles([SYSTEM_ROLES.SYSTEM_ADMIN], { checkOrganization: false })
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Toggle multi-company setting',
+    description:
+      'Enable or disable the multi-company (business lines) feature for an organization. Only super-admins can change this setting.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Organization ID (CUID)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Multi-company setting updated successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Organization not found',
+  })
+  async toggleMultiCompanySetting(
+    @Param('id') id: string,
+    @Body() body: { multiCompanyEnabled: boolean }
+  ) {
+    this.logger.log('Toggling multi-company setting', {
+      organizationId: id,
+      multiCompanyEnabled: body.multiCompanyEnabled,
+    });
+
+    const result = await this.toggleMultiCompanySettingUseCase.execute({
+      orgId: id,
+      multiCompanyEnabled: body.multiCompanyEnabled,
     });
 
     return resultToHttpResponse(result);

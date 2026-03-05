@@ -40,7 +40,10 @@ export class PrismaProductRepository implements IProductRepository {
 
       const productData = await this.prisma.product.findUnique({
         where: { id },
-        include: { categories: { select: { id: true, name: true } } },
+        include: {
+          categories: { select: { id: true, name: true } },
+          company: { select: { id: true, name: true } },
+        },
       });
 
       if (!productData || productData.orgId !== orgId) return null;
@@ -72,6 +75,8 @@ export class PrismaProductRepository implements IProductRepository {
           costMethod: CostMethod.create((productData.costMethod as 'AVG' | 'FIFO') || 'AVG'),
           statusChangedBy: productData.statusChangedBy || undefined,
           statusChangedAt: productData.statusChangedAt || undefined,
+          companyId: productData.companyId || undefined,
+          companyName: productData.company?.name || undefined,
         },
         productData.id,
         productData.orgId
@@ -97,7 +102,10 @@ export class PrismaProductRepository implements IProductRepository {
     try {
       const productsData = await this.prisma.product.findMany({
         where: { orgId },
-        include: { categories: { select: { id: true, name: true } } },
+        include: {
+          categories: { select: { id: true, name: true } },
+          company: { select: { id: true, name: true } },
+        },
       });
 
       return productsData.map(productData =>
@@ -122,6 +130,8 @@ export class PrismaProductRepository implements IProductRepository {
               : undefined,
             status: ProductStatus.create(productData.isActive ? 'ACTIVE' : 'INACTIVE'),
             costMethod: CostMethod.create((productData.costMethod as 'AVG' | 'FIFO') || 'AVG'),
+            companyId: productData.companyId || undefined,
+            companyName: productData.company?.name || undefined,
           },
           productData.id,
           productData.orgId
@@ -176,6 +186,7 @@ export class PrismaProductRepository implements IProductRepository {
         isActive: product.status.getValue() === 'ACTIVE',
         statusChangedBy: product.statusChangedBy ?? null,
         statusChangedAt: product.statusChangedAt ?? null,
+        companyId: product.companyId ?? null,
         orgId: product.orgId,
       };
 
@@ -609,7 +620,10 @@ export class PrismaProductRepository implements IProductRepository {
           skip,
           take,
           orderBy: { createdAt: 'desc' },
-          include: { categories: { select: { id: true, name: true } } },
+          include: {
+            categories: { select: { id: true, name: true } },
+            company: { select: { id: true, name: true } },
+          },
         }),
         this.prisma.product.count({ where }),
       ]);
@@ -636,6 +650,8 @@ export class PrismaProductRepository implements IProductRepository {
               : undefined,
             status: ProductStatus.create(productData.isActive ? 'ACTIVE' : 'INACTIVE'),
             costMethod: CostMethod.create((productData.costMethod as 'AVG' | 'FIFO') || 'AVG'),
+            companyId: productData.companyId || undefined,
+            companyName: productData.company?.name || undefined,
           },
           productData.id,
           productData.orgId

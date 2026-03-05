@@ -14,6 +14,7 @@ import {
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { ISessionRepository, IUserRepository } from '@auth/domain/repositories';
+import type { IOrganizationRepository } from '@organization/domain/ports/repositories/iOrganizationRepository.port';
 
 export interface ILoginRequest {
   email: string;
@@ -38,6 +39,7 @@ export interface ILoginData {
     mustChangePassword: boolean;
     roles: string[];
     permissions: string[];
+    orgSettings?: Record<string, unknown>;
   };
   accessToken: string;
   refreshToken: string;
@@ -55,6 +57,8 @@ export class LoginUseCase {
   constructor(
     @Inject('UserRepository') private readonly userRepository: IUserRepository,
     @Inject('SessionRepository') private readonly sessionRepository: ISessionRepository,
+    @Inject('OrganizationRepository')
+    private readonly organizationRepository: IOrganizationRepository,
     private readonly jwtService: JwtService,
     private readonly rateLimitService: RateLimitService
   ) {}
@@ -133,6 +137,17 @@ export class LoginUseCase {
 
       await this.sessionRepository.save(session);
 
+      // Fetch organization settings
+      let orgSettings: Record<string, unknown> = {};
+      try {
+        const organization = await this.organizationRepository.findById(request.orgId);
+        if (organization) {
+          orgSettings = organization.settings;
+        }
+      } catch (settingsError) {
+        this.logger.warn('Could not fetch org settings for login response', settingsError);
+      }
+
       this.logger.log(`Successful login for user: ${user.id}`);
 
       return ok({
@@ -153,6 +168,7 @@ export class LoginUseCase {
             mustChangePassword: user.mustChangePassword,
             roles: user.roles || [],
             permissions: user.permissions || [],
+            orgSettings,
           },
           accessToken: tokenPair.accessToken,
           refreshToken: tokenPair.refreshToken,

@@ -66,6 +66,15 @@ export class GetMovementsQueryDto {
   productId?: string;
 
   @ApiProperty({
+    description: 'Filter by company ID',
+    example: 'clxyz...',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'CompanyId must be a string' })
+  companyId?: string;
+
+  @ApiProperty({
     description: 'Start date (ISO string)',
     example: '2024-01-01T00:00:00.000Z',
     required: false,

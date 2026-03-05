@@ -131,4 +131,13 @@ export class UpdateProductDto {
   @IsOptional()
   @IsString({ message: 'Currency must be a string' })
   currency?: string;
+
+  @ApiProperty({
+    description: 'Company ID (business line)',
+    example: 'clxyz...',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Company ID must be a string' })
+  companyId?: string;
 }

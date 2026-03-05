@@ -150,7 +150,15 @@ describe('StockController', () => {
       );
 
       // Act
-      await controller.getStock('org-123', undefined, undefined, undefined, 'quantity', 'desc');
+      await controller.getStock(
+        'org-123',
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        'quantity',
+        'desc'
+      );
 
       // Assert
       expect(mockGetStockUseCase.execute).toHaveBeenCalledWith(

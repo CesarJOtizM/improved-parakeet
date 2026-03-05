@@ -121,6 +121,30 @@ export class SaleBySearchSpecification extends PrismaSpecification<Sale> {
 }
 
 /**
+ * Specification for sales filtered by product company ID (via sale lines)
+ */
+export class SaleByCompanySpecification extends PrismaSpecification<Sale> {
+  constructor(private readonly companyId: string) {
+    super();
+  }
+
+  public isSatisfiedBy(): boolean {
+    return true; // Cannot check in-memory without loaded lines + product relations
+  }
+
+  public toPrismaWhere(orgId: string): PrismaWhereInput {
+    return {
+      orgId,
+      lines: {
+        some: {
+          product: { companyId: this.companyId },
+        },
+      },
+    };
+  }
+}
+
+/**
  * Specification for sales by customer reference
  */
 export class SaleByCustomerSpecification extends PrismaSpecification<Sale> {

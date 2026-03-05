@@ -3,6 +3,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   ProductByStatusSpecification,
   ProductByCategoriesSpecification,
+  ProductByCompanySpecification,
 } from '@product/domain/specifications';
 import { ProductMapper } from '@product/mappers';
 import { DomainError, ok, Result } from '@shared/domain/result';
@@ -19,6 +20,7 @@ export interface IGetProductsRequest {
   limit?: number;
   status?: string;
   categoryIds?: string[];
+  companyId?: string;
   search?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -59,6 +61,10 @@ export class GetProductsUseCase {
 
     if (request.categoryIds?.length) {
       specifications.push(new ProductByCategoriesSpecification(request.categoryIds));
+    }
+
+    if (request.companyId) {
+      specifications.push(new ProductByCompanySpecification(request.companyId));
     }
 
     // Combine all specifications with AND logic

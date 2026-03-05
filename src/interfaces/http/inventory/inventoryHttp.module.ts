@@ -3,6 +3,7 @@ import { InventoryModule } from '@inventory/inventory.module';
 import { Module } from '@nestjs/common';
 
 import { CategoriesController } from './categories.controller';
+import { CompaniesController } from './companies.controller';
 import { MovementsController } from './movements.controller';
 import { ProductsController } from './products.controller';
 import { ReorderRulesController } from './reorderRules.controller';
@@ -17,6 +18,7 @@ import { WarehousesController } from './warehouses.controller';
   ],
   controllers: [
     CategoriesController,
+    CompaniesController,
     ProductsController,
     WarehousesController,
     MovementsController,

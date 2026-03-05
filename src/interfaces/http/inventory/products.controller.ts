@@ -102,6 +102,7 @@ export class ProductsController {
       currency: createProductDto.currency,
       status: createProductDto.status,
       costMethod: createProductDto.costMethod,
+      companyId: createProductDto.companyId,
       orgId,
     };
 
@@ -132,6 +133,12 @@ export class ProductsController {
     type: String,
     description: 'Comma-separated category IDs',
   })
+  @ApiQuery({
+    name: 'companyId',
+    required: false,
+    type: String,
+    description: 'Filter by company ID',
+  })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -154,6 +161,7 @@ export class ProductsController {
       limit: query.limit,
       status: query.status,
       categoryIds: query.categoryIds,
+      companyId: query.companyId,
       search: query.search,
       sortBy: query.sortBy,
       sortOrder: query.sortOrder,
@@ -247,6 +255,7 @@ export class ProductsController {
       currency: updateProductDto.currency,
       status: updateProductDto.status,
       costMethod: updateProductDto.costMethod,
+      companyId: updateProductDto.companyId,
       updatedBy: user.id,
     };
 

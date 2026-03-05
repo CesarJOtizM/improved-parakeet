@@ -459,15 +459,11 @@ export class PrismaMovementRepository implements IMovementRepository {
     postedAt: Date | null;
     createdBy: string;
   }) {
+    // Normalize legacy type "ADJUSTMENT" → "ADJUST_IN"
+    const normalizedType = movementData.type === 'ADJUSTMENT' ? 'ADJUST_IN' : movementData.type;
     return {
       type: MovementType.create(
-        movementData.type as
-          | 'IN'
-          | 'OUT'
-          | 'ADJUST_IN'
-          | 'ADJUST_OUT'
-          | 'TRANSFER_OUT'
-          | 'TRANSFER_IN'
+        normalizedType as 'IN' | 'OUT' | 'ADJUST_IN' | 'ADJUST_OUT' | 'TRANSFER_OUT' | 'TRANSFER_IN'
       ),
       status: MovementStatus.create('DRAFT'), // Temporary DRAFT status
       warehouseId: movementData.warehouseId,
@@ -503,7 +499,9 @@ export class PrismaMovementRepository implements IMovementRepository {
           : Number(lineData.unitCost)
         : null;
     const unitCost =
-      unitCostValue !== null ? Money.create(unitCostValue, lineData.currency, 2) : undefined;
+      unitCostValue !== null && unitCostValue > 0
+        ? Money.create(unitCostValue, lineData.currency, 2)
+        : undefined;
 
     return MovementLine.reconstitute(
       {
@@ -616,10 +614,12 @@ export class PrismaMovementRepository implements IMovementRepository {
     createdAt: Date;
     updatedAt: Date;
   }): Movement {
+    // Normalize legacy type "ADJUSTMENT" → "ADJUST_IN"
+    const normalizedType = movementData.type === 'ADJUSTMENT' ? 'ADJUST_IN' : movementData.type;
     const movement = Movement.reconstitute(
       {
         type: MovementType.create(
-          movementData.type as
+          normalizedType as
             | 'IN'
             | 'OUT'
             | 'ADJUST_IN'

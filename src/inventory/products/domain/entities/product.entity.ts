@@ -22,6 +22,8 @@ export interface IProductProps {
   costMethod: CostMethod;
   statusChangedBy?: string;
   statusChangedAt?: Date;
+  companyId?: string;
+  companyName?: string;
 }
 
 export class Product extends AggregateRoot<IProductProps> {
@@ -109,6 +111,8 @@ export class Product extends AggregateRoot<IProductProps> {
       costMethod: props.costMethod !== undefined ? props.costMethod : this.props.costMethod,
       statusChangedBy,
       statusChangedAt,
+      companyId: props.companyId !== undefined ? props.companyId : this.props.companyId,
+      companyName: props.companyName !== undefined ? props.companyName : this.props.companyName,
     };
 
     // Create new instance using reconstitute
@@ -198,5 +202,13 @@ export class Product extends AggregateRoot<IProductProps> {
 
   get statusChangedAt(): Date | undefined {
     return this.props.statusChangedAt;
+  }
+
+  get companyId(): string | undefined {
+    return this.props.companyId;
+  }
+
+  get companyName(): string | undefined {
+    return this.props.companyName;
   }
 }
