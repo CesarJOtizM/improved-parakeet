@@ -308,6 +308,12 @@ export class PermissionsSeed {
         module: 'SALES',
         action: 'RETURN',
       },
+      {
+        name: 'SALES:SWAP',
+        description: 'Swap products in confirmed or picking sales',
+        module: 'SALES',
+        action: 'SWAP',
+      },
 
       // Devoluciones
       {

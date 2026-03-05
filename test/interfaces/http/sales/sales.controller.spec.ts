@@ -59,7 +59,9 @@ describe('SalesController', () => {
       { execute: jest.fn() } as any, // startPickingSaleUseCase
       { execute: jest.fn() } as any, // shipSaleUseCase
       { execute: jest.fn() } as any, // completeSaleUseCase
-      { execute: jest.fn() } as any // markSaleReturnedUseCase
+      { execute: jest.fn() } as any, // markSaleReturnedUseCase
+      { execute: jest.fn() } as any, // swapSaleLineUseCase
+      { execute: jest.fn() } as any // getSaleSwapsUseCase
     );
   });
 

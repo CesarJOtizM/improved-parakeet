@@ -11,6 +11,7 @@ import { CompleteSaleUseCase } from '@application/saleUseCases/completeSaleUseCa
 import { MarkSaleReturnedUseCase } from '@application/saleUseCases/markSaleReturnedUseCase';
 import { ShipSaleUseCase } from '@application/saleUseCases/shipSaleUseCase';
 import { StartPickingSaleUseCase } from '@application/saleUseCases/startPickingSaleUseCase';
+import { GetSaleSwapsUseCase } from '@application/saleUseCases/getSaleSwapsUseCase';
 import { SwapSaleLineUseCase } from '@application/saleUseCases/swapSaleLineUseCase';
 import { UpdateSaleUseCase } from '@application/saleUseCases/updateSaleUseCase';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
@@ -73,7 +74,8 @@ export class SalesController {
     private readonly shipSaleUseCase: ShipSaleUseCase,
     private readonly completeSaleUseCase: CompleteSaleUseCase,
     private readonly markSaleReturnedUseCase: MarkSaleReturnedUseCase,
-    private readonly swapSaleLineUseCase: SwapSaleLineUseCase
+    private readonly swapSaleLineUseCase: SwapSaleLineUseCase,
+    private readonly getSaleSwapsUseCase: GetSaleSwapsUseCase
   ) {}
 
   @Post()
@@ -567,6 +569,29 @@ export class SalesController {
     this.logger.log('Getting returns for sale', { saleId: id, orgId });
 
     const result = await this.getReturnsBySaleUseCase.execute({ saleId: id, orgId });
+    return resultToHttpResponse(result);
+  }
+
+  @Get(':id/swaps')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.SALES_READ)
+  @ApiOperation({
+    summary: 'Get swap history for sale',
+    description: 'Get all product line swaps performed on a sale. Requires SALES:READ permission.',
+  })
+  @ApiParam({ name: 'id', description: 'Sale ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Swap history retrieved successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Sale not found',
+  })
+  async getSaleSwaps(@Param('id') id: string, @OrgId() orgId: string) {
+    this.logger.log('Getting swap history for sale', { saleId: id, orgId });
+
+    const result = await this.getSaleSwapsUseCase.execute({ saleId: id, orgId });
     return resultToHttpResponse(result);
   }
 }
