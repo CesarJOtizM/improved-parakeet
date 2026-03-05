@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { REORDER_RULE_NOT_FOUND, REORDER_RULE_UPDATE_ERROR } from '@shared/constants/error-codes';
 import {
   DomainError,
   NotFoundError,
@@ -51,7 +52,7 @@ export class UpdateReorderRuleUseCase {
       const existing = await this.reorderRuleRepository.findById(request.id, request.orgId);
 
       if (!existing) {
-        return err(new NotFoundError('Reorder rule not found', 'REORDER_RULE_NOT_FOUND'));
+        return err(new NotFoundError('Reorder rule not found', REORDER_RULE_NOT_FOUND));
       }
 
       // Apply partial updates
@@ -90,7 +91,7 @@ export class UpdateReorderRuleUseCase {
       return err(
         new ValidationError(
           error instanceof Error ? error.message : 'Failed to update reorder rule',
-          'REORDER_RULE_UPDATE_ERROR'
+          REORDER_RULE_UPDATE_ERROR
         )
       );
     }

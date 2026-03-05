@@ -1,6 +1,13 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { IReportParametersInput } from '@report/domain/valueObjects';
 import { IReportTemplateData, ReportTemplateMapper } from '@report/mappers';
+import {
+  REPORT_TEMPLATE_NOT_FOUND,
+  REPORT_TEMPLATE_NAME_TOO_SHORT,
+  REPORT_TEMPLATE_NAME_TOO_LONG,
+  REPORT_TEMPLATE_NAME_CONFLICT,
+  REPORT_TEMPLATE_UPDATE_ERROR,
+} from '@shared/constants/error-codes';
 import { err, ok, Result } from '@shared/domain/result';
 import {
   ConflictError,
@@ -55,17 +62,32 @@ export class UpdateReportTemplateUseCase {
     );
 
     if (!template) {
-      return err(new NotFoundError(`Report template with ID '${request.templateId}' not found`));
+      return err(
+        new NotFoundError(
+          `Report template with ID '${request.templateId}' not found`,
+          REPORT_TEMPLATE_NOT_FOUND
+        )
+      );
     }
 
     // Update name if provided
     if (request.name !== undefined) {
       if (request.name.trim().length < 3) {
-        return err(new ValidationError('Template name must be at least 3 characters long'));
+        return err(
+          new ValidationError(
+            'Template name must be at least 3 characters long',
+            REPORT_TEMPLATE_NAME_TOO_SHORT
+          )
+        );
       }
 
       if (request.name.trim().length > 100) {
-        return err(new ValidationError('Template name must be at most 100 characters long'));
+        return err(
+          new ValidationError(
+            'Template name must be at most 100 characters long',
+            REPORT_TEMPLATE_NAME_TOO_LONG
+          )
+        );
       }
 
       // Check if new name conflicts with existing template
@@ -76,7 +98,10 @@ export class UpdateReportTemplateUseCase {
         );
         if (existingTemplate && existingTemplate.id !== request.templateId) {
           return err(
-            new ConflictError(`A report template with name '${request.name}' already exists`)
+            new ConflictError(
+              `A report template with name '${request.name}' already exists`,
+              REPORT_TEMPLATE_NAME_CONFLICT
+            )
           );
         }
       }
@@ -132,7 +157,8 @@ export class UpdateReportTemplateUseCase {
       });
       return err(
         new ValidationError(
-          error instanceof Error ? error.message : 'Failed to update report template'
+          error instanceof Error ? error.message : 'Failed to update report template',
+          REPORT_TEMPLATE_UPDATE_ERROR
         )
       );
     }

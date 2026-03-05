@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { SALE_NOT_FOUND } from '@shared/constants/error-codes';
 import {
   BusinessRuleError,
   DomainError,
@@ -44,7 +45,7 @@ export class RemoveSaleLineUseCase {
     const sale = await this.saleRepository.findById(request.saleId, request.orgId);
 
     if (!sale) {
-      return err(new NotFoundError(`Sale with ID ${request.saleId} not found`));
+      return err(new NotFoundError(`Sale with ID ${request.saleId} not found`, SALE_NOT_FOUND));
     }
 
     // Remove line from sale

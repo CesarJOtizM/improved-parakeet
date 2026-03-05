@@ -1,6 +1,12 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Company } from '@inventory/companies/domain/entities/company.entity';
 import {
+  COMPANY_CODE_CONFLICT,
+  COMPANY_CONFLICT,
+  COMPANY_CREATION_ERROR,
+  COMPANY_NAME_CONFLICT,
+} from '@shared/constants/error-codes';
+import {
   ConflictError,
   DomainError,
   Result,
@@ -40,7 +46,7 @@ export class CreateCompanyUseCase {
       const codeExists = await this.companyRepository.existsByCode(request.code, request.orgId);
       if (codeExists) {
         return err(
-          new ConflictError('A company with this code already exists', 'COMPANY_CODE_CONFLICT')
+          new ConflictError('A company with this code already exists', COMPANY_CODE_CONFLICT)
         );
       }
 
@@ -48,7 +54,7 @@ export class CreateCompanyUseCase {
       const nameExists = await this.companyRepository.existsByName(request.name, request.orgId);
       if (nameExists) {
         return err(
-          new ConflictError('A company with this name already exists', 'COMPANY_NAME_CONFLICT')
+          new ConflictError('A company with this name already exists', COMPANY_NAME_CONFLICT)
         );
       }
 
@@ -92,7 +98,7 @@ export class CreateCompanyUseCase {
           return err(
             new ConflictError(
               'A company with this code or name already exists in this organization',
-              'COMPANY_CONFLICT'
+              COMPANY_CONFLICT
             )
           );
         }
@@ -101,7 +107,7 @@ export class CreateCompanyUseCase {
       return err(
         new ValidationError(
           `Failed to create company: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          'COMPANY_CREATION_ERROR'
+          COMPANY_CREATION_ERROR
         )
       );
     }

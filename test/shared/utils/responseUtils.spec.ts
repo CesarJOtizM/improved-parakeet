@@ -51,10 +51,50 @@ describe('responseUtils', () => {
       // Assert
       expect(result.success).toBe(false);
       expect(result.message).toBe(message);
+      expect(result.errorCode).toBe('UNKNOWN_ERROR');
       expect(result.error.statusCode).toBe(statusCode);
       expect(result.error.path).toBe(path);
       expect(result.error.method).toBe(method);
       expect(result.error.timestamp).toBeDefined();
+    });
+
+    it('Given: error with errorCode When: creating error response Then: should include errorCode', () => {
+      // Act
+      const result = createErrorResponse(
+        'Product not found',
+        404,
+        '/products/1',
+        'GET',
+        'PRODUCT_NOT_FOUND'
+      );
+
+      // Assert
+      expect(result.errorCode).toBe('PRODUCT_NOT_FOUND');
+    });
+
+    it('Given: error with details When: creating error response Then: should include details', () => {
+      // Act
+      const details = { productId: '123', warehouseId: '456' };
+      const result = createErrorResponse(
+        'Insufficient stock',
+        400,
+        '/sales/1/confirm',
+        'POST',
+        'INSUFFICIENT_STOCK',
+        details
+      );
+
+      // Assert
+      expect(result.errorCode).toBe('INSUFFICIENT_STOCK');
+      expect(result.error.details).toEqual(details);
+    });
+
+    it('Given: error without details When: creating error response Then: should not include details key', () => {
+      // Act
+      const result = createErrorResponse('Not found', 404, '/test', 'GET', 'NOT_FOUND');
+
+      // Assert
+      expect(result.error.details).toBeUndefined();
     });
   });
 

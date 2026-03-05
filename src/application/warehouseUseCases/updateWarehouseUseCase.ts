@@ -1,5 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  WAREHOUSE_HAS_STOCK,
+  WAREHOUSE_NOT_FOUND,
+  WAREHOUSE_UPDATE_ERROR,
+} from '@shared/constants/error-codes';
+import {
   DomainError,
   NotFoundError,
   Result,
@@ -58,7 +63,7 @@ export class UpdateWarehouseUseCase {
 
       if (!warehouse) {
         return err(
-          new NotFoundError('Warehouse not found', 'WAREHOUSE_NOT_FOUND', {
+          new NotFoundError('Warehouse not found', WAREHOUSE_NOT_FOUND, {
             warehouseId: request.warehouseId,
             orgId: request.orgId,
           })
@@ -76,7 +81,7 @@ export class UpdateWarehouseUseCase {
           return err(
             new ValidationError(
               'Cannot deactivate warehouse with existing stock. Transfer or adjust stock to zero first.',
-              'WAREHOUSE_HAS_STOCK'
+              WAREHOUSE_HAS_STOCK
             )
           );
         }
@@ -122,7 +127,7 @@ export class UpdateWarehouseUseCase {
       return err(
         new ValidationError(
           `Failed to update warehouse: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          'WAREHOUSE_UPDATE_ERROR'
+          WAREHOUSE_UPDATE_ERROR
         )
       );
     }

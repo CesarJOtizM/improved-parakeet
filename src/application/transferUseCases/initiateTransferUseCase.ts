@@ -1,6 +1,12 @@
 import { Quantity } from '@inventory/stock';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  TRANSFER_INSUFFICIENT_STOCK,
+  TRANSFER_LINES_INVALID,
+  TRANSFER_LOCATION_INVALID,
+  TRANSFER_VALIDATION_FAILED,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   err,
@@ -91,7 +97,9 @@ export class InitiateTransferUseCase {
     );
 
     if (!creationValidation.isValid) {
-      return err(new ValidationError(creationValidation.errors.join(', ')));
+      return err(
+        new ValidationError(creationValidation.errors.join(', '), TRANSFER_VALIDATION_FAILED)
+      );
     }
 
     // Create transfer lines for validation
@@ -115,7 +123,7 @@ export class InitiateTransferUseCase {
     );
 
     if (!linesValidation.isValid) {
-      return err(new ValidationError(linesValidation.errors.join(', ')));
+      return err(new ValidationError(linesValidation.errors.join(', '), TRANSFER_LINES_INVALID));
     }
 
     // Validate stock availability
@@ -127,7 +135,9 @@ export class InitiateTransferUseCase {
     );
 
     if (!stockValidation.isValid) {
-      return err(new BusinessRuleError(stockValidation.errors.join(', ')));
+      return err(
+        new BusinessRuleError(stockValidation.errors.join(', '), TRANSFER_INSUFFICIENT_STOCK)
+      );
     }
 
     // Validate locations if provided
@@ -141,7 +151,9 @@ export class InitiateTransferUseCase {
       );
 
       if (!locationValidation.isValid) {
-        return err(new ValidationError(locationValidation.errors.join(', ')));
+        return err(
+          new ValidationError(locationValidation.errors.join(', '), TRANSFER_LOCATION_INVALID)
+        );
       }
     }
 

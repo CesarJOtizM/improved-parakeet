@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ROLE_ORG_ID_REQUIRED } from '@shared/constants/error-codes';
 import { DomainError, err, ok, Result, ValidationError } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -31,7 +32,7 @@ export class GetRolesUseCase {
     this.logger.log('Getting available roles for organization', { orgId: request.orgId });
 
     if (!request.orgId) {
-      return err(new ValidationError('Organization ID is required'));
+      return err(new ValidationError('Organization ID is required', ROLE_ORG_ID_REQUIRED));
     }
 
     // Get available roles (system + custom for this org)

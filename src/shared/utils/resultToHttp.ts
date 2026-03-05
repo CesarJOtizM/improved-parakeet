@@ -1,14 +1,7 @@
 // Result to HTTP Response Utility
 // Converts Result<T, DomainError> to HTTP responses or throws appropriate exceptions
 
-import {
-  BadRequestException,
-  ConflictException,
-  HttpException,
-  HttpStatus,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import {
   AuthenticationError,
   BusinessRuleError,
@@ -22,37 +15,43 @@ import {
 } from '@shared/domain/result';
 
 /**
- * Convert DomainError to appropriate NestJS HTTP exception
+ * Maps DomainError subclass to HTTP status code
+ */
+function getHttpStatus(error: DomainError): number {
+  if (error instanceof AuthenticationError || error instanceof TokenError) {
+    return HttpStatus.UNAUTHORIZED;
+  }
+  if (error instanceof RateLimitError) {
+    return HttpStatus.TOO_MANY_REQUESTS;
+  }
+  if (error instanceof NotFoundError) {
+    return HttpStatus.NOT_FOUND;
+  }
+  if (error instanceof ConflictError) {
+    return HttpStatus.CONFLICT;
+  }
+  if (error instanceof ValidationError || error instanceof BusinessRuleError) {
+    return HttpStatus.BAD_REQUEST;
+  }
+  return HttpStatus.BAD_REQUEST;
+}
+
+/**
+ * Convert DomainError to appropriate NestJS HTTP exception.
+ * Includes errorCode and details in the exception response body
+ * so the GlobalExceptionFilter can propagate them to the client.
  */
 export function domainErrorToHttpException(error: DomainError): never {
-  // Auth-specific errors - security-safe messages
-  if (error instanceof AuthenticationError) {
-    throw new UnauthorizedException(error.message);
-  }
+  const status = getHttpStatus(error);
 
-  if (error instanceof TokenError) {
-    throw new UnauthorizedException(error.message);
-  }
-
-  if (error instanceof RateLimitError) {
-    throw new HttpException(error.message, HttpStatus.TOO_MANY_REQUESTS);
-  }
-
-  // Standard domain errors
-  if (error instanceof NotFoundError) {
-    throw new NotFoundException(error.message);
-  }
-
-  if (error instanceof ConflictError) {
-    throw new ConflictException(error.message);
-  }
-
-  if (error instanceof ValidationError || error instanceof BusinessRuleError) {
-    throw new BadRequestException(error.message);
-  }
-
-  // Default to BadRequestException for unknown domain errors
-  throw new BadRequestException(error.message);
+  throw new HttpException(
+    {
+      message: error.message,
+      errorCode: error.code ?? 'UNKNOWN_ERROR',
+      details: error.details,
+    },
+    status
+  );
 }
 
 /**

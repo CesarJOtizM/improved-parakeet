@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
+import { PRODUCT_NOT_FOUND } from '@shared/constants/error-codes';
 import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -79,7 +80,7 @@ export class GetProductByIdUseCase {
     const product = await this.productRepository.findById(request.productId, request.orgId);
 
     if (!product) {
-      return err(new NotFoundError('Product not found'));
+      return err(new NotFoundError('Product not found', PRODUCT_NOT_FOUND));
     }
 
     // Fetch stock data for this product across all warehouses

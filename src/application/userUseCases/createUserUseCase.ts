@@ -6,6 +6,11 @@ import { UserStatus } from '@auth/domain/valueObjects/userStatus.valueObject';
 import { EmailService } from '@infrastructure/externalServices';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  USER_EMAIL_CONFLICT,
+  USER_USERNAME_CONFLICT,
+  USER_VALIDATION_FAILED,
+} from '@shared/constants/error-codes';
+import {
   ConflictError,
   DomainError,
   err,
@@ -63,13 +68,18 @@ export class CreateUserUseCase {
     });
 
     if (!validation.isValid) {
-      return err(new ValidationError(`Validation failed: ${validation.errors.join(', ')}`));
+      return err(
+        new ValidationError(
+          `Validation failed: ${validation.errors.join(', ')}`,
+          USER_VALIDATION_FAILED
+        )
+      );
     }
 
     // Check if email already exists
     const emailExists = await this.userRepository.existsByEmail(request.email, request.orgId);
     if (emailExists) {
-      return err(new ConflictError('Email is already in use'));
+      return err(new ConflictError('Email is already in use', USER_EMAIL_CONFLICT));
     }
 
     // Check if username already exists
@@ -78,7 +88,7 @@ export class CreateUserUseCase {
       request.orgId
     );
     if (usernameExists) {
-      return err(new ConflictError('Username is already in use'));
+      return err(new ConflictError('Username is already in use', USER_USERNAME_CONFLICT));
     }
 
     // Hash the password before creating the user

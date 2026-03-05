@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Sale } from '@sale/domain/entities/sale.entity';
 import { SaleNumberGenerationService } from '@sale/domain/services/saleNumberGeneration.service';
 import { SaleMapper } from '@sale/mappers';
+import { SALE_CREATION_ERROR } from '@shared/constants/error-codes';
 import {
   DomainError,
   NotFoundError,
@@ -146,10 +147,10 @@ export class CreateSaleUseCase {
       });
 
       if (error instanceof Error) {
-        return err(new ValidationError(error.message, 'SALE_CREATION_ERROR'));
+        return err(new ValidationError(error.message, SALE_CREATION_ERROR));
       }
 
-      return err(new ValidationError('Failed to create sale', 'SALE_CREATION_ERROR'));
+      return err(new ValidationError('Failed to create sale', SALE_CREATION_ERROR));
     }
   }
 }

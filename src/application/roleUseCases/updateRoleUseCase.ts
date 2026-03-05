@@ -1,5 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  ROLE_DESCRIPTION_TOO_LONG,
+  ROLE_NOT_FOUND,
+  ROLE_ORG_MISMATCH,
+  ROLE_SYSTEM_IMMUTABLE,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   err,
@@ -45,22 +51,24 @@ export class UpdateRoleUseCase {
     const role = await this.roleRepository.findById(request.roleId);
 
     if (!role) {
-      return err(new NotFoundError('Role not found'));
+      return err(new NotFoundError('Role not found', ROLE_NOT_FOUND));
     }
 
     // Cannot update system roles
     if (role.isSystem) {
-      return err(new BusinessRuleError('Cannot update system roles'));
+      return err(new BusinessRuleError('Cannot update system roles', ROLE_SYSTEM_IMMUTABLE));
     }
 
     // Verify role belongs to this organization
     if (role.orgId !== request.orgId) {
-      return err(new NotFoundError('Role not found in this organization'));
+      return err(new NotFoundError('Role not found in this organization', ROLE_ORG_MISMATCH));
     }
 
     // Validate description length if provided
     if (request.description !== undefined && request.description.length > 500) {
-      return err(new ValidationError('Description must not exceed 500 characters'));
+      return err(
+        new ValidationError('Description must not exceed 500 characters', ROLE_DESCRIPTION_TOO_LONG)
+      );
     }
 
     // Update role

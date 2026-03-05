@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { RETURN_SALE_NOT_FOUND } from '@shared/constants/error-codes';
 import { DomainError, NotFoundError, Result, err, ok } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -32,7 +33,9 @@ export class GetReturnsBySaleUseCase {
     // Validate sale exists
     const sale = await this.saleRepository.findById(request.saleId, request.orgId);
     if (!sale) {
-      return err(new NotFoundError(`Sale with ID ${request.saleId} not found`));
+      return err(
+        new NotFoundError(`Sale with ID ${request.saleId} not found`, RETURN_SALE_NOT_FOUND)
+      );
     }
 
     // Find returns by sale ID

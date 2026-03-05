@@ -1,6 +1,11 @@
 import { ImportErrorReportService, type IImportBatchRepository } from '@import/domain';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  IMPORT_BATCH_NOT_FOUND,
+  IMPORT_NOT_VALIDATED,
+  IMPORT_ERROR_REPORT_FAILED,
+} from '@shared/constants/error-codes';
+import {
   DomainError,
   NotFoundError,
   Result,
@@ -54,12 +59,14 @@ export class DownloadErrorReportUseCase {
       // Find batch
       const batch = await this.repository.findById(request.batchId, request.orgId);
       if (!batch) {
-        return err(new NotFoundError('Import batch not found'));
+        return err(new NotFoundError('Import batch not found', IMPORT_BATCH_NOT_FOUND));
       }
 
       // Check if batch has been validated
       if (batch.status.isPending()) {
-        return err(new ValidationError('Import batch has not been validated yet'));
+        return err(
+          new ValidationError('Import batch has not been validated yet', IMPORT_NOT_VALIDATED)
+        );
       }
 
       const format = request.format ?? 'csv';
@@ -108,7 +115,9 @@ export class DownloadErrorReportUseCase {
         batchId: request.batchId,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      return err(new ValidationError('Failed to generate error report'));
+      return err(
+        new ValidationError('Failed to generate error report', IMPORT_ERROR_REPORT_FAILED)
+      );
     }
   }
 }

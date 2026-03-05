@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { IReportViewResult, ReportViewService, ReportCacheService } from '@report/domain/services';
 import { IReportParametersInput, ReportType } from '@report/domain/valueObjects';
+import { REPORT_GENERATION_ERROR, REPORT_INVALID_TYPE } from '@shared/constants/error-codes';
 import { err, ok, Result } from '@shared/domain/result';
 import { DomainError, ValidationError } from '@shared/domain/result/domainError';
 
@@ -40,7 +41,9 @@ export class ViewReportUseCase {
       try {
         reportType = ReportType.create(request.type);
       } catch {
-        return err(new ValidationError(`Invalid report type: ${request.type}`));
+        return err(
+          new ValidationError(`Invalid report type: ${request.type}`, REPORT_INVALID_TYPE)
+        );
       }
 
       const reportTypeValue = reportType.getValue();
@@ -124,7 +127,10 @@ export class ViewReportUseCase {
         error,
       });
       return err(
-        new ValidationError(error instanceof Error ? error.message : 'Failed to generate report')
+        new ValidationError(
+          error instanceof Error ? error.message : 'Failed to generate report',
+          REPORT_GENERATION_ERROR
+        )
       );
     }
   }

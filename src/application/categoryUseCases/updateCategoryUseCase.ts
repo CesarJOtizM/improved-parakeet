@@ -1,5 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  CATEGORY_INVALID_PARENT_REF,
+  CATEGORY_NAME_CONFLICT,
+  CATEGORY_NOT_FOUND,
+  CATEGORY_PARENT_NOT_FOUND,
+  CATEGORY_SELF_PARENT,
+  CATEGORY_UPDATE_ERROR,
+} from '@shared/constants/error-codes';
+import {
   ConflictError,
   DomainError,
   NotFoundError,
@@ -42,7 +50,7 @@ export class UpdateCategoryUseCase {
     try {
       const category = await this.categoryRepository.findById(request.categoryId, request.orgId);
       if (!category) {
-        return err(new NotFoundError('Category not found'));
+        return err(new NotFoundError('Category not found', CATEGORY_NOT_FOUND));
       }
 
       // Validate name uniqueness if changing name
@@ -50,7 +58,7 @@ export class UpdateCategoryUseCase {
         const nameExists = await this.categoryRepository.existsByName(request.name, request.orgId);
         if (nameExists) {
           return err(
-            new ConflictError('A category with this name already exists', 'CATEGORY_NAME_CONFLICT')
+            new ConflictError('A category with this name already exists', CATEGORY_NAME_CONFLICT)
           );
         }
       }
@@ -58,11 +66,13 @@ export class UpdateCategoryUseCase {
       // Validate parent exists if changing parentId
       if (request.parentId) {
         if (request.parentId === request.categoryId) {
-          return err(new ValidationError('A category cannot be its own parent', 'INVALID_PARENT'));
+          return err(
+            new ValidationError('A category cannot be its own parent', CATEGORY_SELF_PARENT)
+          );
         }
         const parent = await this.categoryRepository.findById(request.parentId, request.orgId);
         if (!parent) {
-          return err(new NotFoundError('Parent category not found'));
+          return err(new NotFoundError('Parent category not found', CATEGORY_PARENT_NOT_FOUND));
         }
       }
 
@@ -120,26 +130,26 @@ export class UpdateCategoryUseCase {
           return err(
             new ConflictError(
               'A category with this name already exists in this organization',
-              'CATEGORY_NAME_CONFLICT'
+              CATEGORY_NAME_CONFLICT
             )
           );
         }
 
         if (prismaError.code === 'P2003') {
           return err(
-            new ValidationError('Invalid parent category reference', 'INVALID_PARENT_CATEGORY')
+            new ValidationError('Invalid parent category reference', CATEGORY_INVALID_PARENT_REF)
           );
         }
 
         if (prismaError.code === 'P2025') {
-          return err(new NotFoundError('Category not found'));
+          return err(new NotFoundError('Category not found', CATEGORY_NOT_FOUND));
         }
       }
 
       return err(
         new ValidationError(
           `Failed to update category: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          'CATEGORY_UPDATE_ERROR'
+          CATEGORY_UPDATE_ERROR
         )
       );
     }

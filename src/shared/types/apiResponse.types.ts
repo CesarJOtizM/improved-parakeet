@@ -8,11 +8,13 @@ export interface IApiResponseSuccess<T = unknown> {
 export interface IApiResponseError {
   success: false;
   message: string;
+  errorCode: string;
   error: {
     statusCode: number;
     timestamp: string;
     path: string;
     method: string;
+    details?: Record<string, unknown>;
   };
 }
 

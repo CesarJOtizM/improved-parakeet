@@ -1,5 +1,6 @@
 import { UserManagementService } from '@auth/domain/services/userManagementService';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { USER_NOT_FOUND, USER_VALIDATION_FAILED } from '@shared/constants/error-codes';
 import {
   ConflictError,
   DomainError,
@@ -58,7 +59,7 @@ export class UpdateUserUseCase {
     // Get existing user
     const user = await this.userRepository.findById(request.userId, request.orgId);
     if (!user) {
-      return err(new NotFoundError('User not found'));
+      return err(new NotFoundError('User not found', USER_NOT_FOUND));
     }
 
     // Validate update data
@@ -70,7 +71,12 @@ export class UpdateUserUseCase {
     });
 
     if (!validation.isValid) {
-      return err(new ValidationError(`Validation failed: ${validation.errors.join(', ')}`));
+      return err(
+        new ValidationError(
+          `Validation failed: ${validation.errors.join(', ')}`,
+          USER_VALIDATION_FAILED
+        )
+      );
     }
 
     // Check email uniqueness if email is being changed

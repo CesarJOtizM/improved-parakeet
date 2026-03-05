@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { MOVEMENT_CANNOT_BE_DELETED, MOVEMENT_NOT_FOUND } from '@shared/constants/error-codes';
 import {
   BusinessRuleError,
   DomainError,
@@ -38,12 +39,12 @@ export class DeleteMovementUseCase {
     const movement = await this.movementRepository.findById(request.movementId, request.orgId);
 
     if (!movement) {
-      return err(new NotFoundError('Movement not found', 'MOVEMENT_NOT_FOUND'));
+      return err(new NotFoundError('Movement not found', MOVEMENT_NOT_FOUND));
     }
 
     if (!movement.status.isDraft()) {
       return err(
-        new BusinessRuleError('Only DRAFT movements can be deleted', 'MOVEMENT_CANNOT_BE_DELETED')
+        new BusinessRuleError('Only DRAFT movements can be deleted', MOVEMENT_CANNOT_BE_DELETED)
       );
     }
 

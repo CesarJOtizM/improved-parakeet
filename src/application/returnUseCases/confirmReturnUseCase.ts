@@ -4,6 +4,7 @@ import { InventoryInGeneratedEvent } from '@returns/domain/events/inventoryInGen
 import { InventoryOutGeneratedEvent } from '@returns/domain/events/inventoryOutGenerated.event';
 import { InventoryIntegrationService } from '@returns/domain/services/inventoryIntegration.service';
 import { ReturnValidationService } from '@returns/domain/services/returnValidation.service';
+import { RETURN_NOT_FOUND, RETURN_CONFIRMATION_FAILED } from '@shared/constants/error-codes';
 import {
   BusinessRuleError,
   DomainError,
@@ -49,14 +50,17 @@ export class ConfirmReturnUseCase {
     const returnEntity = await this.returnRepository.findById(request.id, request.orgId);
 
     if (!returnEntity) {
-      return err(new NotFoundError(`Return with ID ${request.id} not found`));
+      return err(new NotFoundError(`Return with ID ${request.id} not found`, RETURN_NOT_FOUND));
     }
 
     // Validate return can be confirmed
     const validationResult = ReturnValidationService.validateReturnCanBeConfirmed(returnEntity);
     if (!validationResult.isValid) {
       return err(
-        new BusinessRuleError(`Return cannot be confirmed: ${validationResult.errors.join(', ')}`)
+        new BusinessRuleError(
+          `Return cannot be confirmed: ${validationResult.errors.join(', ')}`,
+          RETURN_CONFIRMATION_FAILED
+        )
       );
     }
 
@@ -98,7 +102,10 @@ export class ConfirmReturnUseCase {
           });
 
           if (!sale) {
-            throw new BusinessRuleError(`Sale with ID ${returnEntity.saleId} not found`);
+            throw new BusinessRuleError(
+              `Sale with ID ${returnEntity.saleId} not found`,
+              RETURN_CONFIRMATION_FAILED
+            );
           }
 
           // Calculate total already returned per product
@@ -115,7 +122,8 @@ export class ConfirmReturnUseCase {
             const saleLine = sale.lines.find(l => l.productId === returnLine.productId);
             if (!saleLine) {
               throw new BusinessRuleError(
-                `Product ${returnLine.productId} was not sold in sale ${returnEntity.saleId}`
+                `Product ${returnLine.productId} was not sold in sale ${returnEntity.saleId}`,
+                RETURN_CONFIRMATION_FAILED
               );
             }
 
@@ -127,7 +135,8 @@ export class ConfirmReturnUseCase {
               throw new BusinessRuleError(
                 `Cannot return ${thisReturnQty} units of product ${returnLine.productId}. ` +
                   `Sold: ${soldQuantity}, Already returned: ${alreadyReturned}, ` +
-                  `Remaining: ${soldQuantity - alreadyReturned}`
+                  `Remaining: ${soldQuantity - alreadyReturned}`,
+                RETURN_CONFIRMATION_FAILED
               );
             }
           }
@@ -145,7 +154,8 @@ export class ConfirmReturnUseCase {
 
           if (!sourceMovement) {
             throw new BusinessRuleError(
-              `Source movement with ID ${returnEntity.sourceMovementId} not found`
+              `Source movement with ID ${returnEntity.sourceMovementId} not found`,
+              RETURN_CONFIRMATION_FAILED
             );
           }
 
@@ -175,7 +185,8 @@ export class ConfirmReturnUseCase {
             );
             if (!movementLine) {
               throw new BusinessRuleError(
-                `Product ${returnLine.productId} was not purchased in movement ${returnEntity.sourceMovementId}`
+                `Product ${returnLine.productId} was not purchased in movement ${returnEntity.sourceMovementId}`,
+                RETURN_CONFIRMATION_FAILED
               );
             }
 
@@ -187,7 +198,8 @@ export class ConfirmReturnUseCase {
               throw new BusinessRuleError(
                 `Cannot return ${thisReturnQty} units of product ${returnLine.productId}. ` +
                   `Purchased: ${purchasedQuantity}, Already returned: ${alreadyReturned}, ` +
-                  `Remaining: ${purchasedQuantity - alreadyReturned}`
+                  `Remaining: ${purchasedQuantity - alreadyReturned}`,
+                RETURN_CONFIRMATION_FAILED
               );
             }
           }
@@ -401,7 +413,8 @@ export class ConfirmReturnUseCase {
       if (error instanceof InsufficientStockError) {
         return err(
           new BusinessRuleError(
-            `Insufficient stock for product ${error.productId}: requested ${error.requestedQuantity}, available ${error.availableQuantity ?? 'unknown'}`
+            `Insufficient stock for product ${error.productId}: requested ${error.requestedQuantity}, available ${error.availableQuantity ?? 'unknown'}`,
+            RETURN_CONFIRMATION_FAILED
           )
         );
       }

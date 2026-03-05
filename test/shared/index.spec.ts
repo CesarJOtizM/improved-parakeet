@@ -128,6 +128,7 @@ describe('Shared Index Exports', () => {
       // Assert
       expect(result.success).toBe(false);
       expect(result.message).toBe('Error message');
+      expect(result.errorCode).toBe('UNKNOWN_ERROR');
       expect(result.error.statusCode).toBe(400);
       expect(result.error.path).toBe('/api/test');
       expect(result.error.method).toBe('GET');

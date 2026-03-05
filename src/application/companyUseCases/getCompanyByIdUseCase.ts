@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { COMPANY_NOT_FOUND } from '@shared/constants/error-codes';
 import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -31,7 +32,7 @@ export class GetCompanyByIdUseCase {
     const company = await this.companyRepository.findById(request.companyId, request.orgId);
 
     if (!company) {
-      return err(new NotFoundError('Company not found'));
+      return err(new NotFoundError('Company not found', COMPANY_NOT_FOUND));
     }
 
     const productCount = await this.companyRepository.countProducts(company.id, request.orgId);

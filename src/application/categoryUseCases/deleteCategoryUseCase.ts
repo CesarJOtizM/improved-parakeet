@@ -1,5 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  CATEGORY_DELETE_ERROR,
+  CATEGORY_HAS_CHILDREN,
+  CATEGORY_HAS_PRODUCTS,
+  CATEGORY_NOT_FOUND,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   NotFoundError,
@@ -37,7 +43,7 @@ export class DeleteCategoryUseCase {
     try {
       const category = await this.categoryRepository.findById(request.categoryId, request.orgId);
       if (!category) {
-        return err(new NotFoundError('Category not found'));
+        return err(new NotFoundError('Category not found', CATEGORY_NOT_FOUND));
       }
 
       // Check for subcategories
@@ -49,7 +55,7 @@ export class DeleteCategoryUseCase {
         return err(
           new BusinessRuleError(
             'Cannot delete a category that has subcategories. Remove subcategories first.',
-            'CATEGORY_HAS_CHILDREN'
+            CATEGORY_HAS_CHILDREN
           )
         );
       }
@@ -65,7 +71,7 @@ export class DeleteCategoryUseCase {
         return err(
           new BusinessRuleError(
             `Cannot delete category with ${associatedProducts.length} associated products. Reassign products first.`,
-            'CATEGORY_HAS_PRODUCTS'
+            CATEGORY_HAS_PRODUCTS
           )
         );
       }
@@ -82,7 +88,7 @@ export class DeleteCategoryUseCase {
       this.logger.error('Error deleting category', {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      return err(new ValidationError('Failed to delete category', 'CATEGORY_DELETE_ERROR'));
+      return err(new ValidationError('Failed to delete category', CATEGORY_DELETE_ERROR));
     }
   }
 }

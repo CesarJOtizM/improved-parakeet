@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ROLE_NOT_FOUND, ROLE_ORG_MISMATCH } from '@shared/constants/error-codes';
 import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -35,13 +36,13 @@ export class GetRoleUseCase {
     const role = await this.roleRepository.findById(request.roleId);
 
     if (!role) {
-      return err(new NotFoundError('Role not found'));
+      return err(new NotFoundError('Role not found', ROLE_NOT_FOUND));
     }
 
     // Verify role is available for this organization
     // System roles are available to all, custom roles only to their org
     if (!role.isSystem && role.orgId !== request.orgId) {
-      return err(new NotFoundError('Role not found in this organization'));
+      return err(new NotFoundError('Role not found in this organization', ROLE_ORG_MISMATCH));
     }
 
     this.logger.log('Role retrieved successfully', {

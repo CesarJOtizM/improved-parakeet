@@ -2,6 +2,12 @@ import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Organization } from '@organization/domain/entities/organization.entity';
 import {
+  ORG_CREATION_ERROR,
+  ORG_NAME_CONFLICT,
+  ORG_SLUG_CONFLICT,
+  ORG_SLUG_INVALID,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   ConflictError,
   DomainError,
@@ -67,13 +73,16 @@ export class CreateOrganizationUseCase {
     // Validate slug format
     if (!/^[a-z0-9-]+$/.test(request.slug)) {
       return err(
-        new ValidationError('Slug can only contain lowercase letters, numbers and hyphens')
+        new ValidationError(
+          'Slug can only contain lowercase letters, numbers and hyphens',
+          ORG_SLUG_INVALID
+        )
       );
     }
 
     // Validate slug length
     if (request.slug.length < 3 || request.slug.length > 50) {
-      return err(new ValidationError('Slug must be between 3 and 50 characters'));
+      return err(new ValidationError('Slug must be between 3 and 50 characters', ORG_SLUG_INVALID));
     }
 
     // Validate that slug doesn't exist
@@ -81,7 +90,8 @@ export class CreateOrganizationUseCase {
     if (slugExists) {
       return err(
         new ConflictError(
-          `The slug "${request.slug}" is already in use. Please choose another one.`
+          `The slug "${request.slug}" is already in use. Please choose another one.`,
+          ORG_SLUG_CONFLICT
         )
       );
     }
@@ -92,7 +102,8 @@ export class CreateOrganizationUseCase {
       if (domainExists) {
         return err(
           new ConflictError(
-            `The domain "${request.domain}" is already in use. Please choose another one.`
+            `The domain "${request.domain}" is already in use. Please choose another one.`,
+            ORG_NAME_CONFLICT
           )
         );
       }
@@ -148,7 +159,8 @@ export class CreateOrganizationUseCase {
       if (!adminRole) {
         return err(
           new BusinessRuleError(
-            'ADMIN role not found. Please ensure system roles are initialized before creating organizations.'
+            'ADMIN role not found. Please ensure system roles are initialized before creating organizations.',
+            ORG_CREATION_ERROR
           )
         );
       }

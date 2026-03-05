@@ -216,7 +216,7 @@ describe('CreateCategoryUseCase', () => {
         },
         error => {
           expect(error).toBeInstanceOf(ValidationError);
-          expect(error.code).toBe('INVALID_PARENT_CATEGORY');
+          expect(error.code).toBe('CATEGORY_INVALID_PARENT_REF');
         }
       );
     });

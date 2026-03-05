@@ -1,6 +1,11 @@
 import { Movement } from '@inventory/movements/domain/entities/movement.entity';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  MOVEMENT_CANNOT_POST,
+  MOVEMENT_NOT_FOUND,
+  STOCK_INSUFFICIENT,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   err,
@@ -55,12 +60,12 @@ export class PostMovementUseCase {
     const movement = await this.movementRepository.findById(request.movementId, request.orgId);
 
     if (!movement) {
-      return err(new NotFoundError('Movement not found'));
+      return err(new NotFoundError('Movement not found', MOVEMENT_NOT_FOUND));
     }
 
     // Validate movement can be posted using aggregate method
     if (!movement.canPost()) {
-      return err(new BusinessRuleError('Movement cannot be posted'));
+      return err(new BusinessRuleError('Movement cannot be posted', MOVEMENT_CANNOT_POST));
     }
 
     // Validate stock availability for output movements
@@ -135,7 +140,8 @@ export class PostMovementUseCase {
       if (!validation.isValid) {
         return err(
           new BusinessRuleError(
-            `Insufficient stock for product ${line.productId} at location ${line.locationId}: ${validation.errors.join(', ')}`
+            `Insufficient stock for product ${line.productId} at location ${line.locationId}: ${validation.errors.join(', ')}`,
+            STOCK_INSUFFICIENT
           )
         );
       }

@@ -1,5 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  ORG_NOT_FOUND,
+  SALE_NOT_FOUND,
+  SALE_PICKING_NOT_ENABLED,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   err,
@@ -46,19 +51,26 @@ export class StartPickingSaleUseCase {
     // Validate org has picking enabled
     const org = await this.organizationRepository.findById(request.orgId);
     if (!org) {
-      return err(new NotFoundError(`Organization with ID ${request.orgId} not found`));
+      return err(
+        new NotFoundError(`Organization with ID ${request.orgId} not found`, ORG_NOT_FOUND)
+      );
     }
 
     const pickingEnabled = org.getSetting('pickingEnabled');
     if (!pickingEnabled) {
-      return err(new BusinessRuleError('Picking is not enabled for this organization'));
+      return err(
+        new BusinessRuleError(
+          'Picking is not enabled for this organization',
+          SALE_PICKING_NOT_ENABLED
+        )
+      );
     }
 
     // Retrieve sale
     const sale = await this.saleRepository.findById(request.id, request.orgId);
 
     if (!sale) {
-      return err(new NotFoundError(`Sale with ID ${request.id} not found`));
+      return err(new NotFoundError(`Sale with ID ${request.id} not found`, SALE_NOT_FOUND));
     }
 
     // Start picking

@@ -208,7 +208,7 @@ describe('UpdateCategoryUseCase', () => {
         error => {
           expect(error).toBeInstanceOf(ValidationError);
           expect(error.message).toBe('A category cannot be its own parent');
-          expect(error.code).toBe('INVALID_PARENT');
+          expect(error.code).toBe('CATEGORY_SELF_PARENT');
         }
       );
       expect(mockCategoryRepository.save).not.toHaveBeenCalled();
@@ -365,7 +365,7 @@ describe('UpdateCategoryUseCase', () => {
         },
         error => {
           expect(error).toBeInstanceOf(ValidationError);
-          expect(error.code).toBe('INVALID_PARENT_CATEGORY');
+          expect(error.code).toBe('CATEGORY_INVALID_PARENT_REF');
         }
       );
     });

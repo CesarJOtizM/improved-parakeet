@@ -4,6 +4,7 @@ import { MovementStatus } from '@inventory/movements/domain/valueObjects/movemen
 import { MovementType } from '@inventory/movements/domain/valueObjects/movementType.valueObject';
 import { Quantity } from '@inventory/stock';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { TRANSFER_CANNOT_RECEIVE, TRANSFER_NOT_FOUND } from '@shared/constants/error-codes';
 import {
   BusinessRuleError,
   DomainError,
@@ -54,14 +55,17 @@ export class ReceiveTransferUseCase {
     const transfer = await this.transferRepository.findById(request.transferId, request.orgId);
 
     if (!transfer) {
-      return err(new NotFoundError(`Transfer with ID ${request.transferId} not found`));
+      return err(
+        new NotFoundError(`Transfer with ID ${request.transferId} not found`, TRANSFER_NOT_FOUND)
+      );
     }
 
     // Validate transfer can be received
     if (!transfer.status.canReceive()) {
       return err(
         new BusinessRuleError(
-          `Transfer cannot be received. Current status: ${transfer.status.getValue()}. Must be IN_TRANSIT or PARTIAL.`
+          `Transfer cannot be received. Current status: ${transfer.status.getValue()}. Must be IN_TRANSIT or PARTIAL.`,
+          TRANSFER_CANNOT_RECEIVE
         )
       );
     }

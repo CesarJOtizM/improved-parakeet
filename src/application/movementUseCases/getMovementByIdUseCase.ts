@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { MOVEMENT_NOT_FOUND } from '@shared/constants/error-codes';
 import { DomainError, NotFoundError, Result, err, ok } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
@@ -36,7 +37,7 @@ export class GetMovementByIdUseCase {
     const movement = await this.movementRepository.findById(request.movementId, request.orgId);
 
     if (!movement) {
-      return err(new NotFoundError('Movement not found', 'MOVEMENT_NOT_FOUND'));
+      return err(new NotFoundError('Movement not found', MOVEMENT_NOT_FOUND));
     }
 
     // Collect product info for all lines

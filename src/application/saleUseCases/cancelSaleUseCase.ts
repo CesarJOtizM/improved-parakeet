@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { SALE_CANCEL_ERROR, SALE_NOT_FOUND } from '@shared/constants/error-codes';
 import {
   BusinessRuleError,
   DomainError,
@@ -40,7 +41,7 @@ export class CancelSaleUseCase {
     const sale = await this.saleRepository.findById(request.id, request.orgId);
 
     if (!sale) {
-      return err(new NotFoundError(`Sale with ID ${request.id} not found`));
+      return err(new NotFoundError(`Sale with ID ${request.id} not found`, SALE_NOT_FOUND));
     }
 
     // Cancel sale
@@ -48,7 +49,10 @@ export class CancelSaleUseCase {
       sale.cancel(request.reason, request.userId);
     } catch (error) {
       return err(
-        new BusinessRuleError(error instanceof Error ? error.message : 'Failed to cancel sale')
+        new BusinessRuleError(
+          error instanceof Error ? error.message : 'Failed to cancel sale',
+          SALE_CANCEL_ERROR
+        )
       );
     }
 

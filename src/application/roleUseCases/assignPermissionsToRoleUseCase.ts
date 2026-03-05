@@ -1,6 +1,12 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  ROLE_NOT_FOUND,
+  ROLE_ORG_MISMATCH,
+  ROLE_PERMISSIONS_NOT_FOUND,
+  ROLE_PERMISSIONS_REQUIRED,
+} from '@shared/constants/error-codes';
+import {
   DomainError,
   err,
   NotFoundError,
@@ -47,19 +53,21 @@ export class AssignPermissionsToRoleUseCase {
     });
 
     if (!request.permissionIds || request.permissionIds.length === 0) {
-      return err(new ValidationError('At least one permission ID is required'));
+      return err(
+        new ValidationError('At least one permission ID is required', ROLE_PERMISSIONS_REQUIRED)
+      );
     }
 
     // Find role
     const role = await this.roleRepository.findById(request.roleId);
 
     if (!role) {
-      return err(new NotFoundError('Role not found'));
+      return err(new NotFoundError('Role not found', ROLE_NOT_FOUND));
     }
 
     // Verify role is available for this organization
     if (!role.isSystem && role.orgId !== request.orgId) {
-      return err(new NotFoundError('Role not found in this organization'));
+      return err(new NotFoundError('Role not found in this organization', ROLE_ORG_MISMATCH));
     }
 
     // Verify all permissions exist
@@ -74,7 +82,12 @@ export class AssignPermissionsToRoleUseCase {
     if (permissions.length !== request.permissionIds.length) {
       const foundIds = permissions.map(p => p.id);
       const missingIds = request.permissionIds.filter(id => !foundIds.includes(id));
-      return err(new NotFoundError(`Permissions not found: ${missingIds.join(', ')}`));
+      return err(
+        new NotFoundError(
+          `Permissions not found: ${missingIds.join(', ')}`,
+          ROLE_PERMISSIONS_NOT_FOUND
+        )
+      );
     }
 
     // Remove existing permissions for this role

@@ -1,5 +1,6 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ORG_NOT_FOUND } from '@shared/constants/error-codes';
 import { DomainError, NotFoundError, Result, err, ok } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -75,7 +76,7 @@ export class GetOrganizationByIdUseCase {
     }
 
     if (!organization) {
-      return err(new NotFoundError('Organization not found'));
+      return err(new NotFoundError('Organization not found', ORG_NOT_FOUND));
     }
 
     return ok({

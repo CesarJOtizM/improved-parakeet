@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { MOVEMENT_NOT_FOUND } from '@shared/constants/error-codes';
 import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -35,7 +36,9 @@ export class GetReturnsByMovementUseCase {
     // Validate movement exists
     const movement = await this.movementRepository.findById(request.movementId, request.orgId);
     if (!movement) {
-      return err(new NotFoundError(`Movement with ID ${request.movementId} not found`));
+      return err(
+        new NotFoundError(`Movement with ID ${request.movementId} not found`, MOVEMENT_NOT_FOUND)
+      );
     }
 
     // Find returns by source movement ID

@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { USER_NOT_FOUND } from '@shared/constants/error-codes';
 import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -43,7 +44,7 @@ export class GetUserUseCase {
     const user = await this.userRepository.findById(request.userId, request.orgId);
 
     if (!user) {
-      return err(new NotFoundError('User not found'));
+      return err(new NotFoundError('User not found', USER_NOT_FOUND));
     }
 
     return ok({

@@ -3,6 +3,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InventoryOutGeneratedEvent } from '@sale/domain/events/inventoryOutGenerated.event';
 import { InventoryIntegrationService } from '@sale/domain/services/inventoryIntegration.service';
 import { SaleValidationService } from '@sale/domain/services/saleValidation.service';
+import { SALE_NOT_FOUND, SALE_INSUFFICIENT_STOCK } from '@shared/constants/error-codes';
 import {
   BusinessRuleError,
   DomainError,
@@ -48,7 +49,7 @@ export class ConfirmSaleUseCase {
     const sale = await this.saleRepository.findById(request.id, request.orgId);
 
     if (!sale) {
-      return err(new NotFoundError(`Sale with ID ${request.id} not found`));
+      return err(new NotFoundError(`Sale with ID ${request.id} not found`, SALE_NOT_FOUND));
     }
 
     // Validate sale can be confirmed
@@ -65,7 +66,12 @@ export class ConfirmSaleUseCase {
       this.stockRepository
     );
     if (!stockValidation.isValid) {
-      return err(new BusinessRuleError(`Insufficient stock: ${stockValidation.errors.join(', ')}`));
+      return err(
+        new BusinessRuleError(
+          `Insufficient stock: ${stockValidation.errors.join(', ')}`,
+          SALE_INSUFFICIENT_STOCK
+        )
+      );
     }
 
     // Generate movement from sale

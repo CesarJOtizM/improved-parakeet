@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ReportGenerationService } from '@report/domain/services/reportGeneration.service';
 import { IReportParametersInput, ReportType } from '@report/domain/valueObjects';
+import { REPORT_INVALID_TYPE } from '@shared/constants/error-codes';
 import { ValidationError } from '@shared/domain/result/domainError';
 
 export interface IStreamReportRequest {
@@ -28,7 +29,7 @@ export class StreamReportUseCase {
       try {
         reportType = ReportType.create(request.type);
       } catch {
-        throw new ValidationError(`Invalid report type: ${request.type}`);
+        throw new ValidationError(`Invalid report type: ${request.type}`, REPORT_INVALID_TYPE);
       }
 
       const reportTypeValue = reportType.getValue();

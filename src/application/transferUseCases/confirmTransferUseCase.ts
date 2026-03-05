@@ -4,6 +4,7 @@ import { MovementStatus } from '@inventory/movements/domain/valueObjects/movemen
 import { MovementType } from '@inventory/movements/domain/valueObjects/movementType.valueObject';
 import { Quantity } from '@inventory/stock';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { TRANSFER_CANNOT_CONFIRM, TRANSFER_NOT_FOUND } from '@shared/constants/error-codes';
 import {
   BusinessRuleError,
   DomainError,
@@ -53,14 +54,17 @@ export class ConfirmTransferUseCase {
     const transfer = await this.transferRepository.findById(request.transferId, request.orgId);
 
     if (!transfer) {
-      return err(new NotFoundError(`Transfer with ID ${request.transferId} not found`));
+      return err(
+        new NotFoundError(`Transfer with ID ${request.transferId} not found`, TRANSFER_NOT_FOUND)
+      );
     }
 
     // Validate transfer can be confirmed
     if (!transfer.canConfirm()) {
       return err(
         new BusinessRuleError(
-          'Transfer cannot be confirmed. It must be in DRAFT status with at least one line.'
+          'Transfer cannot be confirmed. It must be in DRAFT status with at least one line.',
+          TRANSFER_CANNOT_CONFIRM
         )
       );
     }

@@ -1,5 +1,13 @@
 import { AuthenticationService } from '@auth/domain/services/authenticationService';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  AUTH_PASSWORD_CHANGE_FAILED,
+  AUTH_PASSWORD_INCORRECT,
+  AUTH_PASSWORD_REQUIREMENTS,
+  AUTH_PASSWORD_SAME_AS_CURRENT,
+  AUTH_PASSWORDS_MISMATCH,
+  AUTH_USER_NOT_FOUND,
+} from '@shared/constants/error-codes';
 import { DomainError, err, ok, Result, ValidationError } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -31,7 +39,7 @@ export class ChangePasswordUseCase {
     try {
       // Validate passwords match
       if (request.newPassword !== request.confirmPassword) {
-        return err(new ValidationError('Passwords do not match'));
+        return err(new ValidationError('Passwords do not match', AUTH_PASSWORDS_MISMATCH));
       }
 
       // Validate password strength
@@ -41,7 +49,8 @@ export class ChangePasswordUseCase {
       if (!passwordValidation.isValid) {
         return err(
           new ValidationError(
-            `Password does not meet security requirements: ${passwordValidation.errors.join(', ')}`
+            `Password does not meet security requirements: ${passwordValidation.errors.join(', ')}`,
+            AUTH_PASSWORD_REQUIREMENTS
           )
         );
       }
@@ -49,7 +58,7 @@ export class ChangePasswordUseCase {
       // Find user
       const user = await this.userRepository.findById(request.userId, request.orgId);
       if (!user) {
-        return err(new ValidationError('User not found'));
+        return err(new ValidationError('User not found', AUTH_USER_NOT_FOUND));
       }
 
       // Verify current password
@@ -58,7 +67,7 @@ export class ChangePasswordUseCase {
         user.passwordHash
       );
       if (!isCurrentPasswordValid) {
-        return err(new ValidationError('Current password is incorrect'));
+        return err(new ValidationError('Current password is incorrect', AUTH_PASSWORD_INCORRECT));
       }
 
       // Ensure new password is different from current
@@ -67,7 +76,12 @@ export class ChangePasswordUseCase {
         user.passwordHash
       );
       if (isSamePassword) {
-        return err(new ValidationError('New password must be different from current password'));
+        return err(
+          new ValidationError(
+            'New password must be different from current password',
+            AUTH_PASSWORD_SAME_AS_CURRENT
+          )
+        );
       }
 
       // Hash and change password
@@ -85,7 +99,7 @@ export class ChangePasswordUseCase {
       });
     } catch (error) {
       this.logger.error('Change password failed:', error);
-      return err(new ValidationError('Failed to change password'));
+      return err(new ValidationError('Failed to change password', AUTH_PASSWORD_CHANGE_FAILED));
     }
   }
 }

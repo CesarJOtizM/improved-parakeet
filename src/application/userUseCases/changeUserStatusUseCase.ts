@@ -2,6 +2,11 @@ import { UserManagementService } from '@auth/domain/services/userManagementServi
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  USER_INVALID_STATUS,
+  USER_NOT_FOUND,
+  USER_STATUS_CHANGE_DENIED,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   err,
@@ -60,7 +65,7 @@ export class ChangeUserStatusUseCase {
     // Get existing user
     const user = await this.userRepository.findById(request.userId, request.orgId);
     if (!user) {
-      return err(new NotFoundError('User not found'));
+      return err(new NotFoundError('User not found', USER_NOT_FOUND));
     }
 
     // Validate status change based on target status
@@ -72,11 +77,16 @@ export class ChangeUserStatusUseCase {
     } else if (request.status === 'LOCKED') {
       validation = UserManagementService.canUserBeLocked(user, request.changedBy);
     } else {
-      return err(new ValidationError(`Invalid status: ${request.status}`));
+      return err(new ValidationError(`Invalid status: ${request.status}`, USER_INVALID_STATUS));
     }
 
     if (!validation.isValid) {
-      return err(new BusinessRuleError(`Cannot change status: ${validation.errors.join(', ')}`));
+      return err(
+        new BusinessRuleError(
+          `Cannot change status: ${validation.errors.join(', ')}`,
+          USER_STATUS_CHANGE_DENIED
+        )
+      );
     }
 
     // Change status

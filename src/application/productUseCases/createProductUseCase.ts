@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Product } from '@product/domain/entities/product.entity';
 import { ProductBusinessRulesService } from '@product/domain/services/productBusinessRules.service';
 import { ProductMapper } from '@product/mappers';
+import { PRODUCT_CREATION_ERROR, PRODUCT_SKU_CONFLICT } from '@shared/constants/error-codes';
 import {
   ConflictError,
   DomainError,
@@ -99,7 +100,7 @@ export class CreateProductUseCase {
 
       if (!validationResult.isValid) {
         return err(
-          new ConflictError(validationResult.errors.join(', '), 'SKU_CONFLICT', {
+          new ConflictError(validationResult.errors.join(', '), PRODUCT_SKU_CONFLICT, {
             sku: request.sku,
             orgId: request.orgId,
           })
@@ -139,10 +140,10 @@ export class CreateProductUseCase {
       });
 
       if (error instanceof Error) {
-        return err(new ValidationError(error.message, 'PRODUCT_CREATION_ERROR'));
+        return err(new ValidationError(error.message, PRODUCT_CREATION_ERROR));
       }
 
-      return err(new ValidationError('Failed to create product', 'PRODUCT_CREATION_ERROR'));
+      return err(new ValidationError('Failed to create product', PRODUCT_CREATION_ERROR));
     }
   }
 }

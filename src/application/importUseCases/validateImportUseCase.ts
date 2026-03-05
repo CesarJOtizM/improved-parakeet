@@ -1,6 +1,12 @@
 import { type IImportBatchRepository, ImportRow, ImportValidationService } from '@import/domain';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  IMPORT_BATCH_NOT_FOUND,
+  IMPORT_FILE_VALIDATION_FAILED,
+  IMPORT_STRUCTURE_INVALID,
+  IMPORT_VALIDATION_ERROR,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   err,
@@ -56,14 +62,15 @@ export class ValidateImportUseCase {
       // 1. Find batch
       const batch = await this.repository.findById(request.batchId, request.orgId);
       if (!batch) {
-        return err(new NotFoundError('Import batch not found'));
+        return err(new NotFoundError('Import batch not found', IMPORT_BATCH_NOT_FOUND));
       }
 
       // 2. Check if batch can be validated
       if (!batch.status.canValidate()) {
         return err(
           new BusinessRuleError(
-            `Import batch cannot be validated in status: ${batch.status.getValue()}`
+            `Import batch cannot be validated in status: ${batch.status.getValue()}`,
+            IMPORT_VALIDATION_ERROR
           )
         );
       }
@@ -71,7 +78,9 @@ export class ValidateImportUseCase {
       // 3. Validate file format using port
       const fileValidation = this.fileParsingService.validateFileFormat(request.file);
       if (!fileValidation.isValid) {
-        return err(new ValidationError(fileValidation.errors.join(', ')));
+        return err(
+          new ValidationError(fileValidation.errors.join(', '), IMPORT_FILE_VALIDATION_FAILED)
+        );
       }
 
       // 4. Start validation (changes status to VALIDATING)
@@ -91,7 +100,9 @@ export class ValidateImportUseCase {
           'File structure validation failed: ' + structureValidation.getErrors().join(', ')
         );
         await this.repository.save(batch);
-        return err(new ValidationError(structureValidation.getErrors().join(', ')));
+        return err(
+          new ValidationError(structureValidation.getErrors().join(', '), IMPORT_STRUCTURE_INVALID)
+        );
       }
 
       // 7. Create and validate rows
@@ -160,7 +171,8 @@ export class ValidateImportUseCase {
       });
       return err(
         new ValidationError(
-          `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          IMPORT_VALIDATION_ERROR
         )
       );
     }

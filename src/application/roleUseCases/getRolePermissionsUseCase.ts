@@ -1,5 +1,6 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ROLE_ID_REQUIRED, ROLE_NOT_FOUND, ROLE_ORG_MISMATCH } from '@shared/constants/error-codes';
 import {
   DomainError,
   err,
@@ -45,17 +46,17 @@ export class GetRolePermissionsUseCase {
     });
 
     if (!request.roleId) {
-      return err(new ValidationError('Role ID is required'));
+      return err(new ValidationError('Role ID is required', ROLE_ID_REQUIRED));
     }
 
     const role = await this.roleRepository.findById(request.roleId);
 
     if (!role) {
-      return err(new NotFoundError('Role not found'));
+      return err(new NotFoundError('Role not found', ROLE_NOT_FOUND));
     }
 
     if (!role.isSystem && role.orgId !== request.orgId) {
-      return err(new NotFoundError('Role not found in this organization'));
+      return err(new NotFoundError('Role not found in this organization', ROLE_ORG_MISMATCH));
     }
 
     const rolePermissions = await this.prisma.rolePermission.findMany({

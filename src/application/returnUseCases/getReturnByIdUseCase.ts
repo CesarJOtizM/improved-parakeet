@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ReturnMapper } from '@returns/mappers';
+import { RETURN_NOT_FOUND } from '@shared/constants/error-codes';
 import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -30,7 +31,7 @@ export class GetReturnByIdUseCase {
     const returnEntity = await this.returnRepository.findById(request.id, request.orgId);
 
     if (!returnEntity) {
-      return err(new NotFoundError(`Return with ID ${request.id} not found`));
+      return err(new NotFoundError(`Return with ID ${request.id} not found`, RETURN_NOT_FOUND));
     }
 
     return ok({

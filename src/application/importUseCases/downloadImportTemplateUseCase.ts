@@ -1,5 +1,6 @@
 import { ImportTemplateService, ImportType, ImportTypeValue } from '@import/domain';
 import { Injectable, Logger } from '@nestjs/common';
+import { IMPORT_INVALID_TYPE, IMPORT_TEMPLATE_FAILED } from '@shared/constants/error-codes';
 import { DomainError, err, ok, Result, ValidationError } from '@shared/domain/result';
 
 export interface IDownloadImportTemplateRequest {
@@ -38,7 +39,9 @@ export class DownloadImportTemplateUseCase {
       try {
         importType = ImportType.create(request.type);
       } catch {
-        return err(new ValidationError(`Invalid import type: ${request.type}`));
+        return err(
+          new ValidationError(`Invalid import type: ${request.type}`, IMPORT_INVALID_TYPE)
+        );
       }
 
       const format = request.format ?? 'csv';
@@ -77,7 +80,7 @@ export class DownloadImportTemplateUseCase {
         type: request.type,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      return err(new ValidationError('Failed to generate import template'));
+      return err(new ValidationError('Failed to generate import template', IMPORT_TEMPLATE_FAILED));
     }
   }
 }

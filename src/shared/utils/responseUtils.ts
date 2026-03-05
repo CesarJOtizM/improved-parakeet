@@ -16,15 +16,19 @@ export const createErrorResponse = (
   message: string,
   statusCode: number,
   path: string,
-  method: string
+  method: string,
+  errorCode = 'UNKNOWN_ERROR',
+  details?: Record<string, unknown>
 ): IApiResponseError => ({
   success: false,
   message,
+  errorCode,
   error: {
     statusCode,
     timestamp: new Date().toISOString(),
     path,
     method,
+    ...(details && { details }),
   },
 });
 

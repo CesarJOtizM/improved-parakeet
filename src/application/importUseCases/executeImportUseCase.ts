@@ -11,6 +11,12 @@ import {
 } from '@import/domain';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  IMPORT_INVALID_TYPE,
+  IMPORT_FILE_VALIDATION_FAILED,
+  IMPORT_STRUCTURE_INVALID,
+  IMPORT_EXECUTION_FAILED,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   Result,
@@ -72,13 +78,17 @@ export class ExecuteImportUseCase {
       try {
         importType = ImportType.create(request.type);
       } catch {
-        return err(new ValidationError(`Invalid import type: ${request.type}`));
+        return err(
+          new ValidationError(`Invalid import type: ${request.type}`, IMPORT_INVALID_TYPE)
+        );
       }
 
       // STEP 2: Validate file format
       const fileValidation = this.fileParsingService.validateFileFormat(request.file);
       if (!fileValidation.isValid) {
-        return err(new ValidationError(fileValidation.errors.join(', ')));
+        return err(
+          new ValidationError(fileValidation.errors.join(', '), IMPORT_FILE_VALIDATION_FAILED)
+        );
       }
 
       // STEP 3: Parse file
@@ -92,7 +102,12 @@ export class ExecuteImportUseCase {
 
       if (!structureValidation.isValid()) {
         const errors = structureValidation.getErrors().join(', ');
-        return err(new ValidationError(`File structure validation failed: ${errors}`));
+        return err(
+          new ValidationError(
+            `File structure validation failed: ${errors}`,
+            IMPORT_STRUCTURE_INVALID
+          )
+        );
       }
 
       // STEP 5: Validate all rows (in-memory, no persistence yet)
@@ -135,7 +150,7 @@ export class ExecuteImportUseCase {
           type: request.type,
           errorCount: validationErrors.length,
         });
-        return err(new ValidationError(errorMessage));
+        return err(new ValidationError(errorMessage, IMPORT_EXECUTION_FAILED));
       }
 
       // STEP 7: All validations passed - proceed with creation and processing
@@ -234,7 +249,8 @@ export class ExecuteImportUseCase {
       });
       return err(
         new BusinessRuleError(
-          `Execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          `Execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          IMPORT_EXECUTION_FAILED
         )
       );
     }

@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Return } from '@returns/domain/entities/return.entity';
 import { ReturnReason } from '@returns/domain/valueObjects/returnReason.valueObject';
+import { RETURN_NOT_FOUND } from '@shared/constants/error-codes';
 import {
   BusinessRuleError,
   DomainError,
@@ -43,7 +44,7 @@ export class UpdateReturnUseCase {
     const returnEntity = await this.returnRepository.findById(request.id, request.orgId);
 
     if (!returnEntity) {
-      return err(new NotFoundError(`Return with ID ${request.id} not found`));
+      return err(new NotFoundError(`Return with ID ${request.id} not found`, RETURN_NOT_FOUND));
     }
 
     // Update return

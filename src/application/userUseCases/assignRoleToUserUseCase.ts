@@ -3,6 +3,14 @@ import { RoleAssignmentService } from '@auth/domain/services/roleAssignmentServi
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import {
+  USER_ASSIGNER_NOT_FOUND,
+  USER_NOT_FOUND,
+  USER_ROLE_ALREADY_ASSIGNED,
+  USER_ROLE_ASSIGN_DENIED,
+  USER_ROLE_NOT_FOUND,
+  USER_ROLE_ORG_MISMATCH,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   ConflictError,
   DomainError,
@@ -62,25 +70,27 @@ export class AssignRoleToUserUseCase {
     // Get user
     const user = await this.userRepository.findById(request.userId, request.orgId);
     if (!user) {
-      return err(new NotFoundError('User not found'));
+      return err(new NotFoundError('User not found', USER_NOT_FOUND));
     }
 
     // Get role (can be system or custom)
     const role = await this.roleRepository.findById(request.roleId);
     if (!role) {
-      return err(new NotFoundError('Role not found'));
+      return err(new NotFoundError('Role not found', USER_ROLE_NOT_FOUND));
     }
 
     // Verify role is available for this organization
     // System roles are available to all, custom roles only to their org
     if (!role.isSystem && role.orgId !== request.orgId) {
-      return err(new NotFoundError('Role not available for this organization'));
+      return err(
+        new NotFoundError('Role not available for this organization', USER_ROLE_ORG_MISMATCH)
+      );
     }
 
     // Get the user who is assigning the role (assignedBy) to get their roles for validation
     const assigningUser = await this.userRepository.findById(request.assignedBy, request.orgId);
     if (!assigningUser) {
-      return err(new NotFoundError('User assigning the role not found'));
+      return err(new NotFoundError('User assigning the role not found', USER_ASSIGNER_NOT_FOUND));
     }
 
     // Get current user roles for validation (roles of the user making the assignment)
@@ -94,7 +104,12 @@ export class AssignRoleToUserUseCase {
       currentUserRoles
     );
     if (!validation.isValid) {
-      return err(new BusinessRuleError(`Cannot assign role: ${validation.errors.join(', ')}`));
+      return err(
+        new BusinessRuleError(
+          `Cannot assign role: ${validation.errors.join(', ')}`,
+          USER_ROLE_ASSIGN_DENIED
+        )
+      );
     }
 
     // Check if user already has this role
@@ -109,7 +124,7 @@ export class AssignRoleToUserUseCase {
     });
 
     if (existingAssignment) {
-      return err(new ConflictError('User already has this role'));
+      return err(new ConflictError('User already has this role', USER_ROLE_ALREADY_ASSIGNED));
     }
 
     // Assign role

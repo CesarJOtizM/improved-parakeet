@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { MOVEMENT_CANNOT_BE_VOIDED, MOVEMENT_NOT_FOUND } from '@shared/constants/error-codes';
 import {
   BusinessRuleError,
   DomainError,
@@ -48,12 +49,12 @@ export class VoidMovementUseCase {
     const movement = await this.movementRepository.findById(request.movementId, request.orgId);
 
     if (!movement) {
-      return err(new NotFoundError('Movement not found', 'MOVEMENT_NOT_FOUND'));
+      return err(new NotFoundError('Movement not found', MOVEMENT_NOT_FOUND));
     }
 
     if (!movement.status.canVoid()) {
       return err(
-        new BusinessRuleError('Only POSTED movements can be voided', 'MOVEMENT_CANNOT_BE_VOIDED')
+        new BusinessRuleError('Only POSTED movements can be voided', MOVEMENT_CANNOT_BE_VOIDED)
       );
     }
 

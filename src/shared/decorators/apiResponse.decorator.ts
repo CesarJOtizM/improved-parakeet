@@ -24,6 +24,9 @@ export class ApiErrorWrapper implements IApiResponseError {
   @ApiProperty({ example: 'Error description' })
   message!: string;
 
+  @ApiProperty({ example: 'UNKNOWN_ERROR' })
+  errorCode!: string;
+
   @ApiProperty({
     type: 'object',
     properties: {

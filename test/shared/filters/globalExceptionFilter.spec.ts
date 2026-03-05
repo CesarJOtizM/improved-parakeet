@@ -31,18 +31,16 @@ describe('GlobalExceptionFilter', () => {
 
   describe('catch', () => {
     it('Given: HttpException When: catching Then: should return correct status and message', () => {
-      // Arrange
       const exception = new HttpException('Not Found', HttpStatus.NOT_FOUND);
 
-      // Act
       filter.catch(exception, mockHost);
 
-      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
           message: 'Not Found',
+          errorCode: 'UNKNOWN_ERROR',
           error: expect.objectContaining({
             statusCode: HttpStatus.NOT_FOUND,
           }),
@@ -50,17 +48,62 @@ describe('GlobalExceptionFilter', () => {
       );
     });
 
+    it('Given: HttpException with errorCode When: catching Then: should propagate errorCode', () => {
+      const exception = new HttpException(
+        { message: 'Product not found', errorCode: 'PRODUCT_NOT_FOUND' },
+        HttpStatus.NOT_FOUND
+      );
+
+      filter.catch(exception, mockHost);
+
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Product not found',
+          errorCode: 'PRODUCT_NOT_FOUND',
+        })
+      );
+    });
+
+    it('Given: HttpException with errorCode and details When: catching Then: should propagate both', () => {
+      const exception = new HttpException(
+        {
+          message: 'Insufficient stock',
+          errorCode: 'INSUFFICIENT_STOCK',
+          details: {
+            productId: 'p1',
+            warehouseId: 'w1',
+            requestedQuantity: 10,
+            availableQuantity: 5,
+          },
+        },
+        HttpStatus.BAD_REQUEST
+      );
+
+      filter.catch(exception, mockHost);
+
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          errorCode: 'INSUFFICIENT_STOCK',
+          error: expect.objectContaining({
+            details: {
+              productId: 'p1',
+              warehouseId: 'w1',
+              requestedQuantity: 10,
+              availableQuantity: 5,
+            },
+          }),
+        })
+      );
+    });
+
     it('Given: HttpException with object response When: catching Then: should extract message', () => {
-      // Arrange
       const exception = new HttpException(
         { message: 'Custom error message', error: 'Bad Request' },
         HttpStatus.BAD_REQUEST
       );
 
-      // Act
       filter.catch(exception, mockHost);
 
-      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -70,16 +113,13 @@ describe('GlobalExceptionFilter', () => {
     });
 
     it('Given: HttpException with array message When: catching Then: should use first message', () => {
-      // Arrange
       const exception = new HttpException(
         { message: ['First error', 'Second error'], error: 'Validation Failed' },
         HttpStatus.BAD_REQUEST
       );
 
-      // Act
       filter.catch(exception, mockHost);
 
-      // Assert
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'First error',
@@ -87,19 +127,17 @@ describe('GlobalExceptionFilter', () => {
       );
     });
 
-    it('Given: unknown error When: catching Then: should return 500 status', () => {
-      // Arrange
+    it('Given: unknown error When: catching Then: should return 500 with INTERNAL_SERVER_ERROR code', () => {
       const exception = new Error('Unexpected error');
 
-      // Act
       filter.catch(exception, mockHost);
 
-      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
           message: 'Internal server error',
+          errorCode: 'INTERNAL_SERVER_ERROR',
           error: expect.objectContaining({
             statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
           }),
@@ -108,24 +146,18 @@ describe('GlobalExceptionFilter', () => {
     });
 
     it('Given: non-error object When: catching Then: should return 500 status', () => {
-      // Arrange
       const exception = 'String error';
 
-      // Act
       filter.catch(exception, mockHost);
 
-      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
     });
 
     it('Given: error When: catching Then: should include request path in response', () => {
-      // Arrange
       const exception = new HttpException('Error', HttpStatus.BAD_REQUEST);
 
-      // Act
       filter.catch(exception, mockHost);
 
-      // Assert
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           error: expect.objectContaining({

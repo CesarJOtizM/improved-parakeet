@@ -7,6 +7,7 @@ import {
   REPORT_FORMATS,
 } from '@report/domain/valueObjects';
 import { ReportMapper } from '@report/mappers';
+import { REPORT_GENERATION_ERROR, REPORT_INVALID_TYPE } from '@shared/constants/error-codes';
 import { err, ok, Result } from '@shared/domain/result';
 import { DomainError, ValidationError } from '@shared/domain/result/domainError';
 
@@ -65,7 +66,9 @@ export class ExportReportUseCase {
       try {
         reportType = ReportType.create(request.type);
       } catch {
-        return err(new ValidationError(`Invalid report type: ${request.type}`));
+        return err(
+          new ValidationError(`Invalid report type: ${request.type}`, REPORT_INVALID_TYPE)
+        );
       }
 
       // Validate export format
@@ -75,7 +78,8 @@ export class ExportReportUseCase {
       } catch {
         return err(
           new ValidationError(
-            `Invalid export format: ${request.format}. Valid formats: ${Object.values(REPORT_FORMATS).join(', ')}`
+            `Invalid export format: ${request.format}. Valid formats: ${Object.values(REPORT_FORMATS).join(', ')}`,
+            REPORT_GENERATION_ERROR
           )
         );
       }
@@ -197,7 +201,10 @@ export class ExportReportUseCase {
         error,
       });
       return err(
-        new ValidationError(error instanceof Error ? error.message : 'Failed to export report')
+        new ValidationError(
+          error instanceof Error ? error.message : 'Failed to export report',
+          REPORT_GENERATION_ERROR
+        )
       );
     }
   }

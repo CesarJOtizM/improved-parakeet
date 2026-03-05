@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { WAREHOUSE_CODE_CONFLICT } from '@shared/constants/error-codes';
 import {
   ConflictError,
   DomainError,
@@ -83,7 +84,10 @@ export class CreateWarehouseUseCase {
     const codeExists = await this.warehouseRepository.existsByCode(code.getValue(), request.orgId);
     if (codeExists) {
       return err(
-        new ConflictError(`Warehouse code '${code.getValue()}' already exists in this organization`)
+        new ConflictError(
+          `Warehouse code '${code.getValue()}' already exists in this organization`,
+          WAREHOUSE_CODE_CONFLICT
+        )
       );
     }
 

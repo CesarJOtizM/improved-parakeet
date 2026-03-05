@@ -2,6 +2,11 @@ import { RoleAssignmentService } from '@auth/domain/services/roleAssignmentServi
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  ROLE_DELETE_DENIED,
+  ROLE_NOT_FOUND,
+  ROLE_ORG_MISMATCH,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   err,
@@ -37,18 +42,23 @@ export class DeleteRoleUseCase {
     const role = await this.roleRepository.findById(request.roleId);
 
     if (!role) {
-      return err(new NotFoundError('Role not found'));
+      return err(new NotFoundError('Role not found', ROLE_NOT_FOUND));
     }
 
     // Validate deletion
     const validation = RoleAssignmentService.canDeleteRole(role);
     if (!validation.isValid) {
-      return err(new BusinessRuleError(`Cannot delete role: ${validation.errors.join(', ')}`));
+      return err(
+        new BusinessRuleError(
+          `Cannot delete role: ${validation.errors.join(', ')}`,
+          ROLE_DELETE_DENIED
+        )
+      );
     }
 
     // Verify role belongs to this organization
     if (role.orgId !== request.orgId) {
-      return err(new NotFoundError('Role not found in this organization'));
+      return err(new NotFoundError('Role not found in this organization', ROLE_ORG_MISMATCH));
     }
 
     // Check if role is assigned to any users
@@ -62,7 +72,8 @@ export class DeleteRoleUseCase {
     if (userRoleCount > 0) {
       return err(
         new BusinessRuleError(
-          `Cannot delete role: it is assigned to ${userRoleCount} user(s). Remove assignments first.`
+          `Cannot delete role: it is assigned to ${userRoleCount} user(s). Remove assignments first.`,
+          ROLE_DELETE_DENIED
         )
       );
     }

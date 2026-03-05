@@ -1,5 +1,12 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  COMPANY_CODE_CONFLICT,
+  COMPANY_CONFLICT,
+  COMPANY_NAME_CONFLICT,
+  COMPANY_NOT_FOUND,
+  COMPANY_UPDATE_ERROR,
+} from '@shared/constants/error-codes';
+import {
   ConflictError,
   DomainError,
   NotFoundError,
@@ -40,7 +47,7 @@ export class UpdateCompanyUseCase {
     try {
       const company = await this.companyRepository.findById(request.companyId, request.orgId);
       if (!company) {
-        return err(new NotFoundError('Company not found'));
+        return err(new NotFoundError('Company not found', COMPANY_NOT_FOUND));
       }
 
       // Validate name uniqueness if changing name
@@ -48,7 +55,7 @@ export class UpdateCompanyUseCase {
         const nameExists = await this.companyRepository.existsByName(request.name, request.orgId);
         if (nameExists) {
           return err(
-            new ConflictError('A company with this name already exists', 'COMPANY_NAME_CONFLICT')
+            new ConflictError('A company with this name already exists', COMPANY_NAME_CONFLICT)
           );
         }
       }
@@ -58,7 +65,7 @@ export class UpdateCompanyUseCase {
         const codeExists = await this.companyRepository.existsByCode(request.code, request.orgId);
         if (codeExists) {
           return err(
-            new ConflictError('A company with this code already exists', 'COMPANY_CODE_CONFLICT')
+            new ConflictError('A company with this code already exists', COMPANY_CODE_CONFLICT)
           );
         }
       }
@@ -99,7 +106,7 @@ export class UpdateCompanyUseCase {
         const prismaError = error as { code: string };
         if (prismaError.code === 'P2002') {
           return err(
-            new ConflictError('A company with this code or name already exists', 'COMPANY_CONFLICT')
+            new ConflictError('A company with this code or name already exists', COMPANY_CONFLICT)
           );
         }
       }
@@ -107,7 +114,7 @@ export class UpdateCompanyUseCase {
       return err(
         new ValidationError(
           `Failed to update company: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          'COMPANY_UPDATE_ERROR'
+          COMPANY_UPDATE_ERROR
         )
       );
     }

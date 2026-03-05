@@ -1,5 +1,10 @@
 import { AuthenticationService } from '@auth/domain/services/authenticationService';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  AUTH_PASSWORD_REQUIREMENTS,
+  AUTH_PASSWORD_SAME_AS_CURRENT,
+  AUTH_PASSWORDS_MISMATCH,
+} from '@shared/constants/error-codes';
 import { DomainError, err, ok, Result, TokenError, ValidationError } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -34,7 +39,7 @@ export class ResetPasswordUseCase {
     try {
       // Validar que las contraseñas coincidan
       if (request.newPassword !== request.confirmPassword) {
-        return err(new ValidationError('Passwords do not match'));
+        return err(new ValidationError('Passwords do not match', AUTH_PASSWORDS_MISMATCH));
       }
 
       // Validar la fortaleza de la nueva contraseña
@@ -44,7 +49,8 @@ export class ResetPasswordUseCase {
       if (!passwordValidation.isValid) {
         return err(
           new ValidationError(
-            `Password does not meet security requirements: ${passwordValidation.errors.join(', ')}`
+            `Password does not meet security requirements: ${passwordValidation.errors.join(', ')}`,
+            AUTH_PASSWORD_REQUIREMENTS
           )
         );
       }
@@ -100,7 +106,12 @@ export class ResetPasswordUseCase {
       );
 
       if (isSamePassword) {
-        return err(new ValidationError('New password must be different from current password'));
+        return err(
+          new ValidationError(
+            'New password must be different from current password',
+            AUTH_PASSWORD_SAME_AS_CURRENT
+          )
+        );
       }
 
       // Cambiar la contraseña del usuario

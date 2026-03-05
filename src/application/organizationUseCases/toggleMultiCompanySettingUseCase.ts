@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ORG_NOT_FOUND } from '@shared/constants/error-codes';
 import { DomainError, NotFoundError, err, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -37,7 +38,9 @@ export class ToggleMultiCompanySettingUseCase {
     const org = await this.organizationRepository.findById(request.orgId);
 
     if (!org) {
-      return err(new NotFoundError(`Organization with ID ${request.orgId} not found`));
+      return err(
+        new NotFoundError(`Organization with ID ${request.orgId} not found`, ORG_NOT_FOUND)
+      );
     }
 
     org.setSetting('multiCompanyEnabled', request.multiCompanyEnabled);

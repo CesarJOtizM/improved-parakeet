@@ -3,6 +3,11 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { SaleLineSwappedEvent } from '@sale/domain/events/saleLineSwapped.event';
 import { SaleValidationService } from '@sale/domain/services/saleValidation.service';
 import {
+  SALE_NOT_FOUND,
+  SALE_SWAP_PRICE_REQUIRED,
+  SALE_SWAP_DENIED,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   InsufficientStockError,
@@ -77,13 +82,18 @@ export class SwapSaleLineUseCase {
 
     // 1. Validate pricing strategy consistency
     if (request.pricingStrategy === 'NEW_PRICE' && !request.newSalePrice) {
-      return err(new ValidationError('newSalePrice is required when pricingStrategy is NEW_PRICE'));
+      return err(
+        new ValidationError(
+          'newSalePrice is required when pricingStrategy is NEW_PRICE',
+          SALE_SWAP_PRICE_REQUIRED
+        )
+      );
     }
 
     // 2. Load sale with lines
     const sale = await this.saleRepository.findById(request.saleId, request.orgId);
     if (!sale) {
-      return err(new NotFoundError(`Sale with ID ${request.saleId} not found`));
+      return err(new NotFoundError(`Sale with ID ${request.saleId} not found`, SALE_NOT_FOUND));
     }
 
     // 3. Validate sale can swap line
@@ -93,7 +103,9 @@ export class SwapSaleLineUseCase {
       request.swapQuantity
     );
     if (!validation.isValid) {
-      return err(new BusinessRuleError(`Cannot swap line: ${validation.errors.join(', ')}`));
+      return err(
+        new BusinessRuleError(`Cannot swap line: ${validation.errors.join(', ')}`, SALE_SWAP_DENIED)
+      );
     }
 
     // 4. Pre-check stock availability for replacement product

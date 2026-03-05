@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { AUDIT_LOG_NOT_FOUND } from '@shared/constants/error-codes';
 import { DomainError, NotFoundError, Result, err, ok } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -46,7 +47,7 @@ export class GetAuditLogUseCase {
     const auditLog = await this.auditRepository.findById(request.id, request.orgId);
 
     if (!auditLog) {
-      return err(new NotFoundError('Audit log not found'));
+      return err(new NotFoundError('Audit log not found', AUDIT_LOG_NOT_FOUND));
     }
 
     return ok({

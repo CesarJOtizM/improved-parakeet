@@ -6,6 +6,11 @@ import {
   type ImportTypeValue,
 } from '@import/domain';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  IMPORT_INVALID_TYPE,
+  IMPORT_FILE_NAME_REQUIRED,
+  IMPORT_BATCH_CREATION_FAILED,
+} from '@shared/constants/error-codes';
 import { DomainError, err, ok, Result, ValidationError } from '@shared/domain/result';
 
 export interface ICreateImportBatchRequest {
@@ -52,12 +57,14 @@ export class CreateImportBatchUseCase {
       try {
         importType = ImportType.create(request.type);
       } catch {
-        return err(new ValidationError(`Invalid import type: ${request.type}`));
+        return err(
+          new ValidationError(`Invalid import type: ${request.type}`, IMPORT_INVALID_TYPE)
+        );
       }
 
       // Validate fileName
       if (!request.fileName || request.fileName.trim() === '') {
-        return err(new ValidationError('File name is required'));
+        return err(new ValidationError('File name is required', IMPORT_FILE_NAME_REQUIRED));
       }
 
       // Create batch
@@ -96,7 +103,9 @@ export class CreateImportBatchUseCase {
       this.logger.error('Failed to create import batch', {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      return err(new ValidationError('Failed to create import batch'));
+      return err(
+        new ValidationError('Failed to create import batch', IMPORT_BATCH_CREATION_FAILED)
+      );
     }
   }
 }

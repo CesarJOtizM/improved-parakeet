@@ -2,6 +2,11 @@ import { Movement } from '@movement/domain/entities/movement.entity';
 import { MovementMapper } from '@movement/mappers';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  MOVEMENT_CREATION_ERROR,
+  PRODUCT_NOT_FOUND,
+  WAREHOUSE_NOT_FOUND,
+} from '@shared/constants/error-codes';
+import {
   DomainError,
   NotFoundError,
   Result,
@@ -93,7 +98,7 @@ export class CreateMovementUseCase {
       const warehouse = await this.warehouseRepository.findById(request.warehouseId, request.orgId);
       if (!warehouse) {
         return err(
-          new NotFoundError('Warehouse not found', 'WAREHOUSE_NOT_FOUND', {
+          new NotFoundError('Warehouse not found', WAREHOUSE_NOT_FOUND, {
             warehouseId: request.warehouseId,
             orgId: request.orgId,
           })
@@ -106,7 +111,7 @@ export class CreateMovementUseCase {
         const product = await this.productRepository.findById(line.productId, request.orgId);
         if (!product) {
           return err(
-            new NotFoundError(`Product not found: ${line.productId}`, 'PRODUCT_NOT_FOUND', {
+            new NotFoundError(`Product not found: ${line.productId}`, PRODUCT_NOT_FOUND, {
               productId: line.productId,
               orgId: request.orgId,
             })
@@ -157,10 +162,10 @@ export class CreateMovementUseCase {
       });
 
       if (error instanceof Error) {
-        return err(new ValidationError(error.message, 'MOVEMENT_CREATION_ERROR'));
+        return err(new ValidationError(error.message, MOVEMENT_CREATION_ERROR));
       }
 
-      return err(new ValidationError('Failed to create movement', 'MOVEMENT_CREATION_ERROR'));
+      return err(new ValidationError('Failed to create movement', MOVEMENT_CREATION_ERROR));
     }
   }
 }

@@ -1,6 +1,12 @@
 import { Role } from '@auth/domain/entities/role.entity';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  ROLE_NAME_ORG_CONFLICT,
+  ROLE_NAME_SYSTEM_CONFLICT,
+  ROLE_NAME_TOO_LONG,
+  ROLE_NAME_TOO_SHORT,
+} from '@shared/constants/error-codes';
+import {
   ConflictError,
   DomainError,
   err,
@@ -43,22 +49,30 @@ export class CreateRoleUseCase {
 
     // Validate role name format
     if (!request.name || request.name.trim().length < 3) {
-      return err(new ValidationError('Role name must be at least 3 characters long'));
+      return err(
+        new ValidationError('Role name must be at least 3 characters long', ROLE_NAME_TOO_SHORT)
+      );
     }
 
     if (request.name.length > 50) {
-      return err(new ValidationError('Role name must not exceed 50 characters'));
+      return err(
+        new ValidationError('Role name must not exceed 50 characters', ROLE_NAME_TOO_LONG)
+      );
     }
 
     // Check if role name already exists (system or custom in this org)
     const existingSystemRole = await this.roleRepository.findByName(request.name);
     if (existingSystemRole) {
-      return err(new ConflictError('Role name already exists as a system role'));
+      return err(
+        new ConflictError('Role name already exists as a system role', ROLE_NAME_SYSTEM_CONFLICT)
+      );
     }
 
     const existingCustomRole = await this.roleRepository.findByName(request.name, request.orgId);
     if (existingCustomRole) {
-      return err(new ConflictError('Role name already exists in this organization'));
+      return err(
+        new ConflictError('Role name already exists in this organization', ROLE_NAME_ORG_CONFLICT)
+      );
     }
 
     // Create custom role (isSystem = false, requires orgId)

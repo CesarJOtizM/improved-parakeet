@@ -1,5 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  COMPANY_DELETE_ERROR,
+  COMPANY_HAS_PRODUCTS,
+  COMPANY_NOT_FOUND,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   NotFoundError,
@@ -35,7 +40,7 @@ export class DeleteCompanyUseCase {
     try {
       const company = await this.companyRepository.findById(request.companyId, request.orgId);
       if (!company) {
-        return err(new NotFoundError('Company not found'));
+        return err(new NotFoundError('Company not found', COMPANY_NOT_FOUND));
       }
 
       // Check for associated products
@@ -47,7 +52,7 @@ export class DeleteCompanyUseCase {
         return err(
           new BusinessRuleError(
             `Cannot delete company with ${productCount} associated products. Reassign products first.`,
-            'COMPANY_HAS_PRODUCTS'
+            COMPANY_HAS_PRODUCTS
           )
         );
       }
@@ -64,7 +69,7 @@ export class DeleteCompanyUseCase {
       this.logger.error('Error deleting company', {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      return err(new ValidationError('Failed to delete company', 'COMPANY_DELETE_ERROR'));
+      return err(new ValidationError('Failed to delete company', COMPANY_DELETE_ERROR));
     }
   }
 }

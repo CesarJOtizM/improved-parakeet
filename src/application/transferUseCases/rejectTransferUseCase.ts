@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { TRANSFER_CANNOT_REJECT, TRANSFER_NOT_FOUND } from '@shared/constants/error-codes';
 import {
   BusinessRuleError,
   DomainError,
@@ -45,14 +46,17 @@ export class RejectTransferUseCase {
     const transfer = await this.transferRepository.findById(request.transferId, request.orgId);
 
     if (!transfer) {
-      return err(new NotFoundError(`Transfer with ID ${request.transferId} not found`));
+      return err(
+        new NotFoundError(`Transfer with ID ${request.transferId} not found`, TRANSFER_NOT_FOUND)
+      );
     }
 
     // Validate transfer can be rejected
     if (!transfer.status.canReject()) {
       return err(
         new BusinessRuleError(
-          `Transfer cannot be rejected. Current status: ${transfer.status.getValue()}. Must be IN_TRANSIT or PARTIAL.`
+          `Transfer cannot be rejected. Current status: ${transfer.status.getValue()}. Must be IN_TRANSIT or PARTIAL.`,
+          TRANSFER_CANNOT_REJECT
         )
       );
     }

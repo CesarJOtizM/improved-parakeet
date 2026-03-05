@@ -1,5 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  ORG_NOT_FOUND,
+  SALE_NOT_FOUND,
+  SALE_SHIPPING_ERROR,
+  SALE_SHIPPING_NOT_ENABLED,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   err,
@@ -47,19 +53,26 @@ export class ShipSaleUseCase {
     // Validate org has picking enabled
     const org = await this.organizationRepository.findById(request.orgId);
     if (!org) {
-      return err(new NotFoundError(`Organization with ID ${request.orgId} not found`));
+      return err(
+        new NotFoundError(`Organization with ID ${request.orgId} not found`, ORG_NOT_FOUND)
+      );
     }
 
     const pickingEnabled = org.getSetting('pickingEnabled');
     if (!pickingEnabled) {
-      return err(new BusinessRuleError('Picking/shipping is not enabled for this organization'));
+      return err(
+        new BusinessRuleError(
+          'Picking/shipping is not enabled for this organization',
+          SALE_SHIPPING_NOT_ENABLED
+        )
+      );
     }
 
     // Retrieve sale
     const sale = await this.saleRepository.findById(request.id, request.orgId);
 
     if (!sale) {
-      return err(new NotFoundError(`Sale with ID ${request.id} not found`));
+      return err(new NotFoundError(`Sale with ID ${request.id} not found`, SALE_NOT_FOUND));
     }
 
     // Ship sale
@@ -72,7 +85,10 @@ export class ShipSaleUseCase {
       );
     } catch (error) {
       return err(
-        new BusinessRuleError(error instanceof Error ? error.message : 'Failed to ship sale')
+        new BusinessRuleError(
+          error instanceof Error ? error.message : 'Failed to ship sale',
+          SALE_SHIPPING_ERROR
+        )
       );
     }
 

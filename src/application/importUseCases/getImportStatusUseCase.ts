@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { IMPORT_BATCH_NOT_FOUND } from '@shared/constants/error-codes';
 import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 
 import type { IImportBatchRepository } from '@import/domain';
@@ -50,7 +51,7 @@ export class GetImportStatusUseCase {
     try {
       const batch = await this.repository.findById(request.batchId, request.orgId);
       if (!batch) {
-        return err(new NotFoundError('Import batch not found'));
+        return err(new NotFoundError('Import batch not found', IMPORT_BATCH_NOT_FOUND));
       }
 
       return ok({
@@ -82,7 +83,7 @@ export class GetImportStatusUseCase {
         batchId: request.batchId,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      return err(new NotFoundError('Failed to retrieve import status'));
+      return err(new NotFoundError('Failed to retrieve import status', IMPORT_BATCH_NOT_FOUND));
     }
   }
 }

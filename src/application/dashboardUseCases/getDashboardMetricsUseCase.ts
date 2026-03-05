@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
+import { DASHBOARD_METRICS_FAILED } from '@shared/constants/error-codes';
 import { BusinessRuleError, DomainError, Result, ok, err } from '@shared/domain/result';
 
 export interface IGetDashboardMetricsRequest {
@@ -94,7 +95,9 @@ export class GetDashboardMetricsUseCase {
       const message = error instanceof Error ? error.message : 'Unknown error';
       const stack = error instanceof Error ? error.stack : undefined;
       this.logger.error(`Failed to retrieve dashboard metrics: ${message}`, stack);
-      return err(new BusinessRuleError('Failed to retrieve dashboard metrics'));
+      return err(
+        new BusinessRuleError('Failed to retrieve dashboard metrics', DASHBOARD_METRICS_FAILED)
+      );
     }
   }
 

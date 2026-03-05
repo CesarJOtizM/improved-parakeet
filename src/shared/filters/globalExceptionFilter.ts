@@ -21,6 +21,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     let statusCode: number;
     let message: string;
+    let errorCode = 'UNKNOWN_ERROR';
+    let details: Record<string, unknown> | undefined;
 
     if (exception instanceof HttpException) {
       statusCode = exception.getStatus();
@@ -31,12 +33,25 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         message = Array.isArray(responseObj.message)
           ? (responseObj.message[0] as string)
           : (responseObj.message as string) || exception.message;
+
+        if (typeof responseObj.errorCode === 'string') {
+          errorCode = responseObj.errorCode;
+        }
+
+        if (
+          responseObj.details &&
+          typeof responseObj.details === 'object' &&
+          !Array.isArray(responseObj.details)
+        ) {
+          details = responseObj.details as Record<string, unknown>;
+        }
       } else {
         message = exception.message;
       }
     } else {
       statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
       message = 'Internal server error';
+      errorCode = 'INTERNAL_SERVER_ERROR';
 
       Sentry.captureException(exception);
       this.logger.error(
@@ -45,9 +60,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       );
     }
 
-    const errorResponse = createErrorResponse(message, statusCode, request.url, request.method);
+    const errorResponse = createErrorResponse(
+      message,
+      statusCode,
+      request.url,
+      request.method,
+      errorCode,
+      details
+    );
 
-    this.logger.error(`Error ${statusCode}: ${message} - ${request.method} ${request.url}`);
+    this.logger.error(
+      `Error ${statusCode}: [${errorCode}] ${message} - ${request.method} ${request.url}`
+    );
 
     response.status(statusCode).json(errorResponse);
   }

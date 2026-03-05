@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
+import { WAREHOUSE_NOT_FOUND } from '@shared/constants/error-codes';
 import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 import { WarehouseMapper } from '@warehouse/mappers/warehouse.mapper';
@@ -52,7 +53,7 @@ export class GetWarehouseByIdUseCase {
     ]);
 
     if (!warehouse) {
-      return err(new NotFoundError('Warehouse not found'));
+      return err(new NotFoundError('Warehouse not found', WAREHOUSE_NOT_FOUND));
     }
 
     const data = WarehouseMapper.toResponseData(warehouse);

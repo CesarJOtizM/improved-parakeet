@@ -3,6 +3,17 @@ import { ReturnLine } from '@returns/domain/entities/returnLine.entity';
 import { ReturnType } from '@returns/domain/valueObjects/returnType.valueObject';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
 import {
+  RETURN_NOT_FOUND,
+  RETURN_PRODUCT_NOT_FOUND,
+  RETURN_SALE_ID_REQUIRED,
+  RETURN_SALE_NOT_FOUND,
+  RETURN_MOVEMENT_ID_REQUIRED,
+  RETURN_LINE_VALIDATION_FAILED,
+  RETURN_ORIGINAL_PRICE_REQUIRED,
+  RETURN_ORIGINAL_COST_REQUIRED,
+  MOVEMENT_NOT_FOUND,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   err,
@@ -60,13 +71,20 @@ export class AddReturnLineUseCase {
     const returnEntity = await this.returnRepository.findById(request.returnId, request.orgId);
 
     if (!returnEntity) {
-      return err(new NotFoundError(`Return with ID ${request.returnId} not found`));
+      return err(
+        new NotFoundError(`Return with ID ${request.returnId} not found`, RETURN_NOT_FOUND)
+      );
     }
 
     // Validate product exists
     const product = await this.productRepository.findById(request.productId, request.orgId);
     if (!product) {
-      return err(new ValidationError(`Product with ID ${request.productId} not found`));
+      return err(
+        new ValidationError(
+          `Product with ID ${request.productId} not found`,
+          RETURN_PRODUCT_NOT_FOUND
+        )
+      );
     }
 
     const currency = request.currency || 'COP';
@@ -81,19 +99,24 @@ export class AddReturnLineUseCase {
       returnType = ReturnType.create('RETURN_CUSTOMER');
 
       if (!returnEntity.saleId) {
-        return err(new ValidationError('Sale ID is required for customer returns'));
+        return err(
+          new ValidationError('Sale ID is required for customer returns', RETURN_SALE_ID_REQUIRED)
+        );
       }
 
       const sale = await this.saleRepository.findById(returnEntity.saleId, request.orgId);
       if (!sale) {
-        return err(new NotFoundError(`Sale with ID ${returnEntity.saleId} not found`));
+        return err(
+          new NotFoundError(`Sale with ID ${returnEntity.saleId} not found`, RETURN_SALE_NOT_FOUND)
+        );
       }
 
       const saleLine = sale.getLines().find(line => line.productId === request.productId);
       if (!saleLine) {
         return err(
           new ValidationError(
-            `Product ${request.productId} was not sold in sale ${returnEntity.saleId}`
+            `Product ${request.productId} was not sold in sale ${returnEntity.saleId}`,
+            RETURN_ORIGINAL_PRICE_REQUIRED
           )
         );
       }
@@ -105,7 +128,12 @@ export class AddReturnLineUseCase {
       returnType = ReturnType.create('RETURN_SUPPLIER');
 
       if (!returnEntity.sourceMovementId) {
-        return err(new ValidationError('Source movement ID is required for supplier returns'));
+        return err(
+          new ValidationError(
+            'Source movement ID is required for supplier returns',
+            RETURN_MOVEMENT_ID_REQUIRED
+          )
+        );
       }
 
       const sourceMovement = await this.movementRepository.findById(
@@ -114,7 +142,10 @@ export class AddReturnLineUseCase {
       );
       if (!sourceMovement) {
         return err(
-          new NotFoundError(`Movement with ID ${returnEntity.sourceMovementId} not found`)
+          new NotFoundError(
+            `Movement with ID ${returnEntity.sourceMovementId} not found`,
+            MOVEMENT_NOT_FOUND
+          )
         );
       }
 
@@ -124,7 +155,8 @@ export class AddReturnLineUseCase {
       if (!movementLine) {
         return err(
           new ValidationError(
-            `Product ${request.productId} was not purchased in movement ${returnEntity.sourceMovementId}`
+            `Product ${request.productId} was not purchased in movement ${returnEntity.sourceMovementId}`,
+            RETURN_LINE_VALIDATION_FAILED
           )
         );
       }
@@ -137,7 +169,8 @@ export class AddReturnLineUseCase {
         // For now, return an error as we need unit cost for supplier returns
         return err(
           new ValidationError(
-            `Unit cost is required for supplier returns. Movement line for product ${request.productId} does not have unit cost.`
+            `Unit cost is required for supplier returns. Movement line for product ${request.productId} does not have unit cost.`,
+            RETURN_ORIGINAL_COST_REQUIRED
           )
         );
       }

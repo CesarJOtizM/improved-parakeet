@@ -2,6 +2,13 @@ import { Injectable, Logger, Inject } from '@nestjs/common';
 import { ReportType } from '@report/domain/valueObjects';
 import { IReportParametersInput } from '@report/domain/valueObjects';
 import { IReportTemplateData, ReportTemplateMapper } from '@report/mappers';
+import {
+  REPORT_TEMPLATE_NAME_TOO_SHORT,
+  REPORT_TEMPLATE_NAME_TOO_LONG,
+  REPORT_INVALID_TYPE,
+  REPORT_TEMPLATE_CREATION_ERROR,
+  REPORT_TEMPLATE_NAME_CONFLICT,
+} from '@shared/constants/error-codes';
 import { err, ok, Result } from '@shared/domain/result';
 import { ConflictError, DomainError, ValidationError } from '@shared/domain/result/domainError';
 
@@ -46,18 +53,28 @@ export class CreateReportTemplateUseCase {
 
     // Validate name
     if (!request.name || request.name.trim().length < 3) {
-      return err(new ValidationError('Template name must be at least 3 characters long'));
+      return err(
+        new ValidationError(
+          'Template name must be at least 3 characters long',
+          REPORT_TEMPLATE_NAME_TOO_SHORT
+        )
+      );
     }
 
     if (request.name.trim().length > 100) {
-      return err(new ValidationError('Template name must be at most 100 characters long'));
+      return err(
+        new ValidationError(
+          'Template name must be at most 100 characters long',
+          REPORT_TEMPLATE_NAME_TOO_LONG
+        )
+      );
     }
 
     // Validate report type
     try {
       ReportType.create(request.type);
     } catch {
-      return err(new ValidationError(`Invalid report type: ${request.type}`));
+      return err(new ValidationError(`Invalid report type: ${request.type}`, REPORT_INVALID_TYPE));
     }
 
     // Check if template with same name already exists
@@ -66,7 +83,12 @@ export class CreateReportTemplateUseCase {
       request.orgId
     );
     if (existingTemplate) {
-      return err(new ConflictError(`A report template with name '${request.name}' already exists`));
+      return err(
+        new ConflictError(
+          `A report template with name '${request.name}' already exists`,
+          REPORT_TEMPLATE_NAME_CONFLICT
+        )
+      );
     }
 
     try {
@@ -111,7 +133,8 @@ export class CreateReportTemplateUseCase {
       });
       return err(
         new ValidationError(
-          error instanceof Error ? error.message : 'Failed to create report template'
+          error instanceof Error ? error.message : 'Failed to create report template',
+          REPORT_TEMPLATE_CREATION_ERROR
         )
       );
     }

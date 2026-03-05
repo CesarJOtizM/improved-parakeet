@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@infrastructure/database/prisma.service';
+import { TRANSFER_NOT_FOUND } from '@shared/constants/error-codes';
 import { DomainError, NotFoundError, Result, err, ok } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -67,7 +68,7 @@ export class GetTransferByIdUseCase {
     });
 
     if (!transfer) {
-      return err(new NotFoundError('Transfer not found', 'TRANSFER_NOT_FOUND'));
+      return err(new NotFoundError('Transfer not found', TRANSFER_NOT_FOUND));
     }
 
     return ok({

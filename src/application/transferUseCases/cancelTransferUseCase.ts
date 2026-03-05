@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { TRANSFER_CANNOT_CANCEL, TRANSFER_NOT_FOUND } from '@shared/constants/error-codes';
 import {
   BusinessRuleError,
   DomainError,
@@ -43,14 +44,17 @@ export class CancelTransferUseCase {
     const transfer = await this.transferRepository.findById(request.transferId, request.orgId);
 
     if (!transfer) {
-      return err(new NotFoundError(`Transfer with ID ${request.transferId} not found`));
+      return err(
+        new NotFoundError(`Transfer with ID ${request.transferId} not found`, TRANSFER_NOT_FOUND)
+      );
     }
 
     // Validate transfer can be canceled
     if (!transfer.status.canCancel()) {
       return err(
         new BusinessRuleError(
-          `Transfer cannot be canceled. Current status: ${transfer.status.getValue()}. Only DRAFT transfers can be canceled.`
+          `Transfer cannot be canceled. Current status: ${transfer.status.getValue()}. Only DRAFT transfers can be canceled.`,
+          TRANSFER_CANNOT_CANCEL
         )
       );
     }

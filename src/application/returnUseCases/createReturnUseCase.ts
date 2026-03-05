@@ -3,6 +3,11 @@ import { Return } from '@returns/domain/entities/return.entity';
 import { ReturnNumberGenerationService } from '@returns/domain/services/returnNumberGeneration.service';
 import { ReturnMapper } from '@returns/mappers';
 import {
+  RETURN_WAREHOUSE_NOT_FOUND,
+  RETURN_SALE_ID_REQUIRED,
+  RETURN_MOVEMENT_ID_REQUIRED,
+} from '@shared/constants/error-codes';
+import {
   DomainError,
   NotFoundError,
   Result,
@@ -99,15 +104,27 @@ export class CreateReturnUseCase {
     // Validate warehouse exists
     const warehouse = await this.warehouseRepository.findById(request.warehouseId, request.orgId);
     if (!warehouse) {
-      return err(new NotFoundError(`Warehouse with ID ${request.warehouseId} not found`));
+      return err(
+        new NotFoundError(
+          `Warehouse with ID ${request.warehouseId} not found`,
+          RETURN_WAREHOUSE_NOT_FOUND
+        )
+      );
     }
 
     // Validate type-specific requirements
     if (request.type === 'RETURN_CUSTOMER' && !request.saleId) {
-      return err(new ValidationError('Sale ID is required for customer returns'));
+      return err(
+        new ValidationError('Sale ID is required for customer returns', RETURN_SALE_ID_REQUIRED)
+      );
     }
     if (request.type === 'RETURN_SUPPLIER' && !request.sourceMovementId) {
-      return err(new ValidationError('Source movement ID is required for supplier returns'));
+      return err(
+        new ValidationError(
+          'Source movement ID is required for supplier returns',
+          RETURN_MOVEMENT_ID_REQUIRED
+        )
+      );
     }
 
     // Generate return number

@@ -106,7 +106,7 @@ describe('CreateReorderRuleUseCase', () => {
         error => {
           expect(error).toBeInstanceOf(ValidationError);
           expect(error.message).toContain('Maximum quantity must be greater than minimum quantity');
-          expect(error.code).toBe('INVALID_QUANTITIES');
+          expect(error.code).toBe('REORDER_RULE_INVALID_QUANTITIES');
         }
       );
       expect(mockReorderRuleRepository.create).not.toHaveBeenCalled();

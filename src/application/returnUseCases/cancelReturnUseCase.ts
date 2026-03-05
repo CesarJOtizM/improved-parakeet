@@ -1,6 +1,7 @@
 import { UnitOfWork } from '@infrastructure/database/unitOfWork.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ReturnValidationService } from '@returns/domain/services/returnValidation.service';
+import { RETURN_NOT_FOUND, RETURN_CANCEL_ERROR } from '@shared/constants/error-codes';
 import {
   BusinessRuleError,
   DomainError,
@@ -45,14 +46,17 @@ export class CancelReturnUseCase {
     const returnEntity = await this.returnRepository.findById(request.id, request.orgId);
 
     if (!returnEntity) {
-      return err(new NotFoundError(`Return with ID ${request.id} not found`));
+      return err(new NotFoundError(`Return with ID ${request.id} not found`, RETURN_NOT_FOUND));
     }
 
     // Validate return can be cancelled
     const validationResult = ReturnValidationService.validateReturnCanBeCancelled(returnEntity);
     if (!validationResult.isValid) {
       return err(
-        new BusinessRuleError(`Return cannot be cancelled: ${validationResult.errors.join(', ')}`)
+        new BusinessRuleError(
+          `Return cannot be cancelled: ${validationResult.errors.join(', ')}`,
+          RETURN_CANCEL_ERROR
+        )
       );
     }
 
@@ -258,7 +262,10 @@ export class CancelReturnUseCase {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       return err(
-        new BusinessRuleError(error instanceof Error ? error.message : 'Failed to cancel return')
+        new BusinessRuleError(
+          error instanceof Error ? error.message : 'Failed to cancel return',
+          RETURN_CANCEL_ERROR
+        )
       );
     }
   }

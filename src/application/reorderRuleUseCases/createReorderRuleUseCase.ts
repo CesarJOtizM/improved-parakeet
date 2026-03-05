@@ -1,5 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  REORDER_RULE_CONFLICT,
+  REORDER_RULE_CREATION_ERROR,
+  REORDER_RULE_INVALID_QUANTITIES,
+} from '@shared/constants/error-codes';
+import {
   ConflictError,
   DomainError,
   Result,
@@ -59,7 +64,7 @@ export class CreateReorderRuleUseCase {
         return err(
           new ValidationError(
             'Maximum quantity must be greater than minimum quantity',
-            'INVALID_QUANTITIES'
+            REORDER_RULE_INVALID_QUANTITIES
           )
         );
       }
@@ -75,7 +80,7 @@ export class CreateReorderRuleUseCase {
         return err(
           new ConflictError(
             'A reorder rule already exists for this product and warehouse combination',
-            'REORDER_RULE_CONFLICT',
+            REORDER_RULE_CONFLICT,
             { productId: request.productId, warehouseId: request.warehouseId }
           )
         );
@@ -118,7 +123,7 @@ export class CreateReorderRuleUseCase {
       return err(
         new ValidationError(
           error instanceof Error ? error.message : 'Failed to create reorder rule',
-          'REORDER_RULE_CREATION_ERROR'
+          REORDER_RULE_CREATION_ERROR
         )
       );
     }

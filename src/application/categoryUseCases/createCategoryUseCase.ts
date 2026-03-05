@@ -1,6 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Category } from '@product/domain/entities/category.entity';
 import {
+  CATEGORY_CREATION_ERROR,
+  CATEGORY_INVALID_PARENT_REF,
+  CATEGORY_NAME_CONFLICT,
+  CATEGORY_PARENT_NOT_FOUND,
+  CATEGORY_REFERENCED_NOT_FOUND,
+} from '@shared/constants/error-codes';
+import {
   ConflictError,
   DomainError,
   NotFoundError,
@@ -41,7 +48,7 @@ export class CreateCategoryUseCase {
       const nameExists = await this.categoryRepository.existsByName(request.name, request.orgId);
       if (nameExists) {
         return err(
-          new ConflictError('A category with this name already exists', 'CATEGORY_NAME_CONFLICT')
+          new ConflictError('A category with this name already exists', CATEGORY_NAME_CONFLICT)
         );
       }
 
@@ -50,7 +57,7 @@ export class CreateCategoryUseCase {
       if (request.parentId) {
         const parent = await this.categoryRepository.findById(request.parentId, request.orgId);
         if (!parent) {
-          return err(new NotFoundError('Parent category not found'));
+          return err(new NotFoundError('Parent category not found', CATEGORY_PARENT_NOT_FOUND));
         }
         parentName = parent.name;
       }
@@ -99,26 +106,28 @@ export class CreateCategoryUseCase {
           return err(
             new ConflictError(
               'A category with this name already exists in this organization',
-              'CATEGORY_NAME_CONFLICT'
+              CATEGORY_NAME_CONFLICT
             )
           );
         }
 
         if (prismaError.code === 'P2003') {
           return err(
-            new ValidationError('Invalid parent category reference', 'INVALID_PARENT_CATEGORY')
+            new ValidationError('Invalid parent category reference', CATEGORY_INVALID_PARENT_REF)
           );
         }
 
         if (prismaError.code === 'P2025') {
-          return err(new NotFoundError('Referenced record not found'));
+          return err(
+            new NotFoundError('Referenced record not found', CATEGORY_REFERENCED_NOT_FOUND)
+          );
         }
       }
 
       return err(
         new ValidationError(
           `Failed to create category: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          'CATEGORY_CREATION_ERROR'
+          CATEGORY_CREATION_ERROR
         )
       );
     }

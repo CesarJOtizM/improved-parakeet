@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { SaleLine } from '@sale/domain/entities/saleLine.entity';
 import { SalePrice } from '@sale/domain/valueObjects/salePrice.valueObject';
+import { SALE_LINE_PRODUCT_NOT_FOUND } from '@shared/constants/error-codes';
 import {
   BusinessRuleError,
   DomainError,
@@ -55,7 +56,12 @@ export class AddSaleLineUseCase {
     // Validate product exists
     const product = await this.productRepository.findById(request.productId, request.orgId);
     if (!product) {
-      return err(new ValidationError(`Product with ID ${request.productId} not found`));
+      return err(
+        new ValidationError(
+          `Product with ID ${request.productId} not found`,
+          SALE_LINE_PRODUCT_NOT_FOUND
+        )
+      );
     }
 
     // Create sale line

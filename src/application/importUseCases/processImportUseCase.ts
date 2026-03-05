@@ -4,6 +4,7 @@ import {
   type RowProcessor,
 } from '@import/domain';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { IMPORT_BATCH_NOT_FOUND, IMPORT_PROCESSING_ERROR } from '@shared/constants/error-codes';
 import {
   BusinessRuleError,
   DomainError,
@@ -69,14 +70,15 @@ export class ProcessImportUseCase {
       // 1. Find batch
       const batch = await this.repository.findById(request.batchId, request.orgId);
       if (!batch) {
-        return err(new NotFoundError('Import batch not found'));
+        return err(new NotFoundError('Import batch not found', IMPORT_BATCH_NOT_FOUND));
       }
 
       // 2. Check if batch can be processed
       if (!batch.status.canProcess()) {
         return err(
           new BusinessRuleError(
-            `Import batch cannot be processed in status: ${batch.status.getValue()}`
+            `Import batch cannot be processed in status: ${batch.status.getValue()}`,
+            IMPORT_PROCESSING_ERROR
           )
         );
       }
@@ -145,7 +147,8 @@ export class ProcessImportUseCase {
       });
       return err(
         new BusinessRuleError(
-          `Processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          `Processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          IMPORT_PROCESSING_ERROR
         )
       );
     }

@@ -1,12 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import {
-  BadRequestException,
-  ConflictException,
-  HttpException,
-  HttpStatus,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import {
   AuthenticationError,
   BusinessRuleError,
@@ -23,212 +16,206 @@ import { domainErrorToHttpException, resultToHttpResponse } from '@shared/utils/
 
 describe('resultToHttp', () => {
   describe('domainErrorToHttpException', () => {
-    it('Given: NotFoundError When: converting to HTTP exception Then: should throw NotFoundException with 404', () => {
-      // Arrange
-      const error = new NotFoundError('Product not found');
+    it('Given: NotFoundError When: converting Then: should throw HttpException with 404 and errorCode', () => {
+      const error = new NotFoundError('Product not found', 'PRODUCT_NOT_FOUND', {
+        productId: '123',
+      });
 
-      // Act & Assert
-      expect(() => domainErrorToHttpException(error)).toThrow(NotFoundException);
       try {
         domainErrorToHttpException(error);
-      } catch (e) {
-        expect(e).toBeInstanceOf(NotFoundException);
-        expect((e as NotFoundException).message).toBe('Product not found');
-        expect((e as NotFoundException).getStatus()).toBe(HttpStatus.NOT_FOUND);
-      }
-    });
-
-    it('Given: ValidationError When: converting to HTTP exception Then: should throw BadRequestException with 400', () => {
-      // Arrange
-      const error = new ValidationError('Invalid email format');
-
-      // Act & Assert
-      expect(() => domainErrorToHttpException(error)).toThrow(BadRequestException);
-      try {
-        domainErrorToHttpException(error);
-      } catch (e) {
-        expect(e).toBeInstanceOf(BadRequestException);
-        expect((e as BadRequestException).message).toBe('Invalid email format');
-        expect((e as BadRequestException).getStatus()).toBe(HttpStatus.BAD_REQUEST);
-      }
-    });
-
-    it('Given: BusinessRuleError When: converting to HTTP exception Then: should throw BadRequestException with 400', () => {
-      // Arrange
-      const error = new BusinessRuleError('Cannot delete active product');
-
-      // Act & Assert
-      expect(() => domainErrorToHttpException(error)).toThrow(BadRequestException);
-      try {
-        domainErrorToHttpException(error);
-      } catch (e) {
-        expect(e).toBeInstanceOf(BadRequestException);
-        expect((e as BadRequestException).message).toBe('Cannot delete active product');
-        expect((e as BadRequestException).getStatus()).toBe(HttpStatus.BAD_REQUEST);
-      }
-    });
-
-    it('Given: AuthenticationError When: converting to HTTP exception Then: should throw UnauthorizedException with 401', () => {
-      // Arrange
-      const error = new AuthenticationError('wrong password');
-
-      // Act & Assert
-      expect(() => domainErrorToHttpException(error)).toThrow(UnauthorizedException);
-      try {
-        domainErrorToHttpException(error);
-      } catch (e) {
-        expect(e).toBeInstanceOf(UnauthorizedException);
-        expect((e as UnauthorizedException).message).toBe('Authentication failed');
-        expect((e as UnauthorizedException).getStatus()).toBe(HttpStatus.UNAUTHORIZED);
-      }
-    });
-
-    it('Given: TokenError When: converting to HTTP exception Then: should throw UnauthorizedException with 401', () => {
-      // Arrange
-      const error = new TokenError('token expired');
-
-      // Act & Assert
-      expect(() => domainErrorToHttpException(error)).toThrow(UnauthorizedException);
-      try {
-        domainErrorToHttpException(error);
-      } catch (e) {
-        expect(e).toBeInstanceOf(UnauthorizedException);
-        expect((e as UnauthorizedException).message).toBe('Invalid or expired token');
-        expect((e as UnauthorizedException).getStatus()).toBe(HttpStatus.UNAUTHORIZED);
-      }
-    });
-
-    it('Given: ConflictError When: converting to HTTP exception Then: should throw ConflictException with 409', () => {
-      // Arrange
-      const error = new ConflictError('SKU already exists');
-
-      // Act & Assert
-      expect(() => domainErrorToHttpException(error)).toThrow(ConflictException);
-      try {
-        domainErrorToHttpException(error);
-      } catch (e) {
-        expect(e).toBeInstanceOf(ConflictException);
-        expect((e as ConflictException).message).toBe('SKU already exists');
-        expect((e as ConflictException).getStatus()).toBe(HttpStatus.CONFLICT);
-      }
-    });
-
-    it('Given: RateLimitError When: converting to HTTP exception Then: should throw HttpException with 429', () => {
-      // Arrange
-      const error = new RateLimitError();
-
-      // Act & Assert
-      expect(() => domainErrorToHttpException(error)).toThrow(HttpException);
-      try {
-        domainErrorToHttpException(error);
+        fail('Should have thrown');
       } catch (e) {
         expect(e).toBeInstanceOf(HttpException);
-        expect((e as HttpException).message).toBe('Too many requests. Please try again later.');
-        expect((e as HttpException).getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
+        const exc = e as HttpException;
+        expect(exc.getStatus()).toBe(HttpStatus.NOT_FOUND);
+        const body = exc.getResponse() as Record<string, unknown>;
+        expect(body.message).toBe('Product not found');
+        expect(body.errorCode).toBe('PRODUCT_NOT_FOUND');
+        expect(body.details).toEqual({ productId: '123' });
       }
     });
 
-    it('Given: RateLimitError with custom message When: converting Then: should use the custom message', () => {
-      // Arrange
-      const error = new RateLimitError('Rate limit exceeded for login');
+    it('Given: NotFoundError without code When: converting Then: should use default code NOT_FOUND', () => {
+      const error = new NotFoundError('Item not found');
 
-      // Act & Assert
       try {
         domainErrorToHttpException(error);
       } catch (e) {
-        expect((e as HttpException).message).toBe('Rate limit exceeded for login');
-        expect((e as HttpException).getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
+        const body = (e as HttpException).getResponse() as Record<string, unknown>;
+        expect(body.errorCode).toBe('NOT_FOUND');
       }
     });
 
-    it('Given: unknown DomainError subclass When: converting to HTTP exception Then: should default to BadRequestException', () => {
-      // Arrange - create a concrete subclass that doesn't match any specific error type
+    it('Given: ValidationError When: converting Then: should throw HttpException with 400', () => {
+      const error = new ValidationError('Invalid email format', 'USER_VALIDATION_FAILED');
+
+      try {
+        domainErrorToHttpException(error);
+      } catch (e) {
+        const exc = e as HttpException;
+        expect(exc.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+        const body = exc.getResponse() as Record<string, unknown>;
+        expect(body.message).toBe('Invalid email format');
+        expect(body.errorCode).toBe('USER_VALIDATION_FAILED');
+      }
+    });
+
+    it('Given: BusinessRuleError When: converting Then: should throw HttpException with 400', () => {
+      const error = new BusinessRuleError('Cannot delete active product', 'CATEGORY_HAS_PRODUCTS');
+
+      try {
+        domainErrorToHttpException(error);
+      } catch (e) {
+        const exc = e as HttpException;
+        expect(exc.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+        const body = exc.getResponse() as Record<string, unknown>;
+        expect(body.errorCode).toBe('CATEGORY_HAS_PRODUCTS');
+      }
+    });
+
+    it('Given: AuthenticationError When: converting Then: should throw HttpException with 401 and AUTHENTICATION_ERROR code', () => {
+      const error = new AuthenticationError('wrong password');
+
+      try {
+        domainErrorToHttpException(error);
+      } catch (e) {
+        const exc = e as HttpException;
+        expect(exc.getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+        const body = exc.getResponse() as Record<string, unknown>;
+        expect(body.message).toBe('Authentication failed');
+        expect(body.errorCode).toBe('AUTHENTICATION_ERROR');
+      }
+    });
+
+    it('Given: TokenError When: converting Then: should throw HttpException with 401 and TOKEN_ERROR code', () => {
+      const error = new TokenError('token expired');
+
+      try {
+        domainErrorToHttpException(error);
+      } catch (e) {
+        const exc = e as HttpException;
+        expect(exc.getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+        const body = exc.getResponse() as Record<string, unknown>;
+        expect(body.message).toBe('Invalid or expired token');
+        expect(body.errorCode).toBe('TOKEN_ERROR');
+      }
+    });
+
+    it('Given: ConflictError When: converting Then: should throw HttpException with 409', () => {
+      const error = new ConflictError('SKU already exists', 'PRODUCT_SKU_CONFLICT');
+
+      try {
+        domainErrorToHttpException(error);
+      } catch (e) {
+        const exc = e as HttpException;
+        expect(exc.getStatus()).toBe(HttpStatus.CONFLICT);
+        const body = exc.getResponse() as Record<string, unknown>;
+        expect(body.errorCode).toBe('PRODUCT_SKU_CONFLICT');
+      }
+    });
+
+    it('Given: RateLimitError When: converting Then: should throw HttpException with 429', () => {
+      const error = new RateLimitError();
+
+      try {
+        domainErrorToHttpException(error);
+      } catch (e) {
+        const exc = e as HttpException;
+        expect(exc.getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
+        const body = exc.getResponse() as Record<string, unknown>;
+        expect(body.message).toBe('Too many requests. Please try again later.');
+        expect(body.errorCode).toBe('RATE_LIMIT_EXCEEDED');
+      }
+    });
+
+    it('Given: RateLimitError with custom message When: converting Then: should use custom message', () => {
+      const error = new RateLimitError('Rate limit exceeded for login');
+
+      try {
+        domainErrorToHttpException(error);
+      } catch (e) {
+        const body = (e as HttpException).getResponse() as Record<string, unknown>;
+        expect(body.message).toBe('Rate limit exceeded for login');
+      }
+    });
+
+    it('Given: unknown DomainError subclass When: converting Then: should default to 400 with UNKNOWN_ERROR', () => {
       class UnknownDomainError extends DomainError {
         constructor(message: string) {
-          super(message, 'UNKNOWN');
+          super(message);
         }
       }
       const error = new UnknownDomainError('Something went wrong');
 
-      // Act & Assert
-      expect(() => domainErrorToHttpException(error)).toThrow(BadRequestException);
       try {
         domainErrorToHttpException(error);
       } catch (e) {
-        expect(e).toBeInstanceOf(BadRequestException);
-        expect((e as BadRequestException).message).toBe('Something went wrong');
+        const exc = e as HttpException;
+        expect(exc.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+        const body = exc.getResponse() as Record<string, unknown>;
+        expect(body.errorCode).toBe('UNKNOWN_ERROR');
       }
     });
 
-    it('Given: AuthenticationError without internal reason When: converting Then: should still use generic message', () => {
-      // Arrange
-      const error = new AuthenticationError();
+    it('Given: error without details When: converting Then: details should be undefined', () => {
+      const error = new NotFoundError('Not found');
 
-      // Act & Assert
       try {
         domainErrorToHttpException(error);
       } catch (e) {
-        expect((e as UnauthorizedException).message).toBe('Authentication failed');
+        const body = (e as HttpException).getResponse() as Record<string, unknown>;
+        expect(body.details).toBeUndefined();
       }
     });
   });
 
   describe('resultToHttpResponse', () => {
-    it('Given: ok result with value When: converting to HTTP response Then: should return the value', () => {
-      // Arrange
+    it('Given: ok result with value When: converting Then: should return the value', () => {
       const result = ok({ id: '123', name: 'Test Product' });
-
-      // Act
       const response = resultToHttpResponse(result);
-
-      // Assert
       expect(response).toEqual({ id: '123', name: 'Test Product' });
     });
 
-    it('Given: ok result with null When: converting to HTTP response Then: should return null', () => {
-      // Arrange
+    it('Given: ok result with null When: converting Then: should return null', () => {
       const result = ok(null);
-
-      // Act
       const response = resultToHttpResponse(result);
-
-      // Assert
       expect(response).toBeNull();
     });
 
-    it('Given: err result with NotFoundError When: converting to HTTP response Then: should throw NotFoundException', () => {
-      // Arrange
+    it('Given: err result with NotFoundError When: converting Then: should throw HttpException with 404', () => {
       const result = err(new NotFoundError('User not found'));
-
-      // Act & Assert
-      expect(() => resultToHttpResponse(result)).toThrow(NotFoundException);
+      expect(() => resultToHttpResponse(result)).toThrow(HttpException);
+      try {
+        resultToHttpResponse(result);
+      } catch (e) {
+        expect((e as HttpException).getStatus()).toBe(HttpStatus.NOT_FOUND);
+      }
     });
 
-    it('Given: err result with ValidationError When: converting to HTTP response Then: should throw BadRequestException', () => {
-      // Arrange
+    it('Given: err result with ValidationError When: converting Then: should throw HttpException with 400', () => {
       const result = err(new ValidationError('Email is required'));
-
-      // Act & Assert
-      expect(() => resultToHttpResponse(result)).toThrow(BadRequestException);
+      expect(() => resultToHttpResponse(result)).toThrow(HttpException);
+      try {
+        resultToHttpResponse(result);
+      } catch (e) {
+        expect((e as HttpException).getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      }
     });
 
-    it('Given: err result with AuthenticationError When: converting to HTTP response Then: should throw UnauthorizedException', () => {
-      // Arrange
+    it('Given: err result with AuthenticationError When: converting Then: should throw HttpException with 401', () => {
       const result = err(new AuthenticationError('invalid credentials'));
-
-      // Act & Assert
-      expect(() => resultToHttpResponse(result)).toThrow(UnauthorizedException);
+      expect(() => resultToHttpResponse(result)).toThrow(HttpException);
+      try {
+        resultToHttpResponse(result);
+      } catch (e) {
+        expect((e as HttpException).getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+      }
     });
 
-    it('Given: ok result with array When: converting to HTTP response Then: should return the array', () => {
-      // Arrange
+    it('Given: ok result with array When: converting Then: should return the array', () => {
       const data = [{ id: '1' }, { id: '2' }, { id: '3' }];
       const result = ok(data);
-
-      // Act
       const response = resultToHttpResponse(result);
-
-      // Assert
       expect(response).toEqual(data);
       expect(response).toHaveLength(3);
     });

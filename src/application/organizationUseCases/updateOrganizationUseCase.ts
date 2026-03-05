@@ -1,6 +1,12 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  ORG_NAME_CONFLICT,
+  ORG_NOT_FOUND,
+  ORG_SLUG_CONFLICT,
+  ORG_SLUG_INVALID,
+} from '@shared/constants/error-codes';
+import {
   ConflictError,
   DomainError,
   NotFoundError,
@@ -56,7 +62,7 @@ export class UpdateOrganizationUseCase {
     const organization = await this.organizationRepository.findById(request.id);
 
     if (!organization) {
-      return err(new NotFoundError('Organization not found'));
+      return err(new NotFoundError('Organization not found', ORG_NOT_FOUND));
     }
 
     // Get current organization data from DB to check current slug
@@ -66,20 +72,25 @@ export class UpdateOrganizationUseCase {
     });
 
     if (!currentOrgData) {
-      return err(new NotFoundError('Organization not found'));
+      return err(new NotFoundError('Organization not found', ORG_NOT_FOUND));
     }
 
     // Validate slug format if provided
     if (request.slug !== undefined) {
       if (!/^[a-z0-9-]+$/.test(request.slug)) {
         return err(
-          new ValidationError('Slug can only contain lowercase letters, numbers and hyphens')
+          new ValidationError(
+            'Slug can only contain lowercase letters, numbers and hyphens',
+            ORG_SLUG_INVALID
+          )
         );
       }
 
       // Validate slug length
       if (request.slug.length < 3 || request.slug.length > 50) {
-        return err(new ValidationError('Slug must be between 3 and 50 characters'));
+        return err(
+          new ValidationError('Slug must be between 3 and 50 characters', ORG_SLUG_INVALID)
+        );
       }
 
       // Check if slug is different and already exists
@@ -88,7 +99,8 @@ export class UpdateOrganizationUseCase {
         if (slugExists) {
           return err(
             new ConflictError(
-              `The slug "${request.slug}" is already in use. Please choose another one.`
+              `The slug "${request.slug}" is already in use. Please choose another one.`,
+              ORG_SLUG_CONFLICT
             )
           );
         }
@@ -101,7 +113,8 @@ export class UpdateOrganizationUseCase {
       if (domainExists) {
         return err(
           new ConflictError(
-            `The domain "${request.domain}" is already in use. Please choose another one.`
+            `The domain "${request.domain}" is already in use. Please choose another one.`,
+            ORG_NAME_CONFLICT
           )
         );
       }
@@ -158,7 +171,7 @@ export class UpdateOrganizationUseCase {
     });
 
     if (!orgData) {
-      return err(new NotFoundError('Organization not found after update'));
+      return err(new NotFoundError('Organization not found after update', ORG_NOT_FOUND));
     }
 
     return ok({

@@ -1,5 +1,10 @@
 import { ImportType, ImportValidationService, type ImportTypeValue } from '@import/domain';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  IMPORT_FILE_VALIDATION_FAILED,
+  IMPORT_INVALID_TYPE,
+  IMPORT_PREVIEW_ERROR,
+} from '@shared/constants/error-codes';
 import { DomainError, Result, ValidationError, err, ok } from '@shared/domain/result';
 
 import type { IFileParsingService } from '@shared/ports/externalServices';
@@ -48,13 +53,17 @@ export class PreviewImportUseCase {
       try {
         importType = ImportType.create(request.type);
       } catch {
-        return err(new ValidationError(`Invalid import type: ${request.type}`));
+        return err(
+          new ValidationError(`Invalid import type: ${request.type}`, IMPORT_INVALID_TYPE)
+        );
       }
 
       // 2. Validate file format using port
       const fileValidation = this.fileParsingService.validateFileFormat(request.file);
       if (!fileValidation.isValid) {
-        return err(new ValidationError(fileValidation.errors.join(', ')));
+        return err(
+          new ValidationError(fileValidation.errors.join(', '), IMPORT_FILE_VALIDATION_FAILED)
+        );
       }
 
       // 3. Parse file using port
@@ -130,7 +139,8 @@ export class PreviewImportUseCase {
       });
       return err(
         new ValidationError(
-          `Preview failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          `Preview failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          IMPORT_PREVIEW_ERROR
         )
       );
     }

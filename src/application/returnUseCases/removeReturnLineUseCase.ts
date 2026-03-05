@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { RETURN_NOT_FOUND } from '@shared/constants/error-codes';
 import {
   BusinessRuleError,
   DomainError,
@@ -44,7 +45,9 @@ export class RemoveReturnLineUseCase {
     const returnEntity = await this.returnRepository.findById(request.returnId, request.orgId);
 
     if (!returnEntity) {
-      return err(new NotFoundError(`Return with ID ${request.returnId} not found`));
+      return err(
+        new NotFoundError(`Return with ID ${request.returnId} not found`, RETURN_NOT_FOUND)
+      );
     }
 
     // Remove line from return

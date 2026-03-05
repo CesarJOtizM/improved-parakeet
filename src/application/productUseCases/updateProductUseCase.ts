@@ -6,6 +6,12 @@ import { ProductName } from '@product/domain/valueObjects/productName.valueObjec
 import { ProductStatus } from '@product/domain/valueObjects/productStatus.valueObject';
 import { UnitValueObject } from '@product/domain/valueObjects/unit.valueObject';
 import {
+  PRODUCT_COST_METHOD_IMMUTABLE,
+  PRODUCT_NOT_FOUND,
+  PRODUCT_STATUS_CHANGE_DENIED,
+  PRODUCT_UPDATE_ERROR,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   NotFoundError,
@@ -70,7 +76,7 @@ export class UpdateProductUseCase {
 
       if (!product) {
         return err(
-          new NotFoundError('Product not found', 'PRODUCT_NOT_FOUND', {
+          new NotFoundError('Product not found', PRODUCT_NOT_FOUND, {
             productId: request.productId,
             orgId: request.orgId,
           })
@@ -128,7 +134,7 @@ export class UpdateProductUseCase {
           return err(
             new BusinessRuleError(
               'Cannot change status of a discontinued product',
-              'STATUS_CHANGE_ERROR',
+              PRODUCT_STATUS_CHANGE_DENIED,
               {
                 productId: product.id,
                 orgId: request.orgId,
@@ -144,7 +150,7 @@ export class UpdateProductUseCase {
         // Check if cost method can be changed (pure check)
         if (!product.canChangeCostMethod()) {
           return err(
-            new BusinessRuleError('Cost method cannot be changed', 'COST_METHOD_CHANGE_ERROR', {
+            new BusinessRuleError('Cost method cannot be changed', PRODUCT_COST_METHOD_IMMUTABLE, {
               productId: product.id,
               orgId: request.orgId,
             })
@@ -160,7 +166,7 @@ export class UpdateProductUseCase {
 
         if (!validation.isValid) {
           return err(
-            new BusinessRuleError(validation.errors.join(', '), 'COST_METHOD_CHANGE_ERROR', {
+            new BusinessRuleError(validation.errors.join(', '), PRODUCT_COST_METHOD_IMMUTABLE, {
               productId: product.id,
               orgId: request.orgId,
             })
@@ -229,10 +235,10 @@ export class UpdateProductUseCase {
       });
 
       if (error instanceof Error) {
-        return err(new ValidationError(error.message, 'PRODUCT_UPDATE_ERROR'));
+        return err(new ValidationError(error.message, PRODUCT_UPDATE_ERROR));
       }
 
-      return err(new ValidationError('Failed to update product', 'PRODUCT_UPDATE_ERROR'));
+      return err(new ValidationError('Failed to update product', PRODUCT_UPDATE_ERROR));
     }
   }
 }

@@ -817,6 +817,7 @@ SOFTWARE.
 | [Result Monad Guide](docs/technical/result-monad-guide.md)         | Guia del patron Result<T, E>       |
 | [Modelo de Datos](docs/technical/data_model.md)                    | Estructura de la base de datos     |
 | [Guia de Testing](docs/technical/testing-structure.md)             | Estructura y convenciones de tests |
+| [Error Codes](docs/technical/error-codes.md)                       | Catalogo de codigos de error (80+) |
 | [Requerimientos](docs/Requirement.md)                              | Especificacion de requerimientos   |
 | [Coleccion Postman](docs/postman/)                                 | Colecciones y documentacion de API |
 

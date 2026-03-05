@@ -1,6 +1,12 @@
 import { MovementMapper } from '@movement/mappers';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  MOVEMENT_CANNOT_BE_UPDATED,
+  MOVEMENT_NOT_FOUND,
+  MOVEMENT_UPDATE_ERROR,
+  PRODUCT_NOT_FOUND,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   NotFoundError,
@@ -49,12 +55,12 @@ export class UpdateMovementUseCase {
       const movement = await this.movementRepository.findById(request.movementId, request.orgId);
 
       if (!movement) {
-        return err(new NotFoundError('Movement not found', 'MOVEMENT_NOT_FOUND'));
+        return err(new NotFoundError('Movement not found', MOVEMENT_NOT_FOUND));
       }
 
       if (!movement.canUpdate()) {
         return err(
-          new BusinessRuleError('Only DRAFT movements can be updated', 'MOVEMENT_CANNOT_BE_UPDATED')
+          new BusinessRuleError('Only DRAFT movements can be updated', MOVEMENT_CANNOT_BE_UPDATED)
         );
       }
 
@@ -73,7 +79,7 @@ export class UpdateMovementUseCase {
           const product = await this.productRepository.findById(line.productId, request.orgId);
           if (!product) {
             return err(
-              new NotFoundError(`Product not found: ${line.productId}`, 'PRODUCT_NOT_FOUND')
+              new NotFoundError(`Product not found: ${line.productId}`, PRODUCT_NOT_FOUND)
             );
           }
           productPrecisions.set(line.productId, product.unit.getValue().precision);
@@ -112,7 +118,7 @@ export class UpdateMovementUseCase {
       return err(
         new BusinessRuleError(
           error instanceof Error ? error.message : 'Failed to update movement',
-          'MOVEMENT_UPDATE_ERROR'
+          MOVEMENT_UPDATE_ERROR
         )
       );
     }

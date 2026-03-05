@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { CATEGORY_NOT_FOUND } from '@shared/constants/error-codes';
 import { DomainError, err, NotFoundError, ok, Result } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
@@ -33,7 +34,7 @@ export class GetCategoryByIdUseCase {
     const category = await this.categoryRepository.findById(request.categoryId, request.orgId);
 
     if (!category) {
-      return err(new NotFoundError('Category not found'));
+      return err(new NotFoundError('Category not found', CATEGORY_NOT_FOUND));
     }
 
     // Get parent name

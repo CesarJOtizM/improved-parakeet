@@ -8,7 +8,7 @@ import { RemoveRoleFromUserUseCase } from '@application/userUseCases/removeRoleF
 import { UpdateUserUseCase } from '@application/userUseCases/updateUserUseCase';
 import { UsersController } from '@interface/http/routes/users.controller';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { ok, err } from '@shared/domain/result';
 import { ConflictError, NotFoundError } from '@shared/domain/result/domainError';
 
@@ -245,7 +245,7 @@ describe('UsersController', () => {
 
       // Act & Assert
       await expect(usersController.getUser('non-existent', mockOrgId)).rejects.toThrow(
-        NotFoundException
+        HttpException
       );
     });
   });

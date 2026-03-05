@@ -1,5 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+  MOVEMENT_CANNOT_BE_RETURNED,
+  MOVEMENT_NOT_FOUND,
+  MOVEMENT_RETURN_ERROR,
+} from '@shared/constants/error-codes';
+import {
   BusinessRuleError,
   DomainError,
   NotFoundError,
@@ -51,14 +56,14 @@ export class MarkMovementReturnedUseCase {
     const movement = await this.movementRepository.findById(request.movementId, request.orgId);
 
     if (!movement) {
-      return err(new NotFoundError('Movement not found', 'MOVEMENT_NOT_FOUND'));
+      return err(new NotFoundError('Movement not found', MOVEMENT_NOT_FOUND));
     }
 
     if (!movement.status.canReturn()) {
       return err(
         new BusinessRuleError(
           'Only POSTED movements can be marked as returned',
-          'MOVEMENT_CANNOT_BE_RETURNED'
+          MOVEMENT_CANNOT_BE_RETURNED
         )
       );
     }
@@ -89,7 +94,8 @@ export class MarkMovementReturnedUseCase {
     } catch (error) {
       return err(
         new BusinessRuleError(
-          error instanceof Error ? error.message : 'Failed to mark movement as returned'
+          error instanceof Error ? error.message : 'Failed to mark movement as returned',
+          MOVEMENT_RETURN_ERROR
         )
       );
     }
