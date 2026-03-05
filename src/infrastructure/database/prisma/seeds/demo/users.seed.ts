@@ -4,7 +4,7 @@ import { IUser } from '@shared/types/database.types';
 // bcrypt hash for "demo1234"
 const DEMO_PASSWORD_HASH = '$2b$12$7uXtQhxjUIKJmqgwexPCxeRqytbhrRfwMN2V3LreerUJGBWQuDEDy';
 
-interface DemoUser {
+export interface DemoUser {
   email: string;
   username: string;
   firstName: string;
@@ -13,7 +13,7 @@ interface DemoUser {
   isActive: boolean;
 }
 
-const DEMO_USERS: DemoUser[] = [
+export const FULL_USERS: DemoUser[] = [
   {
     email: 'admin@nevada-demo.com',
     username: 'admin-demo',
@@ -72,13 +72,49 @@ const DEMO_USERS: DemoUser[] = [
   },
 ];
 
+export const SIMPLE_USERS: DemoUser[] = [
+  {
+    email: 'admin@distri-lopez.com',
+    username: 'admin-lopez',
+    firstName: 'Manuel',
+    lastName: 'López',
+    roleName: 'ADMIN',
+    isActive: true,
+  },
+  {
+    email: 'supervisor@distri-lopez.com',
+    username: 'supervisor-lopez',
+    firstName: 'Claudia',
+    lastName: 'Torres',
+    roleName: 'SUPERVISOR',
+    isActive: true,
+  },
+  {
+    email: 'operador@distri-lopez.com',
+    username: 'operador-lopez',
+    firstName: 'Diego',
+    lastName: 'Ramírez',
+    roleName: 'WAREHOUSE_OPERATOR',
+    isActive: true,
+  },
+  {
+    email: 'vendedor@distri-lopez.com',
+    username: 'vendedor-lopez',
+    firstName: 'Sofía',
+    lastName: 'Vargas',
+    roleName: 'SALES_PERSON',
+    isActive: true,
+  },
+];
+
 export class DemoUsersSeed {
   constructor(private prisma: PrismaClient) {}
 
-  async seed(orgId: string): Promise<IUser[]> {
+  async seed(orgId: string, userDefs?: DemoUser[]): Promise<IUser[]> {
+    const usersToCreate = userDefs || FULL_USERS;
     const users: IUser[] = [];
 
-    for (const userData of DEMO_USERS) {
+    for (const userData of usersToCreate) {
       const user = await this.prisma.user.upsert({
         where: { email: userData.email },
         update: {},

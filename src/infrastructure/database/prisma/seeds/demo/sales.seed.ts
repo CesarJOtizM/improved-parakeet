@@ -220,11 +220,11 @@ export class DemoSalesSeed {
   ): Promise<SaleRecord[]> {
     const findProduct = (prefix: string) => products.find(p => p.sku.startsWith(prefix));
 
-    // --- Identify users by role ---
-    const admin = users.find(u => u.email === 'admin@nevada-demo.com')!;
-    const supervisor = users.find(u => u.email === 'supervisor@nevada-demo.com')!;
-    const operador = users.find(u => u.email === 'operador@nevada-demo.com')!;
-    const vendedor = users.find(u => u.email === 'vendedor@nevada-demo.com')!;
+    // --- Identify users by index (admin=0, supervisor=1, operador=2, vendedor=3) ---
+    const admin = users[0]!;
+    const supervisor = users[1] || users[0]!;
+    const operador = users[2] || users[0]!;
+    const vendedor = users[3] || users[0]!;
 
     const salesRecords: SaleRecord[] = [];
 

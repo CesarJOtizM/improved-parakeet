@@ -105,19 +105,24 @@ async function main() {
     const demoSeed = new DemoSeed(prisma);
     await demoSeed.seed();
 
-    console.log('📊 Resumen demo:');
-    console.log('   - Organización: Nevada Tech Demo');
+    console.log('📊 Resumen demo:\n');
+    console.log('   === Nevada Tech Demo (COMPLETA) ===');
+    console.log('   - Picking: habilitado | Multi-company: habilitado');
+    console.log('   - Empresas: 3 (Hardware, Redes, Oficina) con productos asignados');
     console.log(
-      '   - Usuarios demo: 7 (admin, supervisor, operador, vendedor, consultor, importador, inactivo)'
+      '   - Usuarios: 7 (admin, supervisor, operador, vendedor, consultor, importador, inactivo)'
     );
     console.log('   - Credenciales: password "demo1234" para todos');
-    console.log('   - Productos: ~50 (electrónica, periféricos, redes, impresión, software)');
-    console.log('   - Bodegas: 5 (Bogotá x2, Medellín, Cali, Devoluciones)');
-    console.log('   - Ventas: ~100 (en diferentes estados del workflow, a lo largo de 1 año)');
-    console.log('   - Devoluciones: 20 (cliente y proveedor)');
-    console.log('   - Transferencias: 20 (entre bodegas)');
-    console.log('   - Movimientos: ~50 (entradas, salidas, ajustes)');
-    console.log('   - Logs de auditoría: 500+');
+    console.log(
+      '   - Productos: ~50 | Bodegas: 5 | Ventas: ~95 | Devoluciones: 20 | Transferencias: 20\n'
+    );
+    console.log('   === Distribuidora Lopez SAS (SIMPLE) ===');
+    console.log('   - Picking: deshabilitado | Multi-company: deshabilitado');
+    console.log('   - Usuarios: 4 (admin, supervisor, operador, vendedor)');
+    console.log('   - Credenciales: password "demo1234" para todos');
+    console.log(
+      '   - Productos: ~50 | Bodegas: 5 | Ventas: ~95 | Devoluciones: 20 | Transferencias: 20'
+    );
   } else {
     console.log('\n💡 Tip: Ejecuta con --demo para crear datos de demostración:');
     console.log('   bun run db:seed -- --demo');
