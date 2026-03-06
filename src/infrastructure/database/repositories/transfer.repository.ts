@@ -37,6 +37,7 @@ export class PrismaTransferRepository implements ITransferRepository {
       const transfersData = await this.prisma.transfer.findMany({
         where: { orgId },
         include: { lines: true },
+        orderBy: { createdAt: 'desc' },
       });
 
       return transfersData.map(transferData => this.mapToEntity(transferData));
@@ -182,6 +183,7 @@ export class PrismaTransferRepository implements ITransferRepository {
       const transfersData = await this.prisma.transfer.findMany({
         where: { fromWarehouseId: warehouseId, orgId },
         include: { lines: true },
+        orderBy: { createdAt: 'desc' },
       });
 
       return transfersData.map(transferData => this.mapToEntity(transferData));
@@ -200,6 +202,7 @@ export class PrismaTransferRepository implements ITransferRepository {
       const transfersData = await this.prisma.transfer.findMany({
         where: { toWarehouseId: warehouseId, orgId },
         include: { lines: true },
+        orderBy: { createdAt: 'desc' },
       });
 
       return transfersData.map(transferData => this.mapToEntity(transferData));
@@ -222,6 +225,7 @@ export class PrismaTransferRepository implements ITransferRepository {
           status: statuses.length === 1 ? statuses[0] : { in: statuses },
         },
         include: { lines: true },
+        orderBy: { createdAt: 'desc' },
       });
 
       return transfersData.map(transferData => this.mapToEntity(transferData));
@@ -246,6 +250,7 @@ export class PrismaTransferRepository implements ITransferRepository {
           },
         },
         include: { lines: true },
+        orderBy: { createdAt: 'desc' },
       });
 
       return transfersData.map(transferData => this.mapToEntity(transferData));
@@ -264,6 +269,7 @@ export class PrismaTransferRepository implements ITransferRepository {
       const transfersData = await this.prisma.transfer.findMany({
         where: { status: 'IN_TRANSIT', orgId },
         include: { lines: true },
+        orderBy: { createdAt: 'desc' },
       });
 
       return transfersData.map(transferData => this.mapToEntity(transferData));
@@ -282,6 +288,7 @@ export class PrismaTransferRepository implements ITransferRepository {
       const transfersData = await this.prisma.transfer.findMany({
         where: { status: 'DRAFT', orgId },
         include: { lines: true },
+        orderBy: { createdAt: 'desc' },
       });
 
       return transfersData.map(transferData => this.mapToEntity(transferData));

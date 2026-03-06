@@ -70,6 +70,8 @@ model User {
   userRoles    UserRole[]
   sessions     Session[]
 
+  @@index([orgId])
+  @@index([orgId, isActive])
   @@map("users")
 }
 
@@ -90,6 +92,8 @@ model Role {
 
   @@unique([name, orgId])
   @@index([isSystem])
+  @@index([orgId])
+  @@index([orgId, isActive])
   @@map("roles")
 }
 
@@ -250,6 +254,8 @@ model Warehouse {
   returns       Return[]
 
   @@unique([code, orgId])
+  @@index([orgId])
+  @@index([orgId, isActive])
   @@map("warehouses")
 }
 
@@ -373,6 +379,9 @@ model MovementLine {
   product  Product   @relation(fields: [productId], references: [id])
   location Location? @relation(fields: [locationId], references: [id])
 
+  @@index([movementId])
+  @@index([movementId, orgId])
+  @@index([productId, orgId])
   @@map("movement_lines")
 }
 
@@ -396,6 +405,10 @@ model Transfer {
   toWarehouse   Warehouse      @relation("ToTransfers", fields: [toWarehouseId], references: [id])
   lines         TransferLine[]
 
+  @@index([orgId, fromWarehouseId])
+  @@index([orgId, toWarehouseId])
+  @@index([orgId, status])
+  @@index([orgId, createdAt])
   @@map("transfers")
 }
 
@@ -413,6 +426,8 @@ model TransferLine {
   transfer Transfer @relation(fields: [transferId], references: [id])
   product  Product  @relation(fields: [productId], references: [id])
 
+  @@index([transferId])
+  @@index([transferId, orgId])
   @@map("transfer_lines")
 }
 

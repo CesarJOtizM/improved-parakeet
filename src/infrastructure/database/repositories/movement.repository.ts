@@ -143,6 +143,7 @@ export class PrismaMovementRepository implements IMovementRepository {
       const movementsData = await this.prisma.movement.findMany({
         where: { orgId },
         include: { lines: true },
+        orderBy: { createdAt: 'desc' },
       });
 
       return movementsData.map(movementData => this.mapToEntity(movementData));
@@ -312,6 +313,7 @@ export class PrismaMovementRepository implements IMovementRepository {
       const movementsData = await this.prisma.movement.findMany({
         where: { warehouseId, orgId },
         include: { lines: true },
+        orderBy: { createdAt: 'desc' },
       });
 
       return movementsData.map(movementData => this.mapToEntity(movementData));
@@ -330,6 +332,7 @@ export class PrismaMovementRepository implements IMovementRepository {
       const movementsData = await this.prisma.movement.findMany({
         where: { status, orgId },
         include: { lines: true },
+        orderBy: { createdAt: 'desc' },
       });
 
       return movementsData.map(movementData => this.mapToEntity(movementData));
@@ -348,6 +351,7 @@ export class PrismaMovementRepository implements IMovementRepository {
       const movementsData = await this.prisma.movement.findMany({
         where: { type, orgId },
         include: { lines: true },
+        orderBy: { createdAt: 'desc' },
       });
 
       return movementsData.map(movementData => this.mapToEntity(movementData));
@@ -372,6 +376,7 @@ export class PrismaMovementRepository implements IMovementRepository {
           },
         },
         include: { lines: true },
+        orderBy: { createdAt: 'desc' },
       });
 
       return movementsData.map(movementData => this.mapToEntity(movementData));
@@ -399,6 +404,7 @@ export class PrismaMovementRepository implements IMovementRepository {
           },
         },
         include: { lines: true },
+        orderBy: { createdAt: 'desc' },
       });
 
       return movementsData.map(movementData => this.mapToEntity(movementData));
@@ -417,6 +423,7 @@ export class PrismaMovementRepository implements IMovementRepository {
       const movementsData = await this.prisma.movement.findMany({
         where: { status: 'DRAFT', orgId },
         include: { lines: true },
+        orderBy: { createdAt: 'desc' },
       });
 
       return movementsData.map(movementData => this.mapToEntity(movementData));
@@ -435,6 +442,7 @@ export class PrismaMovementRepository implements IMovementRepository {
       const movementsData = await this.prisma.movement.findMany({
         where: { status: 'POSTED', orgId },
         include: { lines: true },
+        orderBy: { createdAt: 'desc' },
       });
 
       return movementsData.map(movementData => this.mapToEntity(movementData));
