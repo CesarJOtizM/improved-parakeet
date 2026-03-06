@@ -37,6 +37,7 @@ export interface ISaleLineResponseData {
   productId: string;
   productName?: string;
   productSku?: string;
+  productBarcode?: string;
   locationId?: string; // Optional for MVP - warehouse is the location
   quantity: number;
   salePrice: number;

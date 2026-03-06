@@ -59,7 +59,7 @@ export class GetSaleByIdUseCase {
     // Resolve product names in lines
     if (responseData.lines && responseData.lines.length > 0) {
       const uniqueProductIds = [...new Set(responseData.lines.map(l => l.productId))];
-      const productMap = new Map<string, { name: string; sku: string }>();
+      const productMap = new Map<string, { name: string; sku: string; barcode?: string }>();
 
       for (const productId of uniqueProductIds) {
         try {
@@ -68,6 +68,7 @@ export class GetSaleByIdUseCase {
             productMap.set(productId, {
               name: product.name.getValue(),
               sku: product.sku.getValue(),
+              barcode: product.barcode,
             });
           }
         } catch {
@@ -80,6 +81,7 @@ export class GetSaleByIdUseCase {
         if (product) {
           line.productName = product.name;
           line.productSku = product.sku;
+          line.productBarcode = product.barcode;
         }
       }
     }

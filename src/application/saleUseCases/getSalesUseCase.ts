@@ -195,7 +195,7 @@ export class GetSalesUseCase {
       productIds.size > 0
         ? this.prisma.product.findMany({
             where: { id: { in: [...productIds] }, orgId },
-            select: { id: true, name: true, sku: true },
+            select: { id: true, name: true, sku: true, barcode: true },
           })
         : Promise.resolve([]),
 
@@ -216,9 +216,9 @@ export class GetSalesUseCase {
     );
 
     const productMap = new Map(
-      products.map((p: { id: string; name: string; sku: string }) => [
+      products.map((p: { id: string; name: string; sku: string; barcode?: string | null }) => [
         p.id,
-        { name: p.name, sku: p.sku },
+        { name: p.name, sku: p.sku, barcode: p.barcode },
       ])
     );
 
@@ -244,6 +244,7 @@ export class GetSalesUseCase {
           if (product) {
             line.productName = product.name;
             line.productSku = product.sku;
+            line.productBarcode = product.barcode ?? undefined;
           }
         }
       }
