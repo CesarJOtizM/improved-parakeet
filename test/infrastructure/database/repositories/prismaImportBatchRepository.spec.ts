@@ -72,6 +72,9 @@ describe('PrismaImportBatchRepository', () => {
         deleteMany: jest.fn(),
         createMany: jest.fn(),
       },
+      $transaction: jest.fn(async (fn: (tx: unknown) => Promise<unknown>) => {
+        return fn(mockPrismaClient);
+      }),
     };
 
     // The repository casts prismaService to PrismaClient internally
@@ -246,7 +249,6 @@ describe('PrismaImportBatchRepository', () => {
       expect(result).toHaveLength(1);
       expect(mockPrismaClient.importBatch.findMany).toHaveBeenCalledWith({
         where: { type: 'PRODUCTS', orgId: 'org-123' },
-        include: { rows: true },
         orderBy: { createdAt: 'desc' },
       });
     });
@@ -275,7 +277,6 @@ describe('PrismaImportBatchRepository', () => {
       expect(result).toHaveLength(1);
       expect(mockPrismaClient.importBatch.findMany).toHaveBeenCalledWith({
         where: { status: 'PENDING', orgId: 'org-123' },
-        include: { rows: true },
         orderBy: { createdAt: 'desc' },
       });
     });
@@ -293,7 +294,6 @@ describe('PrismaImportBatchRepository', () => {
       expect(result).toHaveLength(1);
       expect(mockPrismaClient.importBatch.findMany).toHaveBeenCalledWith({
         where: { createdBy: 'user-789', orgId: 'org-123' },
-        include: { rows: true },
         orderBy: { createdAt: 'desc' },
       });
     });
@@ -313,7 +313,6 @@ describe('PrismaImportBatchRepository', () => {
       expect(result).toHaveLength(1);
       expect(mockPrismaClient.importBatch.findMany).toHaveBeenCalledWith({
         where: { type: 'PRODUCTS', status: 'COMPLETED', orgId: 'org-123' },
-        include: { rows: true },
         orderBy: { createdAt: 'desc' },
       });
     });
@@ -331,7 +330,6 @@ describe('PrismaImportBatchRepository', () => {
       expect(result).toHaveLength(1);
       expect(mockPrismaClient.importBatch.findMany).toHaveBeenCalledWith({
         where: { orgId: 'org-123' },
-        include: { rows: true },
         orderBy: { createdAt: 'desc' },
         take: 5,
       });

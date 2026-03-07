@@ -3,6 +3,7 @@ export * from './downloadErrorReportUseCase';
 export * from './downloadImportTemplateUseCase';
 export * from './executeImportUseCase';
 export * from './getImportStatusUseCase';
+export * from './listImportBatchesUseCase';
 export * from './previewImportUseCase';
 export * from './processImportUseCase';
 export * from './validateImportUseCase';

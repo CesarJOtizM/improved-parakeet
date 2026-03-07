@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { NotFoundError, ValidationError } from '@shared/domain/result/domainError';
 
 import type { IImportBatchRepository } from '@import/domain';
+import type { IExcelGenerationService } from '@shared/ports/externalServices/iExcelGenerationService.port';
 
 describe('DownloadErrorReportUseCase', () => {
   const mockOrgId = 'test-org-id';
@@ -14,6 +15,7 @@ describe('DownloadErrorReportUseCase', () => {
 
   let useCase: DownloadErrorReportUseCase;
   let mockRepository: jest.Mocked<IImportBatchRepository>;
+  let mockExcelService: jest.Mocked<IExcelGenerationService>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -31,9 +33,19 @@ describe('DownloadErrorReportUseCase', () => {
       findByTypeAndStatus: jest.fn(),
       findRecent: jest.fn(),
       countByStatus: jest.fn(),
+      findPaginated: jest.fn(),
     } as jest.Mocked<IImportBatchRepository>;
 
-    useCase = new DownloadErrorReportUseCase(mockRepository);
+    mockExcelService = {
+      generateTemplateXlsx: jest
+        .fn<IExcelGenerationService['generateTemplateXlsx']>()
+        .mockResolvedValue(Buffer.from('xlsx-content')),
+      generateErrorReportXlsx: jest
+        .fn<IExcelGenerationService['generateErrorReportXlsx']>()
+        .mockResolvedValue(Buffer.from('xlsx-content')),
+    };
+
+    useCase = new DownloadErrorReportUseCase(mockRepository, mockExcelService);
   });
 
   describe('execute', () => {

@@ -4,5 +4,6 @@ export {
   MovementByWarehouseSpecification,
   MovementByDateRangeSpecification,
   MovementByCompanySpecification,
+  MovementBySearchSpecification,
   MovementByProductSpecification,
 } from './movementSpecifications';

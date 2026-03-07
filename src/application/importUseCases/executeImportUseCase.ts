@@ -7,8 +7,8 @@ import {
   ImportValidationService,
   type IImportBatchRepository,
   type ImportTypeValue,
-  type RowProcessor,
 } from '@import/domain';
+import { ImportRowProcessorFactory } from '@import/application/services/importRowProcessorFactory';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   IMPORT_INVALID_TYPE,
@@ -60,7 +60,8 @@ export class ExecuteImportUseCase {
     @Inject('FileParsingService')
     private readonly fileParsingService: IFileParsingService,
     @Inject('DomainEventDispatcher')
-    private readonly eventDispatcher: IDomainEventDispatcher
+    private readonly eventDispatcher: IDomainEventDispatcher,
+    private readonly rowProcessorFactory: ImportRowProcessorFactory
   ) {}
 
   async execute(
@@ -190,7 +191,7 @@ export class ExecuteImportUseCase {
       await this.repository.save(batch);
 
       // Get row processor
-      const rowProcessor = this.getRowProcessor();
+      const rowProcessor = this.rowProcessorFactory.createProcessor(importType);
 
       // Process batch using domain service
       const processResult = await ImportProcessingService.processBatch(batch, rowProcessor, {
@@ -203,6 +204,19 @@ export class ExecuteImportUseCase {
           }
         },
       });
+
+      // Update rows with execution errors so they are persisted
+      for (const result of processResult.results) {
+        if (!result.success && result.error) {
+          const row = rows.find(r => r.rowNumber === result.rowNumber);
+          if (row) {
+            const updatedValidation = row.validationResult.addError(
+              `Execution error: ${result.error}`
+            );
+            row.updateValidation(updatedValidation);
+          }
+        }
+      }
 
       // Complete or fail based on result
       if (processResult.success) {
@@ -254,33 +268,5 @@ export class ExecuteImportUseCase {
         )
       );
     }
-  }
-
-  /**
-   * Get the row processor for a specific import type.
-   * In a production system, this would return processors that call actual domain services.
-   *
-   * Example implementation for PRODUCTS:
-   * - Would inject CreateProductUseCase
-   * - Would call createProductUseCase.execute() for each row
-   * - Would handle the result and return success/failure
-   */
-  private getRowProcessor(): RowProcessor {
-    // This is a placeholder implementation
-    // In production, inject specific use cases and return proper processors
-    return async (row, importType, _orgId) => {
-      // Simulate processing
-      this.logger.log('Processing row', {
-        rowNumber: row.rowNumber,
-        type: importType.getValue(),
-      });
-
-      // For now, just mark as success if the row is valid
-      return {
-        rowNumber: row.rowNumber,
-        success: row.isValid(),
-        error: row.isValid() ? undefined : 'Row has validation errors',
-      };
-    };
   }
 }

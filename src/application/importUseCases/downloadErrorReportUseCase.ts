@@ -13,6 +13,7 @@ import {
   err,
   ok,
 } from '@shared/domain/result';
+import type { IExcelGenerationService } from '@shared/ports/externalServices/iExcelGenerationService.port';
 
 export interface IDownloadErrorReportRequest {
   batchId: string;
@@ -44,7 +45,9 @@ export class DownloadErrorReportUseCase {
 
   constructor(
     @Inject('ImportBatchRepository')
-    private readonly repository: IImportBatchRepository
+    private readonly repository: IImportBatchRepository,
+    @Inject('ExcelGenerationService')
+    private readonly excelService: IExcelGenerationService
   ) {}
 
   async execute(
@@ -79,9 +82,7 @@ export class DownloadErrorReportUseCase {
       if (format === 'csv') {
         content = ImportErrorReportService.generateCSVErrorReportBuffer(batch);
       } else {
-        // For xlsx, generate CSV for now
-        // In production, this would call infrastructure service to generate xlsx
-        content = ImportErrorReportService.generateCSVErrorReportBuffer(batch);
+        content = await this.excelService.generateErrorReportXlsx(batch);
       }
 
       const filename = ImportErrorReportService.getErrorReportFilename(batch, format);

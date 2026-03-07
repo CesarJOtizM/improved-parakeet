@@ -46,33 +46,32 @@ export class PrismaImportBatchRepository implements IImportBatchRepository {
       updatedAt: new Date(),
     };
 
-    await this.prisma.importBatch.upsert({
-      where: { id: batch.id },
-      create: data,
-      update: data,
+    await this.prisma.$transaction(async tx => {
+      await tx.importBatch.upsert({
+        where: { id: batch.id },
+        create: data,
+        update: data,
+      });
+
+      if (rows.length > 0) {
+        await tx.importRow.deleteMany({
+          where: { importBatchId: batch.id },
+        });
+
+        await tx.importRow.createMany({
+          data: rows.map(row => ({
+            id: row.id,
+            orgId: row.orgId!,
+            importBatchId: batch.id,
+            rowNumber: row.rowNumber,
+            data: row.data as object,
+            isValid: row.isValid(),
+            validationErrors: row.errors,
+            warnings: row.warnings,
+          })),
+        });
+      }
     });
-
-    // Save rows if they exist
-    if (rows.length > 0) {
-      // Delete existing rows first (for updates)
-      await this.prisma.importRow.deleteMany({
-        where: { importBatchId: batch.id },
-      });
-
-      // Insert new rows
-      await this.prisma.importRow.createMany({
-        data: rows.map(row => ({
-          id: row.id,
-          orgId: row.orgId!,
-          importBatchId: batch.id,
-          rowNumber: row.rowNumber,
-          data: row.data as object,
-          isValid: row.isValid(),
-          validationErrors: row.errors,
-          warnings: row.warnings,
-        })),
-      });
-    }
 
     return batch;
   }
@@ -93,7 +92,6 @@ export class PrismaImportBatchRepository implements IImportBatchRepository {
   async findAll(orgId: string): Promise<ImportBatch[]> {
     const records = await this.prisma.importBatch.findMany({
       where: { orgId },
-      include: { rows: true },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -110,7 +108,6 @@ export class PrismaImportBatchRepository implements IImportBatchRepository {
   async findByType(type: ImportTypeValue, orgId: string): Promise<ImportBatch[]> {
     const records = await this.prisma.importBatch.findMany({
       where: { type, orgId },
-      include: { rows: true },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -120,7 +117,6 @@ export class PrismaImportBatchRepository implements IImportBatchRepository {
   async findByStatus(status: ImportStatusValue, orgId: string): Promise<ImportBatch[]> {
     const records = await this.prisma.importBatch.findMany({
       where: { status, orgId },
-      include: { rows: true },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -130,7 +126,6 @@ export class PrismaImportBatchRepository implements IImportBatchRepository {
   async findByCreatedBy(userId: string, orgId: string): Promise<ImportBatch[]> {
     const records = await this.prisma.importBatch.findMany({
       where: { createdBy: userId, orgId },
-      include: { rows: true },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -144,7 +139,6 @@ export class PrismaImportBatchRepository implements IImportBatchRepository {
   ): Promise<ImportBatch[]> {
     const records = await this.prisma.importBatch.findMany({
       where: { type, status, orgId },
-      include: { rows: true },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -154,7 +148,6 @@ export class PrismaImportBatchRepository implements IImportBatchRepository {
   async findRecent(orgId: string, limit = 10): Promise<ImportBatch[]> {
     const records = await this.prisma.importBatch.findMany({
       where: { orgId },
-      include: { rows: true },
       orderBy: { createdAt: 'desc' },
       take: limit,
     });
@@ -166,6 +159,48 @@ export class PrismaImportBatchRepository implements IImportBatchRepository {
     return this.prisma.importBatch.count({
       where: { status, orgId },
     });
+  }
+
+  async findPaginated(
+    orgId: string,
+    options: {
+      page: number;
+      limit: number;
+      type?: ImportTypeValue;
+      status?: ImportStatusValue;
+    }
+  ): Promise<{
+    data: ImportBatch[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    const where: Record<string, unknown> = { orgId };
+    if (options.type) where.type = options.type;
+    if (options.status) where.status = options.status;
+
+    const [records, total] = await Promise.all([
+      this.prisma.importBatch.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (options.page - 1) * options.limit,
+        take: options.limit,
+      }),
+      this.prisma.importBatch.count({ where }),
+    ]);
+
+    return {
+      data: records.map(r => this.toDomain(r)),
+      pagination: {
+        page: options.page,
+        limit: options.limit,
+        total,
+        totalPages: Math.ceil(total / options.limit),
+      },
+    };
   }
 
   async delete(id: string, _orgId: string): Promise<void> {
@@ -192,7 +227,7 @@ export class PrismaImportBatchRepository implements IImportBatchRepository {
     createdBy: string;
     createdAt: Date;
     updatedAt: Date;
-    rows: {
+    rows?: {
       id: string;
       orgId: string;
       rowNumber: number;
@@ -222,24 +257,25 @@ export class PrismaImportBatchRepository implements IImportBatchRepository {
       record.orgId
     );
 
-    // Reconstitute rows
-    const rows = record.rows.map(row =>
-      ImportRow.reconstitute(
-        {
-          rowNumber: row.rowNumber,
-          data: row.data as Record<string, unknown>,
-          validationResult: ValidationResult.create(
-            row.isValid,
-            (row.validationErrors as string[]) ?? [],
-            (row.warnings as string[]) ?? []
-          ),
-        },
-        row.id,
-        row.orgId
-      )
-    );
-
-    batch.restoreRows(rows);
+    const rowRecords = record.rows ?? [];
+    if (rowRecords.length > 0) {
+      const rows = rowRecords.map(row =>
+        ImportRow.reconstitute(
+          {
+            rowNumber: row.rowNumber,
+            data: row.data as Record<string, unknown>,
+            validationResult: ValidationResult.create(
+              row.isValid,
+              (row.validationErrors as string[]) ?? [],
+              (row.warnings as string[]) ?? []
+            ),
+          },
+          row.id,
+          row.orgId
+        )
+      );
+      batch.restoreRows(rows);
+    }
 
     return batch;
   }

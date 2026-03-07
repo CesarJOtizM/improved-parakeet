@@ -128,6 +128,7 @@ export class ImportProcessingService {
     status?: string;
     costMethod?: string;
     category?: string;
+    companyCode?: string;
   } {
     return {
       sku: String(rowData['SKU'] || ''),
@@ -142,6 +143,7 @@ export class ImportProcessingService {
       status: rowData['Status'] ? String(rowData['Status']) : undefined,
       costMethod: rowData['Cost Method'] ? String(rowData['Cost Method']) : undefined,
       category: rowData['Category'] ? String(rowData['Category']) : undefined,
+      companyCode: rowData['Company Code'] ? String(rowData['Company Code']) : undefined,
     };
   }
 

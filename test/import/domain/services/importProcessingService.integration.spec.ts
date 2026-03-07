@@ -432,6 +432,7 @@ describe('ImportProcessingService Integration Tests', () => {
         status: 'ACTIVE',
         costMethod: 'AVERAGE',
         category: 'Electronics',
+        companyCode: undefined,
       });
     });
 
@@ -462,6 +463,7 @@ describe('ImportProcessingService Integration Tests', () => {
         status: undefined,
         costMethod: undefined,
         category: undefined,
+        companyCode: undefined,
       });
     });
   });

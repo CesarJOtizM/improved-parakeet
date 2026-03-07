@@ -1,8 +1,5 @@
-import {
-  ImportProcessingService,
-  type IImportBatchRepository,
-  type RowProcessor,
-} from '@import/domain';
+import { ImportProcessingService, type IImportBatchRepository } from '@import/domain';
+import { ImportRowProcessorFactory } from '@import/application/services/importRowProcessorFactory';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { IMPORT_BATCH_NOT_FOUND, IMPORT_PROCESSING_ERROR } from '@shared/constants/error-codes';
 import {
@@ -41,11 +38,8 @@ export interface IProcessImportResponse {
  * ProcessImportUseCase
  *
  * This use case handles the processing of validated import batches.
- * For each import type, it would typically call the corresponding domain services
- * (e.g., CreateProductUseCase for PRODUCTS import, CreateMovementUseCase for MOVEMENTS, etc.)
- *
- * In a production implementation, the rowProcessor would be injected based on the import type.
- * For now, this provides a placeholder that demonstrates the processing flow.
+ * For each import type, it delegates to the ImportRowProcessorFactory which creates
+ * real row processors that call actual use cases (CreateProductUseCase, CreateMovementUseCase, etc.)
  */
 @Injectable()
 export class ProcessImportUseCase {
@@ -55,7 +49,8 @@ export class ProcessImportUseCase {
     @Inject('ImportBatchRepository')
     private readonly repository: IImportBatchRepository,
     @Inject('DomainEventDispatcher')
-    private readonly eventDispatcher: IDomainEventDispatcher
+    private readonly eventDispatcher: IDomainEventDispatcher,
+    private readonly rowProcessorFactory: ImportRowProcessorFactory
   ) {}
 
   async execute(
@@ -88,8 +83,7 @@ export class ProcessImportUseCase {
       await this.repository.save(batch);
 
       // 4. Get the row processor based on import type
-      // In a full implementation, this would inject specific use cases for each type
-      const rowProcessor = this.getRowProcessor();
+      const rowProcessor = this.rowProcessorFactory.createProcessor(batch.type);
 
       // 5. Process batch using domain service
       const result = await ImportProcessingService.processBatch(batch, rowProcessor, {
@@ -152,33 +146,5 @@ export class ProcessImportUseCase {
         )
       );
     }
-  }
-
-  /**
-   * Get the row processor for a specific import type.
-   * In a production system, this would return processors that call actual domain services.
-   *
-   * Example implementation for PRODUCTS:
-   * - Would inject CreateProductUseCase
-   * - Would call createProductUseCase.execute() for each row
-   * - Would handle the result and return success/failure
-   */
-  private getRowProcessor(): RowProcessor {
-    // This is a placeholder implementation
-    // In production, inject specific use cases and return proper processors
-    return async (row, importType, _orgId) => {
-      // Simulate processing
-      this.logger.log('Processing row', {
-        rowNumber: row.rowNumber,
-        type: importType.getValue(),
-      });
-
-      // For now, just mark as success if the row is valid
-      return {
-        rowNumber: row.rowNumber,
-        success: row.isValid(),
-        error: row.isValid() ? undefined : 'Row has validation errors',
-      };
-    };
   }
 }

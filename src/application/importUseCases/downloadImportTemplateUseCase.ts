@@ -1,7 +1,8 @@
 import { ImportTemplateService, ImportType, ImportTypeValue } from '@import/domain';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { IMPORT_INVALID_TYPE, IMPORT_TEMPLATE_FAILED } from '@shared/constants/error-codes';
 import { DomainError, err, ok, Result, ValidationError } from '@shared/domain/result';
+import type { IExcelGenerationService } from '@shared/ports/externalServices/iExcelGenerationService.port';
 
 export interface IDownloadImportTemplateRequest {
   type: ImportTypeValue;
@@ -24,6 +25,11 @@ export interface IDownloadImportTemplateResponse {
 @Injectable()
 export class DownloadImportTemplateUseCase {
   private readonly logger = new Logger(DownloadImportTemplateUseCase.name);
+
+  constructor(
+    @Inject('ExcelGenerationService')
+    private readonly excelService: IExcelGenerationService
+  ) {}
 
   async execute(
     request: IDownloadImportTemplateRequest
@@ -53,9 +59,7 @@ export class DownloadImportTemplateUseCase {
       if (format === 'csv') {
         content = ImportTemplateService.generateCSVTemplateBuffer(importType);
       } else {
-        // For xlsx, generate CSV for now
-        // In production, this would call infrastructure service to generate xlsx
-        content = ImportTemplateService.generateCSVTemplateBuffer(importType);
+        content = await this.excelService.generateTemplateXlsx(importType);
       }
 
       const filename = ImportTemplateService.getTemplateFilename(importType, format);

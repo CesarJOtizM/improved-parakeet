@@ -4,6 +4,7 @@ import {
   DownloadImportTemplateUseCase,
   ExecuteImportUseCase,
   GetImportStatusUseCase,
+  ListImportBatchesUseCase,
   PreviewImportUseCase,
   ProcessImportUseCase,
   ValidateImportUseCase,
@@ -15,6 +16,7 @@ import {
   ExecuteImportDto,
   ExecuteImportResponseDto,
   ImportStatusResponseDto,
+  ListImportBatchesQueryDto,
   PreviewImportDto,
   PreviewImportResponseDto,
   ProcessImportDto,
@@ -73,7 +75,8 @@ export class ImportController {
     private readonly downloadImportTemplateUseCase: DownloadImportTemplateUseCase,
     private readonly downloadErrorReportUseCase: DownloadErrorReportUseCase,
     private readonly previewImportUseCase: PreviewImportUseCase,
-    private readonly executeImportUseCase: ExecuteImportUseCase
+    private readonly executeImportUseCase: ExecuteImportUseCase,
+    private readonly listImportBatchesUseCase: ListImportBatchesUseCase
   ) {}
 
   @Post('preview')
@@ -259,6 +262,37 @@ export class ImportController {
     const result = await this.processImportUseCase.execute({
       batchId,
       skipInvalidRows: dto.skipInvalidRows,
+      orgId,
+    });
+
+    return resultToHttpResponse(result);
+  }
+
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.PRODUCTS_IMPORT)
+  @ApiOperation({ summary: 'List import batches with pagination and filters' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: ['PRODUCTS', 'MOVEMENTS', 'WAREHOUSES', 'STOCK', 'TRANSFERS'],
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['PENDING', 'VALIDATING', 'VALIDATED', 'PROCESSING', 'COMPLETED', 'FAILED'],
+  })
+  @ApiResponse({ status: HttpStatus.OK, description: 'List of import batches' })
+  async listImportBatches(@Query() query: ListImportBatchesQueryDto, @OrgId() orgId: string) {
+    this.logger.log('Listing import batches', { ...query });
+
+    const result = await this.listImportBatchesUseCase.execute({
+      page: query.page,
+      limit: query.limit,
+      type: query.type as import('@import/domain').ImportTypeValue,
+      status: query.status as import('@import/domain').ImportStatusValue,
       orgId,
     });
 

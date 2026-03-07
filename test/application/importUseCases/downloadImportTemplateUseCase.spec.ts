@@ -6,14 +6,27 @@ import { ImportTemplateService } from '@import/domain/services/importTemplate.se
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ValidationError } from '@shared/domain/result/domainError';
 
+import type { IExcelGenerationService } from '@shared/ports/externalServices/iExcelGenerationService.port';
+
 describe('DownloadImportTemplateUseCase', () => {
   const mockOrgId = 'test-org-id';
 
   let useCase: DownloadImportTemplateUseCase;
+  let mockExcelService: jest.Mocked<IExcelGenerationService>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useCase = new DownloadImportTemplateUseCase();
+
+    mockExcelService = {
+      generateTemplateXlsx: jest
+        .fn<IExcelGenerationService['generateTemplateXlsx']>()
+        .mockResolvedValue(Buffer.from('xlsx-content')),
+      generateErrorReportXlsx: jest
+        .fn<IExcelGenerationService['generateErrorReportXlsx']>()
+        .mockResolvedValue(Buffer.from('xlsx-content')),
+    };
+
+    useCase = new DownloadImportTemplateUseCase(mockExcelService);
   });
 
   describe('execute', () => {
@@ -76,10 +89,10 @@ describe('DownloadImportTemplateUseCase', () => {
       );
     });
 
-    it('Given: xlsx format When: downloading template Then: should fall back to CSV generation', async () => {
+    it('Given: xlsx format When: downloading template Then: should use ExcelGenerationService', async () => {
       // Arrange
-      const csvBuffer = Buffer.from('sku,name,unit');
-      jest.spyOn(ImportTemplateService, 'generateCSVTemplateBuffer').mockReturnValue(csvBuffer);
+      const xlsxBuffer = Buffer.from('xlsx-content');
+      mockExcelService.generateTemplateXlsx.mockResolvedValue(xlsxBuffer);
       jest
         .spyOn(ImportTemplateService, 'getTemplateFilename')
         .mockReturnValue('products-template.xlsx');
@@ -104,8 +117,9 @@ describe('DownloadImportTemplateUseCase', () => {
       result.match(
         value => {
           expect(value.success).toBe(true);
-          expect(value.data.content).toBe(csvBuffer);
-          expect(ImportTemplateService.generateCSVTemplateBuffer).toHaveBeenCalled();
+          expect(value.data.content).toBe(xlsxBuffer);
+          expect(mockExcelService.generateTemplateXlsx).toHaveBeenCalled();
+          expect(ImportTemplateService.generateCSVTemplateBuffer).not.toHaveBeenCalled();
         },
         () => {
           throw new Error('Expected Ok result');

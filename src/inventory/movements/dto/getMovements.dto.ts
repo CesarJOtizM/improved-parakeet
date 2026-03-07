@@ -93,6 +93,15 @@ export class GetMovementsQueryDto {
   endDate?: string;
 
   @ApiProperty({
+    description: 'Search by reference, reason or note',
+    example: 'REF-001',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Search must be a string' })
+  search?: string;
+
+  @ApiProperty({
     description: 'Sort by field',
     example: 'createdAt',
     enum: ['type', 'status', 'createdAt', 'postedAt'],

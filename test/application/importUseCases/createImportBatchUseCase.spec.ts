@@ -34,6 +34,7 @@ describe('CreateImportBatchUseCase', () => {
       findByTypeAndStatus: jest.fn(),
       findRecent: jest.fn(),
       countByStatus: jest.fn(),
+      findPaginated: jest.fn(),
     } as jest.Mocked<IImportBatchRepository>;
 
     useCase = new CreateImportBatchUseCase(mockRepository);

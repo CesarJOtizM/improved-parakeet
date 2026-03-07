@@ -9,6 +9,14 @@ export interface IGetImportStatusRequest {
   orgId: string;
 }
 
+export interface IImportRowData {
+  rowNumber: number;
+  data: Record<string, unknown>;
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
 export interface IGetImportStatusResponse {
   success: boolean;
   message: string;
@@ -30,6 +38,7 @@ export interface IGetImportStatusResponse {
     orgId: string;
     createdAt: string;
     updatedAt: string;
+    rows: IImportRowData[];
   };
   timestamp: string;
 }
@@ -75,6 +84,13 @@ export class GetImportStatusUseCase {
           orgId: batch.orgId!,
           createdAt: batch.createdAt.toISOString(),
           updatedAt: batch.updatedAt.toISOString(),
+          rows: batch.getRows().map(row => ({
+            rowNumber: row.rowNumber,
+            data: row.data,
+            isValid: row.isValid(),
+            errors: row.errors,
+            warnings: row.warnings,
+          })),
         },
         timestamp: new Date().toISOString(),
       });

@@ -143,6 +143,12 @@ export class MovementsController {
     type: String,
     description: 'Filter by company ID',
   })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search by reference, reason or note',
+  })
   @ApiQuery({ name: 'sortBy', required: false, enum: ['type', 'status', 'createdAt', 'postedAt'] })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiResponse({
@@ -169,6 +175,7 @@ export class MovementsController {
       status: query.status,
       type: query.type,
       productId: query.productId,
+      search: query.search,
       startDate: query.startDate ? new Date(query.startDate) : undefined,
       endDate: query.endDate ? new Date(query.endDate) : undefined,
       sortBy: query.sortBy,

@@ -4,14 +4,18 @@ import {
   DownloadImportTemplateUseCase,
   ExecuteImportUseCase,
   GetImportStatusUseCase,
+  ListImportBatchesUseCase,
   PreviewImportUseCase,
   ProcessImportUseCase,
   ValidateImportUseCase,
 } from '@application/importUseCases';
 import { AuthenticationModule } from '@auth/authentication.module';
+import { ImportRowProcessorFactory } from '@import/application/services/importRowProcessorFactory';
 import { PrismaModule } from '@infrastructure/database/prisma.module';
 import { PrismaImportBatchRepository } from '@infrastructure/database/repositories/prismaImportBatchRepository';
+import { ExcelGenerationService } from '@infrastructure/externalServices/excelGenerationService';
 import { FileParsingService } from '@infrastructure/externalServices/fileParsingService';
+import { InventoryModule } from '@inventory/inventory.module';
 import { Module } from '@nestjs/common';
 
 import { ImportController } from './import.controller';
@@ -20,6 +24,7 @@ import { ImportController } from './import.controller';
   imports: [
     PrismaModule,
     AuthenticationModule, // Import AuthenticationModule to access DomainEventDispatcher
+    InventoryModule, // Import InventoryModule for use cases and repositories
   ],
   controllers: [ImportController],
   providers: [
@@ -33,11 +38,19 @@ import { ImportController } from './import.controller';
       provide: 'FileParsingService',
       useClass: FileParsingService,
     },
+    // Excel Generation Service - Port implementation
+    {
+      provide: 'ExcelGenerationService',
+      useClass: ExcelGenerationService,
+    },
+    // Row Processor Factory
+    ImportRowProcessorFactory,
     // Use Cases
     CreateImportBatchUseCase,
     ValidateImportUseCase,
     ProcessImportUseCase,
     GetImportStatusUseCase,
+    ListImportBatchesUseCase,
     DownloadImportTemplateUseCase,
     DownloadErrorReportUseCase,
     PreviewImportUseCase,

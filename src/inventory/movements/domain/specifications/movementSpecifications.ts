@@ -124,6 +124,38 @@ export class MovementByCompanySpecification extends PrismaSpecification<Movement
 }
 
 /**
+ * Specification for movements by search term (reference, reason, note)
+ */
+export class MovementBySearchSpecification extends PrismaSpecification<Movement> {
+  private readonly searchTerm: string;
+
+  constructor(search: string) {
+    super();
+    this.searchTerm = search.trim().toLowerCase();
+  }
+
+  public isSatisfiedBy(movement: Movement): boolean {
+    const term = this.searchTerm;
+    return (
+      (movement.reference?.toLowerCase().includes(term) ?? false) ||
+      (movement.reason?.toLowerCase().includes(term) ?? false) ||
+      (movement.note?.toLowerCase().includes(term) ?? false)
+    );
+  }
+
+  public toPrismaWhere(orgId: string): PrismaWhereInput {
+    return {
+      orgId,
+      OR: [
+        { reference: { contains: this.searchTerm, mode: 'insensitive' } },
+        { reason: { contains: this.searchTerm, mode: 'insensitive' } },
+        { notes: { contains: this.searchTerm, mode: 'insensitive' } },
+      ],
+    };
+  }
+}
+
+/**
  * Specification for movements by product (via movement lines)
  */
 export class MovementByProductSpecification extends PrismaSpecification<Movement> {

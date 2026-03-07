@@ -278,6 +278,13 @@ export class ImportValidationService {
           description: 'Product category',
           example: 'Category A',
         },
+        {
+          name: 'Company Code',
+          dataType: 'string',
+          required: false,
+          description: 'Company code (for multi-company orgs)',
+          example: 'GYM-001',
+        },
       ],
       exampleRows: [
         {
@@ -293,6 +300,7 @@ export class ImportValidationService {
           Status: 'ACTIVE',
           'Cost Method': 'AVG',
           Category: 'Category A',
+          'Company Code': 'GYM-001',
         },
         {
           SKU: 'PROD-002',
@@ -307,6 +315,7 @@ export class ImportValidationService {
           Status: 'ACTIVE',
           'Cost Method': 'FIFO',
           Category: 'Category B',
+          'Company Code': 'GYM-001',
         },
       ],
     };

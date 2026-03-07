@@ -230,12 +230,13 @@ import { createCacheModuleOptions, FunctionalCacheService } from '@shared/infras
     ReceiveTransferUseCase,
     RejectTransferUseCase,
     CancelTransferUseCase,
-    // Export repositories for cross-module access (e.g., SalesModule)
+    // Export repositories for cross-module access (e.g., SalesModule, ImportModule)
     'ProductRepository',
     'WarehouseRepository',
     'MovementRepository',
     'StockRepository',
     'LocationRepository',
+    'CompanyRepository',
   ],
 })
 export class InventoryModule implements OnModuleInit {

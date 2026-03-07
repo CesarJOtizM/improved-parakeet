@@ -1,5 +1,6 @@
 import { ProcessImportUseCase } from '@application/importUseCases/processImportUseCase';
 import { ImportBatch, ImportProcessingService } from '@import/domain';
+import { ImportRowProcessorFactory } from '@import/application/services/importRowProcessorFactory';
 import { ImportStatus } from '@import/domain/valueObjects/importStatus.valueObject';
 import { ImportType } from '@import/domain/valueObjects/importType.valueObject';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
@@ -15,6 +16,7 @@ describe('ProcessImportUseCase', () => {
   let useCase: ProcessImportUseCase;
   let mockRepository: jest.Mocked<IImportBatchRepository>;
   let mockEventDispatcher: jest.Mocked<IDomainEventDispatcher>;
+  let mockRowProcessorFactory: jest.Mocked<ImportRowProcessorFactory>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -32,6 +34,7 @@ describe('ProcessImportUseCase', () => {
       findByTypeAndStatus: jest.fn(),
       findRecent: jest.fn(),
       countByStatus: jest.fn(),
+      findPaginated: jest.fn(),
     } as jest.Mocked<IImportBatchRepository>;
 
     mockEventDispatcher = {
@@ -39,7 +42,19 @@ describe('ProcessImportUseCase', () => {
       markAndDispatch: jest.fn().mockResolvedValue(undefined as never),
     } as jest.Mocked<IDomainEventDispatcher>;
 
-    useCase = new ProcessImportUseCase(mockRepository, mockEventDispatcher);
+    mockRowProcessorFactory = {
+      createProcessor: jest.fn().mockReturnValue(async (row: any) => ({
+        rowNumber: row.rowNumber,
+        success: row.isValid(),
+        error: row.isValid() ? undefined : 'Row has validation errors',
+      })),
+    } as unknown as jest.Mocked<ImportRowProcessorFactory>;
+
+    useCase = new ProcessImportUseCase(
+      mockRepository,
+      mockEventDispatcher,
+      mockRowProcessorFactory
+    );
   });
 
   describe('execute', () => {

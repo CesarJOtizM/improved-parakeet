@@ -44,4 +44,25 @@ export interface IImportBatchRepository
    * Count import batches by status
    */
   countByStatus(status: ImportStatusValue, orgId: string): Promise<number>;
+
+  /**
+   * Find import batches with pagination and optional filters
+   */
+  findPaginated(
+    orgId: string,
+    options: {
+      page: number;
+      limit: number;
+      type?: ImportTypeValue;
+      status?: ImportStatusValue;
+    }
+  ): Promise<{
+    data: ImportBatch[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }>;
 }

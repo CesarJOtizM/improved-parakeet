@@ -4,6 +4,7 @@ import {
   MovementByCompanySpecification,
   MovementByDateRangeSpecification,
   MovementByProductSpecification,
+  MovementBySearchSpecification,
   MovementByStatusSpecification,
   MovementByTypeSpecification,
   MovementByWarehouseSpecification,
@@ -28,6 +29,7 @@ export interface IGetMovementsRequest {
   status?: string;
   type?: string;
   productId?: string;
+  search?: string;
   startDate?: Date;
   endDate?: Date;
   sortBy?: string;
@@ -88,6 +90,10 @@ export class GetMovementsUseCase {
 
     if (request.productId) {
       specifications.push(new MovementByProductSpecification(request.productId));
+    }
+
+    if (request.search) {
+      specifications.push(new MovementBySearchSpecification(request.search));
     }
 
     if (request.startDate && request.endDate) {
