@@ -246,15 +246,20 @@ export class OrganizationController {
     status: HttpStatus.FORBIDDEN,
     description: 'Insufficient permissions. Only super-admins can change this setting.',
   })
-  async togglePickingSetting(@Param('id') id: string, @Body() body: { pickingEnabled: boolean }) {
-    this.logger.log('Toggling picking setting', {
+  async togglePickingSetting(
+    @Param('id') id: string,
+    @Body() body: { pickingEnabled?: boolean; pickingMode?: string }
+  ) {
+    this.logger.log('Updating picking setting', {
       organizationId: id,
+      pickingMode: body.pickingMode,
       pickingEnabled: body.pickingEnabled,
     });
 
     const result = await this.togglePickingSettingUseCase.execute({
       orgId: id,
       pickingEnabled: body.pickingEnabled,
+      pickingMode: body.pickingMode as 'OFF' | 'OPTIONAL' | 'REQUIRED_FULL' | 'REQUIRED_PARTIAL',
     });
 
     return resultToHttpResponse(result);

@@ -9,6 +9,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   Logger,
   Put,
   UseGuards,
@@ -18,6 +19,8 @@ import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
 import { OrgId } from '@shared/decorators/orgId.decorator';
 import { RequirePermissions } from '@shared/decorators/requirePermissions.decorator';
 
+import type { IOrganizationRepository } from '@organization/domain/repositories';
+
 @ApiTags('Settings')
 @Controller('settings')
 @UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
@@ -25,7 +28,11 @@ import { RequirePermissions } from '@shared/decorators/requirePermissions.decora
 export class SettingsController {
   private readonly logger = new Logger(SettingsController.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject('OrganizationRepository')
+    private readonly organizationRepository: IOrganizationRepository
+  ) {}
 
   @Get('alerts')
   @HttpCode(HttpStatus.OK)
@@ -131,6 +138,73 @@ export class SettingsController {
         createdAt: config.createdAt,
         updatedAt: config.updatedAt,
       },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get('picking')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.SETTINGS_MANAGE)
+  @ApiOperation({
+    summary: 'Get picking configuration',
+    description: 'Get the picking verification mode for the current organization.',
+  })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Picking configuration retrieved' })
+  async getPickingConfig(@OrgId() orgId: string) {
+    const org = await this.organizationRepository.findById(orgId);
+    const pickingMode = (org?.getSetting('pickingMode') as string) ?? 'OFF';
+    const pickingEnabled = !!org?.getSetting('pickingEnabled');
+
+    return {
+      success: true,
+      message: 'Picking configuration retrieved successfully',
+      data: { pickingMode, pickingEnabled },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Put('picking')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.SETTINGS_MANAGE)
+  @ApiOperation({
+    summary: 'Update picking configuration',
+    description: 'Update the picking verification mode for the current organization.',
+  })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Picking configuration updated' })
+  async updatePickingConfig(
+    @Body() body: { pickingMode?: string; pickingEnabled?: boolean },
+    @OrgId() orgId: string
+  ) {
+    const org = await this.organizationRepository.findById(orgId);
+    if (!org) {
+      return {
+        success: false,
+        message: 'Organization not found',
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    // Update pickingEnabled if provided
+    if (body.pickingEnabled !== undefined) {
+      org.setSetting('pickingEnabled', body.pickingEnabled);
+    }
+
+    // Update pickingMode if provided
+    if (body.pickingMode !== undefined) {
+      const validModes = ['OFF', 'OPTIONAL', 'REQUIRED_FULL', 'REQUIRED_PARTIAL'];
+      const mode = validModes.includes(body.pickingMode) ? body.pickingMode : 'OFF';
+      org.setSetting('pickingMode', mode);
+    }
+
+    await this.organizationRepository.update(org);
+
+    const pickingEnabled = !!org.getSetting('pickingEnabled');
+    const pickingMode = (org.getSetting('pickingMode') as string) ?? 'OFF';
+
+    return {
+      success: true,
+      message: 'Picking configuration updated',
+      data: { pickingMode, pickingEnabled },
       timestamp: new Date().toISOString(),
     };
   }

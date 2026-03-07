@@ -5,14 +5,20 @@ import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IOrganizationRepository } from '@organization/domain/repositories';
 
+export type PickingMode = 'OFF' | 'OPTIONAL' | 'REQUIRED_FULL' | 'REQUIRED_PARTIAL';
+
+const VALID_PICKING_MODES: PickingMode[] = ['OFF', 'OPTIONAL', 'REQUIRED_FULL', 'REQUIRED_PARTIAL'];
+
 export interface ITogglePickingSettingRequest {
   orgId: string;
-  pickingEnabled: boolean;
+  pickingEnabled?: boolean;
+  pickingMode?: PickingMode;
 }
 
 export interface ITogglePickingSettingData {
   orgId: string;
   pickingEnabled: boolean;
+  pickingMode: PickingMode;
 }
 
 export type ITogglePickingSettingResponse = IApiResponseSuccess<ITogglePickingSettingData>;
@@ -29,8 +35,9 @@ export class TogglePickingSettingUseCase {
   async execute(
     request: ITogglePickingSettingRequest
   ): Promise<Result<ITogglePickingSettingResponse, DomainError>> {
-    this.logger.log('Toggling picking setting', {
+    this.logger.log('Updating picking setting', {
       orgId: request.orgId,
+      pickingMode: request.pickingMode,
       pickingEnabled: request.pickingEnabled,
     });
 
@@ -42,21 +49,37 @@ export class TogglePickingSettingUseCase {
       );
     }
 
-    org.setSetting('pickingEnabled', request.pickingEnabled);
+    // Determine mode: explicit pickingMode takes priority
+    let mode: PickingMode;
+    if (request.pickingMode && VALID_PICKING_MODES.includes(request.pickingMode)) {
+      mode = request.pickingMode;
+    } else if (request.pickingEnabled !== undefined) {
+      // Legacy boolean: true -> OPTIONAL, false -> OFF
+      mode = request.pickingEnabled ? 'OPTIONAL' : 'OFF';
+    } else {
+      mode = 'OFF';
+    }
+
+    const enabled = mode !== 'OFF';
+
+    org.setSetting('pickingEnabled', enabled);
+    org.setSetting('pickingMode', mode);
 
     await this.organizationRepository.update(org);
 
     this.logger.log('Picking setting updated successfully', {
       orgId: request.orgId,
-      pickingEnabled: request.pickingEnabled,
+      pickingMode: mode,
+      pickingEnabled: enabled,
     });
 
     return ok({
       success: true,
-      message: `Picking ${request.pickingEnabled ? 'enabled' : 'disabled'} successfully`,
+      message: `Picking mode set to ${mode}`,
       data: {
         orgId: request.orgId,
-        pickingEnabled: request.pickingEnabled,
+        pickingEnabled: enabled,
+        pickingMode: mode,
       },
       timestamp: new Date().toISOString(),
     });

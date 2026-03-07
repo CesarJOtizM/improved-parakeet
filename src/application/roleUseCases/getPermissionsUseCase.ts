@@ -23,6 +23,7 @@ export class GetPermissionsUseCase {
     this.logger.log('Getting all system permissions');
 
     const permissions = await this.prisma.permission.findMany({
+      where: { module: { not: 'ORGANIZATIONS' } },
       orderBy: [{ module: 'asc' }, { action: 'asc' }],
     });
 
