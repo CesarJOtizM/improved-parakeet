@@ -22,6 +22,7 @@ export interface ISaleLineCreateInput {
  */
 export interface ISaleCreateInput {
   warehouseId: string;
+  contactId: string;
   customerReference?: string;
   externalReference?: string;
   note?: string;
@@ -55,6 +56,8 @@ export interface ISaleResponseData {
   status: string;
   warehouseId: string;
   warehouseName?: string;
+  contactId?: string;
+  contactName?: string;
   customerReference?: string;
   externalReference?: string;
   note?: string;
@@ -112,6 +115,7 @@ export class SaleMapper {
       saleNumber,
       status,
       warehouseId: input.warehouseId,
+      contactId: input.contactId,
       customerReference: input.customerReference,
       externalReference: input.externalReference,
       note: input.note,
@@ -186,6 +190,7 @@ export class SaleMapper {
       saleNumber: sale.saleNumber.getValue(),
       status: sale.status.getValue(),
       warehouseId: sale.warehouseId,
+      contactId: sale.contactId,
       customerReference: sale.customerReference,
       externalReference: sale.externalReference,
       note: sale.note,

@@ -8,6 +8,7 @@ export interface IMovementProps {
   type: MovementType;
   status: MovementStatus;
   warehouseId: string;
+  contactId?: string;
   reference?: string;
   reason?: string;
   note?: string;
@@ -215,6 +216,7 @@ export class Movement extends AggregateRoot<IMovementProps> {
       type: this.props.type,
       status: this.props.status,
       warehouseId: this.props.warehouseId,
+      contactId: props.contactId !== undefined ? props.contactId : this.props.contactId,
       reference: props.reference !== undefined ? props.reference : this.props.reference,
       reason: props.reason !== undefined ? props.reason : this.props.reason,
       note: props.note !== undefined ? props.note : this.props.note,
@@ -254,6 +256,10 @@ export class Movement extends AggregateRoot<IMovementProps> {
 
   get warehouseId(): string {
     return this.props.warehouseId;
+  }
+
+  get contactId(): string | undefined {
+    return this.props.contactId;
   }
 
   get reference(): string | undefined {

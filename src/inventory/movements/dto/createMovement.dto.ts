@@ -90,6 +90,15 @@ export class CreateMovementDto {
   warehouseId!: string;
 
   @ApiProperty({
+    description: 'Contact (supplier) ID for entry movements',
+    example: 'contact-123',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Contact ID must be a string' })
+  contactId?: string;
+
+  @ApiProperty({
     description: 'Reference document number',
     example: 'REF-001',
     required: false,

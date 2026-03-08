@@ -183,6 +183,7 @@ export class PrismaSaleRepository implements ISaleRepository {
           saleNumber: sale.saleNumber.getValue(),
           status: sale.status.getValue(),
           warehouseId: sale.warehouseId,
+          contactId: sale.contactId || null,
           customerReference: sale.customerReference || null,
           externalReference: sale.externalReference || null,
           note: sale.note || null,
@@ -507,6 +508,7 @@ export class PrismaSaleRepository implements ISaleRepository {
     saleNumber: string;
     status: string;
     warehouseId: string;
+    contactId: string | null;
     customerReference: string | null;
     externalReference: string | null;
     note: string | null;
@@ -541,6 +543,7 @@ export class PrismaSaleRepository implements ISaleRepository {
           | 'RETURNED'
       ),
       warehouseId: saleData.warehouseId,
+      contactId: saleData.contactId || undefined,
       customerReference: saleData.customerReference || undefined,
       externalReference: saleData.externalReference || undefined,
       note: saleData.note || undefined,
@@ -604,6 +607,7 @@ export class PrismaSaleRepository implements ISaleRepository {
     saleNumber: string;
     status: string;
     warehouseId: string;
+    contactId: string | null;
     customerReference: string | null;
     externalReference: string | null;
     note: string | null;
@@ -650,6 +654,7 @@ export class PrismaSaleRepository implements ISaleRepository {
         saleNumber: valueObjects.saleNumber,
         status: valueObjects.status,
         warehouseId: valueObjects.warehouseId,
+        contactId: valueObjects.contactId,
         customerReference: valueObjects.customerReference,
         externalReference: valueObjects.externalReference,
         note: valueObjects.note,
@@ -682,6 +687,7 @@ export class PrismaSaleRepository implements ISaleRepository {
     saleNumber: string;
     status: string;
     warehouseId: string;
+    contactId: string | null;
     customerReference: string | null;
     externalReference: string | null;
     note: string | null;
@@ -723,6 +729,7 @@ export class PrismaSaleRepository implements ISaleRepository {
         saleNumber,
         status,
         warehouseId: saleData.warehouseId,
+        contactId: saleData.contactId || undefined,
         customerReference: saleData.customerReference || undefined,
         externalReference: saleData.externalReference || undefined,
         note: saleData.note || undefined,

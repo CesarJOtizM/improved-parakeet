@@ -16,6 +16,7 @@ import {
 } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
+import type { IContactRepository } from '@contacts/domain/ports/repositories/iContactRepository.port';
 import type { IMovementRepository } from '@movement/domain/repositories/movementRepository.interface';
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
 import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
@@ -33,6 +34,7 @@ export interface ICreateMovementLineRequest {
 export interface ICreateMovementRequest {
   type: 'IN' | 'OUT' | 'ADJUST_IN' | 'ADJUST_OUT' | 'TRANSFER_OUT' | 'TRANSFER_IN';
   warehouseId: string;
+  contactId?: string;
   reference?: string;
   reason?: string;
   note?: string;
@@ -56,6 +58,7 @@ export interface IMovementData {
   type: string;
   status: string;
   warehouseId: string;
+  contactId?: string;
   reference?: string;
   reason?: string;
   note?: string;
@@ -80,7 +83,9 @@ export class CreateMovementUseCase {
     @Inject('WarehouseRepository')
     private readonly warehouseRepository: IWarehouseRepository,
     @Inject('DomainEventDispatcher')
-    private readonly eventDispatcher: IDomainEventDispatcher
+    private readonly eventDispatcher: IDomainEventDispatcher,
+    @Inject('ContactRepository')
+    private readonly contactRepository: IContactRepository
   ) {}
 
   async execute(
@@ -103,6 +108,18 @@ export class CreateMovementUseCase {
             orgId: request.orgId,
           })
         );
+      }
+
+      // Validate contact exists if provided (optional, only for IN movements)
+      if (request.contactId) {
+        const contact = await this.contactRepository.findById(request.contactId, request.orgId);
+        if (!contact) {
+          return err(
+            new NotFoundError('Contact not found', 'CONTACT_NOT_FOUND', {
+              contactId: request.contactId,
+            })
+          );
+        }
       }
 
       // Validate products exist and get unit precision

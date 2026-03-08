@@ -13,6 +13,7 @@ export const REPORT_TYPES = {
   SALES: 'SALES',
   SALES_BY_PRODUCT: 'SALES_BY_PRODUCT',
   SALES_BY_WAREHOUSE: 'SALES_BY_WAREHOUSE',
+  SALES_BY_CLIENT: 'SALES_BY_CLIENT',
   // Returns Reports
   RETURNS: 'RETURNS',
   RETURNS_BY_TYPE: 'RETURNS_BY_TYPE',
@@ -88,7 +89,8 @@ export class ReportType extends ValueObject<IReportTypeProps> {
     return (
       this.props.value === REPORT_TYPES.SALES ||
       this.props.value === REPORT_TYPES.SALES_BY_PRODUCT ||
-      this.props.value === REPORT_TYPES.SALES_BY_WAREHOUSE
+      this.props.value === REPORT_TYPES.SALES_BY_WAREHOUSE ||
+      this.props.value === REPORT_TYPES.SALES_BY_CLIENT
     );
   }
 

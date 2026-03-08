@@ -367,6 +367,32 @@ export class PermissionsSeed {
         action: 'EXPORT',
       },
 
+      // Contactos
+      {
+        name: 'CONTACTS:CREATE',
+        description: 'Crear contactos',
+        module: 'CONTACTS',
+        action: 'CREATE',
+      },
+      {
+        name: 'CONTACTS:READ',
+        description: 'Ver contactos',
+        module: 'CONTACTS',
+        action: 'READ',
+      },
+      {
+        name: 'CONTACTS:UPDATE',
+        description: 'Actualizar contactos',
+        module: 'CONTACTS',
+        action: 'UPDATE',
+      },
+      {
+        name: 'CONTACTS:DELETE',
+        description: 'Eliminar contactos',
+        module: 'CONTACTS',
+        action: 'DELETE',
+      },
+
       // Configuración
       {
         name: 'SETTINGS:MANAGE',

@@ -189,6 +189,7 @@ export class PrismaMovementRepository implements IMovementRepository {
           reference: movement.reference || null,
           reason: movement.reason || null,
           notes: movement.note || null,
+          contactId: movement.contactId || null,
           postedAt: movement.postedAt || null,
           postedBy: movement.postedBy || null,
           returnedAt: movement.returnedAt || null,
@@ -461,6 +462,7 @@ export class PrismaMovementRepository implements IMovementRepository {
     type: string;
     status: string;
     warehouseId: string;
+    contactId?: string | null;
     reference: string | null;
     reason: string | null;
     notes: string | null;
@@ -475,6 +477,7 @@ export class PrismaMovementRepository implements IMovementRepository {
       ),
       status: MovementStatus.create('DRAFT'), // Temporary DRAFT status
       warehouseId: movementData.warehouseId,
+      contactId: movementData.contactId || undefined,
       reference: movementData.reference || undefined,
       reason: movementData.reason || undefined,
       note: movementData.notes || undefined,
@@ -556,6 +559,7 @@ export class PrismaMovementRepository implements IMovementRepository {
     type: string;
     status: string;
     warehouseId: string;
+    contactId?: string | null;
     reference: string | null;
     reason: string | null;
     notes: string | null;
@@ -581,6 +585,7 @@ export class PrismaMovementRepository implements IMovementRepository {
         type: valueObjects.type,
         status: valueObjects.status, // Temporary DRAFT
         warehouseId: valueObjects.warehouseId,
+        contactId: valueObjects.contactId,
         reference: valueObjects.reference,
         reason: valueObjects.reason,
         note: valueObjects.note,
@@ -613,6 +618,7 @@ export class PrismaMovementRepository implements IMovementRepository {
     type: string;
     status: string;
     warehouseId: string;
+    contactId?: string | null;
     reference: string | null;
     reason: string | null;
     notes: string | null;
@@ -639,6 +645,7 @@ export class PrismaMovementRepository implements IMovementRepository {
           movementData.status as 'DRAFT' | 'POSTED' | 'VOID' | 'RETURNED'
         ),
         warehouseId: movementData.warehouseId,
+        contactId: movementData.contactId || undefined,
         reference: movementData.reference || undefined,
         reason: movementData.reason || undefined,
         note: movementData.notes || undefined,

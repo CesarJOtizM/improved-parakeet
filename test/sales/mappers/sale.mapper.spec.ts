@@ -12,6 +12,7 @@ describe('SaleMapper', () => {
       // Arrange
       const input: ISaleCreateInput = {
         warehouseId: 'warehouse-123',
+        contactId: 'contact-123',
         customerReference: 'John Doe',
         externalReference: 'INV-2024-001',
         note: 'Test sale',
@@ -37,6 +38,7 @@ describe('SaleMapper', () => {
       // Arrange
       const input: ISaleCreateInput = {
         warehouseId: 'warehouse-456',
+        contactId: 'contact-456',
         createdBy: 'user-456',
       };
       const saleNumber = SaleNumber.create(2024, 2);

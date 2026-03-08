@@ -20,6 +20,7 @@ export interface ISaleProps {
   saleNumber: SaleNumber;
   status: SaleStatus;
   warehouseId: string;
+  contactId?: string;
   customerReference?: string;
   externalReference?: string;
   note?: string;
@@ -263,6 +264,7 @@ export class Sale extends AggregateRoot<ISaleProps> {
       saleNumber: this.props.saleNumber,
       status: this.props.status,
       warehouseId: this.props.warehouseId,
+      contactId: props.contactId !== undefined ? props.contactId : this.props.contactId,
       customerReference:
         props.customerReference !== undefined
           ? props.customerReference
@@ -326,6 +328,10 @@ export class Sale extends AggregateRoot<ISaleProps> {
 
   get warehouseId(): string {
     return this.props.warehouseId;
+  }
+
+  get contactId(): string | undefined {
+    return this.props.contactId;
   }
 
   get customerReference(): string | undefined {

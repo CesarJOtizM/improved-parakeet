@@ -9,6 +9,7 @@ import { NotFoundError, ValidationError } from '@shared/domain/result/domainErro
 import { Warehouse } from '@warehouse/domain/entities/warehouse.entity';
 import { WarehouseCode } from '@warehouse/domain/valueObjects/warehouseCode.valueObject';
 
+import type { IContactRepository } from '@contacts/domain/ports/repositories/iContactRepository.port';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
 import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
 
@@ -16,6 +17,7 @@ describe('CreateSaleUseCase', () => {
   const mockOrgId = 'test-org-id';
   const mockSaleId = 'sale-123';
   const mockWarehouseId = 'warehouse-123';
+  const mockContactId = 'contact-123';
   const mockProductId = 'product-123';
   const mockLocationId = 'location-123';
   const mockUserId = 'user-123';
@@ -23,6 +25,7 @@ describe('CreateSaleUseCase', () => {
   let useCase: CreateSaleUseCase;
   let mockSaleRepository: jest.Mocked<ISaleRepository>;
   let mockWarehouseRepository: jest.Mocked<IWarehouseRepository>;
+  let mockContactRepository: jest.Mocked<IContactRepository>;
   let mockEventDispatcher: jest.Mocked<IDomainEventDispatcher>;
 
   beforeEach(() => {
@@ -55,6 +58,18 @@ describe('CreateSaleUseCase', () => {
       findActive: jest.fn(),
     } as jest.Mocked<IWarehouseRepository>;
 
+    mockContactRepository = {
+      save: jest.fn(),
+      findById: jest.fn(),
+      findAll: jest.fn(),
+      exists: jest.fn<IContactRepository['exists']>().mockResolvedValue(true),
+      delete: jest.fn(),
+      findByIdentification: jest.fn(),
+      existsByIdentification: jest.fn(),
+      findByType: jest.fn(),
+      countSales: jest.fn(),
+    } as jest.Mocked<IContactRepository>;
+
     mockEventDispatcher = {
       dispatchEvents: jest.fn().mockResolvedValue(undefined as never),
       markAndDispatch: jest.fn().mockResolvedValue(undefined as never),
@@ -63,6 +78,7 @@ describe('CreateSaleUseCase', () => {
     useCase = new CreateSaleUseCase(
       mockSaleRepository,
       mockWarehouseRepository,
+      mockContactRepository,
       mockEventDispatcher
     );
   });
@@ -79,6 +95,7 @@ describe('CreateSaleUseCase', () => {
 
     const validRequest = {
       warehouseId: mockWarehouseId,
+      contactId: mockContactId,
       customerReference: 'CUST-001',
       externalReference: 'EXT-001',
       note: 'Test sale',

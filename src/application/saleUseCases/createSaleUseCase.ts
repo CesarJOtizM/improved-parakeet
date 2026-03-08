@@ -13,12 +13,14 @@ import {
 } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
+import type { IContactRepository } from '@contacts/domain/ports/repositories/iContactRepository.port';
 import type { ISaleRepository } from '@sale/domain/repositories/saleRepository.interface';
 import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
 import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
 
 export interface ICreateSaleRequest {
   warehouseId: string;
+  contactId: string;
   customerReference?: string;
   externalReference?: string;
   note?: string;
@@ -38,6 +40,8 @@ export interface ISaleData {
   saleNumber: string;
   status: string;
   warehouseId: string;
+  contactId?: string;
+  contactName?: string;
   customerReference?: string;
   externalReference?: string;
   note?: string;
@@ -76,6 +80,8 @@ export class CreateSaleUseCase {
     private readonly saleRepository: ISaleRepository,
     @Inject('WarehouseRepository')
     private readonly warehouseRepository: IWarehouseRepository,
+    @Inject('ContactRepository')
+    private readonly contactRepository: IContactRepository,
     @Inject('DomainEventDispatcher')
     private readonly eventDispatcher: IDomainEventDispatcher
   ) {}
@@ -97,6 +103,19 @@ export class CreateSaleUseCase {
             }
           )
         );
+      }
+
+      // Validate contact exists
+      if (request.contactId) {
+        const contactExists = await this.contactRepository.exists(request.contactId, request.orgId);
+        if (!contactExists) {
+          return err(
+            new NotFoundError('Contact not found', 'CONTACT_NOT_FOUND', {
+              contactId: request.contactId,
+              orgId: request.orgId,
+            })
+          );
+        }
       }
 
       // Generate sale number

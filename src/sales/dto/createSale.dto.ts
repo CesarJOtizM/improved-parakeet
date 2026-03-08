@@ -77,6 +77,14 @@ export class CreateSaleDto {
   warehouseId!: string;
 
   @ApiProperty({
+    description: 'Contact ID',
+    example: 'contact-123',
+  })
+  @IsString({ message: 'Contact ID must be a string' })
+  @IsNotEmpty({ message: 'Contact ID is required' })
+  contactId!: string;
+
+  @ApiProperty({
     description: 'Customer reference (optional text)',
     example: 'John Doe',
     required: false,

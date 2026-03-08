@@ -49,6 +49,12 @@ export class MovementResponseDto {
   @ApiProperty({ description: 'Warehouse ID', example: 'warehouse-123' })
   warehouseId!: string;
 
+  @ApiProperty({ description: 'Contact ID', example: 'contact-123', required: false })
+  contactId?: string;
+
+  @ApiProperty({ description: 'Contact name', example: 'Supplier Inc', required: false })
+  contactName?: string;
+
   @ApiProperty({ description: 'Reference', example: 'REF-001', required: false })
   reference?: string;
 

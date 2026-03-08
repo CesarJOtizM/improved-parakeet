@@ -153,6 +153,18 @@ export interface ISalesByWarehouseItem {
   period: string;
 }
 
+export interface ISalesByClientItem {
+  contactId: string;
+  contactName: string;
+  identification: string;
+  totalSales: number;
+  totalRevenue: number;
+  averagePerSale: number;
+  totalItems: number;
+  currency: string;
+  period: string;
+}
+
 export interface IReturnsReportItem {
   returnId: string;
   returnNumber: string;
@@ -327,6 +339,8 @@ export class ReportGenerationService {
         return this.generateSalesByProductReport(parameters, orgId);
       case REPORT_TYPES.SALES_BY_WAREHOUSE:
         return this.generateSalesByWarehouseReport(parameters, orgId);
+      case REPORT_TYPES.SALES_BY_CLIENT:
+        return this.generateSalesByClientReport(parameters, orgId);
       case REPORT_TYPES.RETURNS:
         return this.generateReturnsReport(parameters, orgId);
       case REPORT_TYPES.RETURNS_BY_TYPE:
@@ -1300,6 +1314,97 @@ export class ReportGenerationService {
     }
 
     return this.createResult(data, REPORT_TYPES.SALES_BY_WAREHOUSE, parameters, orgId);
+  }
+
+  /**
+   * 10b. Sales by Client Report
+   * Aggregates sales by contact (client), showing total sales, revenue, and average per sale
+   */
+  public async generateSalesByClientReport(
+    parameters: IReportParametersInput,
+    orgId: string
+  ): Promise<IReportGenerationResult<ISalesByClientItem>> {
+    this.logger.log('Generating sales by client report', { orgId });
+
+    const salesPromise = parameters.dateRange
+      ? this.saleRepository.findByDateRange(
+          parameters.dateRange.startDate,
+          parameters.dateRange.endDate,
+          orgId
+        )
+      : this.saleRepository.findAll(orgId);
+
+    const [sales, contacts] = await Promise.all([
+      salesPromise,
+      this.prisma.contact.findMany({
+        where: { orgId },
+        select: { id: true, name: true, identification: true },
+      }),
+    ]);
+
+    const contactMap = new Map(contacts.map(c => [c.id, c]));
+
+    const clientSalesMap = new Map<
+      string,
+      { totalSales: number; totalRevenue: number; totalItems: number }
+    >();
+
+    const confirmedSales = sales.filter(s => s.status.getValue() === 'CONFIRMED');
+
+    for (const sale of confirmedSales) {
+      if (!sale.contactId) continue;
+
+      // Filter by warehouse if specified
+      if (
+        parameters.warehouseId &&
+        !parameters.warehouseId
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean)
+          .includes(sale.warehouseId)
+      ) {
+        continue;
+      }
+
+      const existing = clientSalesMap.get(sale.contactId) || {
+        totalSales: 0,
+        totalRevenue: 0,
+        totalItems: 0,
+      };
+
+      existing.totalSales += 1;
+      for (const line of sale.getLines()) {
+        existing.totalRevenue += line.quantity.getNumericValue() * line.salePrice.getAmount();
+        existing.totalItems += line.quantity.getNumericValue();
+      }
+
+      clientSalesMap.set(sale.contactId, existing);
+    }
+
+    const period = this.getPeriodString(parameters.dateRange);
+    const data: ISalesByClientItem[] = [];
+
+    for (const [contactId, stats] of clientSalesMap) {
+      const contact = contactMap.get(contactId);
+      const averagePerSale = stats.totalSales > 0 ? stats.totalRevenue / stats.totalSales : 0;
+
+      data.push({
+        contactId,
+        contactName: contact?.name || 'Unknown',
+        identification: contact?.identification || '',
+        totalSales: stats.totalSales,
+        totalRevenue: stats.totalRevenue,
+        averagePerSale,
+        totalItems: stats.totalItems,
+        currency: 'COP',
+        period,
+      });
+    }
+
+    // Sort by revenue descending
+    data.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+    return this.createResult(data, REPORT_TYPES.SALES_BY_CLIENT, parameters, orgId);
   }
 
   /**

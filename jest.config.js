@@ -55,6 +55,8 @@ const config = {
     '^@report/(.*)$': '<rootDir>/src/report/$1',
     '^@import$': '<rootDir>/src/import',
     '^@import/(.*)$': '<rootDir>/src/import/$1',
+    '^@contacts$': '<rootDir>/src/contacts',
+    '^@contacts/(.*)$': '<rootDir>/src/contacts/$1',
     '^@organization$': '<rootDir>/src/organization',
     '^@organization/(.*)$': '<rootDir>/src/organization/$1',
     '^@application$': '<rootDir>/src/application',

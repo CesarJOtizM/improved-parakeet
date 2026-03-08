@@ -303,6 +303,31 @@ export class ReportController {
     return resultToHttpResponse(result);
   }
 
+  @Get('sales/by-client/view')
+  @RequireReportPermission(REPORT_TYPES.SALES_BY_CLIENT)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'View sales by client report' })
+  @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Report generated successfully',
+    type: ViewReportResponseDto,
+  })
+  async viewSalesByClient(
+    @Query() query: ViewReportQueryDto,
+    @Headers('X-Organization-ID') orgId: string,
+    @Headers('X-User-ID') userId: string
+  ): Promise<ViewReportResponseDto> {
+    this.logger.log('Viewing sales by client report', { orgId });
+    const result = await this.viewReportUseCase.execute({
+      type: REPORT_TYPES.SALES_BY_CLIENT,
+      parameters: this.mapQueryToParameters(query),
+      orgId,
+      viewedBy: userId || 'system',
+    });
+    return resultToHttpResponse(result);
+  }
+
   @Get('returns/view')
   @RequireReportPermission(REPORT_TYPES.RETURNS)
   @HttpCode(HttpStatus.OK)
@@ -718,6 +743,21 @@ export class ReportController {
     @Res() res: Response
   ): Promise<void> {
     await this.handleExport(REPORT_TYPES.SALES_BY_WAREHOUSE, dto, orgId, userId || 'system', res);
+  }
+
+  @Post('sales/by-client/export')
+  @RequireExportPermission()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Export sales by client report' })
+  @ApiHeader({ name: 'X-Organization-ID', required: true, description: 'Organization ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Report exported successfully' })
+  async exportSalesByClient(
+    @Body() dto: ExportReportDto,
+    @Headers('X-Organization-ID') orgId: string,
+    @Headers('X-User-ID') userId: string,
+    @Res() res: Response
+  ): Promise<void> {
+    await this.handleExport(REPORT_TYPES.SALES_BY_CLIENT, dto, orgId, userId || 'system', res);
   }
 
   @Post('returns/export')

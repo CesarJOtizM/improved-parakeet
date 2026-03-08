@@ -78,12 +78,23 @@ export class GetMovementByIdUseCase {
       : [];
     const userMap = new Map(users.map(u => [u.id, `${u.firstName} ${u.lastName}`]));
 
+    // Resolve contact name
+    let contactName: string | undefined;
+    if (movement.contactId) {
+      const contact = await this.prisma.contact.findFirst({
+        where: { id: movement.contactId },
+        select: { name: true },
+      });
+      contactName = contact?.name;
+    }
+
     return ok({
       success: true,
       message: 'Movement retrieved successfully',
       data: MovementMapper.toResponseData(movement, productInfoMap, {
         warehouseName: warehouse?.name,
         warehouseCode: warehouse?.code,
+        contactName,
         createdByName: userMap.get(movement.createdBy),
         postedByName: movement.postedBy ? userMap.get(movement.postedBy) : undefined,
         returnedByName: movement.returnedBy ? userMap.get(movement.returnedBy) : undefined,

@@ -9,6 +9,7 @@ import type { IDomainEventDispatcher } from '@shared/domain/events/domainEventDi
 
 export interface IUpdateSaleRequest {
   id: string;
+  contactId?: string;
   customerReference?: string;
   externalReference?: string;
   note?: string;
@@ -39,6 +40,7 @@ export class UpdateSaleUseCase {
 
     // Update sale (returns new instance)
     const updatedSale = sale.update({
+      contactId: request.contactId,
       customerReference: request.customerReference,
       externalReference: request.externalReference,
       note: request.note,
@@ -67,6 +69,7 @@ export class UpdateSaleUseCase {
         saleNumber: savedSale.saleNumber.getValue(),
         status: savedSale.status.getValue(),
         warehouseId: savedSale.warehouseId,
+        contactId: savedSale.contactId,
         customerReference: savedSale.customerReference,
         externalReference: savedSale.externalReference,
         note: savedSale.note,

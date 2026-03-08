@@ -1,6 +1,7 @@
 import { PrismaClient } from '@infrastructure/database/generated/prisma';
 import { IProduct, IUser, IWarehouse } from '@shared/types/database.types';
 
+import type { ContactRecord } from './contacts.seed';
 import { qtyKey } from './movements.seed';
 
 function daysAgo(days: number): Date {
@@ -216,9 +217,18 @@ export class DemoSalesSeed {
     products: IProduct[],
     warehouses: IWarehouse[],
     users: IUser[],
-    available: Map<string, number>
+    available: Map<string, number>,
+    contacts: ContactRecord[]
   ): Promise<SaleRecord[]> {
     const findProduct = (prefix: string) => products.find(p => p.sku.startsWith(prefix));
+
+    // Build customer name -> contactId lookup
+    const contactByName = new Map<string, string>();
+    for (const contact of contacts) {
+      if (contact.type === 'CUSTOMER') {
+        contactByName.set(contact.name, contact.id);
+      }
+    }
 
     // --- Identify users by index (admin=0, supervisor=1, operador=2, vendedor=3) ---
     const admin = users[0]!;
@@ -372,6 +382,7 @@ export class DemoSalesSeed {
           saleNumber,
           status: def.status,
           warehouseId: warehouse.id,
+          contactId: contactByName.get(customer) || null,
           customerReference: customer,
           externalReference:
             i % 3 === 0 ? `PO-${customer.substring(0, 3).toUpperCase()}-${i + 1}` : null,

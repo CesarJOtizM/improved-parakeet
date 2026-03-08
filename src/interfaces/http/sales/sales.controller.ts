@@ -111,6 +111,7 @@ export class SalesController {
 
     const request = {
       warehouseId: createSaleDto.warehouseId,
+      contactId: createSaleDto.contactId,
       customerReference: createSaleDto.customerReference,
       externalReference: createSaleDto.externalReference,
       note: createSaleDto.note,
@@ -227,6 +228,7 @@ export class SalesController {
 
     const request = {
       id,
+      contactId: updateSaleDto.contactId,
       customerReference: updateSaleDto.customerReference,
       externalReference: updateSaleDto.externalReference,
       note: updateSaleDto.note,

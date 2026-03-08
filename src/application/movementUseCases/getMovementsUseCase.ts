@@ -200,11 +200,28 @@ export class GetMovementsUseCase {
       : [];
     const warehouseMap = new Map(warehouses.map(w => [w.id, { name: w.name, code: w.code }]));
 
+    // Batch-fetch contact names for movements with contactId
+    const contactIds = [
+      ...new Set(sortedMovements.map(m => m.contactId).filter(Boolean)),
+    ] as string[];
+    const contacts = contactIds.length
+      ? await this.prisma.contact.findMany({
+          where: { id: { in: contactIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+    const contactMap = new Map(contacts.map(c => [c.id, c.name]));
+
     // Use mapper to convert entities to response DTOs with product information
     return ok({
       success: true,
       message: 'Movements retrieved successfully',
-      data: MovementMapper.toResponseDataList(sortedMovements, productInfoMap, warehouseMap),
+      data: MovementMapper.toResponseDataList(
+        sortedMovements,
+        productInfoMap,
+        warehouseMap,
+        contactMap
+      ),
       pagination: {
         page,
         limit,

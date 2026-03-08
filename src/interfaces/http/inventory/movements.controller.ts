@@ -105,6 +105,7 @@ export class MovementsController {
     const request = {
       type: createMovementDto.type,
       warehouseId: createMovementDto.warehouseId,
+      contactId: createMovementDto.contactId,
       reference: createMovementDto.reference,
       reason: createMovementDto.reason,
       note: createMovementDto.note,
@@ -265,6 +266,7 @@ export class MovementsController {
       reference: updateMovementDto.reference,
       reason: updateMovementDto.reason,
       note: updateMovementDto.note,
+      contactId: updateMovementDto.contactId,
       lines: updateMovementDto.lines,
     });
     return resultToHttpResponse(result);

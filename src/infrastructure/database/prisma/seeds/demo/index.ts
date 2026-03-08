@@ -4,6 +4,7 @@ import { PrismaClient } from '@infrastructure/database/generated/prisma';
 import { DemoAuditLogsSeed } from './audit-logs.seed';
 import { DemoCategoriesSeed } from './categories.seed';
 import { DemoCompaniesSeed } from './companies.seed';
+import { DemoContactsSeed } from './contacts.seed';
 import { DemoMovementsSeed } from './movements.seed';
 import { DemoOrganizationSeed } from './organization.seed';
 import { DemoProductsSeed } from './products.seed';
@@ -70,27 +71,32 @@ export class DemoSeed {
     // Compute available stock
     const available = this.computeAvailable(movResult);
 
-    // 8. Sales
+    // 8. Contacts
+    const contactsSeed = new DemoContactsSeed(this.prisma);
+    const contacts = await contactsSeed.seed(orgId);
+    console.log('  ✅ Contactos:', contacts.length);
+
+    // 9. Sales
     const salesSeed = new DemoSalesSeed(this.prisma);
-    const sales = await salesSeed.seed(orgId, products, warehouses, users, available);
+    const sales = await salesSeed.seed(orgId, products, warehouses, users, available, contacts);
     console.log('  ✅ Ventas:', sales.length);
 
-    // 9. Returns
+    // 10. Returns
     const returnsSeed = new DemoReturnsSeed(this.prisma);
     const returns = await returnsSeed.seed(orgId, products, warehouses, sales, adminUser.id);
     console.log('  ✅ Devoluciones:', returns.length);
 
-    // 10. Transfers
+    // 11. Transfers
     const transfersSeed = new DemoTransfersSeed(this.prisma);
     const transfers = await transfersSeed.seed(orgId, products, warehouses, adminUser.id);
     console.log('  ✅ Transferencias:', transfers.length);
 
-    // 11. Stock
+    // 12. Stock
     const stockSeed = new DemoStockSeed(this.prisma);
     await stockSeed.seed(orgId, products, available);
     console.log('  ✅ Stock calculado');
 
-    // 12. Audit Logs
+    // 13. Audit Logs
     const auditSeed = new DemoAuditLogsSeed(this.prisma);
     await auditSeed.seed(orgId, users);
     console.log('  ✅ Logs de auditoria');
@@ -141,27 +147,32 @@ export class DemoSeed {
     // Compute available stock
     const available = this.computeAvailable(movResult);
 
-    // 7. Sales
+    // 7. Contacts
+    const contactsSeed = new DemoContactsSeed(this.prisma);
+    const contacts = await contactsSeed.seed(orgId);
+    console.log('  ✅ Contactos:', contacts.length);
+
+    // 8. Sales
     const salesSeed = new DemoSalesSeed(this.prisma);
-    const sales = await salesSeed.seed(orgId, products, warehouses, users, available);
+    const sales = await salesSeed.seed(orgId, products, warehouses, users, available, contacts);
     console.log('  ✅ Ventas:', sales.length);
 
-    // 8. Returns
+    // 9. Returns
     const returnsSeed = new DemoReturnsSeed(this.prisma);
     const returns = await returnsSeed.seed(orgId, products, warehouses, sales, adminUser.id);
     console.log('  ✅ Devoluciones:', returns.length);
 
-    // 9. Transfers
+    // 10. Transfers
     const transfersSeed = new DemoTransfersSeed(this.prisma);
     const transfers = await transfersSeed.seed(orgId, products, warehouses, adminUser.id);
     console.log('  ✅ Transferencias:', transfers.length);
 
-    // 10. Stock
+    // 11. Stock
     const stockSeed = new DemoStockSeed(this.prisma);
     await stockSeed.seed(orgId, products, available);
     console.log('  ✅ Stock calculado');
 
-    // 11. Audit Logs
+    // 12. Audit Logs
     const auditSeed = new DemoAuditLogsSeed(this.prisma);
     await auditSeed.seed(orgId, users);
     console.log('  ✅ Logs de auditoria');

@@ -81,6 +81,7 @@ describe('ConfirmSaleUseCase', () => {
       const props = SaleMapper.toDomainProps(
         {
           warehouseId: 'warehouse-123',
+          contactId: 'contact-123',
           createdBy: 'user-123',
         },
         saleNumber

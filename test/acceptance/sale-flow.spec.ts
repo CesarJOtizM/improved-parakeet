@@ -40,6 +40,7 @@ describeIf(!!process.env.DATABASE_URL)('Sale Flow Acceptance Test', () => {
   let testProductId: string;
   let testLocationId: string;
   let testUserId: string;
+  let testContactId: string;
 
   beforeAll(async () => {
     module = await Test.createTestingModule({
@@ -85,6 +86,7 @@ describeIf(!!process.env.DATABASE_URL)('Sale Flow Acceptance Test', () => {
 
       const saleData = {
         warehouseId: testWarehouseId,
+        contactId: testContactId,
         customerReference: 'CUST-001',
         note: 'Acceptance test sale',
         lines: [
@@ -174,6 +176,7 @@ describeIf(!!process.env.DATABASE_URL)('Sale Flow Acceptance Test', () => {
       // Create sale
       const createResult = await createSaleUseCase.execute({
         warehouseId: testWarehouseId,
+        contactId: testContactId,
         lines: [
           {
             productId: testProductId,
@@ -282,6 +285,18 @@ describeIf(!!process.env.DATABASE_URL)('Sale Flow Acceptance Test', () => {
         throw new Error('Product creation failed');
       }
     );
+
+    // Create contact
+    const contact = await prisma.contact.create({
+      data: {
+        name: 'Test Customer',
+        identification: 'TEST-SALE-001',
+        type: 'CUSTOMER',
+        isActive: true,
+        orgId: testOrgId,
+      },
+    });
+    testContactId = contact.id;
   }
 
   async function cleanupTestData() {
@@ -306,6 +321,9 @@ describeIf(!!process.env.DATABASE_URL)('Sale Flow Acceptance Test', () => {
         where: { orgId: testOrgId },
       });
       await prisma.product.deleteMany({
+        where: { orgId: testOrgId },
+      });
+      await prisma.contact.deleteMany({
         where: { orgId: testOrgId },
       });
       await prisma.warehouse.deleteMany({

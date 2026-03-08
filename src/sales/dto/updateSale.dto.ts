@@ -3,6 +3,15 @@ import { IsOptional, IsString } from 'class-validator';
 
 export class UpdateSaleDto {
   @ApiProperty({
+    description: 'Contact ID (optional link to a contact)',
+    example: 'contact-123',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Contact ID must be a string' })
+  contactId?: string;
+
+  @ApiProperty({
     description: 'Customer reference (optional text)',
     example: 'John Doe',
     required: false,

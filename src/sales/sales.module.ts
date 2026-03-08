@@ -14,6 +14,7 @@ import { GetSaleSwapsUseCase } from '@application/saleUseCases/getSaleSwapsUseCa
 import { SwapSaleLineUseCase } from '@application/saleUseCases/swapSaleLineUseCase';
 import { UpdateSaleUseCase } from '@application/saleUseCases/updateSaleUseCase';
 import { AuthenticationModule } from '@auth/authentication.module';
+import { ContactsModule } from '@contacts/contacts.module';
 import { PrismaSaleRepository } from '@infrastructure/database/repositories/sale.repository';
 import { InventoryModule } from '@inventory/inventory.module';
 import { Module } from '@nestjs/common';
@@ -22,6 +23,7 @@ import { OrganizationModule } from '@organization/organization.module';
 @Module({
   imports: [
     AuthenticationModule, // Import AuthenticationModule to access DomainEventDispatcher
+    ContactsModule, // Import ContactsModule to access ContactRepository
     InventoryModule, // Import InventoryModule to access MovementRepository, StockRepository, ProductRepository, WarehouseRepository
     OrganizationModule, // Import OrganizationModule to access OrganizationRepository (for picking/shipping validation)
   ],

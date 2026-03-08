@@ -58,6 +58,11 @@ export class UpdateMovementDto {
   @IsString({ message: 'Note must be a string' })
   note?: string;
 
+  @ApiProperty({ description: 'Contact (supplier) ID', required: false })
+  @IsOptional()
+  @IsString({ message: 'Contact ID must be a string' })
+  contactId?: string;
+
   @ApiProperty({
     description: 'Movement lines (replaces all existing lines)',
     type: [UpdateMovementLineDto],

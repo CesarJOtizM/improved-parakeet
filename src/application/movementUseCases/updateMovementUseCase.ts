@@ -27,6 +27,7 @@ export interface IUpdateMovementRequest {
   reference?: string;
   reason?: string;
   note?: string;
+  contactId?: string;
   lines?: ICreateMovementLineRequest[];
 }
 
@@ -69,6 +70,7 @@ export class UpdateMovementUseCase {
         reference: request.reference,
         reason: request.reason,
         note: request.note,
+        contactId: request.contactId,
       });
 
       // Replace lines if provided

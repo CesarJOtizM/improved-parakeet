@@ -339,6 +339,7 @@ model Movement {
   type        String // IN, OUT, ADJUST_IN, ADJUST_OUT, TRANSFER_IN, TRANSFER_OUT
   status      String    @default("DRAFT") // DRAFT, POSTED, VOID, RETURNED
   warehouseId String
+  contactId   String?
   reference   String?
   reason      String?
   notes       String?
@@ -353,6 +354,7 @@ model Movement {
 
   // Relations
   warehouse       Warehouse      @relation(fields: [warehouseId], references: [id])
+  contact         Contact?       @relation(fields: [contactId], references: [id])
   lines           MovementLine[]
   sale            Sale?
   sourceReturns   Return[]       @relation("SourceReturns")
@@ -438,6 +440,7 @@ model Sale {
   status            String    @default("DRAFT") // DRAFT, CONFIRMED, PICKING, SHIPPED, COMPLETED, CANCELLED, RETURNED
   warehouseId       String
   customerReference String?
+  contactId         String?
   externalReference String?
   note              String?
   confirmedAt       DateTime?
@@ -463,6 +466,7 @@ model Sale {
 
   // Relations
   warehouse Warehouse      @relation(fields: [warehouseId], references: [id])
+  contact   Contact?       @relation(fields: [contactId], references: [id])
   movement  Movement?      @relation(fields: [movementId], references: [id])
   lines     SaleLine[]
   returns   Return[]
@@ -471,6 +475,7 @@ model Sale {
   @@unique([saleNumber, orgId])
   @@index([status, orgId])
   @@index([orgId, warehouseId])
+  @@index([orgId, contactId])
   @@index([orgId, status, createdAt])
   @@index([orgId, createdAt])
   @@map("sales")
@@ -778,6 +783,30 @@ model SaleLineSwap {
   @@index([saleId, orgId])
   @@index([orgId, createdAt])
   @@map("sale_line_swaps")
+}
+
+// Contacts (Customers/Suppliers)
+model Contact {
+  id             String    @id @default(cuid())
+  name           String
+  identification String
+  type           String    @default("CUSTOMER") // CUSTOMER, SUPPLIER
+  address        String?
+  notes          String?
+  isActive       Boolean   @default(true)
+  orgId          String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  sales     Sale[]
+  movements Movement[]
+
+  @@unique([identification, orgId])
+  @@index([orgId])
+  @@index([orgId, type])
+  @@index([orgId, isActive])
+  @@map("contacts")
 }
 
 // Companies (Business Lines within an organization)

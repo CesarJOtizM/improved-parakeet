@@ -168,6 +168,11 @@ export class GetSalesUseCase {
     // Collect all unique IDs upfront
     const warehouseIds = [...new Set(salesData.map(s => s.warehouseId))];
 
+    const contactIds = new Set<string>();
+    for (const sale of salesData) {
+      if (sale.contactId) contactIds.add(sale.contactId);
+    }
+
     const productIds = new Set<string>();
     for (const sale of salesData) {
       if (sale.lines) {
@@ -183,12 +188,19 @@ export class GetSalesUseCase {
       if (sale.cancelledBy) userIds.add(sale.cancelledBy);
     }
 
-    // Run all 3 batch queries in parallel (instead of N+1 sequential queries)
-    const [warehouses, products, users] = await Promise.all([
+    // Run all batch queries in parallel (instead of N+1 sequential queries)
+    const [warehouses, contacts, products, users] = await Promise.all([
       warehouseIds.length > 0
         ? this.prisma.warehouse.findMany({
             where: { id: { in: warehouseIds }, orgId },
             select: { id: true, name: true, code: true },
+          })
+        : Promise.resolve([]),
+
+      contactIds.size > 0
+        ? this.prisma.contact.findMany({
+            where: { id: { in: [...contactIds] }, orgId },
+            select: { id: true, name: true },
           })
         : Promise.resolve([]),
 
@@ -215,6 +227,8 @@ export class GetSalesUseCase {
       ])
     );
 
+    const contactMap = new Map(contacts.map((c: { id: string; name: string }) => [c.id, c.name]));
+
     const productMap = new Map(
       products.map((p: { id: string; name: string; sku: string; barcode?: string | null }) => [
         p.id,
@@ -232,6 +246,9 @@ export class GetSalesUseCase {
     // Enrich — pure in-memory, zero DB calls
     for (const sale of salesData) {
       sale.warehouseName = warehouseMap.get(sale.warehouseId);
+      if (sale.contactId) {
+        sale.contactName = contactMap.get(sale.contactId);
+      }
       if (sale.confirmedBy) {
         sale.confirmedByName = userMap.get(sale.confirmedBy);
       }

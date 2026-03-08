@@ -5,6 +5,7 @@ import { HealthCheckModule } from '@interface/http/healthCheck/healthCheck.modul
 import { ImportHttpModule } from '@interface/http/import/importHttp.module';
 import { InventoryHttpModule } from '@interface/http/inventory/inventoryHttp.module';
 import { ClientIpMiddleware } from '@interface/http/middlewares/clientIpMiddleware';
+import { ContactsHttpModule } from '@interface/http/contacts/contactsHttp.module';
 import { DashboardHttpModule } from '@interface/http/dashboard/dashboardHttp.module';
 import { ReturnsHttpModule } from '@interface/http/returns/returnsHttp.module';
 import { SalesHttpModule } from '@interface/http/sales/salesHttp.module';
@@ -37,6 +38,7 @@ import { TenantMiddleware } from './interfaces/http/middlewares/tenant.middlewar
     ImportHttpModule,
     ReportModule,
     DashboardHttpModule,
+    ContactsHttpModule,
   ],
   controllers: [],
   providers: [{ provide: APP_INTERCEPTOR, useClass: ResponseInterceptor }],

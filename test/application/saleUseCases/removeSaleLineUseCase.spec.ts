@@ -48,6 +48,7 @@ describe('RemoveSaleLineUseCase', () => {
       const props = SaleMapper.toDomainProps(
         {
           warehouseId: 'warehouse-123',
+          contactId: 'contact-123',
           createdBy: 'user-123',
         },
         SaleNumber.create(2025, 1)

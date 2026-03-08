@@ -49,6 +49,7 @@ import { GetWarehouseByIdUseCase } from '@application/warehouseUseCases/getWareh
 import { GetWarehousesUseCase } from '@application/warehouseUseCases/getWarehousesUseCase';
 import { UpdateWarehouseUseCase } from '@application/warehouseUseCases/updateWarehouseUseCase';
 import { AuthenticationModule } from '@auth/authentication.module';
+import { ContactsModule } from '@contacts/contacts.module';
 import {
   PrismaCategoryRepository,
   PrismaCompanyRepository,
@@ -75,6 +76,7 @@ import { createCacheModuleOptions, FunctionalCacheService } from '@shared/infras
   imports: [
     AuthenticationModule, // Import AuthenticationModule to access DomainEventDispatcher and DomainEventBus
     OrganizationModule, // Import OrganizationModule to access OrganizationRepository
+    ContactsModule, // Import ContactsModule to access ContactRepository (for movement-contact association)
     ScheduleModule.forRoot(), // Import for scheduled jobs
     ConfigModule,
     CacheModule.registerAsync(createCacheModuleOptions()),

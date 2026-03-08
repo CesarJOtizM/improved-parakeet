@@ -56,6 +56,21 @@ export class GetSaleByIdUseCase {
       this.logger.warn('Could not resolve warehouse name', { warehouseId: sale.warehouseId });
     }
 
+    // Resolve contact name
+    if (sale.contactId) {
+      try {
+        const contact = await this.prisma.contact.findUnique({
+          where: { id: sale.contactId },
+          select: { name: true },
+        });
+        if (contact) {
+          responseData.contactName = contact.name;
+        }
+      } catch {
+        this.logger.warn('Could not resolve contact name', { contactId: sale.contactId });
+      }
+    }
+
     // Resolve product names in lines
     if (responseData.lines && responseData.lines.length > 0) {
       const uniqueProductIds = [...new Set(responseData.lines.map(l => l.productId))];

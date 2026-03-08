@@ -498,6 +498,53 @@ export class ReportViewService {
           { key: 'period', header: 'Period', type: 'string' },
         ];
 
+      case REPORT_TYPES.SALES_BY_CLIENT:
+        return [
+          {
+            key: 'contactName',
+            header: 'Client',
+            type: 'string',
+            sortable: true,
+            filterable: true,
+          },
+          {
+            key: 'identification',
+            header: 'Identification',
+            type: 'string',
+            sortable: true,
+            filterable: true,
+          },
+          {
+            key: 'totalSales',
+            header: 'Total Sales',
+            type: 'number',
+            sortable: true,
+            align: 'right',
+          },
+          {
+            key: 'totalRevenue',
+            header: 'Revenue',
+            type: 'currency',
+            sortable: true,
+            align: 'right',
+          },
+          {
+            key: 'averagePerSale',
+            header: 'Avg per Sale',
+            type: 'currency',
+            sortable: true,
+            align: 'right',
+          },
+          {
+            key: 'totalItems',
+            header: 'Total Items',
+            type: 'number',
+            sortable: true,
+            align: 'right',
+          },
+          { key: 'period', header: 'Period', type: 'string' },
+        ];
+
       case REPORT_TYPES.RETURNS:
         return [
           { key: 'returnDate', header: 'Date', type: 'date', sortable: true },
@@ -836,6 +883,7 @@ export class ReportViewService {
       [REPORT_TYPES.SALES]: 'Sales Report',
       [REPORT_TYPES.SALES_BY_PRODUCT]: 'Sales by Product Report',
       [REPORT_TYPES.SALES_BY_WAREHOUSE]: 'Sales by Warehouse Report',
+      [REPORT_TYPES.SALES_BY_CLIENT]: 'Sales by Client Report',
       [REPORT_TYPES.RETURNS]: 'Returns Report',
       [REPORT_TYPES.RETURNS_BY_TYPE]: 'Returns by Type Report',
       [REPORT_TYPES.RETURNS_BY_PRODUCT]: 'Returns by Product Report',
@@ -925,6 +973,13 @@ export class ReportViewService {
       case REPORT_TYPES.SALES_BY_WAREHOUSE:
         return {
           totalWarehouses: data.length,
+          totalRevenue: this.sumField(data, 'totalRevenue'),
+          totalSales: this.sumField(data, 'totalSales'),
+        };
+
+      case REPORT_TYPES.SALES_BY_CLIENT:
+        return {
+          totalClients: data.length,
           totalRevenue: this.sumField(data, 'totalRevenue'),
           totalSales: this.sumField(data, 'totalSales'),
         };

@@ -23,6 +23,7 @@ export interface IMovementLineCreateInput {
 export interface IMovementCreateInput {
   type: 'IN' | 'OUT' | 'ADJUST_IN' | 'ADJUST_OUT' | 'TRANSFER_OUT' | 'TRANSFER_IN';
   warehouseId: string;
+  contactId?: string;
   reference?: string;
   reason?: string;
   note?: string;
@@ -66,6 +67,8 @@ export interface IMovementResponseData {
   warehouseId: string;
   warehouseName?: string;
   warehouseCode?: string;
+  contactId?: string;
+  contactName?: string;
   reference?: string;
   reason?: string;
   note?: string;
@@ -86,6 +89,7 @@ export interface IMovementResponseData {
 export interface IMovementResolvedNames {
   warehouseName?: string;
   warehouseCode?: string;
+  contactName?: string;
   createdByName?: string;
   postedByName?: string;
   returnedByName?: string;
@@ -113,6 +117,7 @@ export class MovementMapper {
       type,
       status,
       warehouseId: input.warehouseId,
+      contactId: input.contactId,
       reference: input.reference,
       reason: input.reason,
       note: input.note,
@@ -207,6 +212,8 @@ export class MovementMapper {
       warehouseId: movement.warehouseId,
       warehouseName: resolved?.warehouseName,
       warehouseCode: resolved?.warehouseCode,
+      contactId: movement.contactId,
+      contactName: resolved?.contactName,
       reference: movement.reference,
       reason: movement.reason,
       note: movement.note,
@@ -237,13 +244,15 @@ export class MovementMapper {
   public static toResponseDataList(
     movements: Movement[],
     productInfoMap?: Map<string, IProductInfo>,
-    warehouseMap?: Map<string, { name: string; code: string }>
+    warehouseMap?: Map<string, { name: string; code: string }>,
+    contactMap?: Map<string, string>
   ): IMovementResponseData[] {
     return movements.map(movement => {
       const wh = warehouseMap?.get(movement.warehouseId);
       return MovementMapper.toResponseData(movement, productInfoMap, {
         warehouseName: wh?.name,
         warehouseCode: wh?.code,
+        contactName: movement.contactId ? contactMap?.get(movement.contactId) : undefined,
       });
     });
   }
