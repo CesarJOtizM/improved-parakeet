@@ -65,9 +65,10 @@ describe('TogglePickingSettingUseCase', () => {
       result.match(
         value => {
           expect(value.success).toBe(true);
-          expect(value.message).toBe('Picking enabled successfully');
+          expect(value.message).toBe('Picking mode set to OPTIONAL');
           expect(value.data.orgId).toBe(mockOrgId);
           expect(value.data.pickingEnabled).toBe(true);
+          expect(value.data.pickingMode).toBe('OPTIONAL');
           expect(value.timestamp).toBeDefined();
         },
         () => {
@@ -94,8 +95,9 @@ describe('TogglePickingSettingUseCase', () => {
       expect(result.isOk()).toBe(true);
       result.match(
         value => {
-          expect(value.message).toBe('Picking disabled successfully');
+          expect(value.message).toBe('Picking mode set to OFF');
           expect(value.data.pickingEnabled).toBe(false);
+          expect(value.data.pickingMode).toBe('OFF');
         },
         () => {
           throw new Error('Expected Ok result');

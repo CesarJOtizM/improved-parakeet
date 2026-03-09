@@ -70,6 +70,7 @@ describe('GetPermissionsUseCase', () => {
         }
       );
       expect(mockPrismaService.permission.findMany).toHaveBeenCalledWith({
+        where: { module: { not: 'ORGANIZATIONS' } },
         orderBy: [{ module: 'asc' }, { action: 'asc' }],
       });
     });
@@ -126,6 +127,7 @@ describe('GetPermissionsUseCase', () => {
       expect(mockPrismaService.permission.findMany).toHaveBeenCalledTimes(1);
       const callArgs = mockPrismaService.permission.findMany.mock.calls[0][0];
       expect(callArgs).toEqual({
+        where: { module: { not: 'ORGANIZATIONS' } },
         orderBy: [{ module: 'asc' }, { action: 'asc' }],
       });
     });

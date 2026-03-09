@@ -18,6 +18,8 @@ export class PrismaContactRepository implements IContactRepository {
           name: data.name,
           identification: data.identification,
           type: data.type,
+          email: data.email || undefined,
+          phone: data.phone || undefined,
           address: data.address || undefined,
           notes: data.notes || undefined,
           isActive: data.isActive,
@@ -45,6 +47,8 @@ export class PrismaContactRepository implements IContactRepository {
             name: item.name,
             identification: item.identification,
             type: item.type,
+            email: item.email || undefined,
+            phone: item.phone || undefined,
             address: item.address || undefined,
             notes: item.notes || undefined,
             isActive: item.isActive,
@@ -79,6 +83,8 @@ export class PrismaContactRepository implements IContactRepository {
         name: contact.name,
         identification: contact.identification,
         type: contact.type,
+        email: contact.email || null,
+        phone: contact.phone || null,
         address: contact.address || null,
         notes: contact.notes || null,
         isActive: contact.isActive,
@@ -99,6 +105,8 @@ export class PrismaContactRepository implements IContactRepository {
             name: updated.name,
             identification: updated.identification,
             type: updated.type,
+            email: updated.email || undefined,
+            phone: updated.phone || undefined,
             address: updated.address || undefined,
             notes: updated.notes || undefined,
             isActive: updated.isActive,
@@ -116,6 +124,8 @@ export class PrismaContactRepository implements IContactRepository {
           name: created.name,
           identification: created.identification,
           type: created.type,
+          email: created.email || undefined,
+          phone: created.phone || undefined,
           address: created.address || undefined,
           notes: created.notes || undefined,
           isActive: created.isActive,
@@ -151,6 +161,8 @@ export class PrismaContactRepository implements IContactRepository {
           name: data.name,
           identification: data.identification,
           type: data.type,
+          email: data.email || undefined,
+          phone: data.phone || undefined,
           address: data.address || undefined,
           notes: data.notes || undefined,
           isActive: data.isActive,
@@ -180,6 +192,34 @@ export class PrismaContactRepository implements IContactRepository {
     }
   }
 
+  async findByEmail(email: string, orgId: string): Promise<Contact | null> {
+    try {
+      const data = await this.prisma.contact.findFirst({
+        where: { email, orgId },
+      });
+      if (!data) return null;
+      return Contact.reconstitute(
+        {
+          name: data.name,
+          identification: data.identification,
+          type: data.type,
+          email: data.email || undefined,
+          phone: data.phone || undefined,
+          address: data.address || undefined,
+          notes: data.notes || undefined,
+          isActive: data.isActive,
+        },
+        data.id,
+        data.orgId
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error finding contact by email: ${error instanceof Error ? error.message : error}`
+      );
+      throw error;
+    }
+  }
+
   async findByType(type: string, orgId: string): Promise<Contact[]> {
     try {
       const data = await this.prisma.contact.findMany({
@@ -192,6 +232,8 @@ export class PrismaContactRepository implements IContactRepository {
             name: item.name,
             identification: item.identification,
             type: item.type,
+            email: item.email || undefined,
+            phone: item.phone || undefined,
             address: item.address || undefined,
             notes: item.notes || undefined,
             isActive: item.isActive,

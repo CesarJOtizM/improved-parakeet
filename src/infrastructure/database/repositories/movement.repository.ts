@@ -206,12 +206,12 @@ export class PrismaMovementRepository implements IMovementRepository {
           });
 
           if (existingMovement) {
-            // Update movement — use relation connect for warehouseId
+            // Update movement
             savedMovement = await tx.movement.update({
               where: { id: movement.id },
               data: {
                 ...scalarData,
-                warehouse: { connect: { id: movement.warehouseId } },
+                warehouseId: movement.warehouseId,
               },
             });
 

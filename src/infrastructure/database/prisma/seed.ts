@@ -8,7 +8,6 @@ import { DemoSeed } from '@infrastructure/database/prisma/seeds/demo';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { ISeedResult } from '@shared/types/database.types';
 import { config } from 'dotenv';
-import { Pool } from 'pg';
 
 // Load .env file explicitly before using process.env
 config({ path: resolve(process.cwd(), '.env') });
@@ -18,54 +17,19 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not defined. Please set it in your .env file.');
 }
 
-// Build database URL with connection pooling parameters if not present
-function buildDatabaseUrl(): string {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    throw new Error('DATABASE_URL is not defined');
-  }
-
-  // Parse existing URL
-  const url = new URL(databaseUrl);
-
-  // Add connection pooling parameters if not present
-  const connectionLimit = process.env.DB_CONNECTION_LIMIT || '10';
-  const poolTimeout = process.env.DB_POOL_TIMEOUT || '10';
-
-  // Prisma uses connection_limit and pool_timeout query parameters
-  if (!url.searchParams.has('connection_limit')) {
-    url.searchParams.set('connection_limit', String(connectionLimit));
-  }
-  if (!url.searchParams.has('pool_timeout')) {
-    url.searchParams.set('pool_timeout', String(poolTimeout));
-  }
-
-  // Set the updated URL back to process.env for Prisma
-  process.env.DATABASE_URL = url.toString();
-
-  return url.toString();
-}
-
-// Build and set DATABASE_URL before creating PrismaClient
-const databaseUrl = buildDatabaseUrl();
-
-// Parse database URL to extract connection parameters
+const databaseUrl = process.env.DATABASE_URL;
 const url = new URL(databaseUrl);
 
-// Create PostgreSQL adapter for Prisma 7.2.0
-// Prisma 7.2.0 requires an adapter when using custom output path
-// Configure SSL for Supabase and other cloud providers
-const pool = new Pool({
+// Pass connection config directly to PrismaPg (not a Pool instance)
+// This avoids instanceof mismatch when @prisma/adapter-pg bundles its own copy of pg
+const adapter = new PrismaPg({
   connectionString: databaseUrl,
   ssl:
     url.hostname.includes('supabase') || url.hostname.includes('amazonaws.com')
       ? { rejectUnauthorized: false }
       : undefined,
 });
-const adapter = new PrismaPg(pool);
 
-// Create PrismaClient with adapter
-// In Prisma 7.2.0, when using custom output, you must provide an adapter or accelerateUrl
 const prisma = new PrismaClient({
   adapter,
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],

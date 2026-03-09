@@ -4,6 +4,8 @@ export interface IContactProps {
   name: string;
   identification: string;
   type: string; // CUSTOMER, SUPPLIER
+  email?: string;
+  phone?: string;
   address?: string;
   notes?: string;
   isActive: boolean;
@@ -29,6 +31,8 @@ export class Contact extends Entity<IContactProps> {
     if (props.name !== undefined) this.props.name = props.name;
     if (props.identification !== undefined) this.props.identification = props.identification;
     if (props.type !== undefined) this.props.type = props.type;
+    if (props.email !== undefined) this.props.email = props.email;
+    if (props.phone !== undefined) this.props.phone = props.phone;
     if (props.address !== undefined) this.props.address = props.address;
     if (props.notes !== undefined) this.props.notes = props.notes;
     if (props.isActive !== undefined) this.props.isActive = props.isActive;
@@ -43,6 +47,12 @@ export class Contact extends Entity<IContactProps> {
   }
   get type(): string {
     return this.props.type;
+  }
+  get email(): string | undefined {
+    return this.props.email;
+  }
+  get phone(): string | undefined {
+    return this.props.phone;
   }
   get address(): string | undefined {
     return this.props.address;

@@ -18,6 +18,8 @@ export interface IUpdateContactRequest {
   name?: string;
   identification?: string;
   type?: string;
+  email?: string;
+  phone?: string;
   address?: string;
   notes?: string;
   isActive?: boolean;
@@ -68,6 +70,8 @@ export class UpdateContactUseCase {
         name: request.name,
         identification: request.identification,
         type: request.type,
+        email: request.email,
+        phone: request.phone,
         address: request.address,
         notes: request.notes,
         isActive: request.isActive,
@@ -84,6 +88,8 @@ export class UpdateContactUseCase {
           name: saved.name,
           identification: saved.identification,
           type: saved.type,
+          email: saved.email,
+          phone: saved.phone,
           address: saved.address,
           notes: saved.notes,
           isActive: saved.isActive,

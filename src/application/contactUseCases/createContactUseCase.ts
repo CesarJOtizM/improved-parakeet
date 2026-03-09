@@ -16,6 +16,8 @@ export interface ICreateContactRequest {
   name: string;
   identification: string;
   type?: string;
+  email?: string;
+  phone?: string;
   address?: string;
   notes?: string;
   orgId: string;
@@ -56,6 +58,8 @@ export class CreateContactUseCase {
           name: request.name,
           identification: request.identification,
           type: request.type || 'CUSTOMER',
+          email: request.email,
+          phone: request.phone,
           address: request.address,
           notes: request.notes,
         },
@@ -72,6 +76,8 @@ export class CreateContactUseCase {
           name: saved.name,
           identification: saved.identification,
           type: saved.type,
+          email: saved.email,
+          phone: saved.phone,
           address: saved.address,
           notes: saved.notes,
           isActive: saved.isActive,

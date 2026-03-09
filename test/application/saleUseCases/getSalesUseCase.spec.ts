@@ -37,6 +37,9 @@ describe('GetSalesUseCase', () => {
       warehouse: {
         findMany: jest.fn().mockResolvedValue([]),
       },
+      contact: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
       product: {
         findMany: jest.fn().mockResolvedValue([]),
       },

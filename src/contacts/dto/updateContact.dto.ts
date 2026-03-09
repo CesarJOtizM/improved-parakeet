@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsIn, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsBoolean, IsEmail } from 'class-validator';
 
 export class UpdateContactDto {
   @ApiProperty({ description: 'Contact name', required: false })
@@ -21,6 +21,16 @@ export class UpdateContactDto {
   @IsIn(['CUSTOMER', 'SUPPLIER'])
   @IsOptional()
   type?: string;
+
+  @ApiProperty({ description: 'Email address', required: false })
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+
+  @ApiProperty({ description: 'Phone number', required: false })
+  @IsString()
+  @IsOptional()
+  phone?: string;
 
   @ApiProperty({ description: 'Address', required: false })
   @IsString()

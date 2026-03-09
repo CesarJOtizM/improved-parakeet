@@ -43,6 +43,8 @@ export class GetContactByIdUseCase {
         name: contact.name,
         identification: contact.identification,
         type: contact.type,
+        email: contact.email,
+        phone: contact.phone,
         address: contact.address,
         notes: contact.notes,
         isActive: contact.isActive,

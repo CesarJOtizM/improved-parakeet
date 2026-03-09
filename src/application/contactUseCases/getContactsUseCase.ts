@@ -20,6 +20,8 @@ export interface IContactData {
   name: string;
   identification: string;
   type: string;
+  email?: string;
+  phone?: string;
   address?: string;
   notes?: string;
   isActive: boolean;
@@ -83,6 +85,8 @@ export class GetContactsUseCase {
       name: contact.name,
       identification: contact.identification,
       type: contact.type,
+      email: contact.email,
+      phone: contact.phone,
       address: contact.address,
       notes: contact.notes,
       isActive: contact.isActive,

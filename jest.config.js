@@ -69,6 +69,10 @@ const config = {
     '^@shared/(.*)$': '<rootDir>/src/shared/$1',
     '^@healthCheck$': '<rootDir>/src/healthCheck',
     '^@healthCheck/(.*)$': '<rootDir>/src/healthCheck/$1',
+    '^@integrations$': '<rootDir>/src/integrations',
+    '^@integrations/(.*)$': '<rootDir>/src/integrations/$1',
+    // Strip .js extensions from relative imports (ESM-style imports in TypeScript)
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   testTimeout: 30000,

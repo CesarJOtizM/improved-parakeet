@@ -220,6 +220,7 @@ model Product {
   returnLines        ReturnLine[]
   swapsAsOriginal    SaleLineSwap[] @relation("SwapOriginalProduct")
   swapsAsReplacement SaleLineSwap[] @relation("SwapReplacementProduct")
+  skuMappings        IntegrationSkuMapping[]
 
   @@unique([sku, orgId])
   @@index([orgId])
@@ -252,6 +253,7 @@ model Warehouse {
   toTransfers   Transfer[]    @relation("ToTransfers")
   sales         Sale[]
   returns       Return[]
+  integrations  IntegrationConnection[]
 
   @@unique([code, orgId])
   @@index([orgId])
@@ -791,6 +793,8 @@ model Contact {
   name           String
   identification String
   type           String    @default("CUSTOMER") // CUSTOMER, SUPPLIER
+  email          String?
+  phone          String?
   address        String?
   notes          String?
   isActive       Boolean   @default(true)
@@ -799,13 +803,15 @@ model Contact {
   updatedAt      DateTime  @updatedAt
 
   // Relations
-  sales     Sale[]
-  movements Movement[]
+  sales        Sale[]
+  movements    Movement[]
+  integrations IntegrationConnection[]
 
   @@unique([identification, orgId])
   @@index([orgId])
   @@index([orgId, type])
   @@index([orgId, isActive])
+  @@index([email, orgId])
   @@map("contacts")
 }
 
@@ -823,6 +829,7 @@ model Company {
   // Relations
   organization Organization @relation(fields: [orgId], references: [id])
   products     Product[]
+  integrations IntegrationConnection[]
 
   @@unique([code, orgId])
   @@unique([name, orgId])
@@ -849,4 +856,77 @@ model AlertConfiguration {
   organization Organization @relation(fields: [orgId], references: [id])
 
   @@map("alert_configurations")
+}
+
+// Integration Connections (e-commerce integrations like VTEX)
+model IntegrationConnection {
+  id                 String    @id @default(cuid())
+  provider           String
+  accountName        String
+  storeName          String
+  status             String    @default("DISCONNECTED")
+  syncStrategy       String    @default("BOTH")
+  syncDirection      String    @default("BIDIRECTIONAL")
+  encryptedAppKey    String
+  encryptedAppToken  String
+  webhookSecret      String
+  defaultWarehouseId String
+  defaultContactId   String?
+  connectedAt        DateTime?
+  lastSyncAt         DateTime?
+  lastSyncError      String?
+  companyId          String?
+  orgId              String
+  createdBy          String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  warehouse      Warehouse @relation(fields: [defaultWarehouseId], references: [id])
+  defaultContact Contact?  @relation(fields: [defaultContactId], references: [id])
+  company        Company?  @relation(fields: [companyId], references: [id])
+  syncLogs       IntegrationSyncLog[]
+  skuMappings    IntegrationSkuMapping[]
+
+  @@unique([provider, accountName, orgId])
+  @@index([orgId, provider])
+  @@index([status])
+  @@map("integration_connections")
+}
+
+// Integration Sync Logs (tracks each synced order)
+model IntegrationSyncLog {
+  id              String   @id @default(cuid())
+  connectionId    String
+  externalOrderId String
+  action          String
+  saleId          String?
+  contactId       String?
+  errorMessage    String?
+  rawPayload      Json?
+  orgId           String
+  processedAt     DateTime @default(now())
+
+  connection IntegrationConnection @relation(fields: [connectionId], references: [id])
+
+  @@unique([connectionId, externalOrderId])
+  @@index([connectionId])
+  @@index([orgId, externalOrderId])
+  @@map("integration_sync_logs")
+}
+
+// Integration SKU Mappings (maps external SKUs to internal products)
+model IntegrationSkuMapping {
+  id              String   @id @default(cuid())
+  connectionId    String
+  externalSku     String
+  productId       String
+  orgId           String
+  createdAt       DateTime @default(now())
+
+  connection IntegrationConnection @relation(fields: [connectionId], references: [id])
+  product    Product               @relation(fields: [productId], references: [id])
+
+  @@unique([connectionId, externalSku])
+  @@index([connectionId])
+  @@map("integration_sku_mappings")
 }

@@ -1,6 +1,3 @@
--- CreateSchema
-CREATE SCHEMA IF NOT EXISTS "public";
-
 -- CreateTable
 CREATE TABLE "base_entities" (
     "id" TEXT NOT NULL,
@@ -43,6 +40,7 @@ CREATE TABLE "users" (
     "language" TEXT DEFAULT 'en',
     "jobTitle" TEXT,
     "department" TEXT,
+    "mustChangePassword" BOOLEAN NOT NULL DEFAULT false,
     "orgId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -145,6 +143,7 @@ CREATE TABLE "products" (
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "statusChangedBy" TEXT,
     "statusChangedAt" TIMESTAMP(3),
+    "companyId" TEXT,
     "orgId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -220,6 +219,7 @@ CREATE TABLE "movements" (
     "type" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'DRAFT',
     "warehouseId" TEXT NOT NULL,
+    "contactId" TEXT,
     "reference" TEXT,
     "reason" TEXT,
     "notes" TEXT,
@@ -287,6 +287,7 @@ CREATE TABLE "sales" (
     "status" TEXT NOT NULL DEFAULT 'DRAFT',
     "warehouseId" TEXT NOT NULL,
     "customerReference" TEXT,
+    "contactId" TEXT,
     "externalReference" TEXT,
     "note" TEXT,
     "confirmedAt" TIMESTAMP(3),
@@ -506,6 +507,66 @@ CREATE TABLE "processed_events" (
 );
 
 -- CreateTable
+CREATE TABLE "sale_line_swaps" (
+    "id" TEXT NOT NULL,
+    "saleId" TEXT NOT NULL,
+    "originalLineId" TEXT NOT NULL,
+    "newLineId" TEXT,
+    "originalProductId" TEXT NOT NULL,
+    "originalQuantity" DECIMAL(10,6) NOT NULL,
+    "originalSalePrice" DECIMAL(10,2) NOT NULL,
+    "originalCurrency" TEXT NOT NULL,
+    "replacementProductId" TEXT NOT NULL,
+    "replacementQuantity" DECIMAL(10,6) NOT NULL,
+    "replacementSalePrice" DECIMAL(10,2) NOT NULL,
+    "replacementCurrency" TEXT NOT NULL,
+    "originalWarehouseId" TEXT NOT NULL,
+    "sourceWarehouseId" TEXT NOT NULL,
+    "isCrossWarehouse" BOOLEAN NOT NULL DEFAULT false,
+    "returnMovementId" TEXT,
+    "deductMovementId" TEXT,
+    "pricingStrategy" TEXT NOT NULL,
+    "reason" TEXT,
+    "performedBy" TEXT NOT NULL,
+    "orgId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "sale_line_swaps_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "contacts" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "identification" TEXT NOT NULL,
+    "type" TEXT NOT NULL DEFAULT 'CUSTOMER',
+    "email" TEXT,
+    "phone" TEXT,
+    "address" TEXT,
+    "notes" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "orgId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "contacts_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "companies" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "description" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "orgId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "companies_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "alert_configurations" (
     "id" TEXT NOT NULL,
     "orgId" TEXT NOT NULL,
@@ -520,6 +581,60 @@ CREATE TABLE "alert_configurations" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "alert_configurations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "integration_connections" (
+    "id" TEXT NOT NULL,
+    "provider" TEXT NOT NULL,
+    "accountName" TEXT NOT NULL,
+    "storeName" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'DISCONNECTED',
+    "syncStrategy" TEXT NOT NULL DEFAULT 'BOTH',
+    "syncDirection" TEXT NOT NULL DEFAULT 'BIDIRECTIONAL',
+    "encryptedAppKey" TEXT NOT NULL,
+    "encryptedAppToken" TEXT NOT NULL,
+    "webhookSecret" TEXT NOT NULL,
+    "defaultWarehouseId" TEXT NOT NULL,
+    "defaultContactId" TEXT,
+    "connectedAt" TIMESTAMP(3),
+    "lastSyncAt" TIMESTAMP(3),
+    "lastSyncError" TEXT,
+    "companyId" TEXT,
+    "orgId" TEXT NOT NULL,
+    "createdBy" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "integration_connections_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "integration_sync_logs" (
+    "id" TEXT NOT NULL,
+    "connectionId" TEXT NOT NULL,
+    "externalOrderId" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "saleId" TEXT,
+    "contactId" TEXT,
+    "errorMessage" TEXT,
+    "rawPayload" JSONB,
+    "orgId" TEXT NOT NULL,
+    "processedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "integration_sync_logs_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "integration_sku_mappings" (
+    "id" TEXT NOT NULL,
+    "connectionId" TEXT NOT NULL,
+    "externalSku" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+    "orgId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "integration_sku_mappings_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -543,7 +658,19 @@ CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
 
 -- CreateIndex
+CREATE INDEX "users_orgId_idx" ON "users"("orgId");
+
+-- CreateIndex
+CREATE INDEX "users_orgId_isActive_idx" ON "users"("orgId", "isActive");
+
+-- CreateIndex
 CREATE INDEX "roles_isSystem_idx" ON "roles"("isSystem");
+
+-- CreateIndex
+CREATE INDEX "roles_orgId_idx" ON "roles"("orgId");
+
+-- CreateIndex
+CREATE INDEX "roles_orgId_isActive_idx" ON "roles"("orgId", "isActive");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "roles_name_orgId_key" ON "roles"("name", "orgId");
@@ -591,7 +718,16 @@ CREATE INDEX "products_orgId_idx" ON "products"("orgId");
 CREATE INDEX "products_orgId_isActive_idx" ON "products"("orgId", "isActive");
 
 -- CreateIndex
+CREATE INDEX "products_orgId_companyId_idx" ON "products"("orgId", "companyId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "products_sku_orgId_key" ON "products"("sku", "orgId");
+
+-- CreateIndex
+CREATE INDEX "warehouses_orgId_idx" ON "warehouses"("orgId");
+
+-- CreateIndex
+CREATE INDEX "warehouses_orgId_isActive_idx" ON "warehouses"("orgId", "isActive");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "warehouses_code_orgId_key" ON "warehouses"("code", "orgId");
@@ -636,6 +772,33 @@ CREATE INDEX "movements_orgId_warehouseId_idx" ON "movements"("orgId", "warehous
 CREATE INDEX "movements_orgId_status_createdAt_idx" ON "movements"("orgId", "status", "createdAt");
 
 -- CreateIndex
+CREATE INDEX "movement_lines_movementId_idx" ON "movement_lines"("movementId");
+
+-- CreateIndex
+CREATE INDEX "movement_lines_movementId_orgId_idx" ON "movement_lines"("movementId", "orgId");
+
+-- CreateIndex
+CREATE INDEX "movement_lines_productId_orgId_idx" ON "movement_lines"("productId", "orgId");
+
+-- CreateIndex
+CREATE INDEX "transfers_orgId_fromWarehouseId_idx" ON "transfers"("orgId", "fromWarehouseId");
+
+-- CreateIndex
+CREATE INDEX "transfers_orgId_toWarehouseId_idx" ON "transfers"("orgId", "toWarehouseId");
+
+-- CreateIndex
+CREATE INDEX "transfers_orgId_status_idx" ON "transfers"("orgId", "status");
+
+-- CreateIndex
+CREATE INDEX "transfers_orgId_createdAt_idx" ON "transfers"("orgId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "transfer_lines_transferId_idx" ON "transfer_lines"("transferId");
+
+-- CreateIndex
+CREATE INDEX "transfer_lines_transferId_orgId_idx" ON "transfer_lines"("transferId", "orgId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "sales_movementId_key" ON "sales"("movementId");
 
 -- CreateIndex
@@ -643,6 +806,9 @@ CREATE INDEX "sales_status_orgId_idx" ON "sales"("status", "orgId");
 
 -- CreateIndex
 CREATE INDEX "sales_orgId_warehouseId_idx" ON "sales"("orgId", "warehouseId");
+
+-- CreateIndex
+CREATE INDEX "sales_orgId_contactId_idx" ON "sales"("orgId", "contactId");
 
 -- CreateIndex
 CREATE INDEX "sales_orgId_status_createdAt_idx" ON "sales"("orgId", "status", "createdAt");
@@ -780,7 +946,64 @@ CREATE INDEX "processed_events_processedAt_idx" ON "processed_events"("processed
 CREATE UNIQUE INDEX "processed_events_eventType_eventId_orgId_key" ON "processed_events"("eventType", "eventId", "orgId");
 
 -- CreateIndex
+CREATE INDEX "sale_line_swaps_saleId_orgId_idx" ON "sale_line_swaps"("saleId", "orgId");
+
+-- CreateIndex
+CREATE INDEX "sale_line_swaps_orgId_createdAt_idx" ON "sale_line_swaps"("orgId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "contacts_orgId_idx" ON "contacts"("orgId");
+
+-- CreateIndex
+CREATE INDEX "contacts_orgId_type_idx" ON "contacts"("orgId", "type");
+
+-- CreateIndex
+CREATE INDEX "contacts_orgId_isActive_idx" ON "contacts"("orgId", "isActive");
+
+-- CreateIndex
+CREATE INDEX "contacts_email_orgId_idx" ON "contacts"("email", "orgId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "contacts_identification_orgId_key" ON "contacts"("identification", "orgId");
+
+-- CreateIndex
+CREATE INDEX "companies_orgId_idx" ON "companies"("orgId");
+
+-- CreateIndex
+CREATE INDEX "companies_orgId_isActive_idx" ON "companies"("orgId", "isActive");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "companies_code_orgId_key" ON "companies"("code", "orgId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "companies_name_orgId_key" ON "companies"("name", "orgId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "alert_configurations_orgId_key" ON "alert_configurations"("orgId");
+
+-- CreateIndex
+CREATE INDEX "integration_connections_orgId_provider_idx" ON "integration_connections"("orgId", "provider");
+
+-- CreateIndex
+CREATE INDEX "integration_connections_status_idx" ON "integration_connections"("status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "integration_connections_provider_accountName_orgId_key" ON "integration_connections"("provider", "accountName", "orgId");
+
+-- CreateIndex
+CREATE INDEX "integration_sync_logs_connectionId_idx" ON "integration_sync_logs"("connectionId");
+
+-- CreateIndex
+CREATE INDEX "integration_sync_logs_orgId_externalOrderId_idx" ON "integration_sync_logs"("orgId", "externalOrderId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "integration_sync_logs_connectionId_externalOrderId_key" ON "integration_sync_logs"("connectionId", "externalOrderId");
+
+-- CreateIndex
+CREATE INDEX "integration_sku_mappings_connectionId_idx" ON "integration_sku_mappings"("connectionId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "integration_sku_mappings_connectionId_externalSku_key" ON "integration_sku_mappings"("connectionId", "externalSku");
 
 -- CreateIndex
 CREATE INDEX "_ProductCategories_B_index" ON "_ProductCategories"("B");
@@ -805,6 +1028,9 @@ ALTER TABLE "sessions" ADD CONSTRAINT "sessions_userId_fkey" FOREIGN KEY ("userI
 
 -- AddForeignKey
 ALTER TABLE "products" ADD CONSTRAINT "products_orgId_fkey" FOREIGN KEY ("orgId") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "products" ADD CONSTRAINT "products_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "warehouses" ADD CONSTRAINT "warehouses_orgId_fkey" FOREIGN KEY ("orgId") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -834,6 +1060,9 @@ ALTER TABLE "reorder_rules" ADD CONSTRAINT "reorder_rules_warehouseId_fkey" FORE
 ALTER TABLE "movements" ADD CONSTRAINT "movements_warehouseId_fkey" FOREIGN KEY ("warehouseId") REFERENCES "warehouses"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "movements" ADD CONSTRAINT "movements_contactId_fkey" FOREIGN KEY ("contactId") REFERENCES "contacts"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "movement_lines" ADD CONSTRAINT "movement_lines_movementId_fkey" FOREIGN KEY ("movementId") REFERENCES "movements"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -856,6 +1085,9 @@ ALTER TABLE "transfer_lines" ADD CONSTRAINT "transfer_lines_productId_fkey" FORE
 
 -- AddForeignKey
 ALTER TABLE "sales" ADD CONSTRAINT "sales_warehouseId_fkey" FOREIGN KEY ("warehouseId") REFERENCES "warehouses"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "sales" ADD CONSTRAINT "sales_contactId_fkey" FOREIGN KEY ("contactId") REFERENCES "contacts"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "sales" ADD CONSTRAINT "sales_movementId_fkey" FOREIGN KEY ("movementId") REFERENCES "movements"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -903,13 +1135,40 @@ ALTER TABLE "reports" ADD CONSTRAINT "reports_templateId_fkey" FOREIGN KEY ("tem
 ALTER TABLE "import_rows" ADD CONSTRAINT "import_rows_importBatchId_fkey" FOREIGN KEY ("importBatchId") REFERENCES "import_batches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "sale_line_swaps" ADD CONSTRAINT "sale_line_swaps_saleId_fkey" FOREIGN KEY ("saleId") REFERENCES "sales"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "sale_line_swaps" ADD CONSTRAINT "sale_line_swaps_originalProductId_fkey" FOREIGN KEY ("originalProductId") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "sale_line_swaps" ADD CONSTRAINT "sale_line_swaps_replacementProductId_fkey" FOREIGN KEY ("replacementProductId") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "companies" ADD CONSTRAINT "companies_orgId_fkey" FOREIGN KEY ("orgId") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "alert_configurations" ADD CONSTRAINT "alert_configurations_orgId_fkey" FOREIGN KEY ("orgId") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "integration_connections" ADD CONSTRAINT "integration_connections_defaultWarehouseId_fkey" FOREIGN KEY ("defaultWarehouseId") REFERENCES "warehouses"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "integration_connections" ADD CONSTRAINT "integration_connections_defaultContactId_fkey" FOREIGN KEY ("defaultContactId") REFERENCES "contacts"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "integration_connections" ADD CONSTRAINT "integration_connections_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "integration_sync_logs" ADD CONSTRAINT "integration_sync_logs_connectionId_fkey" FOREIGN KEY ("connectionId") REFERENCES "integration_connections"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "integration_sku_mappings" ADD CONSTRAINT "integration_sku_mappings_connectionId_fkey" FOREIGN KEY ("connectionId") REFERENCES "integration_connections"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "integration_sku_mappings" ADD CONSTRAINT "integration_sku_mappings_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_ProductCategories" ADD CONSTRAINT "_ProductCategories_A_fkey" FOREIGN KEY ("A") REFERENCES "categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_ProductCategories" ADD CONSTRAINT "_ProductCategories_B_fkey" FOREIGN KEY ("B") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AlterTable
-ALTER TABLE "users" ADD COLUMN "mustChangePassword" BOOLEAN NOT NULL DEFAULT false;
