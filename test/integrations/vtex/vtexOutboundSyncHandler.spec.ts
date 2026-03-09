@@ -3,6 +3,9 @@ import { VtexOutboundSyncUseCase } from '../../../src/integrations/vtex/applicat
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { IntegrationConnection } from '../../../src/integrations/shared/domain/entities/integrationConnection.entity';
 import { IntegrationSyncLog } from '../../../src/integrations/shared/domain/entities/integrationSyncLog.entity';
+import { SaleConfirmedEvent } from '@sale/domain/events/saleConfirmed.event';
+import { SaleCompletedEvent } from '@sale/domain/events/saleCompleted.event';
+import { SaleCancelledEvent } from '@sale/domain/events/saleCancelled.event';
 import { ok } from '@shared/domain/result';
 
 import type { IIntegrationConnectionRepository } from '../../../src/integrations/shared/domain/ports/iIntegrationConnectionRepository.port';
@@ -22,6 +25,41 @@ const createMockSaleConfirmedEvent = (saleId: string, orgId: string) => {
   Object.defineProperty(event, 'orgId', { value: orgId, enumerable: true });
   // Set the prototype chain so instanceof checks work
   return event;
+};
+
+// Create real event instances using mock Sale objects
+const createRealSaleConfirmedEvent = (saleId: string, orgId: string) => {
+  const mockSale = {
+    id: saleId,
+    orgId,
+    saleNumber: { getValue: () => 'SALE-2025-001' },
+    confirmedAt: new Date(),
+    warehouseId: 'wh-1',
+    movementId: 'mov-1',
+  };
+  return new SaleConfirmedEvent(mockSale as any);
+};
+
+const createRealSaleCompletedEvent = (saleId: string, orgId: string) => {
+  const mockSale = {
+    id: saleId,
+    orgId,
+    saleNumber: { getValue: () => 'SALE-2025-002' },
+    completedAt: new Date(),
+    warehouseId: 'wh-1',
+  };
+  return new SaleCompletedEvent(mockSale as any);
+};
+
+const createRealSaleCancelledEvent = (saleId: string, orgId: string) => {
+  const mockSale = {
+    id: saleId,
+    orgId,
+    saleNumber: { getValue: () => 'SALE-2025-003' },
+    cancelledAt: new Date(),
+    warehouseId: 'wh-1',
+  };
+  return new SaleCancelledEvent(mockSale as any);
 };
 
 describe('VtexOutboundSyncHandler', () => {
@@ -230,5 +268,122 @@ describe('VtexOutboundSyncHandler', () => {
 
     await handler.handle(event);
     expect(mockConnectionRepository.findByOrgId).not.toHaveBeenCalled();
+  });
+
+  // --- Tests using real event instances to cover instanceof branches ---
+
+  it('Given: real SaleConfirmedEvent with matching sync log When: handling Then: should trigger START_HANDLING outbound sync', async () => {
+    const connection = createMockConnection();
+    const syncLog = createMockSyncLog('sale-1', 'ORD-EXT-1');
+    mockConnectionRepository.findByOrgId.mockResolvedValue([connection]);
+    mockSyncLogRepository.findByConnectionId.mockResolvedValue({
+      data: [syncLog],
+      total: 1,
+    });
+    mockOutboundSyncUseCase.execute.mockResolvedValue(undefined as any);
+
+    const event = createRealSaleConfirmedEvent('sale-1', mockOrgId);
+    await handler.handle(event);
+
+    expect(mockOutboundSyncUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        connectionId: 'conn-1',
+        externalOrderId: 'ORD-EXT-1',
+        action: 'START_HANDLING',
+        orgId: mockOrgId,
+      })
+    );
+  });
+
+  it('Given: real SaleCompletedEvent with matching sync log When: handling Then: should trigger INVOICE outbound sync', async () => {
+    const connection = createMockConnection();
+    const syncLog = createMockSyncLog('sale-2', 'ORD-EXT-2');
+    mockConnectionRepository.findByOrgId.mockResolvedValue([connection]);
+    mockSyncLogRepository.findByConnectionId.mockResolvedValue({
+      data: [syncLog],
+      total: 1,
+    });
+    mockOutboundSyncUseCase.execute.mockResolvedValue(undefined as any);
+
+    const event = createRealSaleCompletedEvent('sale-2', mockOrgId);
+    await handler.handle(event);
+
+    expect(mockOutboundSyncUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        connectionId: 'conn-1',
+        externalOrderId: 'ORD-EXT-2',
+        action: 'INVOICE',
+        orgId: mockOrgId,
+      })
+    );
+  });
+
+  it('Given: real SaleCancelledEvent with matching sync log When: handling Then: should trigger CANCEL outbound sync', async () => {
+    const connection = createMockConnection();
+    const syncLog = createMockSyncLog('sale-3', 'ORD-EXT-3');
+    mockConnectionRepository.findByOrgId.mockResolvedValue([connection]);
+    mockSyncLogRepository.findByConnectionId.mockResolvedValue({
+      data: [syncLog],
+      total: 1,
+    });
+    mockOutboundSyncUseCase.execute.mockResolvedValue(undefined as any);
+
+    const event = createRealSaleCancelledEvent('sale-3', mockOrgId);
+    await handler.handle(event);
+
+    expect(mockOutboundSyncUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        connectionId: 'conn-1',
+        externalOrderId: 'ORD-EXT-3',
+        action: 'CANCEL',
+        orgId: mockOrgId,
+      })
+    );
+  });
+
+  it('Given: real SaleConfirmedEvent with INBOUND_ONLY connection When: handling Then: should skip connection', async () => {
+    const connection = createMockConnection({ syncDirection: 'INBOUND_ONLY' });
+    mockConnectionRepository.findByOrgId.mockResolvedValue([connection]);
+
+    const event = createRealSaleConfirmedEvent('sale-1', mockOrgId);
+    await handler.handle(event);
+
+    expect(mockSyncLogRepository.findByConnectionId).not.toHaveBeenCalled();
+    expect(mockOutboundSyncUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('Given: real SaleConfirmedEvent with no matching sync log When: handling Then: should not trigger sync', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findByOrgId.mockResolvedValue([connection]);
+    mockSyncLogRepository.findByConnectionId.mockResolvedValue({
+      data: [createMockSyncLog('different-sale', 'ORD-OTHER')],
+      total: 1,
+    });
+
+    const event = createRealSaleConfirmedEvent('sale-1', mockOrgId);
+    await handler.handle(event);
+
+    expect(mockOutboundSyncUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('Given: real SaleConfirmedEvent and outbound sync throws When: handling Then: should catch error via outer try-catch', async () => {
+    const connection = createMockConnection();
+    const syncLog = createMockSyncLog('sale-1', 'ORD-EXT-1');
+    mockConnectionRepository.findByOrgId.mockResolvedValue([connection]);
+    mockSyncLogRepository.findByConnectionId.mockResolvedValue({
+      data: [syncLog],
+      total: 1,
+    });
+    mockOutboundSyncUseCase.execute.mockRejectedValue(new Error('Outbound sync failed'));
+
+    const event = createRealSaleConfirmedEvent('sale-1', mockOrgId);
+    await expect(handler.handle(event)).resolves.not.toThrow();
+  });
+
+  it('Given: non-Error thrown in handler When: handling Then: should log Unknown error', async () => {
+    mockConnectionRepository.findByOrgId.mockRejectedValue('string-error');
+
+    const event = createRealSaleConfirmedEvent('sale-1', mockOrgId);
+    await expect(handler.handle(event)).resolves.not.toThrow();
   });
 });

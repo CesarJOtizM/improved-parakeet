@@ -407,4 +407,134 @@ describe('WarehousesController', () => {
       );
     });
   });
+
+  describe('createWarehouse - no optional fields', () => {
+    it('Given: only required fields When: creating warehouse Then: should pass undefined for optional fields', async () => {
+      // Arrange
+      const dto = {
+        code: 'WH-003',
+        name: 'Minimal Warehouse',
+      };
+      mockCreateWarehouseUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { ...mockWarehouseData, code: 'WH-003', name: 'Minimal Warehouse' },
+          message: 'Created',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.createWarehouse(dto as any, 'org-123', mockRequest as any);
+
+      // Assert
+      expect(mockCreateWarehouseUseCase.execute).toHaveBeenCalledWith({
+        code: 'WH-003',
+        name: 'Minimal Warehouse',
+        description: undefined,
+        address: undefined,
+        isActive: undefined,
+        orgId: 'org-123',
+      });
+    });
+  });
+
+  describe('getWarehouses - no filters', () => {
+    it('Given: empty query When: getting warehouses Then: should pass all filters as undefined', async () => {
+      // Arrange
+      const query = {};
+      mockGetWarehousesUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: [],
+          pagination: {},
+          message: 'OK',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getWarehouses(query as any, 'org-123');
+
+      // Assert
+      expect(mockGetWarehousesUseCase.execute).toHaveBeenCalledWith({
+        orgId: 'org-123',
+        page: undefined,
+        limit: undefined,
+        isActive: undefined,
+        search: undefined,
+        sortBy: undefined,
+        sortOrder: undefined,
+      });
+    });
+  });
+
+  describe('updateWarehouse - partial fields', () => {
+    it('Given: only name When: updating warehouse Then: should pass undefined for other fields', async () => {
+      // Arrange
+      const dto = { name: 'New Name Only' };
+      mockUpdateWarehouseUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { ...mockWarehouseData, name: 'New Name Only' },
+          message: 'Updated',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.updateWarehouse('wh-123', dto as any, 'org-123', mockRequest as any);
+
+      // Assert
+      expect(mockUpdateWarehouseUseCase.execute).toHaveBeenCalledWith({
+        warehouseId: 'wh-123',
+        orgId: 'org-123',
+        name: 'New Name Only',
+        description: undefined,
+        address: undefined,
+        isActive: undefined,
+        updatedBy: 'user-123',
+      });
+    });
+
+    it('Given: only isActive When: updating warehouse Then: should pass undefined for name/description/address', async () => {
+      // Arrange
+      const dto = { isActive: false };
+      mockUpdateWarehouseUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { ...mockWarehouseData, isActive: false },
+          message: 'Updated',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.updateWarehouse('wh-123', dto as any, 'org-123', mockRequest as any);
+
+      // Assert
+      expect(mockUpdateWarehouseUseCase.execute).toHaveBeenCalledWith({
+        warehouseId: 'wh-123',
+        orgId: 'org-123',
+        name: undefined,
+        description: undefined,
+        address: undefined,
+        isActive: false,
+        updatedBy: 'user-123',
+      });
+    });
+
+    it('Given: validation error When: updating warehouse Then: should throw', async () => {
+      // Arrange
+      const dto = { name: '' };
+      mockUpdateWarehouseUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Warehouse name cannot be empty'))
+      );
+
+      // Act & Assert
+      await expect(
+        controller.updateWarehouse('wh-123', dto as any, 'org-123', mockRequest as any)
+      ).rejects.toThrow();
+    });
+  });
 });

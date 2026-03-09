@@ -764,6 +764,166 @@ describe('UsersController', () => {
     });
   });
 
+  describe('createUser - validation branch', () => {
+    it('Given: invalid email When: creating user Then: should throw validation error', async () => {
+      // Arrange
+      const createUserDto = {
+        email: 'invalid',
+        username: 'user',
+        password: 'pass',
+        firstName: 'F',
+        lastName: 'L',
+      };
+      const mockRequest = { user: mockAdminUser } as any;
+      mockCreateUserUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Invalid email format'))
+      );
+
+      // Act & Assert
+      await expect(
+        usersController.createUser(createUserDto, mockOrgId, mockRequest)
+      ).rejects.toThrow(HttpException);
+    });
+  });
+
+  describe('getUsers - no filters branch', () => {
+    it('Given: empty query When: getting users Then: should pass undefined for all optional params', async () => {
+      // Arrange
+      const query = {} as any;
+      const mockResponse = {
+        success: true as const,
+        data: [],
+        pagination: { page: 1, limit: 10, total: 0, totalPages: 0, hasNext: false, hasPrev: false },
+        message: 'Users retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetUsersUseCase.execute.mockResolvedValue(ok(mockResponse));
+
+      // Act
+      const result = await usersController.getUsers(query, mockOrgId);
+
+      // Assert
+      expect(mockGetUsersUseCase.execute).toHaveBeenCalledWith({
+        orgId: mockOrgId,
+        page: undefined,
+        limit: undefined,
+        status: undefined,
+        search: undefined,
+        sortBy: undefined,
+        sortOrder: undefined,
+      });
+      expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe('updateMyProfile - partial fields branch', () => {
+    it('Given: only firstName When: updating profile Then: should pass undefined for other fields', async () => {
+      // Arrange
+      const updateDto = { firstName: 'OnlyFirst' } as any;
+      const mockRequest = { user: mockAdminUser } as any;
+      const mockResponseData = {
+        success: true as const,
+        data: { id: mockAdminUser.id, firstName: 'OnlyFirst' },
+        message: 'Profile updated',
+        timestamp: new Date().toISOString(),
+      };
+      mockUpdateUserUseCase.execute.mockResolvedValue(ok(mockResponseData));
+
+      // Act
+      const result = await usersController.updateMyProfile(updateDto, mockOrgId, mockRequest);
+
+      // Assert
+      expect(mockUpdateUserUseCase.execute).toHaveBeenCalledWith({
+        userId: mockAdminUser.id,
+        orgId: mockOrgId,
+        firstName: 'OnlyFirst',
+        lastName: undefined,
+        phone: undefined,
+        timezone: undefined,
+        language: undefined,
+        jobTitle: undefined,
+        department: undefined,
+        updatedBy: mockAdminUser.id,
+      });
+      expect(result).toEqual(mockResponseData);
+    });
+  });
+
+  describe('changeUserStatus - validation error branch', () => {
+    it('Given: invalid status value When: changing status Then: should throw validation error', async () => {
+      // Arrange
+      const statusDto = { status: 'INVALID_STATUS' } as any;
+      const mockRequest = { user: mockAdminUser } as any;
+      mockChangeUserStatusUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Invalid status'))
+      );
+
+      // Act & Assert
+      await expect(
+        usersController.changeUserStatus(mockUserId, statusDto, mockOrgId, mockRequest)
+      ).rejects.toThrow(HttpException);
+    });
+  });
+
+  describe('updateUser - partial fields branch', () => {
+    it('Given: only email When: updating user Then: should pass undefined for other fields', async () => {
+      // Arrange
+      const updateDto = { email: 'new@example.com' } as any;
+      const mockRequest = { user: mockAdminUser } as any;
+      const mockResponseData = {
+        success: true as const,
+        data: { id: mockUserId, email: 'new@example.com' },
+        message: 'User updated',
+        timestamp: new Date().toISOString(),
+      };
+      mockUpdateUserUseCase.execute.mockResolvedValue(ok(mockResponseData));
+
+      // Act
+      const result = await usersController.updateUser(
+        mockUserId,
+        updateDto,
+        mockOrgId,
+        mockRequest
+      );
+
+      // Assert
+      expect(mockUpdateUserUseCase.execute).toHaveBeenCalledWith({
+        userId: mockUserId,
+        orgId: mockOrgId,
+        firstName: undefined,
+        lastName: undefined,
+        username: undefined,
+        email: 'new@example.com',
+        phone: undefined,
+        timezone: undefined,
+        language: undefined,
+        jobTitle: undefined,
+        department: undefined,
+        updatedBy: mockAdminUser.id,
+      });
+    });
+  });
+
+  describe('changeMyPassword - mismatched passwords branch', () => {
+    it('Given: mismatched passwords When: changing Then: should throw validation error', async () => {
+      // Arrange
+      const changePasswordDto = {
+        currentPassword: 'OldPass123!',
+        newPassword: 'NewPass456!',
+        confirmPassword: 'DifferentPass!',
+      };
+      const mockRequest = { user: mockAdminUser } as any;
+      mockChangePasswordUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Passwords do not match'))
+      );
+
+      // Act & Assert
+      await expect(
+        usersController.changeMyPassword(changePasswordDto, mockOrgId, mockRequest)
+      ).rejects.toThrow(HttpException);
+    });
+  });
+
   describe('assignRole - error branches', () => {
     it('Given: duplicate role When: assigning Then: should throw conflict', async () => {
       // Arrange

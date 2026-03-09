@@ -252,5 +252,169 @@ describe('PrismaReorderRuleRepository', () => {
       // Act & Assert
       await expect(repository.delete('non-existent', 'org-123')).resolves.not.toThrow();
     });
+
+    it('Given: prisma throws error When: deleting Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.reorderRule.deleteMany.mockRejectedValue(new Error('Delete Error'));
+
+      // Act & Assert
+      await expect(repository.delete('rule-123', 'org-123')).rejects.toThrow('Delete Error');
+    });
+
+    it('Given: non-Error thrown When: deleting Then: should propagate non-Error', async () => {
+      // Arrange
+      mockPrismaService.reorderRule.deleteMany.mockRejectedValue('string-error');
+
+      // Act & Assert
+      await expect(repository.delete('rule-123', 'org-123')).rejects.toBe('string-error');
+    });
+  });
+
+  describe('findById - error handling', () => {
+    it('Given: prisma throws error When: finding by id Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.reorderRule.findFirst.mockRejectedValue(new Error('FindById Error'));
+
+      // Act & Assert
+      await expect(repository.findById('rule-123', 'org-123')).rejects.toThrow('FindById Error');
+    });
+
+    it('Given: non-Error thrown When: finding by id Then: should propagate non-Error', async () => {
+      // Arrange
+      mockPrismaService.reorderRule.findFirst.mockRejectedValue('string-error');
+
+      // Act & Assert
+      await expect(repository.findById('rule-123', 'org-123')).rejects.toBe('string-error');
+    });
+  });
+
+  describe('findByProductAndWarehouse - error handling', () => {
+    it('Given: prisma throws error When: finding by product and warehouse Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.reorderRule.findUnique.mockRejectedValue(new Error('FindByPW Error'));
+
+      // Act & Assert
+      await expect(
+        repository.findByProductAndWarehouse('product-123', 'wh-123', 'org-123')
+      ).rejects.toThrow('FindByPW Error');
+    });
+
+    it('Given: non-Error thrown When: finding by product and warehouse Then: should propagate non-Error', async () => {
+      // Arrange
+      mockPrismaService.reorderRule.findUnique.mockRejectedValue('string-error');
+
+      // Act & Assert
+      await expect(
+        repository.findByProductAndWarehouse('product-123', 'wh-123', 'org-123')
+      ).rejects.toBe('string-error');
+    });
+  });
+
+  describe('create - error handling', () => {
+    it('Given: prisma throws error When: creating Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.reorderRule.create.mockRejectedValue(new Error('Create Error'));
+
+      const rule = ReorderRule.reconstitute(
+        {
+          productId: 'product-123',
+          warehouseId: 'wh-123',
+          minQty: MinQuantity.create(10),
+          maxQty: MaxQuantity.create(100),
+          safetyQty: SafetyStock.create(20),
+        },
+        'rule-123',
+        'org-123'
+      );
+
+      // Act & Assert
+      await expect(repository.create(rule)).rejects.toThrow('Create Error');
+    });
+
+    it('Given: non-Error thrown When: creating Then: should propagate non-Error', async () => {
+      // Arrange
+      mockPrismaService.reorderRule.create.mockRejectedValue('string-error');
+
+      const rule = ReorderRule.reconstitute(
+        {
+          productId: 'product-123',
+          warehouseId: 'wh-123',
+          minQty: MinQuantity.create(10),
+          maxQty: MaxQuantity.create(100),
+          safetyQty: SafetyStock.create(20),
+        },
+        'rule-123',
+        'org-123'
+      );
+
+      // Act & Assert
+      await expect(repository.create(rule)).rejects.toBe('string-error');
+    });
+  });
+
+  describe('update - error handling', () => {
+    it('Given: prisma throws error When: updating Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.reorderRule.update.mockRejectedValue(new Error('Update Error'));
+
+      const rule = ReorderRule.reconstitute(
+        {
+          productId: 'product-123',
+          warehouseId: 'wh-123',
+          minQty: MinQuantity.create(15),
+          maxQty: MaxQuantity.create(100),
+          safetyQty: SafetyStock.create(20),
+        },
+        'rule-123',
+        'org-123'
+      );
+
+      // Act & Assert
+      await expect(repository.update(rule)).rejects.toThrow('Update Error');
+    });
+
+    it('Given: non-Error thrown When: updating Then: should propagate non-Error', async () => {
+      // Arrange
+      mockPrismaService.reorderRule.update.mockRejectedValue('string-error');
+
+      const rule = ReorderRule.reconstitute(
+        {
+          productId: 'product-123',
+          warehouseId: 'wh-123',
+          minQty: MinQuantity.create(15),
+          maxQty: MaxQuantity.create(100),
+          safetyQty: SafetyStock.create(20),
+        },
+        'rule-123',
+        'org-123'
+      );
+
+      // Act & Assert
+      await expect(repository.update(rule)).rejects.toBe('string-error');
+    });
+  });
+
+  describe('findAll - multiple rules', () => {
+    it('Given: multiple rules When: finding all Then: should return all mapped rules', async () => {
+      // Arrange
+      const rule2 = {
+        ...mockReorderRuleData,
+        id: 'rule-456',
+        productId: 'product-456',
+        minQty: 5,
+        maxQty: 50,
+        safetyQty: 10,
+      };
+      mockPrismaService.reorderRule.findMany.mockResolvedValue([mockReorderRuleData, rule2]);
+
+      // Act
+      const result = await repository.findAll('org-123');
+
+      // Assert
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe('rule-123');
+      expect(result[1].id).toBe('rule-456');
+      expect(result[1].minQty.getNumericValue()).toBe(5);
+    });
   });
 });

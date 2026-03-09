@@ -408,6 +408,145 @@ describe('IntegrationsController', () => {
     });
   });
 
+  describe('getConnections - error paths', () => {
+    it('Given: use case error When: getting connections Then: should throw', async () => {
+      mockGetConnectionsUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Failed to retrieve connections'))
+      );
+
+      await expect(controller.getConnections(undefined, undefined, mockOrgId)).rejects.toThrow();
+    });
+
+    it('Given: only provider filter When: getting connections Then: should pass undefined status', async () => {
+      mockGetConnectionsUseCase.execute.mockResolvedValue(
+        ok({ success: true, message: 'OK', data: [], timestamp: new Date().toISOString() })
+      );
+
+      await controller.getConnections('VTEX', undefined, mockOrgId);
+
+      expect(mockGetConnectionsUseCase.execute).toHaveBeenCalledWith({
+        orgId: mockOrgId,
+        provider: 'VTEX',
+        status: undefined,
+      });
+    });
+
+    it('Given: only status filter When: getting connections Then: should pass undefined provider', async () => {
+      mockGetConnectionsUseCase.execute.mockResolvedValue(
+        ok({ success: true, message: 'OK', data: [], timestamp: new Date().toISOString() })
+      );
+
+      await controller.getConnections(undefined, 'CONNECTED', mockOrgId);
+
+      expect(mockGetConnectionsUseCase.execute).toHaveBeenCalledWith({
+        orgId: mockOrgId,
+        provider: undefined,
+        status: 'CONNECTED',
+      });
+    });
+  });
+
+  describe('syncConnection - success path details', () => {
+    it('Given: valid connectionId When: syncing Then: should pass correct params', async () => {
+      mockVtexPollOrdersUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          message: 'Polling completed',
+          data: { polled: 0, synced: 0, failed: 0 },
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      await controller.syncConnection('conn-2', mockOrgId);
+
+      expect(mockVtexPollOrdersUseCase.execute).toHaveBeenCalledWith({
+        connectionId: 'conn-2',
+        orgId: mockOrgId,
+      });
+    });
+  });
+
+  describe('testConnection - success params', () => {
+    it('Given: valid connectionId When: testing Then: should pass correct params', async () => {
+      mockVtexTestConnectionUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          message: 'OK',
+          data: { connected: true },
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      await controller.testConnection('conn-2', mockOrgId);
+
+      expect(mockVtexTestConnectionUseCase.execute).toHaveBeenCalledWith({
+        connectionId: 'conn-2',
+        orgId: mockOrgId,
+      });
+    });
+  });
+
+  describe('registerWebhook - params mapping', () => {
+    it('Given: valid params When: registering Then: should pass correct params', async () => {
+      mockVtexRegisterWebhookUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          message: 'Registered',
+          data: { registered: true },
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      await controller.registerWebhook('conn-2', { webhookBaseUrl: 'https://test.com' }, mockOrgId);
+
+      expect(mockVtexRegisterWebhookUseCase.execute).toHaveBeenCalledWith({
+        connectionId: 'conn-2',
+        webhookBaseUrl: 'https://test.com',
+        orgId: mockOrgId,
+      });
+    });
+  });
+
+  describe('getUnmatchedSkus - params mapping', () => {
+    it('Given: valid connectionId When: getting unmatched Then: should pass correct params', async () => {
+      mockGetUnmatchedSkusUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          message: 'OK',
+          data: [],
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      await controller.getUnmatchedSkus('conn-2', mockOrgId);
+
+      expect(mockGetUnmatchedSkusUseCase.execute).toHaveBeenCalledWith({
+        connectionId: 'conn-2',
+        orgId: mockOrgId,
+      });
+    });
+  });
+
+  describe('retryAllFailedSyncs - params mapping', () => {
+    it('Given: valid connectionId When: retrying all Then: should pass correct params', async () => {
+      mockRetryAllFailedSyncsUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          message: 'OK',
+          data: { total: 0, succeeded: 0, failed: 0 },
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      await controller.retryAllFailedSyncs('conn-2', mockOrgId);
+
+      expect(mockRetryAllFailedSyncsUseCase.execute).toHaveBeenCalledWith({
+        connectionId: 'conn-2',
+        orgId: mockOrgId,
+      });
+    });
+  });
+
   describe('createConnection - error paths', () => {
     it('Given: invalid dto When: creating Then: should throw validation error', async () => {
       const dto = {

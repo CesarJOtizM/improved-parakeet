@@ -609,5 +609,162 @@ describe('SwapSaleLineUseCase', () => {
         }
       );
     });
+
+    it('Given: InsufficientStockError without availableQuantity during transaction When: swap Then: should show unknown in error', async () => {
+      mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
+      mockUnitOfWork.execute.mockRejectedValue(
+        new InsufficientStockError('product-replacement', 'warehouse-1', 5, undefined)
+      );
+
+      const result = await useCase.execute(baseRequest);
+
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(BusinessRuleError);
+          expect(error.message).toContain('available unknown');
+        }
+      );
+    });
+
+    it('Given: full swap with UnitOfWork callback When: executing Then: should invoke partial=false branch in transaction', async () => {
+      const sale = createMockSale('CONFIRMED');
+      mockSaleRepository.findById.mockResolvedValue(sale);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
+
+      const mockTx = {
+        $executeRaw: jest.fn<() => Promise<number>>().mockResolvedValue(1),
+        movement: {
+          create: jest
+            .fn()
+            .mockResolvedValueOnce({ id: 'mov-ret' })
+            .mockResolvedValueOnce({ id: 'mov-ded' }),
+        },
+        movementLine: {
+          create: jest.fn().mockResolvedValue({}),
+        },
+        saleLine: {
+          update: jest.fn().mockResolvedValue({}),
+          create: jest.fn().mockResolvedValue({ id: 'new-line-1' }),
+        },
+        saleLineSwap: {
+          create: jest.fn().mockResolvedValue({ id: 'swap-tx-1' }),
+        },
+      };
+
+      mockUnitOfWork.execute.mockImplementation(async (callback: any) => {
+        return callback(mockTx);
+      });
+
+      const result = await useCase.execute({ ...baseRequest, swapQuantity: 5 });
+
+      expect(result.isOk()).toBe(true);
+      // Full swap (5 out of 5): saleLine.update should be called (not saleLine.create for new line)
+      expect(mockTx.saleLine.update).toHaveBeenCalled();
+    });
+
+    it('Given: partial swap with UnitOfWork callback When: executing Then: should invoke partial=true branch creating new line', async () => {
+      const sale = createMockSale('CONFIRMED');
+      mockSaleRepository.findById.mockResolvedValue(sale);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
+
+      const mockTx = {
+        $executeRaw: jest.fn<() => Promise<number>>().mockResolvedValue(1),
+        movement: {
+          create: jest
+            .fn()
+            .mockResolvedValueOnce({ id: 'mov-ret' })
+            .mockResolvedValueOnce({ id: 'mov-ded' }),
+        },
+        movementLine: {
+          create: jest.fn().mockResolvedValue({}),
+        },
+        saleLine: {
+          update: jest.fn().mockResolvedValue({}),
+          create: jest.fn().mockResolvedValue({ id: 'new-line-partial' }),
+        },
+        saleLineSwap: {
+          create: jest.fn().mockResolvedValue({ id: 'swap-tx-2' }),
+        },
+      };
+
+      mockUnitOfWork.execute.mockImplementation(async (callback: any) => {
+        return callback(mockTx);
+      });
+
+      const result = await useCase.execute({ ...baseRequest, swapQuantity: 2 });
+
+      expect(result.isOk()).toBe(true);
+      // Partial swap (2 out of 5): both saleLine.update and saleLine.create should be called
+      expect(mockTx.saleLine.update).toHaveBeenCalled();
+      expect(mockTx.saleLine.create).toHaveBeenCalled();
+    });
+
+    it('Given: deductResult is 0 in transaction When: executing Then: should throw InsufficientStockError', async () => {
+      const sale = createMockSale('CONFIRMED');
+      mockSaleRepository.findById.mockResolvedValue(sale);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
+
+      const mockTx = {
+        $executeRaw: jest
+          .fn<() => Promise<number>>()
+          .mockResolvedValueOnce(1) // return stock update
+          .mockResolvedValueOnce(0) // insert if not exists
+          .mockResolvedValueOnce(0), // deduct fails (returns 0)
+        movement: {
+          create: jest.fn().mockResolvedValue({ id: 'mov-1' }),
+        },
+        movementLine: {
+          create: jest.fn().mockResolvedValue({}),
+        },
+        saleLine: {
+          update: jest.fn().mockResolvedValue({}),
+        },
+        saleLineSwap: {
+          create: jest.fn().mockResolvedValue({ id: 'swap-1' }),
+        },
+      };
+
+      mockUnitOfWork.execute.mockImplementation(async (callback: any) => {
+        return callback(mockTx);
+      });
+
+      const result = await useCase.execute(baseRequest);
+
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(BusinessRuleError);
+          expect(error.message).toContain('Insufficient stock');
+        }
+      );
+    });
+
+    it('Given: NEW_PRICE with no currency When: swap Then: should default to original currency', async () => {
+      mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
+      mockUnitOfWork.execute.mockImplementation(async () => ({
+        swapId: 'swap-no-currency',
+        returnMovementId: 'mov-1',
+        deductMovementId: 'mov-2',
+        newLineId: undefined,
+      }));
+
+      const result = await useCase.execute({
+        ...baseRequest,
+        pricingStrategy: 'NEW_PRICE',
+        newSalePrice: 200,
+        // no currency provided - should default to original line currency
+      });
+
+      expect(result.isOk()).toBe(true);
+    });
   });
 });

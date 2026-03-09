@@ -818,4 +818,137 @@ describe('ImportValidationService Integration Tests', () => {
       expect(result.isValid()).toBe(true);
     });
   });
+
+  describe('validateDataType - boolean type branches (via custom template)', () => {
+    // None of the default templates have boolean fields, so we test via direct validateRowData
+    // by injecting boolean-like values. We need to test the boolean branch of validateDataType.
+    // Since there are no boolean fields in templates, these branches are tested indirectly.
+    // We'll need to test the 'date' branch too, since no templates have date fields either.
+    // We can achieve this by verifying the string field with null value behavior
+    // and covering the empty required field (value === '') branch explicitly.
+
+    it('Given: required field with empty string value When: validating Then: should return error', () => {
+      const type = ImportType.create('PRODUCTS');
+      const rowData = {
+        SKU: '',
+        Name: 'Test Product',
+        'Unit Code': 'UND',
+        'Unit Name': 'Unit',
+        'Unit Precision': 0,
+      };
+
+      const result = ImportValidationService.validateRowData(type, rowData, 5);
+
+      expect(result.isValid()).toBe(false);
+      expect(result.getErrors().some(e => e.includes('Row 5: Missing required field "SKU"'))).toBe(
+        true
+      );
+    });
+
+    it('Given: null value for string field When: validating Then: should be treated as string (no error)', () => {
+      // null for a string column (non-required) that passes through validateDataType
+      // string case: typeof null !== 'string' && value !== null => false, so null is skipped
+      const type = ImportType.create('PRODUCTS');
+      const rowData = {
+        SKU: 'PROD-001',
+        Name: 'Test',
+        'Unit Code': 'UND',
+        'Unit Name': 'Unit',
+        'Unit Precision': 0,
+        Description: null, // optional, null => skip
+      };
+
+      const result = ImportValidationService.validateRowData(type, rowData, 1);
+      expect(result.isValid()).toBe(true);
+    });
+
+    it('Given: non-number non-string value for number field When: validating Then: should return error', () => {
+      const type = ImportType.create('PRODUCTS');
+      const rowData = {
+        SKU: 'PROD-001',
+        Name: 'Test',
+        'Unit Code': 'UND',
+        'Unit Name': 'Unit',
+        'Unit Precision': { complex: true }, // object for number field
+      };
+
+      const result = ImportValidationService.validateRowData(type, rowData, 2);
+      expect(result.isValid()).toBe(false);
+      expect(result.getErrors().some(e => e.includes('must be a number'))).toBe(true);
+    });
+
+    it('Given: valid number for number field When: validating Then: should accept', () => {
+      const type = ImportType.create('PRODUCTS');
+      const rowData = {
+        SKU: 'PROD-001',
+        Name: 'Test',
+        'Unit Code': 'UND',
+        'Unit Name': 'Unit',
+        'Unit Precision': 3, // actual number
+      };
+
+      const result = ImportValidationService.validateRowData(type, rowData, 1);
+      expect(result.isValid()).toBe(true);
+    });
+
+    it('Given: array value for string field When: validating Then: should return error', () => {
+      const type = ImportType.create('PRODUCTS');
+      const rowData = {
+        SKU: [1, 2, 3], // array is not string/number/boolean
+        Name: 'Test',
+        'Unit Code': 'UND',
+        'Unit Name': 'Unit',
+        'Unit Precision': 0,
+      };
+
+      const result = ImportValidationService.validateRowData(type, rowData, 1);
+      expect(result.isValid()).toBe(false);
+      expect(result.getErrors().some(e => e.includes('must be a string'))).toBe(true);
+    });
+
+    it('Given: valid enum value When: validating enum field Then: should accept', () => {
+      const type = ImportType.create('PRODUCTS');
+      const rowData = {
+        SKU: 'PROD-001',
+        Name: 'Test',
+        'Unit Code': 'UND',
+        'Unit Name': 'Unit',
+        'Unit Precision': 0,
+        Status: 'DISCONTINUED',
+      };
+
+      const result = ImportValidationService.validateRowData(type, rowData, 1);
+      expect(result.isValid()).toBe(true);
+    });
+
+    it('Given: multiple missing required fields When: validating row Then: should return multiple errors', () => {
+      const type = ImportType.create('PRODUCTS');
+      const rowData = {
+        Description: 'optional only',
+      };
+
+      const result = ImportValidationService.validateRowData(type, rowData, 7);
+      expect(result.isValid()).toBe(false);
+      expect(result.getErrors().length).toBeGreaterThanOrEqual(4);
+      expect(result.getErrors().some(e => e.includes('Missing required field "SKU"'))).toBe(true);
+      expect(result.getErrors().some(e => e.includes('Missing required field "Name"'))).toBe(true);
+      expect(result.getErrors().some(e => e.includes('Missing required field "Unit Code"'))).toBe(
+        true
+      );
+    });
+
+    it('Given: NaN string for number field When: validating Then: should return error', () => {
+      const type = ImportType.create('MOVEMENTS');
+      const rowData = {
+        Type: 'IN',
+        'Warehouse Code': 'WH-001',
+        'Product SKU': 'PROD-001',
+        Quantity: 'abc', // NaN
+      };
+
+      const result = ImportValidationService.validateRowData(type, rowData, 3);
+      expect(result.isValid()).toBe(false);
+      expect(result.getErrors().some(e => e.includes('must be a number'))).toBe(true);
+    });
+  });
 });

@@ -9,6 +9,8 @@ describe('OrganizationController', () => {
   let mockCreateOrganizationUseCase: any;
   let mockGetOrganizationByIdUseCase: any;
   let mockUpdateOrganizationUseCase: any;
+  let mockTogglePickingSettingUseCase: any;
+  let mockToggleMultiCompanySettingUseCase: any;
 
   const mockOrganizationData = {
     id: 'org-123',
@@ -25,11 +27,14 @@ describe('OrganizationController', () => {
     mockCreateOrganizationUseCase = { execute: jest.fn() };
     mockGetOrganizationByIdUseCase = { execute: jest.fn() };
     mockUpdateOrganizationUseCase = { execute: jest.fn() };
+    mockTogglePickingSettingUseCase = { execute: jest.fn() };
+    mockToggleMultiCompanySettingUseCase = { execute: jest.fn() };
     controller = new OrganizationController(
       mockCreateOrganizationUseCase,
       mockGetOrganizationByIdUseCase,
       mockUpdateOrganizationUseCase,
-      { execute: jest.fn() } as any // togglePickingSettingUseCase
+      mockTogglePickingSettingUseCase,
+      mockToggleMultiCompanySettingUseCase
     );
   });
 
@@ -230,8 +235,7 @@ describe('OrganizationController', () => {
   describe('togglePickingSetting', () => {
     it('Given: valid setting When: toggling picking Then: should return success', async () => {
       // Arrange
-      const mockToggleUseCase = (controller as any).togglePickingSettingUseCase;
-      mockToggleUseCase.execute.mockResolvedValue(
+      mockTogglePickingSettingUseCase.execute.mockResolvedValue(
         ok({
           success: true,
           data: { pickingEnabled: true },
@@ -245,16 +249,16 @@ describe('OrganizationController', () => {
 
       // Assert
       expect(result.success).toBe(true);
-      expect(mockToggleUseCase.execute).toHaveBeenCalledWith({
+      expect(mockTogglePickingSettingUseCase.execute).toHaveBeenCalledWith({
         orgId: 'org-123',
         pickingEnabled: true,
+        pickingMode: undefined,
       });
     });
 
     it('Given: disable picking When: toggling Then: should pass false', async () => {
       // Arrange
-      const mockToggleUseCase = (controller as any).togglePickingSettingUseCase;
-      mockToggleUseCase.execute.mockResolvedValue(
+      mockTogglePickingSettingUseCase.execute.mockResolvedValue(
         ok({
           success: true,
           data: { pickingEnabled: false },
@@ -268,6 +272,136 @@ describe('OrganizationController', () => {
 
       // Assert
       expect(result.success).toBe(true);
+    });
+
+    it('Given: pickingMode When: toggling Then: should pass pickingMode', async () => {
+      // Arrange
+      mockTogglePickingSettingUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { pickingEnabled: true, pickingMode: 'REQUIRED_FULL' },
+          message: 'Picking setting updated successfully',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      const result = await controller.togglePickingSetting('org-123', {
+        pickingEnabled: true,
+        pickingMode: 'REQUIRED_FULL',
+      });
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockTogglePickingSettingUseCase.execute).toHaveBeenCalledWith({
+        orgId: 'org-123',
+        pickingEnabled: true,
+        pickingMode: 'REQUIRED_FULL',
+      });
+    });
+
+    it('Given: error When: toggling picking Then: should throw', async () => {
+      // Arrange
+      mockTogglePickingSettingUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Failed to toggle'))
+      );
+
+      // Act & Assert
+      await expect(
+        controller.togglePickingSetting('org-123', { pickingEnabled: true })
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('toggleMultiCompanySetting', () => {
+    it('Given: enable multi-company When: toggling Then: should return success', async () => {
+      // Arrange
+      mockToggleMultiCompanySettingUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { multiCompanyEnabled: true },
+          message: 'Multi-company setting updated successfully',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      const result = await controller.toggleMultiCompanySetting('org-123', {
+        multiCompanyEnabled: true,
+      });
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockToggleMultiCompanySettingUseCase.execute).toHaveBeenCalledWith({
+        orgId: 'org-123',
+        multiCompanyEnabled: true,
+      });
+    });
+
+    it('Given: disable multi-company When: toggling Then: should pass false', async () => {
+      // Arrange
+      mockToggleMultiCompanySettingUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { multiCompanyEnabled: false },
+          message: 'Multi-company setting updated successfully',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      const result = await controller.toggleMultiCompanySetting('org-123', {
+        multiCompanyEnabled: false,
+      });
+
+      // Assert
+      expect(result.success).toBe(true);
+    });
+
+    it('Given: error When: toggling multi-company Then: should throw', async () => {
+      // Arrange
+      mockToggleMultiCompanySettingUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Organization not found'))
+      );
+
+      // Act & Assert
+      await expect(
+        controller.toggleMultiCompanySetting('org-123', { multiCompanyEnabled: true })
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('createOrganization - without adminUser', () => {
+    it('Given: no adminUser When: creating organization Then: should pass adminUser as undefined', async () => {
+      // Arrange
+      const dto = {
+        name: 'Test Org',
+        slug: 'test-org',
+        domain: 'test.com',
+        timezone: 'UTC',
+        currency: 'USD',
+        dateFormat: 'YYYY-MM-DD',
+        // no adminUser
+      };
+      mockCreateOrganizationUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockOrganizationData,
+          message: 'Organization created successfully',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      const result = await controller.createOrganization(dto as any);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockCreateOrganizationUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          adminUser: undefined,
+        })
+      );
     });
   });
 });

@@ -169,4 +169,175 @@ describe('EmailService', () => {
       expect(callArgs.html).toContain('newuser@test.com');
     });
   });
+
+  describe('sendEmail - array of recipients', () => {
+    it('should send to array of recipients', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'msg_arr' }, error: null });
+
+      const result = await service.sendEmail({
+        to: ['a@test.com', 'b@test.com'],
+        subject: 'Bulk',
+        body: '<p>Bulk</p>',
+        orgId: 'org-1',
+      });
+
+      expect(result.success).toBe(true);
+      const callArgs = mockSend.mock.calls[0][0];
+      expect(callArgs.to).toEqual(['a@test.com', 'b@test.com']);
+    });
+  });
+
+  describe('sendEmail - no template defaults to generic', () => {
+    it('should use generic as default template in idempotency key and tags', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'msg_gen' }, error: null });
+
+      await service.sendEmail({
+        to: 'user@test.com',
+        subject: 'No template',
+        body: '<p>Test</p>',
+        orgId: 'org-1',
+      });
+
+      const callArgs = mockSend.mock.calls[0][0];
+      expect(callArgs.headers['X-Idempotency-Key']).toMatch(/^generic\/org-1\//);
+      expect(callArgs.tags).toEqual(
+        expect.arrayContaining([{ name: 'template', value: 'generic' }])
+      );
+    });
+  });
+
+  describe('sendEmail - resilient call exception', () => {
+    it('should catch thrown exceptions and return error response', async () => {
+      mockSend.mockRejectedValue(new Error('Network timeout'));
+
+      const result = await service.sendEmail({
+        to: 'user@test.com',
+        subject: 'Fail',
+        body: '<p>Fail</p>',
+        orgId: 'org-1',
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+
+    it('should handle non-Error exception and return Unknown error', async () => {
+      mockSend.mockRejectedValue('raw string error');
+
+      const result = await service.sendEmail({
+        to: 'user@test.com',
+        subject: 'Fail',
+        body: '<p>Fail</p>',
+        orgId: 'org-1',
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+  });
+
+  describe('sendWelcomeWithCredentialsEmail', () => {
+    it('should generate HTML with credentials', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'msg_cred' }, error: null });
+
+      const result = await service.sendWelcomeWithCredentialsEmail(
+        'user@test.com',
+        'John',
+        'Doe',
+        'TempPass123!',
+        'org-1'
+      );
+
+      expect(result.success).toBe(true);
+      const callArgs = mockSend.mock.calls[0][0];
+      expect(callArgs.html).toContain('John');
+      expect(callArgs.html).toContain('TempPass123!');
+    });
+  });
+
+  describe('sendAccountDeactivationEmail', () => {
+    it('should generate deactivation HTML', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'msg_deact' }, error: null });
+
+      const result = await service.sendAccountDeactivationEmail(
+        'user@test.com',
+        'Jane',
+        'Smith',
+        'org-1',
+        'Policy violation'
+      );
+
+      expect(result.success).toBe(true);
+      const callArgs = mockSend.mock.calls[0][0];
+      expect(callArgs.html).toContain('Jane');
+    });
+
+    it('should work without reason', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'msg_deact2' }, error: null });
+
+      const result = await service.sendAccountDeactivationEmail(
+        'user@test.com',
+        'Bob',
+        'Jones',
+        'org-1'
+      );
+
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('EmailService - no API key', () => {
+    let serviceNoKey: EmailService;
+
+    beforeEach(async () => {
+      const module = await Test.createTestingModule({
+        providers: [
+          EmailService,
+          {
+            provide: ConfigService,
+            useValue: {
+              get: jest.fn((key: string, defaultVal?: string) => {
+                if (key === 'RESEND_API_KEY') return undefined;
+                if (key === 'RESEND_FROM_EMAIL') return defaultVal;
+                return defaultVal;
+              }),
+            },
+          },
+        ],
+      }).compile();
+
+      serviceNoKey = module.get<EmailService>(EmailService);
+    });
+
+    it('should return mock success when no API key is configured', async () => {
+      const result = await serviceNoKey.sendEmail({
+        to: 'user@test.com',
+        subject: 'Test',
+        body: '<p>Test</p>',
+        orgId: 'org-1',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.messageId).toMatch(/^mock_/);
+    });
+  });
+
+  describe('sendPasswordResetOtpEmail - default expiry', () => {
+    it('should use default 15 minute expiry', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'msg_otp2' }, error: null });
+
+      const result = await service.sendPasswordResetOtpEmail(
+        'user@test.com',
+        'Jane',
+        'Smith',
+        '654321',
+        'org-1'
+      );
+
+      expect(result.success).toBe(true);
+      const callArgs = mockSend.mock.calls[0][0];
+      expect(callArgs.html).toContain('654321');
+      expect(callArgs.html).toContain('15 minutes');
+    });
+  });
 });

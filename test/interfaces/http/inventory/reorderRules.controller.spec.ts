@@ -278,4 +278,109 @@ describe('ReorderRulesController', () => {
       await expect(controller.delete('org-123', 'non-existent')).rejects.toThrow();
     });
   });
+
+  describe('getAll - error handling', () => {
+    it('Given: use case returns error When: getting all rules Then: should throw', async () => {
+      // Arrange
+      mockGetReorderRulesUseCase.execute.mockResolvedValue(err(new ValidationError('Invalid org')));
+
+      // Act & Assert
+      await expect(controller.getAll('org-123')).rejects.toThrow();
+    });
+  });
+
+  describe('create - additional coverage', () => {
+    it('Given: dto with all fields When: creating Then: should spread all dto fields with orgId', async () => {
+      // Arrange
+      const dto = {
+        productId: 'prod-3',
+        warehouseId: 'wh-3',
+        minimumQuantity: 20,
+        reorderQuantity: 100,
+        maximumQuantity: 500,
+        safetyStock: 30,
+      };
+      mockCreateReorderRuleUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { ...mockReorderRuleData, ...dto },
+          message: 'Created',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      const result = await controller.create('org-456', dto as any);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockCreateReorderRuleUseCase.execute).toHaveBeenCalledWith({
+        ...dto,
+        orgId: 'org-456',
+      });
+    });
+  });
+
+  describe('update - additional coverage', () => {
+    it('Given: dto with multiple fields When: updating Then: should spread all dto fields with id and orgId', async () => {
+      // Arrange
+      const dto = {
+        minimumQuantity: 25,
+        reorderQuantity: 80,
+        maximumQuantity: 300,
+        safetyStock: 40,
+      };
+      mockUpdateReorderRuleUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { ...mockReorderRuleData, ...dto },
+          message: 'Updated',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      const result = await controller.update('org-456', 'rule-456', dto as any);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockUpdateReorderRuleUseCase.execute).toHaveBeenCalledWith({
+        id: 'rule-456',
+        orgId: 'org-456',
+        ...dto,
+      });
+    });
+
+    it('Given: update returns ValidationError When: updating Then: should throw', async () => {
+      // Arrange
+      const dto = { minimumQuantity: -5 };
+      mockUpdateReorderRuleUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Minimum quantity must be positive'))
+      );
+
+      // Act & Assert
+      await expect(controller.update('org-123', 'rule-123', dto as any)).rejects.toThrow();
+    });
+  });
+
+  describe('delete - additional coverage', () => {
+    it('Given: delete returns success with message When: deleting Then: should return message', async () => {
+      // Arrange
+      mockDeleteReorderRuleUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: null,
+          message: 'Reorder rule deleted successfully',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      const result = await controller.delete('org-123', 'rule-789');
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.message).toBe('Reorder rule deleted successfully');
+    });
+  });
 });

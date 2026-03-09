@@ -575,5 +575,349 @@ describe('CancelReturnUseCase', () => {
       // Events dispatched
       expect(mockEventDispatcher.dispatchEvents).toHaveBeenCalled();
     });
+
+    it('Given: confirmed customer return with RETURNED sale and shippedAt When: cancelling Then: should revert sale to SHIPPED', async () => {
+      // Arrange
+      const mockReturn = createMockConfirmedReturn({
+        type: 'RETURN_CUSTOMER',
+        saleId: 'sale-123',
+      });
+      mockReturnRepository.findById.mockResolvedValue(mockReturn);
+      setupValidationPass();
+
+      const mockTx = createMockTx();
+      mockTx.movement.findUnique.mockResolvedValue({
+        id: 'movement-123',
+        warehouseId: 'warehouse-123',
+        orgId: mockOrgId,
+        lines: [{ productId: 'product-1', quantity: 3, locationId: null }],
+      });
+      mockTx.return.count.mockResolvedValue(0);
+      // Sale has shippedAt but NOT completedAt
+      mockTx.sale.findUnique.mockResolvedValue({
+        id: 'sale-123',
+        status: 'RETURNED',
+        completedAt: null,
+        shippedAt: new Date('2025-05-28'),
+      });
+
+      mockUnitOfWork.execute.mockImplementation(
+        async (callback: (tx: unknown) => Promise<unknown>) => {
+          return callback(mockTx);
+        }
+      );
+
+      const request = {
+        id: mockReturnId,
+        orgId: mockOrgId,
+        cancelledBy: 'admin-user',
+        reason: 'Invalid return',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockTx.sale.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'sale-123' },
+          data: expect.objectContaining({
+            status: 'SHIPPED',
+          }),
+        })
+      );
+    });
+
+    it('Given: confirmed customer return with RETURNED sale no completedAt no shippedAt When: cancelling Then: should revert sale to CONFIRMED', async () => {
+      // Arrange
+      const mockReturn = createMockConfirmedReturn({
+        type: 'RETURN_CUSTOMER',
+        saleId: 'sale-123',
+      });
+      mockReturnRepository.findById.mockResolvedValue(mockReturn);
+      setupValidationPass();
+
+      const mockTx = createMockTx();
+      mockTx.movement.findUnique.mockResolvedValue({
+        id: 'movement-123',
+        warehouseId: 'warehouse-123',
+        orgId: mockOrgId,
+        lines: [{ productId: 'product-1', quantity: 3, locationId: null }],
+      });
+      mockTx.return.count.mockResolvedValue(0);
+      // Sale has neither completedAt nor shippedAt
+      mockTx.sale.findUnique.mockResolvedValue({
+        id: 'sale-123',
+        status: 'RETURNED',
+        completedAt: null,
+        shippedAt: null,
+      });
+
+      mockUnitOfWork.execute.mockImplementation(
+        async (callback: (tx: unknown) => Promise<unknown>) => {
+          return callback(mockTx);
+        }
+      );
+
+      const request = {
+        id: mockReturnId,
+        orgId: mockOrgId,
+        cancelledBy: 'admin-user',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockTx.sale.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'CONFIRMED' }),
+        })
+      );
+    });
+
+    it('Given: confirmed customer return with other active returns When: cancelling Then: should keep RETURNED status', async () => {
+      // Arrange
+      const mockReturn = createMockConfirmedReturn({
+        type: 'RETURN_CUSTOMER',
+        saleId: 'sale-123',
+      });
+      mockReturnRepository.findById.mockResolvedValue(mockReturn);
+      setupValidationPass();
+
+      const mockTx = createMockTx();
+      mockTx.movement.findUnique.mockResolvedValue({
+        id: 'movement-123',
+        warehouseId: 'warehouse-123',
+        orgId: mockOrgId,
+        lines: [{ productId: 'product-1', quantity: 3, locationId: null }],
+      });
+      // There are other active returns
+      mockTx.return.count.mockResolvedValue(2);
+
+      mockUnitOfWork.execute.mockImplementation(
+        async (callback: (tx: unknown) => Promise<unknown>) => {
+          return callback(mockTx);
+        }
+      );
+
+      const request = {
+        id: mockReturnId,
+        orgId: mockOrgId,
+        cancelledBy: 'admin-user',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      // sale.update should NOT be called since other active returns exist
+      expect(mockTx.sale.update).not.toHaveBeenCalled();
+    });
+
+    it('Given: confirmed customer return where sale status is not RETURNED When: cancelling Then: should not revert sale status', async () => {
+      // Arrange
+      const mockReturn = createMockConfirmedReturn({
+        type: 'RETURN_CUSTOMER',
+        saleId: 'sale-123',
+      });
+      mockReturnRepository.findById.mockResolvedValue(mockReturn);
+      setupValidationPass();
+
+      const mockTx = createMockTx();
+      mockTx.movement.findUnique.mockResolvedValue({
+        id: 'movement-123',
+        warehouseId: 'warehouse-123',
+        orgId: mockOrgId,
+        lines: [{ productId: 'product-1', quantity: 3, locationId: null }],
+      });
+      mockTx.return.count.mockResolvedValue(0);
+      // Sale is CONFIRMED, not RETURNED
+      mockTx.sale.findUnique.mockResolvedValue({
+        id: 'sale-123',
+        status: 'CONFIRMED',
+        completedAt: null,
+        shippedAt: null,
+      });
+
+      mockUnitOfWork.execute.mockImplementation(
+        async (callback: (tx: unknown) => Promise<unknown>) => {
+          return callback(mockTx);
+        }
+      );
+
+      const request = {
+        id: mockReturnId,
+        orgId: mockOrgId,
+        cancelledBy: 'admin-user',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      // sale.update should NOT be called since sale is not in RETURNED status
+      expect(mockTx.sale.update).not.toHaveBeenCalled();
+    });
+
+    it('Given: confirmed return with no returnMovement found When: cancelling Then: should still cancel return', async () => {
+      // Arrange
+      const mockReturn = createMockConfirmedReturn({
+        type: 'RETURN_CUSTOMER',
+      });
+      mockReturnRepository.findById.mockResolvedValue(mockReturn);
+      setupValidationPass();
+
+      const mockTx = createMockTx();
+      // Return movement not found
+      mockTx.movement.findUnique.mockResolvedValue(null);
+
+      mockUnitOfWork.execute.mockImplementation(
+        async (callback: (tx: unknown) => Promise<unknown>) => {
+          return callback(mockTx);
+        }
+      );
+
+      const request = {
+        id: mockReturnId,
+        orgId: mockOrgId,
+        cancelledBy: 'admin-user',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      // $executeRaw should NOT be called since movement not found
+      expect(mockTx.$executeRaw).not.toHaveBeenCalled();
+    });
+
+    it('Given: confirmed return When: UoW throws non-Error Then: should wrap in BusinessRuleError with generic message', async () => {
+      // Arrange
+      const mockReturn = createMockConfirmedReturn({ type: 'RETURN_CUSTOMER' });
+      mockReturnRepository.findById.mockResolvedValue(mockReturn);
+      setupValidationPass();
+
+      mockUnitOfWork.execute.mockRejectedValue('string-error');
+
+      const request = {
+        id: mockReturnId,
+        orgId: mockOrgId,
+        cancelledBy: 'admin-user',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(BusinessRuleError);
+          expect(error.message).toBe('Failed to cancel return');
+        }
+      );
+    });
+
+    it('Given: confirmed return without reason When: cancelling Then: should use reason or No reason provided in cancellation note', async () => {
+      // Arrange
+      const mockReturn = createMockConfirmedReturn({ type: 'RETURN_CUSTOMER' });
+      mockReturnRepository.findById.mockResolvedValue(mockReturn);
+      setupValidationPass();
+
+      const mockTx = createMockTx();
+      mockTx.movement.findUnique.mockResolvedValue({
+        id: 'movement-123',
+        warehouseId: 'warehouse-123',
+        orgId: mockOrgId,
+        lines: [],
+      });
+
+      mockUnitOfWork.execute.mockImplementation(
+        async (callback: (tx: unknown) => Promise<unknown>) => {
+          return callback(mockTx);
+        }
+      );
+
+      const request = {
+        id: mockReturnId,
+        orgId: mockOrgId,
+        cancelledBy: 'admin-user',
+        // no reason provided
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      // The return.update should use the entity's original reason since request.reason is undefined
+      expect(mockTx.return.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            reason: 'Original reason', // from mock entity
+          }),
+        })
+      );
+    });
+
+    it('Given: confirmed supplier return with source movement not in RETURNED status When: cancelling Then: should not revert source movement', async () => {
+      // Arrange
+      const mockReturn = createMockConfirmedReturn({
+        type: 'RETURN_SUPPLIER',
+        sourceMovementId: 'source-mov-123',
+      });
+      mockReturnRepository.findById.mockResolvedValue(mockReturn);
+      setupValidationPass();
+
+      const mockTx = createMockTx();
+      mockTx.movement.findUnique.mockImplementation(async (args: unknown) => {
+        const typedArgs = args as { where: { id: string } };
+        if (typedArgs.where.id === 'movement-123') {
+          return {
+            id: 'movement-123',
+            warehouseId: 'warehouse-123',
+            orgId: mockOrgId,
+            lines: [{ productId: 'product-1', quantity: 5, locationId: null }],
+          };
+        }
+        if (typedArgs.where.id === 'source-mov-123') {
+          return { id: 'source-mov-123', status: 'POSTED' }; // Not RETURNED
+        }
+        return null;
+      });
+
+      mockUnitOfWork.execute.mockImplementation(
+        async (callback: (tx: unknown) => Promise<unknown>) => {
+          return callback(mockTx);
+        }
+      );
+
+      const request = {
+        id: mockReturnId,
+        orgId: mockOrgId,
+        cancelledBy: 'admin-user',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      // Movement update should only be called for voiding the return movement, NOT for source movement
+      const movementUpdateCalls = mockTx.movement.update.mock.calls;
+      const sourceMovementUpdate = movementUpdateCalls.find(
+        (call: any) => call[0]?.where?.id === 'source-mov-123'
+      );
+      expect(sourceMovementUpdate).toBeUndefined();
+    });
   });
 });

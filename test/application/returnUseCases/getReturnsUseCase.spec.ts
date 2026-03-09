@@ -930,5 +930,247 @@ describe('GetReturnsUseCase', () => {
         }
       );
     });
+
+    it('Given: comma-separated status filter with results When: getting returns Then: should post-filter by comma statuses', async () => {
+      // Arrange
+      const returnDraft = createReturnWithDates({
+        returnNumber: ReturnNumber.create(2025, 1),
+        status: 'DRAFT',
+      });
+      const returnConfirmed = createReturnWithDates({
+        returnNumber: ReturnNumber.create(2025, 2),
+        status: 'CONFIRMED',
+        confirmedAt: new Date(),
+      });
+      const returnCancelled = createReturnWithDates({
+        returnNumber: ReturnNumber.create(2025, 3),
+        status: 'CANCELLED',
+      });
+      // findByStatus returns all (it was fetched by comma-separated string)
+      mockReturnRepository.findByStatus.mockResolvedValue([
+        returnDraft,
+        returnConfirmed,
+        returnCancelled,
+      ]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        status: 'DRAFT,CONFIRMED',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+          const statuses = value.data.map((d: any) => d.status);
+          expect(statuses).toContain('DRAFT');
+          expect(statuses).toContain('CONFIRMED');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: comma-separated type filter with results When: getting returns Then: should post-filter by types', async () => {
+      // Arrange
+      const returnCustomer = createReturnWithDates({
+        returnNumber: ReturnNumber.create(2025, 1),
+        type: 'RETURN_CUSTOMER',
+      });
+      const returnSupplier = createReturnWithDates({
+        returnNumber: ReturnNumber.create(2025, 2),
+        type: 'RETURN_SUPPLIER',
+      });
+      mockReturnRepository.findByType.mockResolvedValue([returnCustomer, returnSupplier]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        type: 'RETURN_CUSTOMER',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(1);
+          expect(value.data[0].type).toBe('RETURN_CUSTOMER');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sort with equal values When: getting returns Then: should return 0 (stable sort)', async () => {
+      // Arrange - both returns have same status so sorting by status yields equal comparison
+      const returnOne = createReturnWithDates({
+        returnNumber: ReturnNumber.create(2025, 1),
+        status: 'DRAFT',
+      });
+      const returnTwo = createReturnWithDates({
+        returnNumber: ReturnNumber.create(2025, 2),
+        status: 'DRAFT',
+      });
+      mockReturnRepository.findAll.mockResolvedValue([returnOne, returnTwo]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'status',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+          // Both DRAFT - should be stable
+          expect(value.data[0].status).toBe('DRAFT');
+          expect(value.data[1].status).toBe('DRAFT');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy confirmedAt with both null confirmedAt When: sorting Then: should treat as 0', async () => {
+      // Arrange - both have no confirmedAt so both get 0 in sort
+      const returnOne = createReturnWithDates({
+        returnNumber: ReturnNumber.create(2025, 1),
+        status: 'DRAFT',
+      });
+      const returnTwo = createReturnWithDates({
+        returnNumber: ReturnNumber.create(2025, 2),
+        status: 'DRAFT',
+      });
+      mockReturnRepository.findAll.mockResolvedValue([returnOne, returnTwo]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'confirmedAt',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: companyId filter that excludes all returns When: getting returns Then: should return empty', async () => {
+      // Arrange
+      const mockReturn = createReturnWithDates({
+        returnNumber: ReturnNumber.create(2025, 1),
+      });
+      mockReturnRepository.findAll.mockResolvedValue([mockReturn]);
+      (mockPrisma.return.findMany as jest.Mock).mockResolvedValue([]); // no matching IDs
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        companyId: 'company-that-matches-nothing',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(0);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: no sortBy When: getting returns Then: should not sort', async () => {
+      // Arrange
+      const returnOne = createReturnWithDates({
+        returnNumber: ReturnNumber.create(2025, 1),
+      });
+      mockReturnRepository.findAll.mockResolvedValue([returnOne]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        // no sortBy
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(1);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: page beyond total When: getting returns Then: should return empty data with hasPrev true', async () => {
+      // Arrange
+      const returns = [createReturnWithDates({ returnNumber: ReturnNumber.create(2025, 1) })];
+      mockReturnRepository.findAll.mockResolvedValue(returns);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 5,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(0);
+          expect(value.pagination.hasPrev).toBe(true);
+          expect(value.pagination.hasNext).toBe(false);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

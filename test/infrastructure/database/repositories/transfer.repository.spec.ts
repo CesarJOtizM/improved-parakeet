@@ -682,4 +682,142 @@ describe('PrismaTransferRepository', () => {
       await expect(repository.save(transfer)).rejects.toThrow('Failed to retrieve saved transfer');
     });
   });
+
+  describe('non-Error exception paths', () => {
+    it('Given: non-Error thrown When: findAll Then: should log and rethrow', async () => {
+      mockPrismaService.transfer.findMany.mockRejectedValue('string findAll error');
+      await expect(repository.findAll('org-123')).rejects.toBe('string findAll error');
+    });
+
+    it('Given: non-Error thrown When: exists Then: should log and rethrow', async () => {
+      mockPrismaService.transfer.count.mockRejectedValue('string exists error');
+      await expect(repository.exists('transfer-123', 'org-123')).rejects.toBe(
+        'string exists error'
+      );
+    });
+
+    it('Given: non-Error thrown When: delete Then: should log and rethrow', async () => {
+      mockPrismaService.$transaction.mockRejectedValue('string delete error');
+      await expect(repository.delete('transfer-123', 'org-123')).rejects.toBe(
+        'string delete error'
+      );
+    });
+
+    it('Given: non-Error thrown When: findByFromWarehouse Then: should log and rethrow', async () => {
+      mockPrismaService.transfer.findMany.mockRejectedValue('string from-warehouse error');
+      await expect(repository.findByFromWarehouse('wh-1', 'org-123')).rejects.toBe(
+        'string from-warehouse error'
+      );
+    });
+
+    it('Given: non-Error thrown When: findByToWarehouse Then: should log and rethrow', async () => {
+      mockPrismaService.transfer.findMany.mockRejectedValue('string to-warehouse error');
+      await expect(repository.findByToWarehouse('wh-1', 'org-123')).rejects.toBe(
+        'string to-warehouse error'
+      );
+    });
+
+    it('Given: non-Error thrown When: findByStatus Then: should log and rethrow', async () => {
+      mockPrismaService.transfer.findMany.mockRejectedValue('string status error');
+      await expect(repository.findByStatus('DRAFT', 'org-123')).rejects.toBe('string status error');
+    });
+
+    it('Given: non-Error thrown When: findByDateRange Then: should log and rethrow', async () => {
+      mockPrismaService.transfer.findMany.mockRejectedValue('string date-range error');
+      await expect(repository.findByDateRange(new Date(), new Date(), 'org-123')).rejects.toBe(
+        'string date-range error'
+      );
+    });
+
+    it('Given: non-Error thrown When: findInTransitTransfers Then: should log and rethrow', async () => {
+      mockPrismaService.transfer.findMany.mockRejectedValue('string in-transit error');
+      await expect(repository.findInTransitTransfers('org-123')).rejects.toBe(
+        'string in-transit error'
+      );
+    });
+
+    it('Given: non-Error thrown When: findPendingTransfers Then: should log and rethrow', async () => {
+      mockPrismaService.transfer.findMany.mockRejectedValue('string pending error');
+      await expect(repository.findPendingTransfers('org-123')).rejects.toBe('string pending error');
+    });
+  });
+
+  describe('save - new transfer without id (no lines)', () => {
+    it('Given: new transfer without id and no lines When: saving Then: should create without createMany', async () => {
+      const transfer = Transfer.create(
+        {
+          fromWarehouseId: 'warehouse-from',
+          toWarehouseId: 'warehouse-to',
+          status: TransferStatus.create('DRAFT'),
+          createdBy: 'user-123',
+          note: 'A note',
+        },
+        'org-123'
+      );
+
+      const createdData = {
+        ...mockTransferData,
+        id: 'new-id',
+        lines: [],
+        note: 'A note',
+      };
+      mockPrismaService.transfer.findUnique
+        .mockResolvedValueOnce(null) // no existing
+        .mockResolvedValueOnce(createdData);
+      mockPrismaService.transfer.create.mockResolvedValue(createdData);
+
+      const result = await repository.save(transfer);
+      expect(result).not.toBeNull();
+      // createMany should not have been called since there are no lines
+      expect(mockPrismaService.transferLine.createMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('save - transfer with initiatedAt and receivedAt', () => {
+    it('Given: transfer with initiatedAt and receivedAt When: saving Then: should pass dates', async () => {
+      const now = new Date();
+      const transfer = Transfer.reconstitute(
+        {
+          fromWarehouseId: 'warehouse-from',
+          toWarehouseId: 'warehouse-to',
+          status: TransferStatus.create('DRAFT'),
+          createdBy: 'user-123',
+          initiatedAt: now,
+          receivedAt: now,
+          receivedBy: 'receiver-123',
+        },
+        'transfer-123',
+        'org-123'
+      );
+
+      mockPrismaService.transfer.findUnique
+        .mockResolvedValueOnce(mockTransferData)
+        .mockResolvedValueOnce({
+          ...mockTransferData,
+          initiatedAt: now,
+          receivedAt: now,
+          receivedBy: 'receiver-123',
+        });
+      mockPrismaService.transfer.update.mockResolvedValue(mockTransferData);
+      mockPrismaService.transferLine.deleteMany.mockResolvedValue({ count: 0 });
+
+      const result = await repository.save(transfer);
+      expect(result).not.toBeNull();
+    });
+  });
+
+  describe('mapToEntity - non-DRAFT with null initiatedAt and receivedAt', () => {
+    it('Given: non-DRAFT transfer with null initiatedAt When: mapping Then: should not set initiatedAt', async () => {
+      const transferData = {
+        ...mockTransferData,
+        status: 'IN_TRANSIT',
+        initiatedAt: null,
+        receivedAt: null,
+      };
+      mockPrismaService.transfer.findFirst.mockResolvedValue(transferData);
+
+      const result = await repository.findById('transfer-123', 'org-123');
+      expect(result?.status.getValue()).toBe('IN_TRANSIT');
+    });
+  });
 });

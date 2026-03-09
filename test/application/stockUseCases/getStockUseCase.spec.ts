@@ -731,5 +731,108 @@ describe('GetStockUseCase', () => {
         }
       );
     });
+
+    it('Given: items with equal sort values When: sorting Then: should return 0 (stable sort)', async () => {
+      // Arrange
+      const stockRecords = [
+        createStockData({ productId: 'p-1', quantity: Quantity.create(100) }),
+        createStockData({ productId: 'p-2', quantity: Quantity.create(100) }),
+      ];
+      mockStockRepository.findAll.mockResolvedValue(stockRecords);
+      mockPrismaService.$queryRaw.mockResolvedValue([]);
+
+      // Act
+      const result = await useCase.execute({
+        orgId: mockOrgId,
+        sortBy: 'quantity',
+        sortOrder: 'asc',
+      });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+          // Both have same quantity, order should be preserved
+          expect(value.data[0].quantity).toBe(100);
+          expect(value.data[1].quantity).toBe(100);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy productSku with undefined values When: sorting desc Then: should sort correctly', async () => {
+      // Arrange
+      const stockRecords = [
+        createStockData({ productId: 'p-1', productSku: undefined }),
+        createStockData({ productId: 'p-2', productSku: 'SKU-ZZZ' }),
+      ];
+      mockStockRepository.findAll.mockResolvedValue(stockRecords);
+      mockPrismaService.$queryRaw.mockResolvedValue([]);
+
+      // Act
+      const result = await useCase.execute({
+        orgId: mockOrgId,
+        sortBy: 'productSku',
+        sortOrder: 'desc',
+      });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          // 'SKU-ZZZ' > '' so it comes first in desc
+          expect(value.data[0].productSku).toBe('SKU-ZZZ');
+          expect(value.data[1].productSku).toBeUndefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: stock with locationId When: getting stock Then: should include locationId in response', async () => {
+      // Arrange
+      const stockRecords = [createStockData({ productId: 'p-1', locationId: 'loc-123' })];
+      mockStockRepository.findAll.mockResolvedValue(stockRecords);
+      mockPrismaService.$queryRaw.mockResolvedValue([]);
+
+      // Act
+      const result = await useCase.execute({ orgId: mockOrgId });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].locationId).toBe('loc-123');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: non-Error thrown by queryRaw When: getting movement dates Then: should return empty map', async () => {
+      // Arrange
+      const stockRecords = [createStockData()];
+      mockStockRepository.findAll.mockResolvedValue(stockRecords);
+      mockPrismaService.$queryRaw.mockRejectedValue('string-error');
+
+      // Act
+      const result = await useCase.execute({ orgId: mockOrgId });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].lastMovementAt).toBeNull();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

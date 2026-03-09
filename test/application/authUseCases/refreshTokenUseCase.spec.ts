@@ -445,5 +445,179 @@ describe('RefreshTokenUseCase', () => {
         }
       );
     });
+
+    it('Given: no ipAddress in request When: refreshing Then: should use "unknown" for rate limit', async () => {
+      // Arrange
+      mockRateLimitService.checkRefreshTokenRateLimit.mockResolvedValue({
+        allowed: true,
+        remaining: 10,
+        resetTime: new Date(Date.now() + 60000),
+        blocked: false,
+      });
+      mockJwtService.verifyRefreshToken.mockResolvedValue({
+        sub: mockUserId,
+        org_id: mockOrgId,
+        email: 'test@example.com',
+        username: 'testuser',
+        roles: [],
+        permissions: [],
+        type: 'refresh',
+        iat: Math.floor(Date.now() / 1000),
+        jti: mockJti,
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      });
+      mockTokenBlacklistService.isTokenBlacklisted.mockResolvedValue(false);
+      const mockUser = createMockUser();
+      mockUserRepository.findById.mockResolvedValue(mockUser);
+      const mockSession = createMockSession();
+      mockSessionRepository.findActiveByUserIdAndToken.mockResolvedValue(mockSession);
+      mockJwtService.generateTokenPair.mockResolvedValue({
+        accessToken: 'new-access-token',
+        refreshToken: 'new-refresh-token',
+        accessTokenExpiresAt: new Date(Date.now() + 900000),
+        refreshTokenExpiresAt: new Date(Date.now() + 86400000),
+      });
+      mockTokenBlacklistService.blacklistToken.mockResolvedValue(undefined);
+      mockSessionRepository.save.mockResolvedValue(mockSession);
+
+      const requestNoIp = {
+        refreshToken: mockRefreshToken,
+        // no ipAddress
+      };
+
+      // Act
+      const result = await useCase.execute(requestNoIp);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockRateLimitService.checkRefreshTokenRateLimit).toHaveBeenCalledWith('unknown');
+    });
+
+    it('Given: organization exists When: refreshing Then: should include org settings', async () => {
+      // Arrange
+      mockRateLimitService.checkRefreshTokenRateLimit.mockResolvedValue({
+        allowed: true,
+        remaining: 10,
+        resetTime: new Date(Date.now() + 60000),
+        blocked: false,
+      });
+      mockJwtService.verifyRefreshToken.mockResolvedValue({
+        sub: mockUserId,
+        org_id: mockOrgId,
+        email: 'test@example.com',
+        username: 'testuser',
+        roles: [],
+        permissions: [],
+        type: 'refresh',
+        iat: Math.floor(Date.now() / 1000),
+        jti: mockJti,
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      });
+      mockTokenBlacklistService.isTokenBlacklisted.mockResolvedValue(false);
+      const mockUser = createMockUser();
+      mockUserRepository.findById.mockResolvedValue(mockUser);
+      const mockSession = createMockSession();
+      mockSessionRepository.findActiveByUserIdAndToken.mockResolvedValue(mockSession);
+      mockJwtService.generateTokenPair.mockResolvedValue({
+        accessToken: 'new-access-token',
+        refreshToken: 'new-refresh-token',
+        accessTokenExpiresAt: new Date(Date.now() + 900000),
+        refreshTokenExpiresAt: new Date(Date.now() + 86400000),
+      });
+      mockTokenBlacklistService.blacklistToken.mockResolvedValue(undefined);
+      mockSessionRepository.save.mockResolvedValue(mockSession);
+      mockOrganizationRepository.findById.mockResolvedValue({
+        settings: { timezone: 'America/Bogota', currency: 'COP' },
+      });
+
+      // Act
+      const result = await useCase.execute(validRequest);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.user.orgSettings).toEqual({
+            timezone: 'America/Bogota',
+            currency: 'COP',
+          });
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: org settings fetch throws When: refreshing Then: should still succeed with empty orgSettings', async () => {
+      // Arrange
+      mockRateLimitService.checkRefreshTokenRateLimit.mockResolvedValue({
+        allowed: true,
+        remaining: 10,
+        resetTime: new Date(Date.now() + 60000),
+        blocked: false,
+      });
+      mockJwtService.verifyRefreshToken.mockResolvedValue({
+        sub: mockUserId,
+        org_id: mockOrgId,
+        email: 'test@example.com',
+        username: 'testuser',
+        roles: [],
+        permissions: [],
+        type: 'refresh',
+        iat: Math.floor(Date.now() / 1000),
+        jti: mockJti,
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      });
+      mockTokenBlacklistService.isTokenBlacklisted.mockResolvedValue(false);
+      const mockUser = createMockUser();
+      mockUserRepository.findById.mockResolvedValue(mockUser);
+      const mockSession = createMockSession();
+      mockSessionRepository.findActiveByUserIdAndToken.mockResolvedValue(mockSession);
+      mockJwtService.generateTokenPair.mockResolvedValue({
+        accessToken: 'new-access-token',
+        refreshToken: 'new-refresh-token',
+        accessTokenExpiresAt: new Date(Date.now() + 900000),
+        refreshTokenExpiresAt: new Date(Date.now() + 86400000),
+      });
+      mockTokenBlacklistService.blacklistToken.mockResolvedValue(undefined);
+      mockSessionRepository.save.mockResolvedValue(mockSession);
+      mockOrganizationRepository.findById.mockRejectedValue(new Error('DB connection error'));
+
+      // Act
+      const result = await useCase.execute(validRequest);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.user.orgSettings).toEqual({});
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: unexpected error in execute When: refreshing Then: should return TokenError with internal_error reason', async () => {
+      // Arrange - Make the rate limit service throw unexpectedly
+      mockRateLimitService.checkRefreshTokenRateLimit.mockRejectedValue(
+        new Error('Unexpected failure')
+      );
+
+      // Act
+      const result = await useCase.execute(validRequest);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(TokenError);
+          expect((error as TokenError).internalReason).toBe('internal_error');
+        }
+      );
+    });
   });
 });

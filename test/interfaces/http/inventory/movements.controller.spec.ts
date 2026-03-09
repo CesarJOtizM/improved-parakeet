@@ -599,5 +599,111 @@ describe('MovementsController', () => {
         orgId: 'org-123',
       });
     });
+
+    it('Given: no optional fields When: creating Then: should pass undefined for optional fields', async () => {
+      // Arrange
+      const dto = {
+        type: 'OUT',
+        warehouseId: 'warehouse-123',
+        lines: [{ productId: 'product-123', quantity: 5, locationId: 'loc-123' }],
+      };
+      mockCreateMovementUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockMovementData,
+          message: 'Movement created',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.createMovement(dto as CreateMovementDto, 'org-123', mockRequest as Request);
+
+      // Assert
+      expect(mockCreateMovementUseCase.execute).toHaveBeenCalledWith({
+        type: 'OUT',
+        warehouseId: 'warehouse-123',
+        contactId: undefined,
+        reference: undefined,
+        reason: undefined,
+        note: undefined,
+        lines: dto.lines,
+        createdBy: 'user-123',
+        orgId: 'org-123',
+      });
+    });
+  });
+
+  describe('getMovements - partial date branches', () => {
+    it('Given: only startDate When: getting movements Then: startDate should be Date and endDate undefined', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10, startDate: '2026-01-01' };
+      const responseData = {
+        success: true,
+        data: { items: [], total: 0, page: 1, limit: 10 },
+        message: 'Movements retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetMovementsUseCase.execute.mockResolvedValue(ok(responseData));
+
+      // Act
+      await controller.getMovements(query as GetMovementsQueryDto, 'org-123');
+
+      // Assert
+      const callArgs = mockGetMovementsUseCase.execute.mock.calls[0][0];
+      expect(callArgs.startDate).toBeInstanceOf(Date);
+      expect(callArgs.endDate).toBeUndefined();
+    });
+
+    it('Given: only endDate When: getting movements Then: endDate should be Date and startDate undefined', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10, endDate: '2026-01-31' };
+      const responseData = {
+        success: true,
+        data: { items: [], total: 0, page: 1, limit: 10 },
+        message: 'Movements retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetMovementsUseCase.execute.mockResolvedValue(ok(responseData));
+
+      // Act
+      await controller.getMovements(query as GetMovementsQueryDto, 'org-123');
+
+      // Assert
+      const callArgs = mockGetMovementsUseCase.execute.mock.calls[0][0];
+      expect(callArgs.startDate).toBeUndefined();
+      expect(callArgs.endDate).toBeInstanceOf(Date);
+    });
+  });
+
+  describe('updateMovement - partial field mapping', () => {
+    it('Given: only reference When: updating Then: should pass only reference with other fields undefined', async () => {
+      // Arrange
+      const updateDto = { reference: 'REF-ONLY' };
+      mockUpdateMovementUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { ...mockMovementData, reference: 'REF-ONLY' },
+          message: 'Movement updated',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await controller.updateMovement('movement-123', updateDto as any, 'org-123');
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockUpdateMovementUseCase.execute).toHaveBeenCalledWith({
+        movementId: 'movement-123',
+        orgId: 'org-123',
+        reference: 'REF-ONLY',
+        reason: undefined,
+        note: undefined,
+        contactId: undefined,
+        lines: undefined,
+      });
+    });
   });
 });

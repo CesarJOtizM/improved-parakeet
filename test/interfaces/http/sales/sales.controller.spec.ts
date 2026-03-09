@@ -1027,6 +1027,153 @@ describe('SalesController', () => {
     });
   });
 
+  describe('getSales - partial date branches', () => {
+    it('Given: only startDate When: getting sales Then: should convert startDate and pass undefined endDate', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10, startDate: '2026-06-01' };
+      const responseData = {
+        success: true,
+        data: [],
+        pagination: { page: 1, limit: 10, total: 0, totalPages: 0, hasNext: false, hasPrev: false },
+        message: 'Sales retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetSalesUseCase.execute.mockResolvedValue(ok(responseData));
+
+      // Act
+      await controller.getSales(query as any, 'org-123');
+
+      // Assert
+      expect(mockGetSalesUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          startDate: expect.any(Date),
+          endDate: undefined,
+        })
+      );
+    });
+
+    it('Given: only endDate When: getting sales Then: should pass undefined startDate and convert endDate', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10, endDate: '2026-12-31' };
+      const responseData = {
+        success: true,
+        data: [],
+        pagination: { page: 1, limit: 10, total: 0, totalPages: 0, hasNext: false, hasPrev: false },
+        message: 'Sales retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetSalesUseCase.execute.mockResolvedValue(ok(responseData));
+
+      // Act
+      await controller.getSales(query as any, 'org-123');
+
+      // Assert
+      expect(mockGetSalesUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          startDate: undefined,
+          endDate: expect.any(Date),
+        })
+      );
+    });
+  });
+
+  describe('createSale - no optional fields', () => {
+    it('Given: only required fields When: creating sale Then: should pass undefined for optional fields', async () => {
+      // Arrange
+      const dto = {
+        warehouseId: 'wh-123',
+        lines: [{ productId: 'prod-1', quantity: 5, salePrice: 100 }],
+      };
+      mockCreateSaleUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockSaleData,
+          message: 'Sale created',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.createSale(dto as any, 'org-123', mockRequest as any);
+
+      // Assert
+      expect(mockCreateSaleUseCase.execute).toHaveBeenCalledWith({
+        warehouseId: 'wh-123',
+        contactId: undefined,
+        customerReference: undefined,
+        externalReference: undefined,
+        note: undefined,
+        lines: dto.lines,
+        createdBy: 'user-123',
+        orgId: 'org-123',
+      });
+    });
+  });
+
+  describe('updateSale - no optional fields', () => {
+    it('Given: empty update dto When: updating Then: should pass undefined for all optional fields', async () => {
+      // Arrange
+      const dto = {};
+      mockUpdateSaleUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockSaleData,
+          message: 'Sale updated',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      const result = await controller.updateSale('sale-123', dto as any, 'org-123');
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockUpdateSaleUseCase.execute).toHaveBeenCalledWith({
+        id: 'sale-123',
+        contactId: undefined,
+        customerReference: undefined,
+        externalReference: undefined,
+        note: undefined,
+        orgId: 'org-123',
+      });
+    });
+  });
+
+  describe('addSaleLine - no currency branch', () => {
+    it('Given: line without currency When: adding Then: should pass undefined currency', async () => {
+      // Arrange
+      const lineDto = {
+        productId: 'prod-1',
+        locationId: 'loc-1',
+        quantity: 3,
+        salePrice: 25,
+      };
+      mockAddSaleLineUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockSaleData,
+          message: 'Line added',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      const result = await controller.addSaleLine('sale-123', lineDto as any, 'org-123');
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockAddSaleLineUseCase.execute).toHaveBeenCalledWith({
+        saleId: 'sale-123',
+        productId: 'prod-1',
+        locationId: 'loc-1',
+        quantity: 3,
+        salePrice: 25,
+        currency: undefined,
+        orgId: 'org-123',
+      });
+    });
+  });
+
   describe('createSale - additional branches', () => {
     it('Given: all optional fields When: creating sale Then: should pass all fields', async () => {
       // Arrange

@@ -225,5 +225,218 @@ describe('AuthorizationLoggingInterceptor', () => {
         },
       });
     });
+
+    it('Given: error without status When: error occurs Then: should default statusCode to 500', done => {
+      // Arrange
+      const testError = new Error('No status error');
+      // No .status property set
+      (mockCallHandler.handle as jest.Mock<any>).mockReturnValue(throwError(() => testError));
+
+      // Act
+      const result = interceptor.intercept(mockExecutionContext, mockCallHandler);
+
+      // Assert
+      result.subscribe({
+        error: () => {
+          expect(loggerSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[AUTHZ_LOG] ERROR'),
+            expect.objectContaining({
+              statusCode: 500,
+              accessGranted: false,
+            })
+          );
+          done();
+        },
+      });
+    });
+
+    it('Given: metadata disabled When: intercepting Then: should pass through without logging', done => {
+      // Arrange - override getInterceptorMetadata to return disabled
+      jest.spyOn(interceptor as any, 'getInterceptorMetadata').mockReturnValue({
+        enabled: false,
+        logLevel: 'info',
+        logPermissions: false,
+        logRoles: true,
+      });
+      (mockCallHandler.handle as jest.Mock<any>).mockReturnValue(of({ data: [] }));
+
+      // Act
+      const result = interceptor.intercept(mockExecutionContext, mockCallHandler);
+
+      // Assert
+      result.subscribe({
+        complete: () => {
+          // When disabled, START and SUCCESS logs should NOT be emitted
+          expect(loggerSpy).not.toHaveBeenCalled();
+          done();
+        },
+      });
+    });
+
+    it('Given: logLevel debug When: intercepting Then: should use debug logger', done => {
+      // Arrange
+      const debugSpy = jest.spyOn((interceptor as any).logger, 'debug');
+      jest.spyOn(interceptor as any, 'getInterceptorMetadata').mockReturnValue({
+        enabled: true,
+        logLevel: 'debug',
+        logPermissions: false,
+        logRoles: true,
+      });
+      (mockCallHandler.handle as jest.Mock<any>).mockReturnValue(of({ data: [] }));
+
+      // Act
+      const result = interceptor.intercept(mockExecutionContext, mockCallHandler);
+
+      // Assert
+      result.subscribe({
+        complete: () => {
+          expect(debugSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[AUTHZ_LOG] START'),
+            expect.any(Object)
+          );
+          expect(debugSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[AUTHZ_LOG] SUCCESS'),
+            expect.any(Object)
+          );
+          done();
+        },
+      });
+    });
+
+    it('Given: logLevel warn When: intercepting Then: should use warn logger', done => {
+      // Arrange
+      const warnSpy = jest.spyOn((interceptor as any).logger, 'warn');
+      jest.spyOn(interceptor as any, 'getInterceptorMetadata').mockReturnValue({
+        enabled: true,
+        logLevel: 'warn',
+        logPermissions: false,
+        logRoles: true,
+      });
+      (mockCallHandler.handle as jest.Mock<any>).mockReturnValue(of({ data: [] }));
+
+      // Act
+      const result = interceptor.intercept(mockExecutionContext, mockCallHandler);
+
+      // Assert
+      result.subscribe({
+        complete: () => {
+          expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[AUTHZ_LOG] START'),
+            expect.any(Object)
+          );
+          done();
+        },
+      });
+    });
+
+    it('Given: logLevel error When: intercepting Then: should use error logger', done => {
+      // Arrange
+      const errorSpy = jest.spyOn((interceptor as any).logger, 'error');
+      jest.spyOn(interceptor as any, 'getInterceptorMetadata').mockReturnValue({
+        enabled: true,
+        logLevel: 'error',
+        logPermissions: false,
+        logRoles: true,
+      });
+      (mockCallHandler.handle as jest.Mock<any>).mockReturnValue(of({ data: [] }));
+
+      // Act
+      const result = interceptor.intercept(mockExecutionContext, mockCallHandler);
+
+      // Assert
+      result.subscribe({
+        complete: () => {
+          expect(errorSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[AUTHZ_LOG] START'),
+            expect.any(Object)
+          );
+          done();
+        },
+      });
+    });
+
+    it('Given: logPermissions true When: intercepting Then: should include permissions in start log', done => {
+      // Arrange
+      jest.spyOn(interceptor as any, 'getInterceptorMetadata').mockReturnValue({
+        enabled: true,
+        logLevel: 'info',
+        logPermissions: true,
+        logRoles: true,
+      });
+      (mockCallHandler.handle as jest.Mock<any>).mockReturnValue(of({ data: [] }));
+
+      // Act
+      const result = interceptor.intercept(mockExecutionContext, mockCallHandler);
+
+      // Assert
+      result.subscribe({
+        complete: () => {
+          expect(loggerSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[AUTHZ_LOG] START'),
+            expect.objectContaining({
+              permissions: ['read:products', 'write:products'],
+            })
+          );
+          done();
+        },
+      });
+    });
+
+    it('Given: logRoles false When: intercepting Then: should include empty roles array', done => {
+      // Arrange
+      jest.spyOn(interceptor as any, 'getInterceptorMetadata').mockReturnValue({
+        enabled: true,
+        logLevel: 'info',
+        logPermissions: false,
+        logRoles: false,
+      });
+      (mockCallHandler.handle as jest.Mock<any>).mockReturnValue(of({ data: [] }));
+
+      // Act
+      const result = interceptor.intercept(mockExecutionContext, mockCallHandler);
+
+      // Assert
+      result.subscribe({
+        complete: () => {
+          expect(loggerSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[AUTHZ_LOG] START'),
+            expect.objectContaining({
+              roles: [],
+              permissions: [],
+            })
+          );
+          done();
+        },
+      });
+    });
+
+    it('Given: user with partial data When: intercepting Then: should handle missing roles and permissions gracefully', done => {
+      // Arrange
+      mockRequest.user = {
+        id: 'user-456',
+        orgId: 'org-456',
+        // no roles, no permissions
+      };
+      (mockCallHandler.handle as jest.Mock<any>).mockReturnValue(of({ data: [] }));
+
+      // Act
+      const result = interceptor.intercept(mockExecutionContext, mockCallHandler);
+
+      // Assert
+      result.subscribe({
+        complete: () => {
+          expect(loggerSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[AUTHZ_LOG] START'),
+            expect.objectContaining({
+              userId: 'user-456',
+              orgId: 'org-456',
+              roles: [],
+              permissions: [],
+            })
+          );
+          done();
+        },
+      });
+    });
   });
 });

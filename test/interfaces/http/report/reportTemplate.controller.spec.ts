@@ -548,5 +548,157 @@ describe('ReportTemplateController', () => {
         })
       );
     });
+
+    it('Given: update with dateRange in defaultParameters When: updating Then: should convert dates', async () => {
+      // Arrange
+      const dto = {
+        name: 'Updated with dates',
+        defaultParameters: {
+          dateRange: {
+            startDate: '2026-01-01',
+            endDate: '2026-06-30',
+          },
+          warehouseId: 'wh-456',
+        },
+      };
+      const updateResponse = {
+        success: true,
+        data: { ...mockTemplateData, name: 'Updated with dates' },
+        message: 'Template updated',
+        timestamp: new Date().toISOString(),
+      };
+      mockUpdateReportTemplateUseCase.execute.mockResolvedValue(ok(updateResponse));
+
+      // Act
+      const result = await controller.updateTemplate(
+        'template-123',
+        dto as any,
+        mockOrgId,
+        mockUserId
+      );
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockUpdateReportTemplateUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          defaultParameters: expect.objectContaining({
+            dateRange: {
+              startDate: expect.any(Date),
+              endDate: expect.any(Date),
+            },
+            warehouseId: 'wh-456',
+          }),
+        })
+      );
+    });
+
+    it('Given: update with all parameter fields When: updating Then: should map all fields', async () => {
+      // Arrange
+      const dto = {
+        name: 'Full params update',
+        defaultParameters: {
+          productId: 'prod-999',
+          category: 'Beverages',
+          status: 'ACTIVE',
+          returnType: 'SUPPLIER',
+          groupBy: 'DAY',
+          period: 'QUARTERLY',
+          movementType: 'IN',
+          customerReference: 'CUST-999',
+          saleId: 'sale-999',
+          movementId: 'mov-999',
+          includeInactive: false,
+          locationId: 'loc-999',
+          severity: 'WARNING',
+        },
+        isActive: true,
+      };
+      const updateResponse = {
+        success: true,
+        data: { ...mockTemplateData, name: 'Full params update' },
+        message: 'Template updated',
+        timestamp: new Date().toISOString(),
+      };
+      mockUpdateReportTemplateUseCase.execute.mockResolvedValue(ok(updateResponse));
+
+      // Act
+      const result = await controller.updateTemplate(
+        'template-123',
+        dto as any,
+        mockOrgId,
+        mockUserId
+      );
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockUpdateReportTemplateUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          defaultParameters: expect.objectContaining({
+            productId: 'prod-999',
+            category: 'Beverages',
+            status: 'ACTIVE',
+            returnType: 'SUPPLIER',
+            groupBy: 'DAY',
+            period: 'QUARTERLY',
+            movementType: 'IN',
+            customerReference: 'CUST-999',
+            saleId: 'sale-999',
+            movementId: 'mov-999',
+            includeInactive: false,
+            locationId: 'loc-999',
+            severity: 'WARNING',
+          }),
+        })
+      );
+    });
+  });
+
+  describe('createTemplate - with description', () => {
+    it('Given: template with description but no defaultParameters When: creating Then: should pass empty defaultParameters', async () => {
+      const dto = {
+        name: 'Inventory Report',
+        description: 'Detailed inventory report',
+        type: 'INVENTORY',
+      };
+      const createResponse = {
+        success: true,
+        data: { ...mockTemplateData, name: 'Inventory Report', type: 'INVENTORY' },
+        message: 'Template created',
+        timestamp: new Date().toISOString(),
+      };
+      mockCreateReportTemplateUseCase.execute.mockResolvedValue(ok(createResponse));
+
+      const result = await controller.createTemplate(dto as any, mockOrgId, mockUserId);
+
+      expect(result.success).toBe(true);
+      expect(mockCreateReportTemplateUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'Detailed inventory report',
+          defaultParameters: {},
+        })
+      );
+    });
+  });
+
+  describe('getTemplates - all filters', () => {
+    it('Given: all filters provided When: getting templates Then: should pass all filters', async () => {
+      const templatesResponse = {
+        success: true,
+        data: [mockTemplateData],
+        message: 'Templates retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetReportTemplatesUseCase.execute.mockResolvedValue(ok(templatesResponse));
+
+      const result = await controller.getTemplates('INVENTORY', 'true', 'user-456', mockOrgId);
+
+      expect(result.success).toBe(true);
+      expect(mockGetReportTemplatesUseCase.execute).toHaveBeenCalledWith({
+        orgId: mockOrgId,
+        type: 'INVENTORY',
+        activeOnly: true,
+        createdBy: 'user-456',
+      });
+    });
   });
 });

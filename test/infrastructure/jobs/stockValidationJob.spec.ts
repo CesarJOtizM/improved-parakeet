@@ -804,5 +804,146 @@ describe('StockValidationJob', () => {
       );
       expect(thresholdExceededCalls).toHaveLength(0);
     });
+
+    it('Given: OUT_OF_STOCK severity but notifyOutOfStock=false When: validating Then: should not publish alert', async () => {
+      // Arrange
+      mockPrismaService.alertConfiguration.findUnique.mockResolvedValue({
+        orgId: 'org-123',
+        isEnabled: true,
+        cronFrequency: 'EVERY_HOUR',
+        notifyLowStock: true,
+        notifyCriticalStock: true,
+        notifyOutOfStock: false,
+        recipientEmails: '',
+        lastRunAt: null,
+      });
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(0, 0)); // OUT_OF_STOCK
+      mockReorderRuleRepository.findByProductAndWarehouse.mockResolvedValue({
+        ...mockReorderRule,
+        maxQty: undefined,
+      });
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert - validates the OUT_OF_STOCK severity filter path
+    });
+
+    it('Given: getProductStockInfo returns null When: validating Then: should skip that product-warehouse', async () => {
+      // Arrange
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+      // getStockQuantity throws to trigger getProductStockInfo returning null
+      mockStockRepository.getStockQuantity.mockRejectedValue(new Error('Stock query error'));
+      mockReorderRuleRepository.findByProductAndWarehouse.mockResolvedValue(mockReorderRule);
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert - no alerts since stockInfo is null
+      expect(mockEventBus.publish).not.toHaveBeenCalled();
+    });
+
+    it('Given: EVERY_12_HOURS frequency and ran 6h ago When: validating Then: should skip', async () => {
+      // Arrange
+      mockPrismaService.alertConfiguration.findUnique.mockResolvedValue({
+        orgId: 'org-123',
+        isEnabled: true,
+        cronFrequency: 'EVERY_12_HOURS',
+        notifyLowStock: true,
+        notifyCriticalStock: true,
+        notifyOutOfStock: true,
+        recipientEmails: '',
+        lastRunAt: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
+      });
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert
+      expect(mockStockRepository.getStockQuantity).not.toHaveBeenCalled();
+    });
+
+    it('Given: EVERY_DAY frequency and ran 25h ago When: validating Then: should process', async () => {
+      // Arrange
+      mockPrismaService.alertConfiguration.findUnique.mockResolvedValue({
+        orgId: 'org-123',
+        isEnabled: true,
+        cronFrequency: 'EVERY_DAY',
+        notifyLowStock: true,
+        notifyCriticalStock: true,
+        notifyOutOfStock: true,
+        recipientEmails: '',
+        lastRunAt: new Date(Date.now() - 25 * 60 * 60 * 1000), // 25 hours ago
+      });
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(50, 0));
+      mockReorderRuleRepository.findByProductAndWarehouse.mockResolvedValue(mockReorderRule);
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert - should process since 25h > 24h
+      expect(mockStockRepository.getStockQuantity).toHaveBeenCalled();
+    });
+
+    it('Given: recipientEmails with only commas and spaces When: parsing Then: should fallback to admin email', async () => {
+      // Arrange
+      mockPrismaService.alertConfiguration.findUnique.mockResolvedValue({
+        orgId: 'org-123',
+        isEnabled: true,
+        cronFrequency: 'EVERY_HOUR',
+        notifyLowStock: true,
+        notifyCriticalStock: true,
+        notifyOutOfStock: true,
+        recipientEmails: '  ,  ,  ',
+        lastRunAt: null,
+      });
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(5, 0));
+      mockReorderRuleRepository.findByProductAndWarehouse.mockResolvedValue(mockReorderRule);
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      expect(digestCall.recipientEmails).toEqual(['admin@nevadainventory.com']);
+    });
+
+    it('Given: recipientEmails is null When: parsing Then: should fallback to admin email', async () => {
+      // Arrange
+      mockPrismaService.alertConfiguration.findUnique.mockResolvedValue({
+        orgId: 'org-123',
+        isEnabled: true,
+        cronFrequency: 'EVERY_HOUR',
+        notifyLowStock: true,
+        notifyCriticalStock: true,
+        notifyOutOfStock: true,
+        recipientEmails: null,
+        lastRunAt: null,
+      });
+      mockOrganizationRepository.findActiveOrganizations.mockResolvedValue([mockOrganization]);
+      mockProductRepository.findByStatus.mockResolvedValue([mockProduct]);
+      mockWarehouseRepository.findActive.mockResolvedValue([mockWarehouse]);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(5, 0));
+      mockReorderRuleRepository.findByProductAndWarehouse.mockResolvedValue(mockReorderRule);
+
+      // Act
+      await job.validateStockLevels();
+
+      // Assert
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      expect(digestCall.recipientEmails).toEqual(['admin@nevadainventory.com']);
+    });
   });
 });

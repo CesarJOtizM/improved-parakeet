@@ -514,6 +514,141 @@ describe('TransfersController', () => {
     });
   });
 
+  describe('getTransfers - partial date branches', () => {
+    it('Given: only startDate When: getting transfers Then: should convert startDate and pass undefined endDate', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10, startDate: '2026-03-01' };
+      mockGetTransfersUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: [],
+          pagination: {},
+          message: 'OK',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getTransfers(query as any, 'org-123');
+
+      // Assert
+      const callArgs = mockGetTransfersUseCase.execute.mock.calls[0][0];
+      expect(callArgs.startDate).toBeInstanceOf(Date);
+      expect(callArgs.endDate).toBeUndefined();
+    });
+
+    it('Given: only endDate When: getting transfers Then: should pass undefined startDate and convert endDate', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10, endDate: '2026-03-31' };
+      mockGetTransfersUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: [],
+          pagination: {},
+          message: 'OK',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getTransfers(query as any, 'org-123');
+
+      // Assert
+      const callArgs = mockGetTransfersUseCase.execute.mock.calls[0][0];
+      expect(callArgs.startDate).toBeUndefined();
+      expect(callArgs.endDate).toBeInstanceOf(Date);
+    });
+  });
+
+  describe('getTransfers - all filters', () => {
+    it('Given: all filters When: getting transfers Then: should pass all params', async () => {
+      // Arrange
+      const query = {
+        page: 2,
+        limit: 20,
+        fromWarehouseId: 'wh-1',
+        toWarehouseId: 'wh-2',
+        status: 'RECEIVED',
+        startDate: '2026-01-01',
+        endDate: '2026-12-31',
+        sortBy: 'receivedAt',
+        sortOrder: 'asc',
+      };
+      mockGetTransfersUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: [],
+          pagination: {},
+          message: 'OK',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getTransfers(query as any, 'org-123');
+
+      // Assert
+      expect(mockGetTransfersUseCase.execute).toHaveBeenCalledWith({
+        orgId: 'org-123',
+        page: 2,
+        limit: 20,
+        fromWarehouseId: 'wh-1',
+        toWarehouseId: 'wh-2',
+        status: 'RECEIVED',
+        startDate: expect.any(Date),
+        endDate: expect.any(Date),
+        sortBy: 'receivedAt',
+        sortOrder: 'asc',
+      });
+    });
+  });
+
+  describe('initiateTransfer - no note branch', () => {
+    it('Given: transfer without note When: initiating Then: should pass undefined note', async () => {
+      // Arrange
+      const dto = {
+        fromWarehouseId: 'wh-origin',
+        toWarehouseId: 'wh-dest',
+        lines: [{ productId: 'prod-1', quantity: 5 }],
+      };
+      mockInitiateTransferUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockTransferData,
+          message: 'Created',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.initiateTransfer(dto as any, 'org-123', mockRequest as any);
+
+      // Assert
+      expect(mockInitiateTransferUseCase.execute).toHaveBeenCalledWith({
+        fromWarehouseId: 'wh-origin',
+        toWarehouseId: 'wh-dest',
+        note: undefined,
+        lines: [{ productId: 'prod-1', quantity: 5 }],
+        createdBy: 'user-123',
+        orgId: 'org-123',
+      });
+    });
+  });
+
+  describe('receiveTransfer - not found', () => {
+    it('Given: non-existent transfer When: receiving Then: should throw NotFoundError', async () => {
+      // Arrange
+      mockReceiveTransferUseCase.execute.mockResolvedValue(
+        err(new NotFoundError('Transfer not found'))
+      );
+
+      // Act & Assert
+      await expect(
+        controller.receiveTransfer('non-existent', 'org-123', mockRequest as any)
+      ).rejects.toThrow();
+    });
+  });
+
   describe('initiateTransfer - note mapping', () => {
     it('Given: transfer with note When: initiating Then: should pass note to use case', async () => {
       // Arrange

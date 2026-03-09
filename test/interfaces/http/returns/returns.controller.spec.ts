@@ -589,6 +589,36 @@ describe('ReturnsController', () => {
       });
     });
 
+    it('Given: line without currency When: adding Then: should pass undefined currency', async () => {
+      // Arrange
+      const lineDto = {
+        productId: 'prod-1',
+        locationId: 'loc-1',
+        quantity: 5,
+      };
+      mockAddReturnLineUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockReturnData,
+          message: 'Line added',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.addReturnLine('return-123', lineDto as any, 'org-123');
+
+      // Assert
+      expect(mockAddReturnLineUseCase.execute).toHaveBeenCalledWith({
+        returnId: 'return-123',
+        productId: 'prod-1',
+        locationId: 'loc-1',
+        quantity: 5,
+        currency: undefined,
+        orgId: 'org-123',
+      });
+    });
+
     it('Given: non-existent return When: adding line Then: should throw', async () => {
       // Arrange
       const lineDto = { productId: 'prod-1', locationId: 'loc-1', quantity: 3 };
@@ -613,6 +643,133 @@ describe('ReturnsController', () => {
       await expect(
         controller.addReturnLine('return-123', lineDto as any, 'org-123')
       ).rejects.toThrow();
+    });
+  });
+
+  describe('getReturns - partial date branches', () => {
+    it('Given: only startDate When: getting returns Then: startDate should be Date and endDate undefined', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10, startDate: '2026-01-01' };
+      const responseData = {
+        success: true,
+        data: { items: [], total: 0 },
+        message: 'Returns retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetReturnsUseCase.execute.mockResolvedValue(ok(responseData));
+
+      // Act
+      await controller.getReturns(query as any, 'org-123');
+
+      // Assert
+      const callArgs = mockGetReturnsUseCase.execute.mock.calls[0][0];
+      expect(callArgs.startDate).toBeInstanceOf(Date);
+      expect(callArgs.endDate).toBeUndefined();
+    });
+
+    it('Given: only endDate When: getting returns Then: endDate should be Date and startDate undefined', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10, endDate: '2026-01-31' };
+      const responseData = {
+        success: true,
+        data: { items: [], total: 0 },
+        message: 'Returns retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetReturnsUseCase.execute.mockResolvedValue(ok(responseData));
+
+      // Act
+      await controller.getReturns(query as any, 'org-123');
+
+      // Assert
+      const callArgs = mockGetReturnsUseCase.execute.mock.calls[0][0];
+      expect(callArgs.startDate).toBeUndefined();
+      expect(callArgs.endDate).toBeInstanceOf(Date);
+    });
+  });
+
+  describe('createReturn - no optional fields', () => {
+    it('Given: only required fields When: creating return Then: should pass undefined for optional fields', async () => {
+      // Arrange
+      const dto = {
+        type: 'RETURN_SUPPLIER',
+        warehouseId: 'wh-456',
+        lines: [{ productId: 'prod-1', quantity: 2, locationId: 'loc-1' }],
+      };
+      mockCreateReturnUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockReturnData,
+          message: 'Return created',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.createReturn(dto as any, 'org-123', mockRequest as any);
+
+      // Assert
+      expect(mockCreateReturnUseCase.execute).toHaveBeenCalledWith({
+        type: 'RETURN_SUPPLIER',
+        warehouseId: 'wh-456',
+        saleId: undefined,
+        sourceMovementId: undefined,
+        reason: undefined,
+        note: undefined,
+        lines: dto.lines,
+        createdBy: 'user-123',
+        orgId: 'org-123',
+      });
+    });
+  });
+
+  describe('updateReturn - partial fields', () => {
+    it('Given: only reason When: updating return Then: should pass undefined for note', async () => {
+      // Arrange
+      const dto = { reason: 'Only reason provided' };
+      mockUpdateReturnUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { ...mockReturnData, reason: 'Only reason provided' },
+          message: 'Return updated',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.updateReturn('return-123', dto as any, 'org-123');
+
+      // Assert
+      expect(mockUpdateReturnUseCase.execute).toHaveBeenCalledWith({
+        id: 'return-123',
+        reason: 'Only reason provided',
+        note: undefined,
+        orgId: 'org-123',
+      });
+    });
+
+    it('Given: only note When: updating return Then: should pass undefined for reason', async () => {
+      // Arrange
+      const dto = { note: 'Only note provided' };
+      mockUpdateReturnUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { ...mockReturnData, note: 'Only note provided' },
+          message: 'Return updated',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.updateReturn('return-123', dto as any, 'org-123');
+
+      // Assert
+      expect(mockUpdateReturnUseCase.execute).toHaveBeenCalledWith({
+        id: 'return-123',
+        reason: undefined,
+        note: 'Only note provided',
+        orgId: 'org-123',
+      });
     });
   });
 });

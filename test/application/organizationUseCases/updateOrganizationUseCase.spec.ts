@@ -240,5 +240,354 @@ describe('UpdateOrganizationUseCase', () => {
       );
       expect(mockOrganizationRepository.update).toHaveBeenCalledTimes(1);
     });
+
+    it('Given: slug too long (>50 chars) When: updating Then: should return ValidationError', async () => {
+      // Arrange
+      mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
+      mockPrismaService.organization.findUnique.mockResolvedValue({
+        slug: 'original',
+        domain: 'original.com',
+      });
+
+      // Act
+      const result = await useCase.execute({
+        id: organizationId,
+        slug: 'a'.repeat(51),
+      });
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+          expect(error.message).toContain('between 3 and 50');
+        }
+      );
+    });
+
+    it('Given: same slug as current When: updating Then: should not check slug existence', async () => {
+      // Arrange
+      const updatedOrg = Organization.reconstitute(
+        {
+          name: 'Updated Org',
+          settings: {},
+          timezone: 'UTC',
+          currency: 'USD',
+          dateFormat: 'YYYY-MM-DD',
+          isActive: true,
+        },
+        organizationId,
+        organizationId
+      );
+      mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
+      mockPrismaService.organization.findUnique
+        .mockResolvedValueOnce({ slug: 'same-slug', domain: 'original.com' })
+        .mockResolvedValueOnce({
+          id: organizationId,
+          slug: 'same-slug',
+          domain: 'original.com',
+          updatedAt: new Date(),
+        });
+      mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
+
+      // Act
+      const result = await useCase.execute({
+        id: organizationId,
+        slug: 'same-slug',
+      });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      // existsBySlug should NOT be called since slug matches current
+      expect(mockOrganizationRepository.existsBySlug).not.toHaveBeenCalled();
+    });
+
+    it('Given: same domain as current When: updating Then: should not check domain existence', async () => {
+      // Arrange
+      const updatedOrg = Organization.reconstitute(
+        {
+          name: 'Updated Org',
+          settings: {},
+          timezone: 'UTC',
+          currency: 'USD',
+          dateFormat: 'YYYY-MM-DD',
+          isActive: true,
+        },
+        organizationId,
+        organizationId
+      );
+      mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
+      mockPrismaService.organization.findUnique
+        .mockResolvedValueOnce({ slug: 'original', domain: 'same.com' })
+        .mockResolvedValueOnce({
+          id: organizationId,
+          slug: 'original',
+          domain: 'same.com',
+          updatedAt: new Date(),
+        });
+      mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
+
+      // Act
+      const result = await useCase.execute({
+        id: organizationId,
+        domain: 'same.com',
+      });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockOrganizationRepository.existsByDomain).not.toHaveBeenCalled();
+    });
+
+    it('Given: only timezone update When: updating Then: should update timezone only', async () => {
+      // Arrange
+      const updatedOrg = Organization.reconstitute(
+        {
+          name: 'Original Org',
+          settings: {},
+          timezone: 'America/Bogota',
+          currency: 'USD',
+          dateFormat: 'YYYY-MM-DD',
+          isActive: true,
+        },
+        organizationId,
+        organizationId
+      );
+      mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
+      mockPrismaService.organization.findUnique
+        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' })
+        .mockResolvedValueOnce({
+          id: organizationId,
+          slug: 'original',
+          domain: 'original.com',
+          updatedAt: new Date(),
+        });
+      mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
+
+      // Act
+      const result = await useCase.execute({
+        id: organizationId,
+        timezone: 'America/Bogota',
+      });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('Given: only currency update When: updating Then: should update currency only', async () => {
+      // Arrange
+      const updatedOrg = Organization.reconstitute(
+        {
+          name: 'Original Org',
+          settings: {},
+          timezone: 'UTC',
+          currency: 'COP',
+          dateFormat: 'YYYY-MM-DD',
+          isActive: true,
+        },
+        organizationId,
+        organizationId
+      );
+      mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
+      mockPrismaService.organization.findUnique
+        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' })
+        .mockResolvedValueOnce({
+          id: organizationId,
+          slug: 'original',
+          domain: 'original.com',
+          updatedAt: new Date(),
+        });
+      mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
+
+      // Act
+      const result = await useCase.execute({
+        id: organizationId,
+        currency: 'COP',
+      });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('Given: only dateFormat update When: updating Then: should update dateFormat only', async () => {
+      // Arrange
+      const updatedOrg = Organization.reconstitute(
+        {
+          name: 'Original Org',
+          settings: {},
+          timezone: 'UTC',
+          currency: 'USD',
+          dateFormat: 'DD/MM/YYYY',
+          isActive: true,
+        },
+        organizationId,
+        organizationId
+      );
+      mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
+      mockPrismaService.organization.findUnique
+        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' })
+        .mockResolvedValueOnce({
+          id: organizationId,
+          slug: 'original',
+          domain: 'original.com',
+          updatedAt: new Date(),
+        });
+      mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
+
+      // Act
+      const result = await useCase.execute({
+        id: organizationId,
+        dateFormat: 'DD/MM/YYYY',
+      });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('Given: isActive update When: updating Then: should update isActive', async () => {
+      // Arrange
+      const updatedOrg = Organization.reconstitute(
+        {
+          name: 'Original Org',
+          settings: {},
+          timezone: 'UTC',
+          currency: 'USD',
+          dateFormat: 'YYYY-MM-DD',
+          isActive: false,
+        },
+        organizationId,
+        organizationId
+      );
+      mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
+      mockPrismaService.organization.findUnique
+        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' })
+        .mockResolvedValueOnce({
+          id: organizationId,
+          slug: 'original',
+          domain: 'original.com',
+          updatedAt: new Date(),
+        });
+      mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
+
+      // Act
+      const result = await useCase.execute({
+        id: organizationId,
+        isActive: false,
+      });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('Given: no update props (no name/timezone/currency/dateFormat/isActive) When: updating Then: should not call organization.update', async () => {
+      // Arrange
+      const updatedOrg = Organization.reconstitute(
+        {
+          name: 'Original Org',
+          settings: {},
+          timezone: 'UTC',
+          currency: 'USD',
+          dateFormat: 'YYYY-MM-DD',
+          isActive: true,
+        },
+        organizationId,
+        organizationId
+      );
+      mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
+      mockPrismaService.organization.findUnique
+        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' })
+        .mockResolvedValueOnce({
+          id: organizationId,
+          slug: 'original',
+          domain: 'original.com',
+          updatedAt: new Date(),
+        });
+      mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
+
+      // Act - only id, no update fields
+      const result = await useCase.execute({ id: organizationId });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockOrganizationRepository.update).toHaveBeenCalledTimes(1);
+    });
+
+    it('Given: orgData not found after update When: updating Then: should return NotFoundError', async () => {
+      // Arrange
+      const updatedOrg = Organization.reconstitute(
+        {
+          name: 'Updated Org',
+          settings: {},
+          timezone: 'UTC',
+          currency: 'USD',
+          dateFormat: 'YYYY-MM-DD',
+          isActive: true,
+        },
+        organizationId,
+        organizationId
+      );
+      mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
+      mockPrismaService.organization.findUnique
+        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' })
+        .mockResolvedValueOnce(null); // Not found after update
+      mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
+
+      // Act
+      const result = await useCase.execute({ id: organizationId, name: 'Updated Org' });
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(NotFoundError);
+          expect(error.message).toContain('not found after update');
+        }
+      );
+    });
+
+    it('Given: domain without domain in orgData When: updating Then: should return undefined for domain', async () => {
+      // Arrange
+      const updatedOrg = Organization.reconstitute(
+        {
+          name: 'Updated Org',
+          settings: {},
+          timezone: 'UTC',
+          currency: 'USD',
+          dateFormat: 'YYYY-MM-DD',
+          isActive: true,
+        },
+        organizationId,
+        organizationId
+      );
+      mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
+      mockPrismaService.organization.findUnique
+        .mockResolvedValueOnce({ slug: 'original', domain: null })
+        .mockResolvedValueOnce({
+          id: organizationId,
+          slug: 'original',
+          domain: null, // no domain
+          updatedAt: new Date(),
+        });
+      mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
+
+      // Act
+      const result = await useCase.execute({ id: organizationId, name: 'Updated Org' });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.domain).toBeUndefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

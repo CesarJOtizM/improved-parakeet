@@ -240,4 +240,137 @@ describe('VtexPollOrdersUseCase', () => {
       })
     );
   });
+
+  it('Given: connectionId provided but connection not found When: polling Then: should return zero counts', async () => {
+    mockConnectionRepository.findById.mockResolvedValue(null);
+
+    const result = await useCase.execute({ connectionId: 'non-existent', orgId: mockOrgId });
+
+    expect(result.isOk()).toBe(true);
+    result.match(
+      value => {
+        expect(value.data.polled).toBe(0);
+        expect(value.data.synced).toBe(0);
+        expect(value.data.failed).toBe(0);
+      },
+      () => {
+        throw new Error('Expected Ok result');
+      }
+    );
+  });
+
+  it('Given: multiple connections When: polling all Then: should aggregate counts from all', async () => {
+    const conn1 = createMockConnection({ id: 'conn-1' });
+    const conn2 = createMockConnection({ id: 'conn-2' });
+    mockConnectionRepository.findAllConnectedForPolling.mockResolvedValue([conn1, conn2]);
+    mockEncryptionService.decrypt.mockReturnValue('plain-value');
+    mockVtexApiClient.listOrders.mockResolvedValue({
+      list: [{ orderId: 'ORD-1', status: 'ready-for-handling' } as any],
+      paging: { total: 1, pages: 1, currentPage: 1, perPage: 50 },
+    });
+    mockSyncOrderUseCase.execute.mockResolvedValue(
+      ok({
+        success: true,
+        message: 'OK',
+        data: { externalOrderId: 'ORD-1', action: 'SYNCED', saleId: 'sale-1' },
+        timestamp: new Date().toISOString(),
+      })
+    );
+
+    const result = await useCase.execute({});
+
+    expect(result.isOk()).toBe(true);
+    result.match(
+      value => {
+        expect(value.data.polled).toBe(2); // 1 per connection
+        expect(value.data.synced).toBe(2);
+        expect(value.data.failed).toBe(0);
+      },
+      () => {
+        throw new Error('Expected Ok result');
+      }
+    );
+  });
+
+  it('Given: outer try-catch throws When: polling Then: should return ValidationError', async () => {
+    mockConnectionRepository.findAllConnectedForPolling.mockRejectedValue(
+      new Error('Connection repo failed')
+    );
+
+    const result = await useCase.execute({});
+
+    expect(result.isErr()).toBe(true);
+    result.match(
+      () => {
+        throw new Error('Expected Err result');
+      },
+      error => {
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.message).toContain('Polling failed');
+        expect(error.message).toContain('Connection repo failed');
+      }
+    );
+  });
+
+  it('Given: outer try-catch throws non-Error When: polling Then: should return ValidationError with Unknown error', async () => {
+    mockConnectionRepository.findAllConnectedForPolling.mockRejectedValue('string-error');
+
+    const result = await useCase.execute({});
+
+    expect(result.isErr()).toBe(true);
+    result.match(
+      () => {
+        throw new Error('Expected Err result');
+      },
+      error => {
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.message).toContain('Unknown error');
+      }
+    );
+  });
+
+  it('Given: connection polling throws non-Error When: polling Then: should mark connection with Unknown polling error', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findAllConnectedForPolling.mockResolvedValue([connection]);
+    mockEncryptionService.decrypt.mockImplementation(() => {
+      throw 'non-error-value';
+    });
+    mockConnectionRepository.update.mockImplementation(async c => c);
+
+    const result = await useCase.execute({});
+
+    expect(result.isOk()).toBe(true);
+    expect(mockConnectionRepository.update).toHaveBeenCalled();
+  });
+
+  it('Given: all sync orders fail When: polling Then: should count all as failed', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findAllConnectedForPolling.mockResolvedValue([connection]);
+    mockEncryptionService.decrypt.mockReturnValue('plain-value');
+    mockVtexApiClient.listOrders.mockResolvedValue({
+      list: [
+        { orderId: 'ORD-1', status: 'ready-for-handling' } as any,
+        { orderId: 'ORD-2', status: 'ready-for-handling' } as any,
+        { orderId: 'ORD-3', status: 'ready-for-handling' } as any,
+      ],
+      paging: { total: 3, pages: 1, currentPage: 1, perPage: 50 },
+    });
+    mockSyncOrderUseCase.execute.mockResolvedValue(
+      err(new ValidationError('SKU not mapped', 'SKU_NOT_FOUND'))
+    );
+
+    const result = await useCase.execute({});
+
+    expect(result.isOk()).toBe(true);
+    result.match(
+      value => {
+        expect(value.data.polled).toBe(3);
+        expect(value.data.synced).toBe(0);
+        expect(value.data.failed).toBe(3);
+      },
+      () => {
+        throw new Error('Expected Ok result');
+      }
+    );
+  });
 });

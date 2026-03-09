@@ -111,5 +111,137 @@ describe('GetAuditLogUseCase', () => {
       );
       expect(mockAuditRepository.findById).toHaveBeenCalledWith('non-existent-id', mockOrgId);
     });
+
+    it('Given: audit log with all null optional fields When: getting Then: should return nulls', async () => {
+      // Arrange
+      const minimalAuditLog = AuditLog.reconstitute(
+        {
+          entityType: EntityType.create('Product'),
+          action: AuditAction.create('DELETE'),
+          metadata: AuditMetadata.create({}),
+          // no entityId, performedBy, ipAddress, userAgent, httpMethod, httpUrl, httpStatusCode, duration
+        },
+        mockAuditLogId,
+        mockOrgId
+      );
+      mockAuditRepository.findById.mockResolvedValue(minimalAuditLog);
+
+      // Act
+      const result = await useCase.execute({ id: mockAuditLogId, orgId: mockOrgId });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.entityId).toBeNull();
+          expect(value.data.performedBy).toBeNull();
+          expect(value.data.ipAddress).toBeNull();
+          expect(value.data.userAgent).toBeNull();
+          expect(value.data.httpMethod).toBeNull();
+          expect(value.data.httpUrl).toBeNull();
+          expect(value.data.httpStatusCode).toBeNull();
+          expect(value.data.duration).toBeNull();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: audit log with orgId undefined When: getting Then: should return orgId null', async () => {
+      // Arrange - reconstitute without orgId
+      const auditLogNoOrg = AuditLog.reconstitute(
+        {
+          entityType: EntityType.create('System'),
+          action: AuditAction.create('UPDATE'),
+          metadata: AuditMetadata.create({ key: 'value' }),
+          entityId: 'entity-42',
+          performedBy: 'system',
+        },
+        mockAuditLogId,
+        undefined // no orgId
+      );
+      mockAuditRepository.findById.mockResolvedValue(auditLogNoOrg);
+
+      // Act
+      const result = await useCase.execute({ id: mockAuditLogId, orgId: mockOrgId });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.orgId).toBeNull();
+          expect(value.data.entityId).toBe('entity-42');
+          expect(value.data.performedBy).toBe('system');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: audit log with zero httpStatusCode and zero duration When: getting Then: should return null for falsy zero values', async () => {
+      // Note: the source uses `|| null`, so 0 becomes null
+      const auditLogWithZeros = AuditLog.reconstitute(
+        {
+          entityType: EntityType.create('Movement'),
+          action: AuditAction.create('CREATE'),
+          metadata: AuditMetadata.create({}),
+          httpStatusCode: 0,
+          duration: 0,
+        },
+        mockAuditLogId,
+        mockOrgId
+      );
+      mockAuditRepository.findById.mockResolvedValue(auditLogWithZeros);
+
+      const result = await useCase.execute({ id: mockAuditLogId, orgId: mockOrgId });
+
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          // 0 || null = null due to falsy check
+          expect(value.data.httpStatusCode).toBeNull();
+          expect(value.data.duration).toBeNull();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: audit log with all optional fields populated When: getting Then: should return all fields', async () => {
+      const fullAuditLog = createMockAuditLog({
+        entityId: 'entity-100',
+        performedBy: 'user-admin',
+        ipAddress: '10.0.0.1',
+        userAgent: 'TestAgent/1.0',
+        httpMethod: 'GET',
+        httpUrl: '/api/test',
+        httpStatusCode: 200,
+        duration: 42,
+      });
+      mockAuditRepository.findById.mockResolvedValue(fullAuditLog);
+
+      const result = await useCase.execute({ id: mockAuditLogId, orgId: mockOrgId });
+
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.entityId).toBe('entity-100');
+          expect(value.data.performedBy).toBe('user-admin');
+          expect(value.data.ipAddress).toBe('10.0.0.1');
+          expect(value.data.userAgent).toBe('TestAgent/1.0');
+          expect(value.data.httpMethod).toBe('GET');
+          expect(value.data.httpUrl).toBe('/api/test');
+          expect(value.data.httpStatusCode).toBe(200);
+          expect(value.data.duration).toBe(42);
+          expect(value.data.orgId).toBe(mockOrgId);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

@@ -468,6 +468,121 @@ describe('RolesController', () => {
     });
   });
 
+  describe('createRole - no description branch', () => {
+    it('Given: role with no description When: creating Then: should pass undefined description', async () => {
+      // Arrange
+      const dto = { name: 'Minimal Role' };
+      const createResponse = {
+        success: true,
+        data: { ...mockRoleData, name: 'Minimal Role', description: undefined },
+        message: 'Role created',
+        timestamp: new Date().toISOString(),
+      };
+      mockCreateRoleUseCase.execute.mockResolvedValue(ok(createResponse));
+
+      // Act
+      const result = await controller.createRole(dto as any, mockOrgId, mockRequest as any);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockCreateRoleUseCase.execute).toHaveBeenCalledWith({
+        name: 'Minimal Role',
+        description: undefined,
+        orgId: mockOrgId,
+        createdBy: 'user-123',
+      });
+    });
+  });
+
+  describe('updateRole - partial fields', () => {
+    it('Given: only description When: updating Then: should pass undefined isActive', async () => {
+      // Arrange
+      const dto = { description: 'Only description updated' };
+      const updateResponse = {
+        success: true,
+        data: { ...mockRoleData, description: 'Only description updated' },
+        message: 'Role updated',
+        timestamp: new Date().toISOString(),
+      };
+      mockUpdateRoleUseCase.execute.mockResolvedValue(ok(updateResponse));
+
+      // Act
+      const result = await controller.updateRole(
+        'role-123',
+        dto as any,
+        mockOrgId,
+        mockRequest as any
+      );
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockUpdateRoleUseCase.execute).toHaveBeenCalledWith({
+        roleId: 'role-123',
+        description: 'Only description updated',
+        isActive: undefined,
+        orgId: mockOrgId,
+        updatedBy: 'user-123',
+      });
+    });
+
+    it('Given: only isActive When: updating Then: should pass undefined description', async () => {
+      // Arrange
+      const dto = { isActive: true };
+      const updateResponse = {
+        success: true,
+        data: { ...mockRoleData, isActive: true },
+        message: 'Role updated',
+        timestamp: new Date().toISOString(),
+      };
+      mockUpdateRoleUseCase.execute.mockResolvedValue(ok(updateResponse));
+
+      // Act
+      const result = await controller.updateRole(
+        'role-123',
+        dto as any,
+        mockOrgId,
+        mockRequest as any
+      );
+
+      // Assert
+      expect(mockUpdateRoleUseCase.execute).toHaveBeenCalledWith({
+        roleId: 'role-123',
+        description: undefined,
+        isActive: true,
+        orgId: mockOrgId,
+        updatedBy: 'user-123',
+      });
+    });
+  });
+
+  describe('updateRole - validation error', () => {
+    it('Given: validation failure When: updating Then: should throw validation error', async () => {
+      // Arrange
+      const dto = { description: '' };
+      mockUpdateRoleUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Description cannot be empty'))
+      );
+
+      // Act & Assert
+      await expect(
+        controller.updateRole('role-123', dto as any, mockOrgId, mockRequest as any)
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('assignPermissionsToRole - use case rejects', () => {
+    it('Given: use case rejects When: assigning permissions Then: should propagate error', async () => {
+      // Arrange
+      const dto = { permissionIds: ['perm-1'] };
+      mockAssignPermissionsToRoleUseCase.execute.mockRejectedValue(new Error('Database error'));
+
+      // Act & Assert
+      await expect(
+        controller.assignPermissionsToRole('role-123', dto as any, mockOrgId, mockRequest as any)
+      ).rejects.toThrow('Database error');
+    });
+  });
+
   describe('createRole - additional branches', () => {
     it('Given: use case rejects When: creating role Then: should propagate error', async () => {
       // Arrange

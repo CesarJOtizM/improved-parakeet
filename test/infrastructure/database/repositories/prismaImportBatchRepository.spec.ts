@@ -379,4 +379,163 @@ describe('PrismaImportBatchRepository', () => {
       });
     });
   });
+
+  describe('findPaginated', () => {
+    it('Given: basic pagination When: finding paginated Then: should return paginated results', async () => {
+      // Arrange
+      mockPrismaClient.importBatch.findMany.mockResolvedValue([mockBatchDataNoRows]);
+      mockPrismaClient.importBatch.count.mockResolvedValue(1);
+
+      // Act
+      const result = await repository.findPaginated('org-123', {
+        page: 1,
+        limit: 10,
+      });
+
+      // Assert
+      expect(result.data).toHaveLength(1);
+      expect(result.pagination.page).toBe(1);
+      expect(result.pagination.limit).toBe(10);
+      expect(result.pagination.total).toBe(1);
+      expect(result.pagination.totalPages).toBe(1);
+    });
+
+    it('Given: type filter in pagination When: finding paginated Then: should include type in where', async () => {
+      // Arrange
+      mockPrismaClient.importBatch.findMany.mockResolvedValue([]);
+      mockPrismaClient.importBatch.count.mockResolvedValue(0);
+
+      // Act
+      const result = await repository.findPaginated('org-123', {
+        page: 1,
+        limit: 10,
+        type: 'PRODUCTS',
+      });
+
+      // Assert
+      expect(result.data).toHaveLength(0);
+      expect(result.pagination.total).toBe(0);
+      expect(mockPrismaClient.importBatch.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ type: 'PRODUCTS' }),
+        })
+      );
+    });
+
+    it('Given: status filter in pagination When: finding paginated Then: should include status in where', async () => {
+      // Arrange
+      mockPrismaClient.importBatch.findMany.mockResolvedValue([]);
+      mockPrismaClient.importBatch.count.mockResolvedValue(0);
+
+      // Act
+      const result = await repository.findPaginated('org-123', {
+        page: 1,
+        limit: 10,
+        status: 'COMPLETED',
+      });
+
+      // Assert
+      expect(result.pagination.totalPages).toBe(0);
+      expect(mockPrismaClient.importBatch.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ status: 'COMPLETED' }),
+        })
+      );
+    });
+
+    it('Given: type and status filters When: finding paginated Then: should include both in where', async () => {
+      // Arrange
+      mockPrismaClient.importBatch.findMany.mockResolvedValue([
+        { ...mockCompletedBatchData, rows: undefined },
+      ]);
+      mockPrismaClient.importBatch.count.mockResolvedValue(1);
+
+      // Act
+      const result = await repository.findPaginated('org-123', {
+        page: 1,
+        limit: 5,
+        type: 'PRODUCTS',
+        status: 'COMPLETED',
+      });
+
+      // Assert
+      expect(result.data).toHaveLength(1);
+      expect(mockPrismaClient.importBatch.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ type: 'PRODUCTS', status: 'COMPLETED' }),
+          skip: 0,
+          take: 5,
+        })
+      );
+    });
+
+    it('Given: page 2 When: finding paginated Then: should calculate correct skip', async () => {
+      // Arrange
+      mockPrismaClient.importBatch.findMany.mockResolvedValue([]);
+      mockPrismaClient.importBatch.count.mockResolvedValue(15);
+
+      // Act
+      const result = await repository.findPaginated('org-123', {
+        page: 2,
+        limit: 10,
+      });
+
+      // Assert
+      expect(result.pagination.totalPages).toBe(2);
+      expect(mockPrismaClient.importBatch.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 10, take: 10 })
+      );
+    });
+  });
+
+  describe('toDomain - completed batch with dates', () => {
+    it('Given: completed batch with all dates When: mapping Then: should set dates', async () => {
+      // Arrange
+      mockPrismaClient.importBatch.findFirst.mockResolvedValue({
+        ...mockCompletedBatchData,
+        rows: [],
+      });
+
+      // Act
+      const result = await repository.findById('batch-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.status.getValue()).toBe('COMPLETED');
+      expect(result?.processedRows).toBe(100);
+      expect(result?.validRows).toBe(95);
+      expect(result?.invalidRows).toBe(5);
+    });
+
+    it('Given: batch with error message When: mapping Then: should include errorMessage', async () => {
+      // Arrange
+      mockPrismaClient.importBatch.findFirst.mockResolvedValue({
+        ...mockBatchData,
+        status: 'FAILED',
+        errorMessage: 'Something went wrong',
+        note: null,
+        rows: [],
+      });
+
+      // Act
+      const result = await repository.findById('batch-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.errorMessage).toBe('Something went wrong');
+    });
+
+    it('Given: batch with no rows array When: mapping Then: should handle undefined rows', async () => {
+      // Arrange - rows property missing entirely
+      const dataNoRows = { ...mockBatchData };
+      delete (dataNoRows as Record<string, unknown>).rows;
+      mockPrismaClient.importBatch.findFirst.mockResolvedValue(dataNoRows);
+
+      // Act
+      const result = await repository.findById('batch-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+    });
+  });
 });

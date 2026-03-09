@@ -795,5 +795,255 @@ describe('ConfirmSaleUseCase', () => {
         }
       );
     });
+
+    it('Given: confirmed sale with optional fields populated When: confirming Then: should include customerReference externalReference note in response', async () => {
+      // Arrange
+      const mockSale = createMockSale();
+      const mockSaleLine = {
+        id: 'line-123',
+        productId: 'product-123',
+        locationId: 'location-123',
+        quantity: { isPositive: () => true, getNumericValue: () => 5 },
+        getTotalPrice: () => ({ getAmount: () => 100, getCurrency: () => 'COP' }),
+        unitPrice: { getAmount: () => 20 },
+        unitCost: { getAmount: () => 15 },
+        currency: 'COP',
+      };
+      (
+        mockSale as unknown as {
+          lines: unknown[];
+          getLines: () => unknown[];
+          getTotalAmount: () => unknown;
+        }
+      ).lines = [mockSaleLine];
+      (
+        mockSale as unknown as {
+          lines: unknown[];
+          getLines: () => unknown[];
+          getTotalAmount: () => unknown;
+        }
+      ).getLines = jest.fn<() => unknown[]>().mockReturnValue([mockSaleLine]);
+      (
+        mockSale as unknown as {
+          lines: unknown[];
+          getLines: () => unknown[];
+          getTotalAmount: () => unknown;
+        }
+      ).getTotalAmount = jest
+        .fn()
+        .mockReturnValue({ getAmount: () => 100, getCurrency: () => 'COP' });
+
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+
+      jest.spyOn(SaleValidationService, 'validateSaleCanBeConfirmed').mockReturnValue({
+        isValid: true,
+        errors: [],
+      });
+
+      jest.spyOn(SaleValidationService, 'validateStockAvailability').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+
+      const mockMovement = Movement.create(
+        {
+          type: MovementType.create('OUT'),
+          status: MovementStatus.create('DRAFT'),
+          warehouseId: 'warehouse-123',
+          createdBy: 'user-123',
+        },
+        mockOrgId
+      );
+
+      jest
+        .spyOn(InventoryIntegrationService, 'generateMovementFromSale')
+        .mockReturnValue(mockMovement);
+
+      mockUnitOfWork.execute.mockImplementation(async _callback => {
+        return {
+          confirmedSale: {
+            id: mockSaleId,
+            saleNumber: 'SALE-2025-001',
+            status: 'CONFIRMED',
+            warehouseId: 'warehouse-123',
+            customerReference: 'CUST-REF-001',
+            externalReference: 'EXT-REF-001',
+            note: 'Test sale note',
+            confirmedAt: new Date(),
+            confirmedBy: 'user-123',
+            cancelledAt: new Date(),
+            cancelledBy: 'admin-1',
+            movementId: mockMovementId,
+            createdBy: 'user-123',
+            orgId: mockOrgId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            lines: [],
+          },
+          postedMovement: {
+            id: mockMovementId,
+            type: 'OUT',
+            status: 'POSTED',
+            warehouseId: 'warehouse-123',
+            orgId: mockOrgId,
+          },
+        };
+      });
+
+      // Act
+      const result = await useCase.execute({
+        id: mockSaleId,
+        orgId: mockOrgId,
+        userId: 'user-123',
+      });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.customerReference).toBe('CUST-REF-001');
+          expect(value.data.externalReference).toBe('EXT-REF-001');
+          expect(value.data.note).toBe('Test sale note');
+          expect(value.data.cancelledAt).toBeDefined();
+          expect(value.data.cancelledBy).toBe('admin-1');
+          expect(value.data.confirmedBy).toBe('user-123');
+          expect(value.data.totalAmount).toBe(100);
+          expect(value.data.currency).toBe('COP');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: movement with lines and location When: confirming Then: should process each line through transaction', async () => {
+      // Arrange
+      const mockSale = createMockSale();
+      const mockSaleLine = {
+        id: 'line-123',
+        productId: 'product-123',
+        locationId: null,
+        quantity: { isPositive: () => true, getNumericValue: () => 5 },
+        getTotalPrice: () => ({ getAmount: () => 100, getCurrency: () => 'COP' }),
+        unitPrice: { getAmount: () => 20 },
+        unitCost: { getAmount: () => 15 },
+        currency: 'COP',
+      };
+      (
+        mockSale as unknown as {
+          lines: unknown[];
+          getLines: () => unknown[];
+          getTotalAmount: () => unknown;
+        }
+      ).lines = [mockSaleLine];
+      (
+        mockSale as unknown as {
+          lines: unknown[];
+          getLines: () => unknown[];
+          getTotalAmount: () => unknown;
+        }
+      ).getLines = jest.fn<() => unknown[]>().mockReturnValue([mockSaleLine]);
+      (
+        mockSale as unknown as {
+          lines: unknown[];
+          getLines: () => unknown[];
+          getTotalAmount: () => unknown;
+        }
+      ).getTotalAmount = jest
+        .fn()
+        .mockReturnValue({ getAmount: () => 100, getCurrency: () => 'COP' });
+
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+
+      jest.spyOn(SaleValidationService, 'validateSaleCanBeConfirmed').mockReturnValue({
+        isValid: true,
+        errors: [],
+      });
+
+      jest.spyOn(SaleValidationService, 'validateStockAvailability').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+
+      // Movement with lines that have null locationId and unitCost
+      const mockMovement = Movement.create(
+        {
+          type: MovementType.create('OUT'),
+          status: MovementStatus.create('DRAFT'),
+          warehouseId: 'warehouse-123',
+          createdBy: 'user-123',
+        },
+        mockOrgId
+      );
+
+      const mockMovementLine = {
+        id: 'ml-1',
+        productId: 'product-123',
+        locationId: null,
+        quantity: { getNumericValue: () => 5 },
+        unitCost: null,
+        currency: 'COP',
+      };
+
+      jest.spyOn(mockMovement, 'getLines').mockReturnValue([mockMovementLine as any]);
+
+      jest
+        .spyOn(InventoryIntegrationService, 'generateMovementFromSale')
+        .mockReturnValue(mockMovement);
+
+      const mockCreateMany = jest.fn();
+      const mockExecuteRaw = jest.fn<() => Promise<number>>().mockResolvedValue(1);
+      const mockTx = {
+        movement: {
+          create: jest.fn().mockResolvedValue({
+            id: mockMovementId,
+            type: 'OUT',
+            status: 'POSTED',
+            warehouseId: 'warehouse-123',
+            orgId: mockOrgId,
+          }),
+        },
+        movementLine: {
+          createMany: mockCreateMany,
+        },
+        sale: {
+          update: jest.fn().mockResolvedValue({
+            id: mockSaleId,
+            saleNumber: 'SALE-2025-001',
+            status: 'CONFIRMED',
+            warehouseId: 'warehouse-123',
+            customerReference: null,
+            externalReference: null,
+            note: null,
+            confirmedAt: new Date(),
+            confirmedBy: null,
+            cancelledAt: null,
+            cancelledBy: null,
+            movementId: mockMovementId,
+            createdBy: 'user-123',
+            orgId: mockOrgId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            lines: [],
+          }),
+        },
+        $executeRaw: mockExecuteRaw,
+      };
+
+      mockUnitOfWork.execute.mockImplementation(async callback => {
+        return callback(mockTx as never);
+      });
+
+      // Act
+      const result = await useCase.execute({
+        id: mockSaleId,
+        orgId: mockOrgId,
+      });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockCreateMany).toHaveBeenCalled();
+      expect(mockExecuteRaw).toHaveBeenCalled();
+    });
   });
 });
