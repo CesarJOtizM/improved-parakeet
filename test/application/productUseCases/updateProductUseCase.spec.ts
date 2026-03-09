@@ -314,5 +314,294 @@ describe('UpdateProductUseCase', () => {
         }
       );
     });
+
+    it('Given: only price update When: updating product Then: should update price and default to COP currency', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      const updatedProduct = mockProduct.update({});
+      mockProductRepository.save.mockResolvedValue(updatedProduct);
+
+      const request = {
+        productId: mockProductId,
+        orgId: mockOrgId,
+        price: 50.99,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockProductRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('Given: price with explicit currency When: updating product Then: should use provided currency', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      const updatedProduct = mockProduct.update({});
+      mockProductRepository.save.mockResolvedValue(updatedProduct);
+
+      const request = {
+        productId: mockProductId,
+        orgId: mockOrgId,
+        price: 25.0,
+        currency: 'USD',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('Given: only description update When: updating product Then: should succeed', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      const updatedProduct = mockProduct.update({ description: 'New Description' });
+      mockProductRepository.save.mockResolvedValue(updatedProduct);
+
+      const request = {
+        productId: mockProductId,
+        orgId: mockOrgId,
+        description: 'New Description',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('Given: category update When: updating product Then: should map category IDs to categories', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      const updatedProduct = mockProduct.update({});
+      mockProductRepository.save.mockResolvedValue(updatedProduct);
+
+      const request = {
+        productId: mockProductId,
+        orgId: mockOrgId,
+        categoryIds: ['cat-1', 'cat-2'],
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockProductRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('Given: unit update When: updating product Then: should create unit value object', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      const updatedProduct = mockProduct.update({});
+      mockProductRepository.save.mockResolvedValue(updatedProduct);
+
+      const request = {
+        productId: mockProductId,
+        orgId: mockOrgId,
+        unit: { code: 'KG', name: 'Kilogram', precision: 2 },
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('Given: barcode update When: updating product Then: should succeed', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      const updatedProduct = mockProduct.update({});
+      mockProductRepository.save.mockResolvedValue(updatedProduct);
+
+      const request = {
+        productId: mockProductId,
+        orgId: mockOrgId,
+        barcode: '1234567890123',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('Given: model update When: updating product Then: should succeed', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      const updatedProduct = mockProduct.update({});
+      mockProductRepository.save.mockResolvedValue(updatedProduct);
+
+      const request = {
+        productId: mockProductId,
+        orgId: mockOrgId,
+        model: 'Model X',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('Given: status change ACTIVE to INACTIVE When: updating product Then: should succeed', async () => {
+      // Arrange
+      const mockProduct = createMockProduct('ACTIVE');
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      const updatedProduct = mockProduct.update({});
+      mockProductRepository.save.mockResolvedValue(updatedProduct);
+
+      const request = {
+        productId: mockProductId,
+        orgId: mockOrgId,
+        status: 'INACTIVE' as const,
+        updatedBy: 'admin-user',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('Given: companyId update When: updating product Then: should set companyId', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      const updatedProduct = mockProduct.update({});
+      mockProductRepository.save.mockResolvedValue(updatedProduct);
+
+      const request = {
+        productId: mockProductId,
+        orgId: mockOrgId,
+        companyId: 'company-123',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('Given: empty companyId When: updating product Then: should clear companyId', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      const updatedProduct = mockProduct.update({});
+      mockProductRepository.save.mockResolvedValue(updatedProduct);
+
+      const request = {
+        productId: mockProductId,
+        orgId: mockOrgId,
+        companyId: '',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('Given: cost method change allowed When: updating product Then: should succeed', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      jest.spyOn(ProductBusinessRulesService, 'validateCostMethodChange').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+
+      const updatedProduct = mockProduct.update({});
+      mockProductRepository.save.mockResolvedValue(updatedProduct);
+
+      const request = {
+        productId: mockProductId,
+        orgId: mockOrgId,
+        costMethod: 'FIFO' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('Given: non-Error object thrown When: updating product Then: should return generic ValidationError', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+      mockProductRepository.save.mockRejectedValue('string error');
+
+      const request = {
+        productId: mockProductId,
+        orgId: mockOrgId,
+        name: 'Updated Product',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+          expect(error.message).toBe('Failed to update product');
+        }
+      );
+    });
+
+    it('Given: brand update When: updating product Then: should set brand field', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      const updatedProduct = mockProduct.update({ brand: 'New Brand' });
+      mockProductRepository.save.mockResolvedValue(updatedProduct);
+
+      const request = {
+        productId: mockProductId,
+        orgId: mockOrgId,
+        brand: 'New Brand',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
   });
 });

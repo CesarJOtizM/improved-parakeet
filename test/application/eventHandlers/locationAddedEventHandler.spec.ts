@@ -83,5 +83,32 @@ describe('LocationAddedEventHandler', () => {
 
       errorSpy.mockRestore();
     });
+
+    it('Given: non-Error thrown When: handling event Then: should handle gracefully', async () => {
+      // Arrange
+      const mockLocation = createMockLocation();
+      const event = new LocationAddedEvent(mockLocation);
+
+      let callCount = 0;
+      const errorSpy = jest.spyOn((handler as any).logger, 'log').mockImplementation(() => {
+        callCount++;
+        if (callCount === 2) {
+          throw 'string-error';
+        }
+      });
+      const errorLoggerSpy = jest.spyOn((handler as any).logger, 'error');
+
+      // Act & Assert - should not throw
+      await expect(handler.handle(event)).resolves.toBeUndefined();
+
+      // Assert
+      expect(errorLoggerSpy).toHaveBeenCalledWith('Error handling LocationAdded event', {
+        error: 'Unknown error',
+        locationId: 'loc-123',
+        code: 'LOC-001',
+      });
+
+      errorSpy.mockRestore();
+    });
   });
 });

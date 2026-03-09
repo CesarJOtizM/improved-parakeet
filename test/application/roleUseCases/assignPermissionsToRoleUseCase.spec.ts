@@ -222,5 +222,77 @@ describe('AssignPermissionsToRoleUseCase', () => {
         }
       );
     });
+
+    it('Given: system role from different org When: assigning permissions Then: should succeed because isSystem bypasses org check', async () => {
+      // Arrange
+      const systemRole = Role.reconstitute(
+        {
+          name: 'SYSTEM_ROLE',
+          isActive: true,
+          isSystem: true,
+        },
+        'system-role-id',
+        'different-org-id'
+      );
+      mockRoleRepository.findById.mockResolvedValue(systemRole);
+      const mockPermissions = [
+        { id: 'perm-1', name: 'PERMISSION_1', module: 'TEST', action: 'READ', description: null },
+      ];
+      mockPrismaService.permission.findMany.mockResolvedValue(mockPermissions);
+      mockPrismaService.rolePermission.deleteMany.mockResolvedValue({ count: 0 });
+      mockPrismaService.rolePermission.createMany.mockResolvedValue({ count: 1 });
+
+      const request = {
+        roleId: 'system-role-id',
+        permissionIds: ['perm-1'],
+        orgId: mockOrgId,
+        assignedBy: mockAssignedBy,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.roleName).toBe('SYSTEM_ROLE');
+          expect(value.data.assignedPermissions).toHaveLength(1);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: multiple non-existent permissions When: assigning Then: should list all missing IDs', async () => {
+      // Arrange
+      const mockRole = createMockRole();
+      mockRoleRepository.findById.mockResolvedValue(mockRole);
+      mockPrismaService.permission.findMany.mockResolvedValue([]);
+
+      const request = {
+        roleId: mockRoleId,
+        permissionIds: ['missing-1', 'missing-2'],
+        orgId: mockOrgId,
+        assignedBy: mockAssignedBy,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(NotFoundError);
+          expect(error.message).toContain('missing-1');
+          expect(error.message).toContain('missing-2');
+        }
+      );
+    });
   });
 });

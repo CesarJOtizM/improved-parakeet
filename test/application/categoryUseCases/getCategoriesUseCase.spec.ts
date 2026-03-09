@@ -393,5 +393,281 @@ describe('GetCategoriesUseCase', () => {
         }
       );
     });
+
+    it('Given: categories with sortBy isActive When: getting categories Then: should sort by active status', async () => {
+      // Arrange
+      const activeCat = createMockCategory({ name: 'Active', id: 'cat-1', isActive: true });
+      const inactiveCat = createMockCategory({ name: 'Inactive', id: 'cat-2', isActive: false });
+      mockCategoryRepository.findAll.mockResolvedValue([activeCat, inactiveCat]);
+      mockProductRepository.findAll.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        sortBy: 'isActive',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          // isActive false=0, true=1, so inactive first in asc
+          expect(value.data[0].isActive).toBe(false);
+          expect(value.data[1].isActive).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: categories with sortBy productCount When: getting categories Then: should sort by product count', async () => {
+      // Arrange
+      const catA = createMockCategory({ name: 'Few Products', id: 'cat-a' });
+      const catB = createMockCategory({ name: 'Many Products', id: 'cat-b' });
+      mockCategoryRepository.findAll.mockResolvedValue([catA, catB]);
+
+      // Create products that belong to catB through categories array
+      const mockProducts = [
+        { categories: [{ id: 'cat-b' }] },
+        { categories: [{ id: 'cat-b' }] },
+        { categories: [{ id: 'cat-b' }] },
+        { categories: [{ id: 'cat-a' }] },
+      ] as unknown as ReturnType<typeof mockProductRepository.findAll> extends Promise<infer U>
+        ? U
+        : never;
+      mockProductRepository.findAll.mockResolvedValue(mockProducts);
+
+      const request = {
+        orgId: mockOrgId,
+        sortBy: 'productCount',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].productCount).toBeLessThanOrEqual(value.data[1].productCount);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: categories with sortBy updatedAt When: getting categories Then: should sort by update date', async () => {
+      // Arrange
+      const catA = createMockCategory({ name: 'CatA', id: 'cat-a' });
+      const catB = createMockCategory({ name: 'CatB', id: 'cat-b' });
+      mockCategoryRepository.findAll.mockResolvedValue([catA, catB]);
+      mockProductRepository.findAll.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        sortBy: 'updatedAt',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: categories with sortBy createdAt When: getting categories Then: should sort by creation date', async () => {
+      // Arrange
+      const catA = createMockCategory({ name: 'CatA', id: 'cat-a' });
+      const catB = createMockCategory({ name: 'CatB', id: 'cat-b' });
+      mockCategoryRepository.findAll.mockResolvedValue([catA, catB]);
+      mockProductRepository.findAll.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        sortBy: 'createdAt',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: categories with sortBy unknown field When: getting categories Then: should fallback to createdAt sort', async () => {
+      // Arrange
+      const catA = createMockCategory({ name: 'CatA', id: 'cat-a' });
+      const catB = createMockCategory({ name: 'CatB', id: 'cat-b' });
+      mockCategoryRepository.findAll.mockResolvedValue([catA, catB]);
+      mockProductRepository.findAll.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        sortBy: 'unknownField',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: categories with sortBy but no sortOrder When: getting categories Then: should default to ascending', async () => {
+      // Arrange
+      const catA = createMockCategory({ name: 'Zeta', id: 'cat-a' });
+      const catB = createMockCategory({ name: 'Alpha', id: 'cat-b' });
+      mockCategoryRepository.findAll.mockResolvedValue([catA, catB]);
+      mockProductRepository.findAll.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        sortBy: 'name',
+        // no sortOrder - should default to 'asc'
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].name).toBe('Alpha');
+          expect(value.data[1].name).toBe('Zeta');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: categories with isActive=false filter When: getting categories Then: should return only inactive categories', async () => {
+      // Arrange
+      const activeCat = createMockCategory({ name: 'Active', id: 'cat-1', isActive: true });
+      const inactiveCat = createMockCategory({ name: 'Inactive', id: 'cat-2', isActive: false });
+      mockCategoryRepository.findAll.mockResolvedValue([activeCat, inactiveCat]);
+      mockProductRepository.findAll.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        isActive: false,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(1);
+          expect(value.data[0].name).toBe('Inactive');
+          expect(value.data[0].isActive).toBe(false);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: category with no description When: searching by description Then: should not crash on undefined', async () => {
+      // Arrange
+      const catNoDesc = Category.reconstitute(
+        {
+          name: 'No Description',
+          isActive: true,
+          // description is undefined
+        },
+        'cat-nodesc',
+        mockOrgId
+      );
+      mockCategoryRepository.findAll.mockResolvedValue([catNoDesc]);
+      mockProductRepository.findAll.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        search: 'something',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          // Category without description should not match search for 'something'
+          expect(value.data).toHaveLength(0);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: categories with name asc sort When: getting categories Then: should sort by name ascending', async () => {
+      // Arrange
+      const catZ = createMockCategory({ name: 'Zulu', id: 'cat-z' });
+      const catA = createMockCategory({ name: 'Alpha', id: 'cat-a' });
+      const catM = createMockCategory({ name: 'Mike', id: 'cat-m' });
+      mockCategoryRepository.findAll.mockResolvedValue([catZ, catA, catM]);
+      mockProductRepository.findAll.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        sortBy: 'name',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].name).toBe('Alpha');
+          expect(value.data[1].name).toBe('Mike');
+          expect(value.data[2].name).toBe('Zulu');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

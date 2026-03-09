@@ -105,5 +105,32 @@ describe('SaleCancelledEventHandler', () => {
 
       errorSpy.mockRestore();
     });
+
+    it('Given: non-Error thrown When: handling event Then: should handle gracefully', async () => {
+      // Arrange
+      const mockSale = createMockSale();
+      const event = new SaleCancelledEvent(mockSale, 'Customer request');
+
+      let callCount = 0;
+      const errorSpy = jest.spyOn((handler as any).logger, 'log').mockImplementation(() => {
+        callCount++;
+        if (callCount === 2) {
+          throw 'string-error';
+        }
+      });
+      const errorLoggerSpy = jest.spyOn((handler as any).logger, 'error');
+
+      // Act & Assert - should not throw
+      await expect(handler.handle(event)).resolves.toBeUndefined();
+
+      // Assert
+      expect(errorLoggerSpy).toHaveBeenCalledWith('Error handling SaleCancelled event', {
+        error: 'Unknown error',
+        saleId: 'sale-123',
+        saleNumber: 'SALE-001',
+      });
+
+      errorSpy.mockRestore();
+    });
   });
 });

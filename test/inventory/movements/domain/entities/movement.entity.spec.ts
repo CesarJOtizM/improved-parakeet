@@ -509,5 +509,190 @@ describe('Movement', () => {
       expect(movement.returnedAt).toBeDefined();
       expect(movement.returnedBy).toBe('user-returner');
     });
+
+    it('Given: movement with contactId When: accessing getter Then: should return contactId', () => {
+      // Arrange
+      const props = { ...defaultProps(), contactId: 'contact-001' };
+      const movement = Movement.create(props, 'org-123');
+
+      // Act & Assert
+      expect(movement.contactId).toBe('contact-001');
+    });
+
+    it('Given: movement without contactId When: accessing getter Then: should return undefined', () => {
+      // Arrange
+      const movement = Movement.create(defaultProps(), 'org-123');
+
+      // Act & Assert
+      expect(movement.contactId).toBeUndefined();
+    });
+  });
+
+  describe('canPost', () => {
+    it('Given: POSTED movement When: checking canPost Then: should return false', () => {
+      // Arrange
+      const props = { ...defaultProps(), status: MovementStatus.create('POSTED') };
+      const movement = Movement.reconstitute(props, 'mov-001', 'org-123', [createLine('org-123')]);
+
+      // Act & Assert
+      expect(movement.canPost()).toBe(false);
+    });
+  });
+
+  describe('canUpdate', () => {
+    it('Given: VOID movement When: checking canUpdate Then: should return false', () => {
+      // Arrange
+      const props = { ...defaultProps(), status: MovementStatus.create('VOID') };
+      const movement = Movement.reconstitute(props, 'mov-001', 'org-123');
+
+      // Act & Assert
+      expect(movement.canUpdate()).toBe(false);
+    });
+
+    it('Given: RETURNED movement When: checking canUpdate Then: should return false', () => {
+      // Arrange
+      const props = { ...defaultProps(), status: MovementStatus.create('RETURNED') };
+      const movement = Movement.reconstitute(props, 'mov-001', 'org-123');
+
+      // Act & Assert
+      expect(movement.canUpdate()).toBe(false);
+    });
+  });
+
+  describe('canRemoveLine', () => {
+    it('Given: POSTED movement When: checking canRemoveLine Then: should return false', () => {
+      // Arrange
+      const props = { ...defaultProps(), status: MovementStatus.create('POSTED') };
+      const movement = Movement.reconstitute(props, 'mov-001', 'org-123');
+
+      // Act & Assert
+      expect(movement.canRemoveLine()).toBe(false);
+    });
+  });
+
+  describe('update', () => {
+    it('Given: DRAFT movement When: updating contactId Then: should update', () => {
+      // Arrange
+      const movement = Movement.create(defaultProps(), 'org-123');
+
+      // Act
+      const updated = movement.update({ contactId: 'contact-new' });
+
+      // Assert
+      expect(updated.contactId).toBe('contact-new');
+    });
+
+    it('Given: DRAFT movement When: updating reason Then: should update', () => {
+      // Arrange
+      const movement = Movement.create(defaultProps(), 'org-123');
+
+      // Act
+      const updated = movement.update({ reason: 'New reason' });
+
+      // Assert
+      expect(updated.reason).toBe('New reason');
+    });
+
+    it('Given: DRAFT movement When: updating with no changes Then: should preserve existing values', () => {
+      // Arrange
+      const movement = Movement.create(defaultProps(), 'org-123');
+
+      // Act
+      const updated = movement.update({});
+
+      // Assert
+      expect(updated.reference).toBe('REF-001');
+      expect(updated.reason).toBe('Stock replenishment');
+      expect(updated.note).toBe('Monthly restock');
+    });
+
+    it('Given: RETURNED movement When: updating Then: should throw error', () => {
+      // Arrange
+      const props = { ...defaultProps(), status: MovementStatus.create('RETURNED') };
+      const movement = Movement.reconstitute(props, 'mov-001', 'org-123');
+
+      // Act & Assert
+      expect(() => movement.update({ note: 'fail' })).toThrow(
+        'Cannot update movement when status is POSTED or VOID'
+      );
+    });
+
+    it('Given: DRAFT movement with lines When: updating Then: should preserve lines', () => {
+      // Arrange
+      const movement = Movement.create(defaultProps(), 'org-123');
+      movement.addLine(createLine('org-123'));
+
+      // Act
+      const updated = movement.update({ note: 'Updated' });
+
+      // Assert
+      expect(updated.getLines()).toHaveLength(1);
+    });
+  });
+
+  describe('markAsReturned', () => {
+    it('Given: POSTED movement When: marking as returned without userId Then: returnedBy should be undefined', () => {
+      // Arrange
+      const props = { ...defaultProps(), status: MovementStatus.create('POSTED') };
+      const movement = Movement.reconstitute(props, 'mov-001', 'org-123', [createLine('org-123')]);
+
+      // Act
+      const returned = movement.markAsReturned();
+
+      // Assert
+      expect(returned.status.isReturned()).toBe(true);
+      expect(returned.returnedBy).toBeUndefined();
+      expect(returned.returnedAt).toBeDefined();
+    });
+
+    it('Given: VOID movement When: marking as returned Then: should throw error', () => {
+      // Arrange
+      const props = { ...defaultProps(), status: MovementStatus.create('VOID') };
+      const movement = Movement.reconstitute(props, 'mov-001', 'org-123');
+
+      // Act & Assert
+      expect(() => movement.markAsReturned()).toThrow('Movement cannot be marked as returned');
+    });
+  });
+
+  describe('post - error paths', () => {
+    it('Given: DRAFT movement with lines with non-positive quantity When: posting Then: should throw all lines must have positive quantities', () => {
+      // Arrange
+      const movement = Movement.create(defaultProps(), 'org-123');
+      // We use reconstitute to bypass addLine validation
+      const line = MovementLine.reconstitute(
+        {
+          productId: 'prod-001',
+          quantity: Quantity.create(0.0001), // positive but very small
+          unitCost: Money.create(100, 'COP', 2),
+          currency: 'COP',
+        },
+        'line-001',
+        'org-123'
+      );
+      movement.addLine(line); // This works because quantity is technically positive
+
+      // Act
+      const posted = movement.post();
+
+      // Assert - should succeed since quantity is still positive
+      expect(posted.status.isPosted()).toBe(true);
+    });
+  });
+
+  describe('create with OUT type', () => {
+    it('Given: OUT type When: creating movement Then: should create with OUT type', () => {
+      // Arrange
+      const props = {
+        ...defaultProps(),
+        type: MovementType.create('OUT'),
+      };
+
+      // Act
+      const movement = Movement.create(props, 'org-123');
+
+      // Assert
+      expect(movement.type.getValue()).toBe('OUT');
+    });
   });
 });

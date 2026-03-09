@@ -22,6 +22,8 @@ describe('SettingsController', () => {
     updatedAt: new Date('2026-02-01T00:00:00Z'),
   };
 
+  let mockOrganizationRepository: any;
+
   beforeEach(() => {
     mockPrisma = {
       alertConfiguration: {
@@ -31,7 +33,12 @@ describe('SettingsController', () => {
       },
     };
 
-    controller = new SettingsController(mockPrisma);
+    mockOrganizationRepository = {
+      findById: jest.fn(),
+      update: jest.fn(),
+    };
+
+    controller = new SettingsController(mockPrisma, mockOrganizationRepository);
   });
 
   describe('getAlertConfiguration', () => {
@@ -225,6 +232,257 @@ describe('SettingsController', () => {
           }),
         })
       );
+    });
+
+    it('Given: all notification flags off When: updating Then: should set all flags to false', async () => {
+      // Arrange
+      const dto = {
+        notifyLowStock: false,
+        notifyCriticalStock: false,
+        notifyOutOfStock: false,
+        isEnabled: false,
+      };
+      const updatedConfig = {
+        ...mockAlertConfig,
+        notifyLowStock: false,
+        notifyCriticalStock: false,
+        notifyOutOfStock: false,
+        isEnabled: false,
+      };
+      mockPrisma.alertConfiguration.upsert.mockResolvedValue(updatedConfig);
+
+      // Act
+      const result = await controller.updateAlertConfiguration(dto as any, mockOrgId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.data.notifyLowStock).toBe(false);
+      expect(result.data.notifyCriticalStock).toBe(false);
+      expect(result.data.notifyOutOfStock).toBe(false);
+      expect(result.data.isEnabled).toBe(false);
+    });
+
+    it('Given: only cronFrequency and recipientEmails When: updating Then: should only include those in update', async () => {
+      // Arrange
+      const dto = {
+        cronFrequency: 'EVERY_12_HOURS',
+        recipientEmails: 'new@test.com',
+      };
+      const updatedConfig = {
+        ...mockAlertConfig,
+        cronFrequency: 'EVERY_12_HOURS',
+        recipientEmails: 'new@test.com',
+      };
+      mockPrisma.alertConfiguration.upsert.mockResolvedValue(updatedConfig);
+
+      // Act
+      const result = await controller.updateAlertConfiguration(dto as any, mockOrgId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.data.cronFrequency).toBe('EVERY_12_HOURS');
+      expect(result.data.recipientEmails).toBe('new@test.com');
+    });
+  });
+
+  describe('getPickingConfig', () => {
+    it('Given: org with picking settings When: getting config Then: should return picking config', async () => {
+      // Arrange
+      const mockOrg = {
+        getSetting: jest.fn().mockImplementation((key: string) => {
+          if (key === 'pickingMode') return 'REQUIRED_FULL';
+          if (key === 'pickingEnabled') return true;
+          return undefined;
+        }),
+      };
+      mockOrganizationRepository.findById.mockResolvedValue(mockOrg);
+
+      // Act
+      const result = await controller.getPickingConfig(mockOrgId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.data.pickingMode).toBe('REQUIRED_FULL');
+      expect(result.data.pickingEnabled).toBe(true);
+      expect(mockOrganizationRepository.findById).toHaveBeenCalledWith(mockOrgId);
+    });
+
+    it('Given: org without picking settings When: getting config Then: should return defaults', async () => {
+      // Arrange
+      const mockOrg = {
+        getSetting: jest.fn().mockReturnValue(undefined),
+      };
+      mockOrganizationRepository.findById.mockResolvedValue(mockOrg);
+
+      // Act
+      const result = await controller.getPickingConfig(mockOrgId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.data.pickingMode).toBe('OFF');
+      expect(result.data.pickingEnabled).toBe(false);
+    });
+
+    it('Given: org not found When: getting config Then: should return defaults', async () => {
+      // Arrange
+      mockOrganizationRepository.findById.mockResolvedValue(null);
+
+      // Act
+      const result = await controller.getPickingConfig(mockOrgId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.data.pickingMode).toBe('OFF');
+      expect(result.data.pickingEnabled).toBe(false);
+    });
+  });
+
+  describe('updatePickingConfig', () => {
+    it('Given: valid picking mode When: updating Then: should update and return config', async () => {
+      // Arrange
+      const settings: Record<string, any> = {};
+      const mockOrg = {
+        getSetting: jest.fn().mockImplementation((key: string) => settings[key]),
+        setSetting: jest.fn().mockImplementation((key: string, value: any) => {
+          settings[key] = value;
+        }),
+      };
+      mockOrganizationRepository.findById.mockResolvedValue(mockOrg);
+      mockOrganizationRepository.update.mockResolvedValue(undefined);
+
+      // Act
+      const result = await controller.updatePickingConfig(
+        { pickingMode: 'REQUIRED_FULL', pickingEnabled: true },
+        mockOrgId
+      );
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockOrg.setSetting).toHaveBeenCalledWith('pickingEnabled', true);
+      expect(mockOrg.setSetting).toHaveBeenCalledWith('pickingMode', 'REQUIRED_FULL');
+      expect(mockOrganizationRepository.update).toHaveBeenCalledWith(mockOrg);
+    });
+
+    it('Given: org not found When: updating picking config Then: should return error response', async () => {
+      // Arrange
+      mockOrganizationRepository.findById.mockResolvedValue(null);
+
+      // Act
+      const result = await controller.updatePickingConfig(
+        { pickingMode: 'REQUIRED_FULL' },
+        mockOrgId
+      );
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('Organization not found');
+    });
+
+    it('Given: invalid picking mode When: updating Then: should default to OFF', async () => {
+      // Arrange
+      const settings: Record<string, any> = {};
+      const mockOrg = {
+        getSetting: jest.fn().mockImplementation((key: string) => settings[key]),
+        setSetting: jest.fn().mockImplementation((key: string, value: any) => {
+          settings[key] = value;
+        }),
+      };
+      mockOrganizationRepository.findById.mockResolvedValue(mockOrg);
+      mockOrganizationRepository.update.mockResolvedValue(undefined);
+
+      // Act
+      const result = await controller.updatePickingConfig(
+        { pickingMode: 'INVALID_MODE' },
+        mockOrgId
+      );
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockOrg.setSetting).toHaveBeenCalledWith('pickingMode', 'OFF');
+    });
+
+    it('Given: only pickingEnabled When: updating Then: should only set pickingEnabled', async () => {
+      // Arrange
+      const settings: Record<string, any> = { pickingMode: 'OPTIONAL' };
+      const mockOrg = {
+        getSetting: jest.fn().mockImplementation((key: string) => settings[key]),
+        setSetting: jest.fn().mockImplementation((key: string, value: any) => {
+          settings[key] = value;
+        }),
+      };
+      mockOrganizationRepository.findById.mockResolvedValue(mockOrg);
+      mockOrganizationRepository.update.mockResolvedValue(undefined);
+
+      // Act
+      const result = await controller.updatePickingConfig({ pickingEnabled: false }, mockOrgId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockOrg.setSetting).toHaveBeenCalledWith('pickingEnabled', false);
+      // pickingMode should not have been called since it's not in the body
+      expect(mockOrg.setSetting).not.toHaveBeenCalledWith('pickingMode', expect.anything());
+    });
+
+    it('Given: only pickingMode When: updating Then: should only set pickingMode', async () => {
+      // Arrange
+      const settings: Record<string, any> = { pickingEnabled: true };
+      const mockOrg = {
+        getSetting: jest.fn().mockImplementation((key: string) => settings[key]),
+        setSetting: jest.fn().mockImplementation((key: string, value: any) => {
+          settings[key] = value;
+        }),
+      };
+      mockOrganizationRepository.findById.mockResolvedValue(mockOrg);
+      mockOrganizationRepository.update.mockResolvedValue(undefined);
+
+      // Act
+      const result = await controller.updatePickingConfig({ pickingMode: 'OPTIONAL' }, mockOrgId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockOrg.setSetting).toHaveBeenCalledWith('pickingMode', 'OPTIONAL');
+      expect(mockOrg.setSetting).not.toHaveBeenCalledWith('pickingEnabled', expect.anything());
+    });
+
+    it('Given: REQUIRED_PARTIAL mode When: updating Then: should accept valid mode', async () => {
+      // Arrange
+      const settings: Record<string, any> = {};
+      const mockOrg = {
+        getSetting: jest.fn().mockImplementation((key: string) => settings[key]),
+        setSetting: jest.fn().mockImplementation((key: string, value: any) => {
+          settings[key] = value;
+        }),
+      };
+      mockOrganizationRepository.findById.mockResolvedValue(mockOrg);
+      mockOrganizationRepository.update.mockResolvedValue(undefined);
+
+      // Act
+      const result = await controller.updatePickingConfig(
+        { pickingMode: 'REQUIRED_PARTIAL' },
+        mockOrgId
+      );
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockOrg.setSetting).toHaveBeenCalledWith('pickingMode', 'REQUIRED_PARTIAL');
+    });
+
+    it('Given: empty body When: updating Then: should not update any settings', async () => {
+      // Arrange
+      const mockOrg = {
+        getSetting: jest.fn().mockReturnValue(undefined),
+        setSetting: jest.fn(),
+      };
+      mockOrganizationRepository.findById.mockResolvedValue(mockOrg);
+      mockOrganizationRepository.update.mockResolvedValue(undefined);
+
+      // Act
+      const result = await controller.updatePickingConfig({}, mockOrgId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockOrg.setSetting).not.toHaveBeenCalled();
+      expect(mockOrganizationRepository.update).toHaveBeenCalledWith(mockOrg);
     });
   });
 });

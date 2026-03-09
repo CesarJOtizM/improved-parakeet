@@ -1,6 +1,7 @@
 import { GetWarehousesUseCase } from '@application/warehouseUseCases/getWarehousesUseCase';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Warehouse } from '@warehouse/domain/entities/warehouse.entity';
+import { Address } from '@warehouse/domain/valueObjects/address.valueObject';
 import { WarehouseCode } from '@warehouse/domain/valueObjects/warehouseCode.valueObject';
 
 import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
@@ -437,6 +438,123 @@ describe('GetWarehousesUseCase', () => {
           expect(value.pagination.total).toBe(5);
           expect(value.pagination.totalPages).toBe(3);
           expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: search matching code When: getting warehouses Then: should filter by warehouse code', async () => {
+      // Arrange
+      const mockWarehouses = [
+        createMockWarehouse('WH-001', 'Warehouse Alpha'),
+        createMockWarehouse('WH-999', 'Warehouse Beta'),
+      ];
+      mockWarehouseRepository.findAll.mockResolvedValue(mockWarehouses);
+
+      const request = {
+        orgId: mockOrgId,
+        search: 'WH-999',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(1);
+          expect(value.data[0].code).toBe('WH-999');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy without explicit sortOrder When: getting warehouses Then: should default to ascending', async () => {
+      // Arrange
+      const mockWarehouses = [
+        createMockWarehouse('WH-002', 'Zeta Warehouse'),
+        createMockWarehouse('WH-001', 'Alpha Warehouse'),
+      ];
+      mockWarehouseRepository.findAll.mockResolvedValue(mockWarehouses);
+
+      const request = {
+        orgId: mockOrgId,
+        sortBy: 'name',
+        // no sortOrder specified - should default to 'asc'
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].name).toBe('Alpha Warehouse');
+          expect(value.data[1].name).toBe('Zeta Warehouse');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: default pagination When: getting warehouses Then: should use page 1 and limit 10', async () => {
+      // Arrange
+      mockWarehouseRepository.findAll.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        // no page or limit specified
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.pagination.page).toBe(1);
+          expect(value.pagination.limit).toBe(10);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: warehouse with address When: getting warehouses Then: should return address object', async () => {
+      // Arrange
+      const warehouseWithAddress = Warehouse.create(
+        {
+          code: WarehouseCode.create('WH-ADDR'),
+          name: 'Addressed Warehouse',
+          address: Address.create('123 Main St, City'),
+          isActive: true,
+        },
+        mockOrgId
+      );
+      mockWarehouseRepository.findAll.mockResolvedValue([warehouseWithAddress]);
+
+      const request = {
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(1);
+          expect(value.data[0].address).toBeDefined();
         },
         () => {
           throw new Error('Expected Ok result');

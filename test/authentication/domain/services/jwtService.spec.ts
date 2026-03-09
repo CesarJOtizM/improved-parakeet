@@ -688,4 +688,223 @@ describe('JwtService', () => {
       expect(id1).not.toBe(id2);
     });
   });
+
+  describe('generateTokenPair - non-Error thrown object', () => {
+    it('Given: signAsync throws non-Error When: generating token pair Then: should wrap in Unknown error', async () => {
+      // Arrange
+      mockNestJwtService.signAsync.mockRejectedValue('string-error');
+
+      // Act & Assert
+      await expect(
+        jwtService.generateTokenPair(
+          mockUserId,
+          mockOrgId,
+          mockEmail,
+          mockUsername,
+          mockRoles,
+          mockPermissions
+        )
+      ).rejects.toThrow('Invalid JWT token: Unknown error');
+    });
+  });
+
+  describe('refreshAccessToken - non-Error thrown object', () => {
+    it('Given: signAsync throws non-Error When: refreshing access token Then: should wrap in Unknown error', async () => {
+      // Arrange
+      mockNestJwtService.signAsync.mockRejectedValue('string-error');
+
+      // Act & Assert
+      await expect(
+        jwtService.refreshAccessToken(
+          'refresh.token',
+          mockUserId,
+          mockOrgId,
+          mockEmail,
+          mockUsername,
+          mockRoles,
+          mockPermissions
+        )
+      ).rejects.toThrow('Invalid JWT token: Unknown error');
+    });
+  });
+
+  describe('verifyToken - non-Error thrown object', () => {
+    it('Given: verifyAsync throws non-Error When: verifying token Then: should wrap in Unknown error', async () => {
+      // Arrange
+      mockNestJwtService.verifyAsync.mockRejectedValue('string-error');
+
+      // Act & Assert
+      await expect(jwtService.verifyToken('some.token')).rejects.toThrow(
+        'Invalid JWT token: Unknown error'
+      );
+    });
+  });
+
+  describe('verifyRefreshToken - non-Error thrown object', () => {
+    it('Given: verifyAsync throws non-Error When: verifying refresh token Then: should wrap in Unknown error', async () => {
+      // Arrange
+      mockNestJwtService.verifyAsync.mockRejectedValue('string-error');
+
+      // Act & Assert
+      await expect(jwtService.verifyRefreshToken('some.token')).rejects.toThrow(
+        'Invalid refresh token: Unknown error'
+      );
+    });
+  });
+
+  describe('config fallback branches', () => {
+    it('Given: no auth config When: generating token pair Then: should use default expiry values', async () => {
+      // Arrange
+      mockConfigService.get.mockImplementation((key: string) => {
+        if (key === 'auth') return undefined;
+        return undefined;
+      });
+
+      mockNestJwtService.signAsync
+        .mockResolvedValueOnce('access.token')
+        .mockResolvedValueOnce('refresh.token');
+
+      // Act
+      const result = await jwtService.generateTokenPair(
+        mockUserId,
+        mockOrgId,
+        mockEmail,
+        mockUsername,
+        mockRoles,
+        mockPermissions
+      );
+
+      // Assert - should use defaults '30m' and '7d'
+      expect(result.accessToken).toBe('access.token');
+      expect(result.refreshToken).toBe('refresh.token');
+      expect(mockNestJwtService.signAsync).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({ expiresIn: '30m' })
+      );
+    });
+
+    it('Given: no JWT_REFRESH_SECRET and no auth refresh secret When: getting refresh secret Then: should fall back to secret + -refresh', async () => {
+      // Arrange
+      mockConfigService.get.mockImplementation((key: string) => {
+        if (key === 'auth') {
+          return {
+            jwt: {
+              accessTokenExpiry: '1h',
+              refreshTokenExpiry: '7d',
+              secret: 'my-secret',
+              // no refreshSecret
+            },
+          };
+        }
+        if (key === 'JWT_REFRESH_SECRET') return undefined;
+        return undefined;
+      });
+
+      mockNestJwtService.signAsync
+        .mockResolvedValueOnce('access.token')
+        .mockResolvedValueOnce('refresh.token');
+
+      // Act
+      await jwtService.generateTokenPair(
+        mockUserId,
+        mockOrgId,
+        mockEmail,
+        mockUsername,
+        mockRoles,
+        mockPermissions
+      );
+
+      // Assert - refresh token should be signed with 'my-secret-refresh'
+      expect(mockNestJwtService.signAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'refresh' }),
+        expect.objectContaining({ secret: 'my-secret-refresh' })
+      );
+    });
+
+    it('Given: JWT_REFRESH_SECRET env var set When: getting refresh secret Then: should use env var', async () => {
+      // Arrange
+      mockConfigService.get.mockImplementation((key: string) => {
+        if (key === 'JWT_REFRESH_SECRET') return 'env-refresh-secret';
+        if (key === 'auth') {
+          return {
+            jwt: {
+              accessTokenExpiry: '1h',
+              refreshTokenExpiry: '7d',
+              secret: 'my-secret',
+              refreshSecret: 'config-refresh-secret',
+            },
+          };
+        }
+        return undefined;
+      });
+
+      mockNestJwtService.signAsync
+        .mockResolvedValueOnce('access.token')
+        .mockResolvedValueOnce('refresh.token');
+
+      // Act
+      await jwtService.generateTokenPair(
+        mockUserId,
+        mockOrgId,
+        mockEmail,
+        mockUsername,
+        mockRoles,
+        mockPermissions
+      );
+
+      // Assert - refresh token should be signed with env var
+      expect(mockNestJwtService.signAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'refresh' }),
+        expect.objectContaining({ secret: 'env-refresh-secret' })
+      );
+    });
+  });
+
+  describe('isTokenNearExpiration - default threshold', () => {
+    it('Given: token expiring in 3 min When: checking with default threshold (5 min) Then: should return true', () => {
+      // Arrange
+      const now = Math.floor(Date.now() / 1000);
+      const payload: IJwtPayload & { exp: number } = {
+        sub: mockUserId,
+        org_id: mockOrgId,
+        email: mockEmail,
+        username: mockUsername,
+        roles: mockRoles,
+        permissions: mockPermissions,
+        type: 'access',
+        iat: now,
+        jti: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        exp: now + 180, // 3 minutes
+      };
+
+      // Act - use default threshold
+      const result = jwtService.isTokenNearExpiration(payload);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('Given: token expiring in 10 min When: checking with default threshold (5 min) Then: should return false', () => {
+      // Arrange
+      const now = Math.floor(Date.now() / 1000);
+      const payload: IJwtPayload & { exp: number } = {
+        sub: mockUserId,
+        org_id: mockOrgId,
+        email: mockEmail,
+        username: mockUsername,
+        roles: mockRoles,
+        permissions: mockPermissions,
+        type: 'access',
+        iat: now,
+        jti: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        exp: now + 600, // 10 minutes
+      };
+
+      // Act
+      const result = jwtService.isTokenNearExpiration(payload);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+  });
 });

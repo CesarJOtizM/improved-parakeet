@@ -374,4 +374,306 @@ describe('ProductValidationService', () => {
       expect(result.errors.length).toBeGreaterThan(0);
     });
   });
+
+  describe('validateProductCreation - additional branch coverage', () => {
+    it('Given: valid product with all optional fields under limit When: validating Then: should return valid', () => {
+      // Arrange
+      const data = {
+        sku: 'PROD-001',
+        name: 'Test Product',
+        unitCode: 'KG',
+        unitName: 'Kilogram',
+        unitPrecision: 2,
+        description: 'A valid description',
+        barcode: '1234567890',
+        brand: 'TestBrand',
+        model: 'Model-X',
+      };
+
+      // Act
+      const result = ProductValidationService.validateProductCreation(data);
+
+      // Assert
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('Given: brand too long When: validating creation Then: should return errors', () => {
+      // Arrange
+      const data = {
+        sku: 'PROD-001',
+        name: 'Test Product',
+        unitCode: 'KG',
+        unitName: 'Kilogram',
+        unitPrecision: 2,
+        brand: 'B'.repeat(101), // Too long
+      };
+
+      // Act
+      const result = ProductValidationService.validateProductCreation(data);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some(e => e.includes('Brand'))).toBe(true);
+    });
+
+    it('Given: model too long When: validating creation Then: should return errors', () => {
+      // Arrange
+      const data = {
+        sku: 'PROD-001',
+        name: 'Test Product',
+        unitCode: 'KG',
+        unitName: 'Kilogram',
+        unitPrecision: 2,
+        model: 'M'.repeat(101), // Too long
+      };
+
+      // Act
+      const result = ProductValidationService.validateProductCreation(data);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some(e => e.includes('Model'))).toBe(true);
+    });
+
+    it('Given: invalid unit with non-Error throw When: validating Then: should capture Unknown error', () => {
+      // Arrange - unitPrecision of -1 should trigger unit validation error
+      const data = {
+        sku: 'PROD-001',
+        name: 'Test Product',
+        unitCode: 'KG',
+        unitName: 'Kilogram',
+        unitPrecision: -1,
+      };
+
+      // Act
+      const result = ProductValidationService.validateProductCreation(data);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some(e => e.includes('unit'))).toBe(true);
+    });
+
+    it('Given: multiple validation errors When: validating creation Then: should return all errors', () => {
+      // Arrange
+      const data = {
+        sku: 'AB', // Too short
+        name: 'A', // Too short
+        unitCode: 'KG',
+        unitName: 'Kilogram',
+        unitPrecision: 7, // Invalid precision
+        description: 'D'.repeat(1001),
+        barcode: 'B'.repeat(101),
+        brand: 'BR'.repeat(51),
+        model: 'MD'.repeat(51),
+      };
+
+      // Act
+      const result = ProductValidationService.validateProductCreation(data);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('validateProductUpdate - additional branch coverage', () => {
+    it('Given: empty update data When: validating Then: should return valid', () => {
+      // Arrange
+      const data = {};
+
+      // Act
+      const result = ProductValidationService.validateProductUpdate(data);
+
+      // Assert
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('Given: invalid name When: validating update Then: should return errors', () => {
+      // Arrange
+      const data = {
+        name: 'A', // Too short
+      };
+
+      // Act
+      const result = ProductValidationService.validateProductUpdate(data);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some(e => e.includes('product name'))).toBe(true);
+    });
+
+    it('Given: description too long When: validating update Then: should return errors', () => {
+      // Arrange
+      const data = {
+        description: 'D'.repeat(1001),
+      };
+
+      // Act
+      const result = ProductValidationService.validateProductUpdate(data);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some(e => e.includes('Description'))).toBe(true);
+    });
+
+    it('Given: barcode too long When: validating update Then: should return errors', () => {
+      // Arrange
+      const data = {
+        barcode: 'B'.repeat(101),
+      };
+
+      // Act
+      const result = ProductValidationService.validateProductUpdate(data);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some(e => e.includes('Barcode'))).toBe(true);
+    });
+
+    it('Given: brand too long When: validating update Then: should return errors', () => {
+      // Arrange
+      const data = {
+        brand: 'B'.repeat(101),
+      };
+
+      // Act
+      const result = ProductValidationService.validateProductUpdate(data);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some(e => e.includes('Brand'))).toBe(true);
+    });
+
+    it('Given: model too long When: validating update Then: should return errors', () => {
+      // Arrange
+      const data = {
+        model: 'M'.repeat(101),
+      };
+
+      // Act
+      const result = ProductValidationService.validateProductUpdate(data);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some(e => e.includes('Model'))).toBe(true);
+    });
+
+    it('Given: invalid unit precision in update When: validating Then: should return unit error', () => {
+      // Arrange
+      const data = {
+        unitCode: 'KG',
+        unitName: 'Kilogram',
+        unitPrecision: 7, // Invalid
+      };
+
+      // Act
+      const result = ProductValidationService.validateProductUpdate(data);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some(e => e.includes('unit'))).toBe(true);
+    });
+
+    it('Given: only unitName provided When: validating update Then: should require all unit fields', () => {
+      // Arrange
+      const data = {
+        unitName: 'Kilogram',
+      };
+
+      // Act
+      const result = ProductValidationService.validateProductUpdate(data);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some(e => e.includes('all be provided together'))).toBe(true);
+    });
+
+    it('Given: only unitPrecision provided When: validating update Then: should require all unit fields', () => {
+      // Arrange
+      const data = {
+        unitPrecision: 2,
+      };
+
+      // Act
+      const result = ProductValidationService.validateProductUpdate(data);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some(e => e.includes('all be provided together'))).toBe(true);
+    });
+
+    it('Given: unitCode and unitName but no precision When: validating update Then: should require all unit fields', () => {
+      // Arrange
+      const data = {
+        unitCode: 'KG',
+        unitName: 'Kilogram',
+      };
+
+      // Act
+      const result = ProductValidationService.validateProductUpdate(data);
+
+      // Assert
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some(e => e.includes('all be provided together'))).toBe(true);
+    });
+  });
+
+  describe('validateSkuUniquenessOrThrow - additional branch coverage', () => {
+    it('Given: existing SKU with different excludeProductId When: validating Then: should throw ConflictException', async () => {
+      // Arrange
+      const skuResult = SKU.create('PROD-001');
+      if (skuResult.isErr()) throw new Error('Failed to create SKU');
+      const sku = skuResult.unwrap();
+      const existingProduct = Product.create(
+        {
+          sku: SKU.reconstitute('PROD-001'),
+          name: ProductName.reconstitute('Existing Product'),
+          unit: UnitValueObject.create('KG', 'Kilogram', 2),
+          status: ProductStatus.create('ACTIVE'),
+          costMethod: CostMethod.create('AVG'),
+        },
+        mockOrgId
+      );
+      const mockRepository: IProductRepository = {
+        findBySku: jest.fn<() => Promise<Product | null>>().mockResolvedValue(existingProduct),
+      } as unknown as IProductRepository;
+
+      // Act & Assert
+      await expect(
+        ProductValidationService.validateSkuUniquenessOrThrow(
+          sku,
+          mockOrgId,
+          mockRepository,
+          'different-product-id'
+        )
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('Given: no excludeProductId but product exists When: validating Then: should throw ConflictException', async () => {
+      // Arrange
+      const skuResult = SKU.create('PROD-001');
+      if (skuResult.isErr()) throw new Error('Failed to create SKU');
+      const sku = skuResult.unwrap();
+      const existingProduct = Product.create(
+        {
+          sku: SKU.reconstitute('PROD-001'),
+          name: ProductName.reconstitute('Existing Product'),
+          unit: UnitValueObject.create('KG', 'Kilogram', 2),
+          status: ProductStatus.create('ACTIVE'),
+          costMethod: CostMethod.create('AVG'),
+        },
+        mockOrgId
+      );
+      const mockRepository: IProductRepository = {
+        findBySku: jest.fn<() => Promise<Product | null>>().mockResolvedValue(existingProduct),
+      } as unknown as IProductRepository;
+
+      // Act & Assert - no excludeProductId at all
+      await expect(
+        ProductValidationService.validateSkuUniquenessOrThrow(sku, mockOrgId, mockRepository)
+      ).rejects.toThrow(ConflictException);
+    });
+  });
 });

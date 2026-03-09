@@ -100,5 +100,161 @@ describe('VtexApiClient', () => {
         reason: 'Customer request',
       });
     });
+
+    it('Given: API error When: cancelling order Then: should throw error', async () => {
+      mockAxiosInstance.post.mockRejectedValue(new Error('Cancel failed'));
+
+      await expect(
+        client.cancelOrder('teststore', 'key', 'token', 'ORD-123', 'reason')
+      ).rejects.toThrow('Cancel failed');
+    });
+  });
+
+  describe('listOrders - additional branches', () => {
+    it('Given: no params When: listing orders Then: should use defaults (page=1, perPage=50)', async () => {
+      const mockResponse = {
+        list: [],
+        paging: { total: 0, pages: 0, currentPage: 1, perPage: 50 },
+      };
+      mockAxiosInstance.get.mockResolvedValue({ data: mockResponse });
+
+      const result = await client.listOrders('teststore', 'key', 'token', {});
+
+      expect(result).toEqual(mockResponse);
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/oms/pvt/orders', {
+        params: expect.objectContaining({
+          page: 1,
+          per_page: 50,
+        }),
+      });
+    });
+
+    it('Given: creationDate and orderBy params When: listing orders Then: should include them in query', async () => {
+      const mockResponse = {
+        list: [],
+        paging: { total: 0, pages: 0, currentPage: 1, perPage: 10 },
+      };
+      mockAxiosInstance.get.mockResolvedValue({ data: mockResponse });
+
+      await client.listOrders('teststore', 'key', 'token', {
+        page: 2,
+        perPage: 10,
+        creationDate: '2025-01-01T00:00:00Z TO 2025-12-31T23:59:59Z',
+        orderBy: 'creationDate,desc',
+      });
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/oms/pvt/orders', {
+        params: expect.objectContaining({
+          page: 2,
+          per_page: 10,
+          f_creationDate: '2025-01-01T00:00:00Z TO 2025-12-31T23:59:59Z',
+          orderBy: 'creationDate,desc',
+        }),
+      });
+    });
+
+    it('Given: API error When: listing orders Then: should throw error', async () => {
+      mockAxiosInstance.get.mockRejectedValue(new Error('List failed'));
+
+      await expect(client.listOrders('teststore', 'key', 'token', { page: 1 })).rejects.toThrow(
+        'List failed'
+      );
+    });
+  });
+
+  describe('registerWebhook', () => {
+    it('Given: valid hookUrl When: registering webhook Then: should call API correctly', async () => {
+      mockAxiosInstance.post.mockResolvedValue({ status: 200 });
+
+      await client.registerWebhook('teststore', 'key', 'token', 'https://example.com/hook');
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/api/orders/hook/config', {
+        filter: {
+          status: ['order-completed', 'handling', 'invoiced', 'canceled'],
+        },
+        hook: {
+          url: 'https://example.com/hook',
+          headers: {},
+        },
+      });
+    });
+
+    it('Given: API error When: registering webhook Then: should throw error', async () => {
+      mockAxiosInstance.post.mockRejectedValue(new Error('Webhook registration failed'));
+
+      await expect(
+        client.registerWebhook('teststore', 'key', 'token', 'https://example.com/hook')
+      ).rejects.toThrow('Webhook registration failed');
+    });
+  });
+
+  describe('sendInvoice', () => {
+    it('Given: valid invoice data When: sending invoice Then: should call API', async () => {
+      mockAxiosInstance.post.mockResolvedValue({ status: 200 });
+      const invoiceData = {
+        type: 'Output' as const,
+        invoiceNumber: 'INV-001',
+        invoiceValue: 10000,
+        issuanceDate: '2025-01-01',
+        invoiceUrl: 'https://example.com/inv',
+        items: [{ id: 'item-1', quantity: 1, price: 10000 }],
+      };
+
+      await client.sendInvoice('teststore', 'key', 'token', 'ORD-123', invoiceData);
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        '/api/oms/pvt/orders/ORD-123/invoice',
+        invoiceData
+      );
+    });
+
+    it('Given: API error When: sending invoice Then: should throw error', async () => {
+      mockAxiosInstance.post.mockRejectedValue(new Error('Invoice failed'));
+
+      await expect(
+        client.sendInvoice('teststore', 'key', 'token', 'ORD-123', {} as any)
+      ).rejects.toThrow('Invoice failed');
+    });
+  });
+
+  describe('startHandling - error path', () => {
+    it('Given: API error When: starting handling Then: should throw error', async () => {
+      mockAxiosInstance.post.mockRejectedValue(new Error('Start handling failed'));
+
+      await expect(client.startHandling('teststore', 'key', 'token', 'ORD-123')).rejects.toThrow(
+        'Start handling failed'
+      );
+    });
+  });
+
+  describe('createClient headers', () => {
+    it('Given: different account When: creating client Then: should set correct baseURL and headers', async () => {
+      mockAxiosInstance.get.mockResolvedValue({ status: 200 });
+
+      await client.ping('myaccount', 'my-key', 'my-token');
+
+      expect(mockedAxios.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseURL: 'https://myaccount.vtexcommercestable.com.br',
+          timeout: 30000,
+          headers: expect.objectContaining({
+            'X-VTEX-API-AppKey': 'my-key',
+            'X-VTEX-API-AppToken': 'my-token',
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          }),
+        })
+      );
+    });
+  });
+
+  describe('ping - non-Error exception', () => {
+    it('Given: non-Error thrown When: pinging Then: should return false', async () => {
+      mockAxiosInstance.get.mockRejectedValue('not an error object');
+
+      const result = await client.ping('teststore', 'key', 'token');
+
+      expect(result).toBe(false);
+    });
   });
 });

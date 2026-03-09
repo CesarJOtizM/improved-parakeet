@@ -587,6 +587,100 @@ describe('ConfirmSaleUseCase', () => {
       expect(mockCreateMany).not.toHaveBeenCalled();
     });
 
+    it('Given: transaction throws InsufficientStockError without availableQuantity When: confirming sale Then: should show unknown', async () => {
+      // Arrange
+      const mockSale = createMockSale();
+      const mockSaleLine = {
+        id: 'line-123',
+        productId: 'product-123',
+        locationId: 'location-123',
+        quantity: { isPositive: () => true, getNumericValue: () => 5 },
+        getTotalPrice: () => ({ getAmount: () => 100, getCurrency: () => 'COP' }),
+        unitPrice: { getAmount: () => 20 },
+        unitCost: { getAmount: () => 15 },
+        currency: 'COP',
+      };
+      (
+        mockSale as unknown as {
+          lines: unknown[];
+          getLines: () => unknown[];
+          getTotalAmount: () => unknown;
+        }
+      ).lines = [mockSaleLine];
+      (
+        mockSale as unknown as {
+          lines: unknown[];
+          getLines: () => unknown[];
+          getTotalAmount: () => unknown;
+        }
+      ).getLines = jest.fn<() => unknown[]>().mockReturnValue([mockSaleLine]);
+      (
+        mockSale as unknown as {
+          lines: unknown[];
+          getLines: () => unknown[];
+          getTotalAmount: () => unknown;
+        }
+      ).getTotalAmount = jest
+        .fn()
+        .mockReturnValue({ getAmount: () => 100, getCurrency: () => 'COP' });
+
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+
+      jest.spyOn(SaleValidationService, 'validateSaleCanBeConfirmed').mockReturnValue({
+        isValid: true,
+        errors: [],
+      });
+
+      jest.spyOn(SaleValidationService, 'validateStockAvailability').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+
+      const mockMovement = Movement.create(
+        {
+          type: MovementType.create('OUT'),
+          status: MovementStatus.create('DRAFT'),
+          warehouseId: 'warehouse-123',
+          createdBy: 'user-123',
+        },
+        mockOrgId
+      );
+
+      jest
+        .spyOn(InventoryIntegrationService, 'generateMovementFromSale')
+        .mockReturnValue(mockMovement);
+
+      // UnitOfWork throws InsufficientStockError WITHOUT availableQuantity
+      const insufficientStockError = new InsufficientStockError(
+        'product-123',
+        'warehouse-123',
+        10,
+        undefined, // no availableQuantity
+        'location-123'
+      );
+      mockUnitOfWork.execute.mockRejectedValue(insufficientStockError);
+
+      const request = {
+        id: mockSaleId,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(BusinessRuleError);
+          expect(error.message).toContain('available unknown');
+        }
+      );
+    });
+
     it('Given: request with userId When: confirming sale Then: confirmedBy should be set', async () => {
       // Arrange
       const mockSale = createMockSale();

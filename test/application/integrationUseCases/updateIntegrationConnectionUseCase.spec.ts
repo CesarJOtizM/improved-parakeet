@@ -2,7 +2,7 @@ import { UpdateIntegrationConnectionUseCase } from '@application/integrationUseC
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { IntegrationConnection } from '../../../src/integrations/shared/domain/entities/integrationConnection.entity';
 import { EncryptionService } from '../../../src/integrations/shared/encryption/encryption.service';
-import { NotFoundError } from '@shared/domain/result/domainError';
+import { NotFoundError, ValidationError } from '@shared/domain/result/domainError';
 
 import type { IIntegrationConnectionRepository } from '../../../src/integrations/shared/domain/ports/iIntegrationConnectionRepository.port';
 import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
@@ -129,6 +129,58 @@ describe('UpdateIntegrationConnectionUseCase', () => {
       },
       error => {
         expect(error).toBeInstanceOf(NotFoundError);
+      }
+    );
+  });
+
+  it('Given: only appKey without appToken When: updating Then: should skip credential re-encryption', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockConnectionRepository.update.mockImplementation(async c => c);
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      orgId: mockOrgId,
+      appKey: 'new-key-only',
+    });
+
+    expect(result.isOk()).toBe(true);
+    expect(mockEncryptionService.encrypt).not.toHaveBeenCalled();
+  });
+
+  it('Given: same warehouse When: updating Then: should skip warehouse validation', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockConnectionRepository.update.mockImplementation(async c => c);
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      orgId: mockOrgId,
+      defaultWarehouseId: 'wh-1', // same as existing
+    });
+
+    expect(result.isOk()).toBe(true);
+    expect(mockWarehouseRepository.findById).not.toHaveBeenCalled();
+  });
+
+  it('Given: repository throws When: updating Then: should return ValidationError', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockConnectionRepository.update.mockRejectedValue(new Error('DB error'));
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      orgId: mockOrgId,
+      storeName: 'New Name',
+    });
+
+    expect(result.isErr()).toBe(true);
+    result.match(
+      () => {
+        throw new Error('Expected Err result');
+      },
+      error => {
+        expect(error.code).toBe('INTEGRATION_CONNECTION_UPDATE_ERROR');
       }
     );
   });

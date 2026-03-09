@@ -167,5 +167,138 @@ describe('GlobalExceptionFilter', () => {
         })
       );
     });
+
+    it('Given: HttpException with string response When: catching Then: should use exception message', () => {
+      // HttpException with a simple string response (not object)
+      const exception = new HttpException('Simple string error', HttpStatus.FORBIDDEN);
+
+      filter.catch(exception, mockHost);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.FORBIDDEN);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Simple string error',
+        })
+      );
+    });
+
+    it('Given: HttpException with object response but no message When: catching Then: should fallback to exception message', () => {
+      const exception = new HttpException(
+        { error: 'Bad Request', statusCode: 400 },
+        HttpStatus.BAD_REQUEST
+      );
+
+      filter.catch(exception, mockHost);
+
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+        })
+      );
+    });
+
+    it('Given: HttpException with details as array When: catching Then: should not include details', () => {
+      const exception = new HttpException(
+        {
+          message: 'Validation failed',
+          details: ['error1', 'error2'], // array, not object
+        },
+        HttpStatus.BAD_REQUEST
+      );
+
+      filter.catch(exception, mockHost);
+
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Validation failed',
+        })
+      );
+      // details should NOT be in error because it's an array
+      const callArgs = mockResponse.json.mock.calls[0][0];
+      expect(callArgs.error.details).toBeUndefined();
+    });
+
+    it('Given: HttpException with errorCode as non-string When: catching Then: should use default UNKNOWN_ERROR', () => {
+      const exception = new HttpException(
+        { message: 'Error', errorCode: 123 }, // number, not string
+        HttpStatus.BAD_REQUEST
+      );
+
+      filter.catch(exception, mockHost);
+
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          errorCode: 'UNKNOWN_ERROR',
+        })
+      );
+    });
+
+    it('Given: null exception When: catching Then: should return 500 with INTERNAL_SERVER_ERROR', () => {
+      filter.catch(null, mockHost);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Internal server error',
+          errorCode: 'INTERNAL_SERVER_ERROR',
+        })
+      );
+    });
+
+    it('Given: undefined exception When: catching Then: should return 500 with INTERNAL_SERVER_ERROR', () => {
+      filter.catch(undefined, mockHost);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
+    });
+
+    it('Given: number exception When: catching Then: should return 500 status', () => {
+      filter.catch(42, mockHost);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
+    });
+
+    it('Given: HttpException with null response object When: catching Then: should handle gracefully', () => {
+      // Object response but message is null
+      const exception = new HttpException(
+        { message: null, error: 'Not Found' },
+        HttpStatus.NOT_FOUND
+      );
+
+      filter.catch(exception, mockHost);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
+    });
+
+    it('Given: HttpException with details as null When: catching Then: should not include details', () => {
+      const exception = new HttpException(
+        {
+          message: 'Error',
+          details: null,
+        },
+        HttpStatus.BAD_REQUEST
+      );
+
+      filter.catch(exception, mockHost);
+
+      const callArgs = mockResponse.json.mock.calls[0][0];
+      expect(callArgs.error.details).toBeUndefined();
+    });
+
+    it('Given: POST request When: catching error Then: should include POST method in response', () => {
+      mockRequest.method = 'POST';
+      mockRequest.url = '/api/products';
+      const exception = new HttpException('Error', HttpStatus.BAD_REQUEST);
+
+      filter.catch(exception, mockHost);
+
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({
+            path: '/api/products',
+            method: 'POST',
+          }),
+        })
+      );
+    });
   });
 });

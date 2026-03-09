@@ -349,5 +349,155 @@ describe('InitiateTransferUseCase', () => {
         'Quantity must be positive'
       );
     });
+
+    it('Given: lines with location IDs When: initiating transfer Then: should validate locations', async () => {
+      // Arrange
+      const mockFromWarehouse = createMockWarehouse();
+      const mockProduct = createMockProduct();
+
+      jest.spyOn(TransferValidationService, 'validateTransferCreation').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+      jest.spyOn(TransferValidationService, 'validateTransferLines').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+      jest.spyOn(TransferValidationService, 'validateStockAvailability').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+      jest.spyOn(TransferValidationService, 'validateLocations').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+
+      mockWarehouseRepository.findById.mockResolvedValue(mockFromWarehouse);
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(100, 0));
+
+      const transferProps = {
+        fromWarehouseId: mockFromWarehouseId,
+        toWarehouseId: mockToWarehouseId,
+        status: TransferStatus.create('DRAFT'),
+        createdBy: mockUserId,
+      };
+      const transferWithId = Transfer.reconstitute(transferProps, mockTransferId, mockOrgId);
+      mockTransferRepository.save.mockResolvedValue(transferWithId);
+
+      const requestWithLocations = {
+        ...validRequest,
+        lines: [
+          {
+            productId: mockProductId,
+            quantity: 10,
+            fromLocationId: 'loc-from-1',
+            toLocationId: 'loc-to-1',
+          },
+        ],
+      };
+
+      // Act
+      const result = await useCase.execute(requestWithLocations);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(TransferValidationService.validateLocations).toHaveBeenCalled();
+    });
+
+    it('Given: invalid locations When: initiating transfer Then: should return ValidationError', async () => {
+      // Arrange
+      jest.spyOn(TransferValidationService, 'validateTransferCreation').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+      jest.spyOn(TransferValidationService, 'validateTransferLines').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+      jest.spyOn(TransferValidationService, 'validateStockAvailability').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+      jest.spyOn(TransferValidationService, 'validateLocations').mockResolvedValue({
+        isValid: false,
+        errors: ['Location not found in warehouse'],
+      });
+
+      const requestWithLocations = {
+        ...validRequest,
+        lines: [
+          {
+            productId: mockProductId,
+            quantity: 10,
+            fromLocationId: 'invalid-loc',
+          },
+        ],
+      };
+
+      // Act
+      const result = await useCase.execute(requestWithLocations);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+          expect(error.message).toContain('Location not found');
+        }
+      );
+      expect(mockTransferRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('Given: valid transfer without note When: initiating Then: should succeed with undefined note', async () => {
+      // Arrange
+      jest.spyOn(TransferValidationService, 'validateTransferCreation').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+      jest.spyOn(TransferValidationService, 'validateTransferLines').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+      jest.spyOn(TransferValidationService, 'validateStockAvailability').mockResolvedValue({
+        isValid: true,
+        errors: [],
+      });
+
+      const transferProps = {
+        fromWarehouseId: mockFromWarehouseId,
+        toWarehouseId: mockToWarehouseId,
+        status: TransferStatus.create('DRAFT'),
+        createdBy: mockUserId,
+      };
+      const transferWithId = Transfer.reconstitute(transferProps, mockTransferId, mockOrgId);
+      mockTransferRepository.save.mockResolvedValue(transferWithId);
+
+      const requestNoNote = {
+        fromWarehouseId: mockFromWarehouseId,
+        toWarehouseId: mockToWarehouseId,
+        createdBy: mockUserId,
+        lines: [{ productId: mockProductId, quantity: 10 }],
+        orgId: mockOrgId,
+        // no note
+      };
+
+      // Act
+      const result = await useCase.execute(requestNoNote);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.note).toBeUndefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

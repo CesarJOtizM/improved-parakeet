@@ -153,6 +153,24 @@ describe('RolesController', () => {
       expect(result.data.modules).toHaveLength(2);
       expect(mockGetPermissionsUseCase.execute).toHaveBeenCalled();
     });
+
+    it('Given: use case error When: getting permissions Then: should throw', async () => {
+      // Arrange
+      mockGetPermissionsUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Failed to retrieve permissions'))
+      );
+
+      // Act & Assert
+      await expect(controller.getPermissions()).rejects.toThrow();
+    });
+
+    it('Given: use case rejects When: getting permissions Then: should propagate error', async () => {
+      // Arrange
+      mockGetPermissionsUseCase.execute.mockRejectedValue(new Error('Database error'));
+
+      // Act & Assert
+      await expect(controller.getPermissions()).rejects.toThrow('Database error');
+    });
   });
 
   describe('getRole', () => {
@@ -288,6 +306,26 @@ describe('RolesController', () => {
         controller.deleteRole('role-123', mockOrgId, mockRequest as any)
       ).rejects.toThrow();
     });
+
+    it('Given: non-existent role When: deleting Then: should throw not found', async () => {
+      // Arrange
+      mockDeleteRoleUseCase.execute.mockResolvedValue(err(new NotFoundError('Role not found')));
+
+      // Act & Assert
+      await expect(
+        controller.deleteRole('non-existent', mockOrgId, mockRequest as any)
+      ).rejects.toThrow();
+    });
+
+    it('Given: use case rejects When: deleting role Then: should propagate error', async () => {
+      // Arrange
+      mockDeleteRoleUseCase.execute.mockRejectedValue(new Error('Database error'));
+
+      // Act & Assert
+      await expect(
+        controller.deleteRole('role-123', mockOrgId, mockRequest as any)
+      ).rejects.toThrow('Database error');
+    });
   });
 
   describe('getRolePermissions', () => {
@@ -385,6 +423,103 @@ describe('RolesController', () => {
           mockRequest as any
         )
       ).rejects.toThrow();
+    });
+
+    it('Given: system role When: assigning permissions Then: should throw business rule error', async () => {
+      // Arrange
+      const dto = { permissionIds: ['perm-1'] };
+      mockAssignPermissionsToRoleUseCase.execute.mockResolvedValue(
+        err(new BusinessRuleError('Cannot modify system role permissions'))
+      );
+
+      // Act & Assert
+      await expect(
+        controller.assignPermissionsToRole('system-role', dto as any, mockOrgId, mockRequest as any)
+      ).rejects.toThrow();
+    });
+
+    it('Given: empty permission list When: assigning Then: should pass empty array', async () => {
+      // Arrange
+      const dto = { permissionIds: [] };
+      const assignResponse = {
+        success: true,
+        data: { roleId: 'role-123', assignedPermissions: 0 },
+        message: 'Permissions assigned',
+        timestamp: new Date().toISOString(),
+      };
+      mockAssignPermissionsToRoleUseCase.execute.mockResolvedValue(ok(assignResponse));
+
+      // Act
+      const result = await controller.assignPermissionsToRole(
+        'role-123',
+        dto as any,
+        mockOrgId,
+        mockRequest as any
+      );
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockAssignPermissionsToRoleUseCase.execute).toHaveBeenCalledWith({
+        roleId: 'role-123',
+        permissionIds: [],
+        orgId: mockOrgId,
+        assignedBy: 'user-123',
+      });
+    });
+  });
+
+  describe('createRole - additional branches', () => {
+    it('Given: use case rejects When: creating role Then: should propagate error', async () => {
+      // Arrange
+      const dto = { name: 'New Role' };
+      mockCreateRoleUseCase.execute.mockRejectedValue(new Error('Database error'));
+
+      // Act & Assert
+      await expect(
+        controller.createRole(dto as any, mockOrgId, mockRequest as any)
+      ).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('getRole - additional branches', () => {
+    it('Given: use case rejects When: getting role Then: should propagate error', async () => {
+      // Arrange
+      mockGetRoleUseCase.execute.mockRejectedValue(new Error('Database error'));
+
+      // Act & Assert
+      await expect(controller.getRole('role-123', mockOrgId)).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('getRoles - additional branches', () => {
+    it('Given: empty roles list When: getting roles Then: should return empty array', async () => {
+      // Arrange
+      const emptyResponse = {
+        success: true,
+        data: [],
+        message: 'Roles retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetRolesUseCase.execute.mockResolvedValue(ok(emptyResponse));
+
+      // Act
+      const result = await controller.getRoles(mockOrgId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.data).toHaveLength(0);
+    });
+  });
+
+  describe('getRolePermissions - additional branches', () => {
+    it('Given: use case rejects When: getting role permissions Then: should propagate error', async () => {
+      // Arrange
+      mockGetRolePermissionsUseCase.execute.mockRejectedValue(new Error('Database error'));
+
+      // Act & Assert
+      await expect(controller.getRolePermissions('role-123', mockOrgId)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 });

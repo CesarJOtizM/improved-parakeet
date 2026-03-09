@@ -501,5 +501,185 @@ describe('PrismaTransferRepository', () => {
       // Assert
       expect(result?.status.getValue()).toBe('RECEIVED');
     });
+
+    it('Given: transfer with DRAFT status and null note When: mapping Then: should handle null note', async () => {
+      // Arrange
+      const transferNullNote = {
+        ...mockTransferData,
+        note: null,
+      };
+      mockPrismaService.transfer.findFirst.mockResolvedValue(transferNullNote);
+
+      // Act
+      const result = await repository.findById('transfer-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.note).toBeUndefined();
+    });
+
+    it('Given: transfer with CANCELED status When: mapping Then: should restore CANCELED status', async () => {
+      // Arrange
+      const canceledTransfer = {
+        ...mockTransferData,
+        status: 'CANCELED',
+        initiatedAt: null,
+        receivedAt: null,
+      };
+      mockPrismaService.transfer.findFirst.mockResolvedValue(canceledTransfer);
+
+      // Act
+      const result = await repository.findById('transfer-123', 'org-123');
+
+      // Assert
+      expect(result?.status.getValue()).toBe('CANCELED');
+    });
+
+    it('Given: transfer with REJECTED status When: mapping Then: should restore REJECTED status', async () => {
+      // Arrange
+      const rejectedTransfer = {
+        ...mockTransferData,
+        status: 'REJECTED',
+      };
+      mockPrismaService.transfer.findFirst.mockResolvedValue(rejectedTransfer);
+
+      // Act
+      const result = await repository.findById('transfer-123', 'org-123');
+
+      // Assert
+      expect(result?.status.getValue()).toBe('REJECTED');
+    });
+
+    it('Given: transfer with PARTIAL status When: mapping Then: should restore PARTIAL status', async () => {
+      // Arrange
+      const partialTransfer = {
+        ...mockTransferData,
+        status: 'PARTIAL',
+        initiatedAt: new Date(),
+      };
+      mockPrismaService.transfer.findFirst.mockResolvedValue(partialTransfer);
+
+      // Act
+      const result = await repository.findById('transfer-123', 'org-123');
+
+      // Assert
+      expect(result?.status.getValue()).toBe('PARTIAL');
+    });
+
+    it('Given: transfer with no lines When: mapping Then: should have empty lines', async () => {
+      // Arrange
+      const transferNoLines = {
+        ...mockTransferData,
+        lines: [],
+      };
+      mockPrismaService.transfer.findFirst.mockResolvedValue(transferNoLines);
+
+      // Act
+      const result = await repository.findById('transfer-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.getLines()).toHaveLength(0);
+    });
+
+    it('Given: transfer with multiple lines When: mapping Then: should include all lines', async () => {
+      // Arrange
+      const transferMultipleLines = {
+        ...mockTransferData,
+        lines: [
+          mockLineData,
+          {
+            ...mockLineData,
+            id: 'line-456',
+            productId: 'product-456',
+            quantity: 20,
+            fromLocationId: null,
+            toLocationId: null,
+          },
+        ],
+      };
+      mockPrismaService.transfer.findFirst.mockResolvedValue(transferMultipleLines);
+
+      // Act
+      const result = await repository.findById('transfer-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.getLines()).toHaveLength(2);
+    });
+
+    it('Given: transfer with receivedBy When: mapping Then: should include receivedBy', async () => {
+      // Arrange
+      const transferWithReceivedBy = {
+        ...mockTransferData,
+        status: 'RECEIVED',
+        receivedBy: 'user-receiver',
+        receivedAt: new Date(),
+        initiatedAt: new Date(),
+      };
+      mockPrismaService.transfer.findFirst.mockResolvedValue(transferWithReceivedBy);
+
+      // Act
+      const result = await repository.findById('transfer-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.receivedBy).toBe('user-receiver');
+    });
+  });
+
+  describe('findByStatus - comma-separated statuses', () => {
+    it('Given: comma-separated statuses When: finding Then: should use IN filter', async () => {
+      // Arrange
+      mockPrismaService.transfer.findMany.mockResolvedValue([mockTransferData]);
+
+      // Act
+      const result = await repository.findByStatus('DRAFT, IN_TRANSIT', 'org-123');
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(mockPrismaService.transfer.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: { in: ['DRAFT', 'IN_TRANSIT'] },
+          }),
+        })
+      );
+    });
+  });
+
+  describe('findById - non-Error exception', () => {
+    it('Given: non-Error thrown When: finding by id Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.transfer.findFirst.mockRejectedValue('string error');
+
+      // Act & Assert
+      await expect(repository.findById('transfer-123', 'org-123')).rejects.toBe('string error');
+    });
+  });
+
+  describe('save - completeTransfer not found', () => {
+    it('Given: transaction where final findUnique returns null When: saving Then: should throw error', async () => {
+      // Arrange
+      const transfer = Transfer.reconstitute(
+        {
+          fromWarehouseId: 'warehouse-from',
+          toWarehouseId: 'warehouse-to',
+          status: TransferStatus.create('DRAFT'),
+          createdBy: 'user-123',
+        },
+        'transfer-123',
+        'org-123'
+      );
+
+      mockPrismaService.transfer.findUnique
+        .mockResolvedValueOnce(mockTransferData) // exists
+        .mockResolvedValueOnce(null); // final findUnique returns null
+      mockPrismaService.transfer.update.mockResolvedValue(mockTransferData);
+      mockPrismaService.transferLine.deleteMany.mockResolvedValue({ count: 0 });
+
+      // Act & Assert
+      await expect(repository.save(transfer)).rejects.toThrow('Failed to retrieve saved transfer');
+    });
   });
 });

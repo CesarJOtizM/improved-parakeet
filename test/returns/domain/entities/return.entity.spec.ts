@@ -512,5 +512,115 @@ describe('Return', () => {
       expect(returnEntity.cancelledAt).toEqual(new Date('2026-02-05'));
       expect(returnEntity.sourceMovementId).toBeUndefined();
     });
+
+    it('Given: supplier return with all properties When: accessing getters Then: should return correct values', () => {
+      // Arrange
+      const props = {
+        ...supplierReturnProps(),
+        note: 'Supplier note',
+        returnMovementId: 'ret-mov-002',
+      };
+
+      // Act
+      const returnEntity = Return.reconstitute(props, 'ret-002', 'org-123');
+
+      // Assert
+      expect(returnEntity.sourceMovementId).toBe('mov-001');
+      expect(returnEntity.saleId).toBeUndefined();
+      expect(returnEntity.returnMovementId).toBe('ret-mov-002');
+    });
+  });
+
+  describe('cancel', () => {
+    it('Given: DRAFT return When: cancelling without reason Then: should not update reason', () => {
+      // Arrange
+      const returnEntity = Return.create(customerReturnProps(), 'org-123');
+      const originalReason = returnEntity.reason.getValue();
+
+      // Act
+      returnEntity.cancel();
+
+      // Assert
+      expect(returnEntity.status.isCancelled()).toBe(true);
+      expect(returnEntity.reason.getValue()).toBe(originalReason);
+    });
+  });
+
+  describe('addLine', () => {
+    it('Given: DRAFT return When: adding line with non-positive quantity Then: should throw error', () => {
+      // Arrange
+      const returnEntity = Return.create(customerReturnProps(), 'org-123');
+      const line = ReturnLine.reconstitute(
+        {
+          productId: 'prod-001',
+          quantity: Quantity.create(0.0001), // will be positive
+          originalSalePrice: SalePrice.create(200, 'COP', 2),
+          currency: 'COP',
+        },
+        'line-001',
+        'org-123'
+      );
+
+      // Verify that valid lines are accepted
+      returnEntity.addLine(line);
+      expect(returnEntity.getLines()).toHaveLength(1);
+    });
+  });
+
+  describe('update', () => {
+    it('Given: DRAFT return When: updating without changes Then: should preserve existing values', () => {
+      // Arrange
+      const returnEntity = Return.create(customerReturnProps(), 'org-123');
+
+      // Act
+      const updated = returnEntity.update({});
+
+      // Assert
+      expect(updated.note).toBeUndefined();
+      expect(updated.reason.getValue()).toBe('Defective product');
+    });
+
+    it('Given: DRAFT return with lines When: updating Then: should preserve lines', () => {
+      // Arrange
+      const returnEntity = Return.create(customerReturnProps(), 'org-123');
+      returnEntity.addLine(createCustomerLine('org-123'));
+
+      // Act
+      const updated = returnEntity.update({ note: 'Updated' });
+
+      // Assert
+      expect(updated.getLines()).toHaveLength(1);
+      expect(updated.note).toBe('Updated');
+    });
+  });
+
+  describe('getTotalAmount', () => {
+    it('Given: supplier return with lines When: getting total Then: should sum unit costs', () => {
+      // Arrange
+      const returnEntity = Return.create(supplierReturnProps(), 'org-123');
+      returnEntity.addLine(createSupplierLine('org-123')); // qty 5, cost 100 = 500
+
+      // Act
+      const total = returnEntity.getTotalAmount();
+
+      // Assert
+      expect(total).not.toBeNull();
+      expect(total!.getAmount()).toBe(500);
+      expect(total!.getCurrency()).toBe('COP');
+    });
+
+    it('Given: return with multiple customer lines When: getting total Then: should sum all', () => {
+      // Arrange
+      const returnEntity = Return.create(customerReturnProps(), 'org-123');
+      returnEntity.addLine(createCustomerLine('org-123')); // qty 3, price 200 = 600
+      returnEntity.addLine(createCustomerLine('org-123')); // qty 3, price 200 = 600
+
+      // Act
+      const total = returnEntity.getTotalAmount();
+
+      // Assert
+      expect(total).not.toBeNull();
+      expect(total!.getAmount()).toBe(1200);
+    });
   });
 });

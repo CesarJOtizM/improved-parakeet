@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AssignRoleToUserUseCase } from '@application/userUseCases/assignRoleToUserUseCase';
+import { ChangePasswordUseCase } from '@application/authUseCases/changePasswordUseCase';
 import { ChangeUserStatusUseCase } from '@application/userUseCases/changeUserStatusUseCase';
 import { CreateUserUseCase } from '@application/userUseCases/createUserUseCase';
 import { GetUsersUseCase } from '@application/userUseCases/getUsersUseCase';
@@ -10,7 +11,7 @@ import { UsersController } from '@interface/http/routes/users.controller';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ok, err } from '@shared/domain/result';
-import { ConflictError, NotFoundError } from '@shared/domain/result/domainError';
+import { ConflictError, NotFoundError, ValidationError } from '@shared/domain/result/domainError';
 
 describe('UsersController', () => {
   let usersController: UsersController;
@@ -21,6 +22,7 @@ describe('UsersController', () => {
   let mockChangeUserStatusUseCase: jest.Mocked<ChangeUserStatusUseCase>;
   let mockAssignRoleToUserUseCase: jest.Mocked<AssignRoleToUserUseCase>;
   let mockRemoveRoleFromUserUseCase: jest.Mocked<RemoveRoleFromUserUseCase>;
+  let mockChangePasswordUseCase: jest.Mocked<ChangePasswordUseCase>;
 
   const mockOrgId = 'org-123';
   const mockUserId = 'user-123';
@@ -64,6 +66,10 @@ describe('UsersController', () => {
       execute: jest.fn(),
     } as unknown as jest.Mocked<RemoveRoleFromUserUseCase>;
 
+    mockChangePasswordUseCase = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<ChangePasswordUseCase>;
+
     // Create controller instance
     usersController = new UsersController(
       mockCreateUserUseCase,
@@ -72,7 +78,8 @@ describe('UsersController', () => {
       mockUpdateUserUseCase,
       mockChangeUserStatusUseCase,
       mockAssignRoleToUserUseCase,
-      mockRemoveRoleFromUserUseCase
+      mockRemoveRoleFromUserUseCase,
+      mockChangePasswordUseCase
     );
   });
 
@@ -430,6 +437,360 @@ describe('UsersController', () => {
         removedBy: mockAdminUser.id,
       });
       expect(result).toEqual(mockResponseData);
+    });
+
+    it('Given: non-existent role When: removing role Then: should throw not found', async () => {
+      // Arrange
+      const mockRequest = { user: mockAdminUser } as any;
+      mockRemoveRoleFromUserUseCase.execute.mockResolvedValue(
+        err(new NotFoundError('Role assignment not found'))
+      );
+
+      // Act & Assert
+      await expect(
+        usersController.removeRole(mockUserId, 'non-existent', mockOrgId, mockRequest)
+      ).rejects.toThrow(HttpException);
+    });
+  });
+
+  describe('getMyProfile', () => {
+    it('Given: authenticated user When: getting own profile Then: should return user profile', async () => {
+      // Arrange
+      const mockRequest = { user: mockAdminUser } as any;
+      const mockResponseData = {
+        success: true as const,
+        data: {
+          id: mockAdminUser.id,
+          email: mockAdminUser.email,
+          username: mockAdminUser.username,
+          status: 'ACTIVE',
+        },
+        message: 'User retrieved successfully',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetUserUseCase.execute.mockResolvedValue(ok(mockResponseData));
+
+      // Act
+      const result = await usersController.getMyProfile(mockRequest, mockOrgId);
+
+      // Assert
+      expect(mockGetUserUseCase.execute).toHaveBeenCalledWith({
+        userId: mockAdminUser.id,
+        orgId: mockOrgId,
+      });
+      expect(result).toEqual(mockResponseData);
+    });
+
+    it('Given: error from use case When: getting own profile Then: should throw', async () => {
+      // Arrange
+      const mockRequest = { user: mockAdminUser } as any;
+      mockGetUserUseCase.execute.mockResolvedValue(err(new NotFoundError('User not found')));
+
+      // Act & Assert
+      await expect(usersController.getMyProfile(mockRequest, mockOrgId)).rejects.toThrow(
+        HttpException
+      );
+    });
+  });
+
+  describe('updateMyProfile', () => {
+    it('Given: valid update data When: updating own profile Then: should return updated profile', async () => {
+      // Arrange
+      const updateDto = {
+        firstName: 'Updated',
+        lastName: 'Name',
+        phone: '+1234567890',
+        timezone: 'America/New_York',
+        language: 'en',
+        jobTitle: 'Developer',
+        department: 'Engineering',
+      };
+      const mockRequest = { user: mockAdminUser } as any;
+      const mockResponseData = {
+        success: true as const,
+        data: {
+          id: mockAdminUser.id,
+          firstName: 'Updated',
+          lastName: 'Name',
+        },
+        message: 'Profile updated successfully',
+        timestamp: new Date().toISOString(),
+      };
+      mockUpdateUserUseCase.execute.mockResolvedValue(ok(mockResponseData));
+
+      // Act
+      const result = await usersController.updateMyProfile(updateDto, mockOrgId, mockRequest);
+
+      // Assert
+      expect(mockUpdateUserUseCase.execute).toHaveBeenCalledWith({
+        userId: mockAdminUser.id,
+        orgId: mockOrgId,
+        firstName: 'Updated',
+        lastName: 'Name',
+        phone: '+1234567890',
+        timezone: 'America/New_York',
+        language: 'en',
+        jobTitle: 'Developer',
+        department: 'Engineering',
+        updatedBy: mockAdminUser.id,
+      });
+      expect(result).toEqual(mockResponseData);
+    });
+
+    it('Given: error from use case When: updating own profile Then: should throw', async () => {
+      // Arrange
+      const updateDto = { firstName: '' };
+      const mockRequest = { user: mockAdminUser } as any;
+      mockUpdateUserUseCase.execute.mockResolvedValue(
+        err(new ValidationError('First name is required'))
+      );
+
+      // Act & Assert
+      await expect(
+        usersController.updateMyProfile(updateDto, mockOrgId, mockRequest)
+      ).rejects.toThrow(HttpException);
+    });
+  });
+
+  describe('changeMyPassword', () => {
+    it('Given: valid password change When: changing password Then: should return success', async () => {
+      // Arrange
+      const changePasswordDto = {
+        currentPassword: 'OldPass123!',
+        newPassword: 'NewPass456!',
+        confirmPassword: 'NewPass456!',
+      };
+      const mockRequest = { user: mockAdminUser } as any;
+      const mockResponseData = {
+        success: true as const,
+        data: {},
+        message: 'Password changed successfully',
+        timestamp: new Date().toISOString(),
+      };
+      mockChangePasswordUseCase.execute.mockResolvedValue(ok(mockResponseData));
+
+      // Act
+      const result = await usersController.changeMyPassword(
+        changePasswordDto,
+        mockOrgId,
+        mockRequest
+      );
+
+      // Assert
+      expect(mockChangePasswordUseCase.execute).toHaveBeenCalledWith({
+        userId: mockAdminUser.id,
+        orgId: mockOrgId,
+        currentPassword: 'OldPass123!',
+        newPassword: 'NewPass456!',
+        confirmPassword: 'NewPass456!',
+      });
+      expect(result).toEqual(mockResponseData);
+    });
+
+    it('Given: incorrect current password When: changing password Then: should throw', async () => {
+      // Arrange
+      const changePasswordDto = {
+        currentPassword: 'WrongPass',
+        newPassword: 'NewPass456!',
+        confirmPassword: 'NewPass456!',
+      };
+      const mockRequest = { user: mockAdminUser } as any;
+      mockChangePasswordUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Current password is incorrect'))
+      );
+
+      // Act & Assert
+      await expect(
+        usersController.changeMyPassword(changePasswordDto, mockOrgId, mockRequest)
+      ).rejects.toThrow(HttpException);
+    });
+  });
+
+  describe('getUsers - additional branches', () => {
+    it('Given: sortBy and sortOrder When: getting users Then: should pass sort params', async () => {
+      // Arrange
+      const query = {
+        page: 1,
+        limit: 10,
+        sortBy: 'email' as const,
+        sortOrder: 'desc' as const,
+      };
+      const mockResponse = {
+        success: true as const,
+        data: [],
+        pagination: { page: 1, limit: 10, total: 0, totalPages: 0, hasNext: false, hasPrev: false },
+        message: 'Users retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetUsersUseCase.execute.mockResolvedValue(ok(mockResponse));
+
+      // Act
+      const result = await usersController.getUsers(query, mockOrgId);
+
+      // Assert
+      expect(mockGetUsersUseCase.execute).toHaveBeenCalledWith({
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        status: undefined,
+        search: undefined,
+        sortBy: 'email',
+        sortOrder: 'desc',
+      });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('Given: error from use case When: getting users Then: should throw', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10 };
+      mockGetUsersUseCase.execute.mockResolvedValue(err(new ValidationError('Invalid query')));
+
+      // Act & Assert
+      await expect(usersController.getUsers(query, mockOrgId)).rejects.toThrow(HttpException);
+    });
+  });
+
+  describe('updateUser - error branches', () => {
+    it('Given: non-existent user When: updating Then: should throw not found', async () => {
+      // Arrange
+      const updateDto = { firstName: 'Test' };
+      const mockRequest = { user: mockAdminUser } as any;
+      mockUpdateUserUseCase.execute.mockResolvedValue(err(new NotFoundError('User not found')));
+
+      // Act & Assert
+      await expect(
+        usersController.updateUser('non-existent', updateDto, mockOrgId, mockRequest)
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('Given: all update fields When: updating Then: should pass all fields', async () => {
+      // Arrange
+      const updateDto = {
+        firstName: 'Jane',
+        lastName: 'Smith',
+        username: 'jane',
+        email: 'jane@example.com',
+        phone: '+1234567890',
+        timezone: 'America/New_York',
+        language: 'en',
+        jobTitle: 'Manager',
+        department: 'Sales',
+      };
+      const mockRequest = { user: mockAdminUser } as any;
+      const mockResponseData = {
+        success: true as const,
+        data: { id: mockUserId, ...updateDto },
+        message: 'User updated',
+        timestamp: new Date().toISOString(),
+      };
+      mockUpdateUserUseCase.execute.mockResolvedValue(ok(mockResponseData));
+
+      // Act
+      const result = await usersController.updateUser(
+        mockUserId,
+        updateDto,
+        mockOrgId,
+        mockRequest
+      );
+
+      // Assert
+      expect(mockUpdateUserUseCase.execute).toHaveBeenCalledWith({
+        userId: mockUserId,
+        orgId: mockOrgId,
+        firstName: 'Jane',
+        lastName: 'Smith',
+        username: 'jane',
+        email: 'jane@example.com',
+        phone: '+1234567890',
+        timezone: 'America/New_York',
+        language: 'en',
+        jobTitle: 'Manager',
+        department: 'Sales',
+        updatedBy: mockAdminUser.id,
+      });
+      expect(result).toEqual(mockResponseData);
+    });
+  });
+
+  describe('changeUserStatus - error branches', () => {
+    it('Given: non-existent user When: changing status Then: should throw not found', async () => {
+      // Arrange
+      const statusDto = { status: 'INACTIVE' as const } as any;
+      const mockRequest = { user: mockAdminUser } as any;
+      mockChangeUserStatusUseCase.execute.mockResolvedValue(
+        err(new NotFoundError('User not found'))
+      );
+
+      // Act & Assert
+      await expect(
+        usersController.changeUserStatus('non-existent', statusDto, mockOrgId, mockRequest)
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('Given: lockDurationMinutes When: changing status to LOCKED Then: should pass lock duration', async () => {
+      // Arrange
+      const statusDto = {
+        status: 'LOCKED' as const,
+        reason: 'Suspicious activity',
+        lockDurationMinutes: 60,
+      } as any;
+      const mockRequest = { user: mockAdminUser } as any;
+      const mockResponseData = {
+        success: true as const,
+        data: { id: mockUserId, status: 'LOCKED' },
+        message: 'User locked',
+        timestamp: new Date().toISOString(),
+      };
+      mockChangeUserStatusUseCase.execute.mockResolvedValue(ok(mockResponseData));
+
+      // Act
+      const result = await usersController.changeUserStatus(
+        mockUserId,
+        statusDto,
+        mockOrgId,
+        mockRequest
+      );
+
+      // Assert
+      expect(mockChangeUserStatusUseCase.execute).toHaveBeenCalledWith({
+        userId: mockUserId,
+        orgId: mockOrgId,
+        status: 'LOCKED',
+        changedBy: mockAdminUser.id,
+        reason: 'Suspicious activity',
+        lockDurationMinutes: 60,
+      });
+      expect(result).toEqual(mockResponseData);
+    });
+  });
+
+  describe('assignRole - error branches', () => {
+    it('Given: duplicate role When: assigning Then: should throw conflict', async () => {
+      // Arrange
+      const assignRoleDto = { roleId: 'role-456' };
+      const mockRequest = { user: mockAdminUser } as any;
+      mockAssignRoleToUserUseCase.execute.mockResolvedValue(
+        err(new ConflictError('User already has this role'))
+      );
+
+      // Act & Assert
+      await expect(
+        usersController.assignRole(mockUserId, assignRoleDto, mockOrgId, mockRequest)
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('Given: non-existent user When: assigning role Then: should throw not found', async () => {
+      // Arrange
+      const assignRoleDto = { roleId: 'role-456' };
+      const mockRequest = { user: mockAdminUser } as any;
+      mockAssignRoleToUserUseCase.execute.mockResolvedValue(
+        err(new NotFoundError('User not found'))
+      );
+
+      // Act & Assert
+      await expect(
+        usersController.assignRole('non-existent', assignRoleDto, mockOrgId, mockRequest)
+      ).rejects.toThrow(HttpException);
     });
   });
 });

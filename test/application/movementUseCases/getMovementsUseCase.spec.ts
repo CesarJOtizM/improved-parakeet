@@ -57,6 +57,9 @@ describe('GetMovementsUseCase', () => {
       warehouse: {
         findMany: jest.fn().mockResolvedValue([]),
       },
+      contact: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
       product: {
         findMany: jest.fn().mockResolvedValue([]),
       },
@@ -353,6 +356,367 @@ describe('GetMovementsUseCase', () => {
           throw new Error('Expected Ok result');
         }
       );
+    });
+
+    it('Given: no page/limit provided When: getting movements Then: should use defaults', async () => {
+      // Arrange
+      mockMovementRepository.findAll.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.pagination.page).toBe(1);
+          expect(value.pagination.limit).toBe(10);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy status When: getting movements Then: should sort by status value', async () => {
+      // Arrange
+      const movementDraft = createMovementWithLines({
+        type: 'IN',
+        status: 'DRAFT',
+        productIds: ['product-a'],
+      });
+      const movementPosted = createMovementWithLines({
+        type: 'IN',
+        status: 'POSTED',
+        postedAt: new Date(),
+        productIds: ['product-b'],
+      });
+      mockMovementRepository.findAll.mockResolvedValue([movementPosted, movementDraft]);
+
+      mockProductRepository.findById.mockResolvedValue(null);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'status',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+          // DRAFT < POSTED alphabetically
+          expect(value.data[0].status).toBe('DRAFT');
+          expect(value.data[1].status).toBe('POSTED');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy createdAt When: getting movements Then: should sort by createdAt', async () => {
+      // Arrange
+      const movement1 = createMockMovement('IN');
+      const movement2 = createMockMovement('OUT');
+      mockMovementRepository.findAll.mockResolvedValue([movement1, movement2]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'createdAt',
+        sortOrder: 'desc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy unknown field When: getting movements Then: should fallback to createdAt', async () => {
+      // Arrange
+      const movement1 = createMockMovement('IN');
+      const movement2 = createMockMovement('OUT');
+      mockMovementRepository.findAll.mockResolvedValue([movement1, movement2]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'nonExistentField',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy with no sortOrder When: getting movements Then: should default to asc', async () => {
+      // Arrange
+      const movement1 = createMockMovement('IN');
+      const movement2 = createMockMovement('OUT');
+      mockMovementRepository.findAll.mockResolvedValue([movement1, movement2]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'type',
+        // no sortOrder - should default to 'asc'
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+          // IN < OUT alphabetically (asc default)
+          expect(value.data[0].type).toBe('IN');
+          expect(value.data[1].type).toBe('OUT');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: companyId filter When: getting movements Then: should use specification', async () => {
+      // Arrange
+      mockMovementRepository.findBySpecification.mockResolvedValue({
+        data: [],
+        total: 0,
+        hasMore: false,
+      });
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        companyId: 'company-123',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockMovementRepository.findBySpecification).toHaveBeenCalled();
+    });
+
+    it('Given: search filter When: getting movements Then: should use specification', async () => {
+      // Arrange
+      mockMovementRepository.findBySpecification.mockResolvedValue({
+        data: [],
+        total: 0,
+        hasMore: false,
+      });
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        search: 'REF-001',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockMovementRepository.findBySpecification).toHaveBeenCalled();
+    });
+
+    it('Given: combined filters When: getting movements Then: should compose specifications', async () => {
+      // Arrange
+      mockMovementRepository.findBySpecification.mockResolvedValue({
+        data: [],
+        total: 0,
+        hasMore: false,
+      });
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        warehouseId: 'wh-123',
+        status: 'POSTED',
+        type: 'IN',
+        productId: 'product-1',
+        search: 'test',
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-12-31'),
+        companyId: 'company-1',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockMovementRepository.findBySpecification).toHaveBeenCalled();
+    });
+
+    it('Given: warehouse data exists When: enriching movements Then: should include warehouse name and code', async () => {
+      // Arrange
+      const movement = createMovementWithLines({
+        type: 'IN',
+        status: 'DRAFT',
+        productIds: ['product-1'],
+        warehouseId: 'wh-123',
+      });
+
+      mockMovementRepository.findAll.mockResolvedValue([movement]);
+      mockProductRepository.findById.mockResolvedValue(null);
+
+      (mockPrisma.warehouse.findMany as jest.Mock).mockResolvedValue([
+        { id: 'wh-123', name: 'Main Warehouse', code: 'MW-01' },
+      ]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].warehouseName).toBe('Main Warehouse');
+          expect(value.data[0].warehouseCode).toBe('MW-01');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: no warehouse data When: enriching movements Then: should leave warehouse name undefined', async () => {
+      // Arrange
+      const movement = createMovementWithLines({
+        type: 'IN',
+        status: 'DRAFT',
+        productIds: ['product-1'],
+        warehouseId: 'wh-missing',
+      });
+
+      mockMovementRepository.findAll.mockResolvedValue([movement]);
+      mockProductRepository.findById.mockResolvedValue(null);
+
+      (mockPrisma.warehouse.findMany as jest.Mock).mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].warehouseName).toBeUndefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: only startDate without endDate When: getting movements Then: should not add date range spec', async () => {
+      // Arrange
+      mockMovementRepository.findAll.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        startDate: new Date('2024-01-01'),
+        // no endDate
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      // Should fallback to findAll since no specifications added
+      expect(mockMovementRepository.findAll).toHaveBeenCalled();
+    });
+
+    it('Given: product found without price When: enriching movements Then: should set price as undefined', async () => {
+      // Arrange
+      const movement = createMovementWithLines({
+        type: 'IN',
+        status: 'DRAFT',
+        productIds: ['product-no-price'],
+      });
+      mockMovementRepository.findAll.mockResolvedValue([movement]);
+
+      // Create product without price
+      const propsResult = ProductMapper.toDomainProps({
+        sku: 'SKU-NP',
+        name: 'No Price Product',
+        unit: { code: 'UNIT', name: 'Unit', precision: 0 },
+        // no price set
+      });
+      const productNoPrice = Product.create(propsResult.unwrap(), mockOrgId);
+
+      mockProductRepository.findById.mockResolvedValue(productNoPrice);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockProductRepository.findById).toHaveBeenCalledWith('product-no-price', mockOrgId);
     });
   });
 });

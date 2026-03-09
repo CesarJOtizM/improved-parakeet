@@ -275,6 +275,32 @@ describe('CreateCategoryUseCase', () => {
       );
     });
 
+    it('Given: non-Error thrown When: creating category Then: should handle unknown error', async () => {
+      // Arrange
+      mockCategoryRepository.existsByName.mockResolvedValue(false);
+      mockCategoryRepository.save.mockRejectedValue('string-error');
+
+      const request = {
+        name: 'Electronics',
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+          expect(error.message).toContain('Unknown error');
+        }
+      );
+    });
+
     it('Given: category without description When: creating category Then: should succeed with undefined description', async () => {
       // Arrange
       const savedCategory = createMockCategory({ description: undefined as unknown as string });

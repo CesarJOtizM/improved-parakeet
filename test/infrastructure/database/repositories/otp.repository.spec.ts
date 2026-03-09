@@ -370,5 +370,331 @@ describe('OtpRepository', () => {
       // Assert
       expect(result).toBe(false);
     });
+
+    it('Given: prisma throws error When: checking existence Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.otp.count.mockRejectedValue(new Error('DB Error'));
+
+      // Act & Assert
+      await expect(repository.exists('otp-123', 'org-123')).rejects.toThrow('DB Error');
+    });
+  });
+
+  describe('findById - optional fields mapping', () => {
+    it('Given: OTP without ipAddress When: finding Then: should map to undefined', async () => {
+      // Arrange
+      const otpWithNulls = { ...mockOtpData, ipAddress: null, userAgent: null };
+      mockPrismaService.otp.findFirst.mockResolvedValue(otpWithNulls);
+
+      // Act
+      const result = await repository.findById('otp-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.ipAddress).toBeUndefined();
+      expect(result?.userAgent).toBeUndefined();
+    });
+
+    it('Given: OTP with ipAddress and userAgent When: finding Then: should preserve values', async () => {
+      // Arrange
+      mockPrismaService.otp.findFirst.mockResolvedValue(mockOtpData);
+
+      // Act
+      const result = await repository.findById('otp-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.ipAddress).toBe('192.168.1.1');
+      expect(result?.userAgent).toBe('Mozilla/5.0');
+    });
+
+    it('Given: OTP with empty string ipAddress When: finding Then: should map to empty string', async () => {
+      // Arrange
+      const otpWithEmpty = { ...mockOtpData, ipAddress: '', userAgent: '' };
+      mockPrismaService.otp.findFirst.mockResolvedValue(otpWithEmpty);
+
+      // Act
+      const result = await repository.findById('otp-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      // empty string is falsy, so || undefined will map to undefined
+      expect(result?.ipAddress).toBeUndefined();
+      expect(result?.userAgent).toBeUndefined();
+    });
+  });
+
+  describe('findByEmailAndType - error handling', () => {
+    it('Given: prisma throws error When: finding by email and type Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.otp.findFirst.mockRejectedValue(new Error('Connection lost'));
+
+      // Act & Assert
+      await expect(
+        repository.findByEmailAndType('user@example.com', 'PASSWORD_RESET', 'org-123')
+      ).rejects.toThrow('Connection lost');
+    });
+  });
+
+  describe('findValidByEmailAndType - error handling', () => {
+    it('Given: prisma throws error When: finding valid OTP Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.otp.findFirst.mockRejectedValue(new Error('Timeout'));
+
+      // Act & Assert
+      await expect(
+        repository.findValidByEmailAndType('user@example.com', 'PASSWORD_RESET', 'org-123')
+      ).rejects.toThrow('Timeout');
+    });
+  });
+
+  describe('findExpiredOtp - additional cases', () => {
+    it('Given: no expired OTPs When: finding expired Then: should return empty array', async () => {
+      // Arrange
+      mockPrismaService.otp.findMany.mockResolvedValue([]);
+
+      // Act
+      const result = await repository.findExpiredOtp('org-123');
+
+      // Assert
+      expect(result).toHaveLength(0);
+    });
+
+    it('Given: multiple expired OTPs When: finding expired Then: should return all', async () => {
+      // Arrange
+      const expired1 = { ...mockOtpData, id: 'otp-1', expiresAt: pastDate };
+      const expired2 = {
+        ...mockOtpData,
+        id: 'otp-2',
+        expiresAt: pastDate,
+        ipAddress: null,
+        userAgent: null,
+      };
+      mockPrismaService.otp.findMany.mockResolvedValue([expired1, expired2]);
+
+      // Act
+      const result = await repository.findExpiredOtp('org-123');
+
+      // Assert
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe('otp-1');
+      expect(result[1].id).toBe('otp-2');
+      expect(result[1].ipAddress).toBeUndefined();
+    });
+
+    it('Given: prisma throws error When: finding expired Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.otp.findMany.mockRejectedValue(new Error('DB Error'));
+
+      // Act & Assert
+      await expect(repository.findExpiredOtp('org-123')).rejects.toThrow('DB Error');
+    });
+  });
+
+  describe('findUsedOtp - additional cases', () => {
+    it('Given: no used OTPs When: finding used Then: should return empty array', async () => {
+      // Arrange
+      mockPrismaService.otp.findMany.mockResolvedValue([]);
+
+      // Act
+      const result = await repository.findUsedOtp('org-123');
+
+      // Assert
+      expect(result).toHaveLength(0);
+    });
+
+    it('Given: prisma throws error When: finding used Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.otp.findMany.mockRejectedValue(new Error('DB Error'));
+
+      // Act & Assert
+      await expect(repository.findUsedOtp('org-123')).rejects.toThrow('DB Error');
+    });
+  });
+
+  describe('deleteExpiredOtp - error handling', () => {
+    it('Given: prisma throws error When: deleting expired Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.otp.deleteMany.mockRejectedValue(new Error('Delete failed'));
+
+      // Act & Assert
+      await expect(repository.deleteExpiredOtp('org-123')).rejects.toThrow('Delete failed');
+    });
+  });
+
+  describe('deleteUsedOtp - error handling', () => {
+    it('Given: prisma throws error When: deleting used Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.otp.deleteMany.mockRejectedValue(new Error('Delete failed'));
+
+      // Act & Assert
+      await expect(repository.deleteUsedOtp('org-123', 24)).rejects.toThrow('Delete failed');
+    });
+  });
+
+  describe('countByEmailAndType - error handling', () => {
+    it('Given: prisma throws error When: counting Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.otp.count.mockRejectedValue(new Error('Count failed'));
+
+      // Act & Assert
+      await expect(
+        repository.countByEmailAndType('user@example.com', 'PASSWORD_RESET', 'org-123')
+      ).rejects.toThrow('Count failed');
+    });
+  });
+
+  describe('findRecentOtpByEmail - additional cases', () => {
+    it('Given: no recent OTPs When: finding recent Then: should return empty array', async () => {
+      // Arrange
+      mockPrismaService.otp.findMany.mockResolvedValue([]);
+
+      // Act
+      const result = await repository.findRecentOtpByEmail('user@example.com', 'org-123', 1);
+
+      // Assert
+      expect(result).toHaveLength(0);
+    });
+
+    it('Given: OTPs with null optional fields When: finding recent Then: should map to undefined', async () => {
+      // Arrange
+      const otpNulls = { ...mockOtpData, ipAddress: null, userAgent: null };
+      mockPrismaService.otp.findMany.mockResolvedValue([otpNulls]);
+
+      // Act
+      const result = await repository.findRecentOtpByEmail('user@example.com', 'org-123', 1);
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(result[0].ipAddress).toBeUndefined();
+      expect(result[0].userAgent).toBeUndefined();
+    });
+
+    it('Given: prisma throws error When: finding recent Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.otp.findMany.mockRejectedValue(new Error('DB Error'));
+
+      // Act & Assert
+      await expect(
+        repository.findRecentOtpByEmail('user@example.com', 'org-123', 1)
+      ).rejects.toThrow('DB Error');
+    });
+  });
+
+  describe('save - error handling', () => {
+    it('Given: prisma throws error When: saving Then: should propagate error', async () => {
+      // Arrange
+      const otp = Otp.reconstitute(
+        {
+          email: 'user@example.com',
+          code: '123456',
+          type: 'PASSWORD_RESET',
+          expiresAt: futureDate,
+          isUsed: false,
+          attempts: 0,
+          maxAttempts: 3,
+        },
+        'otp-123',
+        'org-123'
+      );
+      mockPrismaService.otp.upsert.mockRejectedValue(new Error('Upsert failed'));
+
+      // Act & Assert
+      await expect(repository.save(otp)).rejects.toThrow('Upsert failed');
+    });
+
+    it('Given: OTP without optional fields When: saving Then: should save successfully', async () => {
+      // Arrange
+      const otpNoOptionals = { ...mockOtpData, ipAddress: null, userAgent: null };
+      mockPrismaService.otp.upsert.mockResolvedValue(otpNoOptionals);
+
+      const otp = Otp.reconstitute(
+        {
+          email: 'user@example.com',
+          code: '654321',
+          type: 'ACCOUNT_ACTIVATION',
+          expiresAt: futureDate,
+          isUsed: false,
+          attempts: 0,
+          maxAttempts: 3,
+        },
+        'otp-456',
+        'org-123'
+      );
+
+      // Act
+      const result = await repository.save(otp);
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result.ipAddress).toBeUndefined();
+      expect(result.userAgent).toBeUndefined();
+    });
+  });
+
+  describe('delete - error handling', () => {
+    it('Given: prisma throws error When: deleting Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.otp.deleteMany.mockRejectedValue(new Error('Delete failed'));
+
+      // Act & Assert
+      await expect(repository.delete('otp-123', 'org-123')).rejects.toThrow('Delete failed');
+    });
+  });
+
+  describe('findAll - additional cases', () => {
+    it('Given: empty org When: finding all Then: should return empty array', async () => {
+      // Arrange
+      mockPrismaService.otp.findMany.mockResolvedValue([]);
+
+      // Act
+      const result = await repository.findAll('org-123');
+
+      // Assert
+      expect(result).toHaveLength(0);
+    });
+
+    it('Given: OTPs with null optional fields When: finding all Then: should map correctly', async () => {
+      // Arrange
+      const otpNulls = { ...mockOtpData, ipAddress: null, userAgent: null };
+      mockPrismaService.otp.findMany.mockResolvedValue([otpNulls]);
+
+      // Act
+      const result = await repository.findAll('org-123');
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(result[0].ipAddress).toBeUndefined();
+      expect(result[0].userAgent).toBeUndefined();
+    });
+
+    it('Given: prisma throws error When: finding all Then: should propagate error', async () => {
+      // Arrange
+      mockPrismaService.otp.findMany.mockRejectedValue(new Error('DB Error'));
+
+      // Act & Assert
+      await expect(repository.findAll('org-123')).rejects.toThrow('DB Error');
+    });
+
+    it('Given: OTPs of different types When: finding all Then: should reconstitute all types', async () => {
+      // Arrange
+      const otpPasswordReset = { ...mockOtpData, id: 'otp-1', type: 'PASSWORD_RESET' };
+      const otpActivation = { ...mockOtpData, id: 'otp-2', type: 'ACCOUNT_ACTIVATION' };
+      const otpTwoFactor = { ...mockOtpData, id: 'otp-3', type: 'TWO_FACTOR' };
+      mockPrismaService.otp.findMany.mockResolvedValue([
+        otpPasswordReset,
+        otpActivation,
+        otpTwoFactor,
+      ]);
+
+      // Act
+      const result = await repository.findAll('org-123');
+
+      // Assert
+      expect(result).toHaveLength(3);
+      expect(result[0].type).toBe('PASSWORD_RESET');
+      expect(result[1].type).toBe('ACCOUNT_ACTIVATION');
+      expect(result[2].type).toBe('TWO_FACTOR');
+    });
   });
 });

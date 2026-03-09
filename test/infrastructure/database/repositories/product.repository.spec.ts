@@ -1545,5 +1545,1048 @@ describe('PrismaProductRepository', () => {
       // Act & Assert
       await expect(repository.findBySpecification(mockSpec, 'org-123')).rejects.toBe('spec error');
     });
+
+    it('Given: only take provided (no skip) When: finding by specification Then: hasMore should be false', async () => {
+      // Arrange
+      mockPrismaService.product.findMany.mockResolvedValue([mockProductData]);
+      mockPrismaService.product.count.mockResolvedValue(100);
+
+      // Act
+      const result = await repository.findBySpecification(mockSpec, 'org-123', {
+        take: 10,
+      });
+
+      // Assert
+      expect(result.hasMore).toBe(false);
+    });
+
+    it('Given: products with companyId and companyName When: finding by specification Then: should map company fields', async () => {
+      // Arrange
+      const productWithCompany = {
+        ...mockProductData,
+        companyId: 'company-1',
+        company: { id: 'company-1', name: 'Acme Corp' },
+      };
+      mockPrismaService.product.findMany.mockResolvedValue([productWithCompany]);
+      mockPrismaService.product.count.mockResolvedValue(1);
+
+      // Act
+      const result = await repository.findBySpecification(mockSpec, 'org-123');
+
+      // Assert
+      expect(result.data[0].companyId).toBe('company-1');
+      expect(result.data[0].companyName).toBe('Acme Corp');
+    });
+
+    it('Given: products with null companyId When: finding by specification Then: companyId should be undefined', async () => {
+      // Arrange
+      const productNoCompany = {
+        ...mockProductData,
+        companyId: null,
+        company: null,
+      };
+      mockPrismaService.product.findMany.mockResolvedValue([productNoCompany]);
+      mockPrismaService.product.count.mockResolvedValue(1);
+
+      // Act
+      const result = await repository.findBySpecification(mockSpec, 'org-123');
+
+      // Assert
+      expect(result.data[0].companyId).toBeUndefined();
+      expect(result.data[0].companyName).toBeUndefined();
+    });
+
+    it('Given: products with null categories from DB When: finding by specification Then: should default to empty array', async () => {
+      // Arrange
+      const productNullCategories = {
+        ...mockProductData,
+        categories: null,
+        company: null,
+        companyId: null,
+      };
+      mockPrismaService.product.findMany.mockResolvedValue([productNullCategories]);
+      mockPrismaService.product.count.mockResolvedValue(1);
+
+      // Act
+      const result = await repository.findBySpecification(mockSpec, 'org-123');
+
+      // Assert
+      expect(result.data[0].categories).toEqual([]);
+    });
+
+    it('Given: skip=0 and take=10 with total=10 When: finding by specification Then: hasMore should be false (exact boundary)', async () => {
+      // Arrange
+      mockPrismaService.product.findMany.mockResolvedValue([mockProductData]);
+      mockPrismaService.product.count.mockResolvedValue(10);
+
+      // Act
+      const result = await repository.findBySpecification(mockSpec, 'org-123', {
+        skip: 0,
+        take: 10,
+      });
+
+      // Assert
+      expect(result.hasMore).toBe(false);
+    });
+  });
+
+  describe('findById - optional field branches', () => {
+    it('Given: product with null description When: finding by id Then: description should be undefined', async () => {
+      // Arrange
+      const productNullDesc = {
+        ...mockProductData,
+        description: null,
+      };
+      mockPrismaService.product.findUnique.mockResolvedValue(productNullDesc);
+
+      // Act
+      const result = await repository.findById('product-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.description).toBeUndefined();
+    });
+
+    it('Given: product with empty string description When: finding by id Then: description should be undefined (falsy)', async () => {
+      // Arrange
+      const productEmptyDesc = {
+        ...mockProductData,
+        description: '',
+      };
+      mockPrismaService.product.findUnique.mockResolvedValue(productEmptyDesc);
+
+      // Act
+      const result = await repository.findById('product-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.description).toBeUndefined();
+    });
+
+    it('Given: product with null barcode, brand, model When: finding by id Then: all should be undefined', async () => {
+      // Arrange
+      const productNullOptionals = {
+        ...mockProductData,
+        barcode: null,
+        brand: null,
+        model: null,
+      };
+      mockPrismaService.product.findUnique.mockResolvedValue(productNullOptionals);
+
+      // Act
+      const result = await repository.findById('product-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.barcode).toBeUndefined();
+      expect(result?.brand).toBeUndefined();
+      expect(result?.model).toBeUndefined();
+    });
+
+    it('Given: product with companyId and company name When: finding by id Then: should map company fields', async () => {
+      // Arrange
+      const productWithCompany = {
+        ...mockProductData,
+        companyId: 'company-1',
+        company: { id: 'company-1', name: 'Test Corp' },
+      };
+      mockPrismaService.product.findUnique.mockResolvedValue(productWithCompany);
+
+      // Act
+      const result = await repository.findById('product-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.companyId).toBe('company-1');
+      expect(result?.companyName).toBe('Test Corp');
+    });
+
+    it('Given: product with null companyId and null company When: finding by id Then: company fields should be undefined', async () => {
+      // Arrange
+      const productNoCompany = {
+        ...mockProductData,
+        companyId: null,
+        company: null,
+      };
+      mockPrismaService.product.findUnique.mockResolvedValue(productNoCompany);
+
+      // Act
+      const result = await repository.findById('product-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.companyId).toBeUndefined();
+      expect(result?.companyName).toBeUndefined();
+    });
+
+    it('Given: product with company but null company name When: finding by id Then: companyName should be undefined', async () => {
+      // Arrange
+      const productCompanyNoName = {
+        ...mockProductData,
+        companyId: 'company-1',
+        company: { id: 'company-1', name: '' },
+      };
+      mockPrismaService.product.findUnique.mockResolvedValue(productCompanyNoName);
+
+      // Act
+      const result = await repository.findById('product-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.companyId).toBe('company-1');
+      expect(result?.companyName).toBeUndefined();
+    });
+
+    it('Given: product with null categories from DB When: finding by id Then: categories should default to empty array via ??', async () => {
+      // Arrange
+      const productNullCats = {
+        ...mockProductData,
+        categories: null,
+        company: null,
+        companyId: null,
+      };
+      mockPrismaService.product.findUnique.mockResolvedValue(productNullCats);
+
+      // Act
+      const result = await repository.findById('product-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.categories).toEqual([]);
+    });
+
+    it('Given: product with price but null currency When: finding by id Then: should default to COP', async () => {
+      // Arrange
+      const productPriceNoCurrency = {
+        ...mockProductData,
+        price: 10000,
+        currency: null,
+      };
+      mockPrismaService.product.findUnique.mockResolvedValue(productPriceNoCurrency);
+
+      // Act
+      const result = await repository.findById('product-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.price?.getCurrency()).toBe('COP');
+    });
+
+    it('Given: product with costMethod null When: finding by id Then: should default to AVG', async () => {
+      // Arrange
+      const productNullCostMethod = {
+        ...mockProductData,
+        costMethod: null,
+      };
+      mockPrismaService.product.findUnique.mockResolvedValue(productNullCostMethod);
+
+      // Act
+      const result = await repository.findById('product-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.costMethod.getValue()).toBe('AVG');
+    });
+
+    it('Given: product with statusChangedBy null and statusChangedAt null When: finding by id Then: both should be undefined', async () => {
+      // Arrange
+      mockPrismaService.product.findUnique.mockResolvedValue(mockProductData);
+
+      // Act
+      const result = await repository.findById('product-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.statusChangedBy).toBeUndefined();
+      expect(result?.statusChangedAt).toBeUndefined();
+    });
+  });
+
+  describe('findAll - optional field branches', () => {
+    it('Given: products with null companyId When: finding all Then: companyId and companyName should be undefined', async () => {
+      // Arrange
+      const productNoCompany = {
+        ...mockProductData,
+        companyId: null,
+        company: null,
+      };
+      mockPrismaService.product.findMany.mockResolvedValue([productNoCompany]);
+
+      // Act
+      const result = await repository.findAll('org-123');
+
+      // Assert
+      expect(result[0].companyId).toBeUndefined();
+      expect(result[0].companyName).toBeUndefined();
+    });
+
+    it('Given: products with company data When: finding all Then: should map company fields', async () => {
+      // Arrange
+      const productWithCompany = {
+        ...mockProductData,
+        companyId: 'company-1',
+        company: { id: 'company-1', name: 'Acme Corp' },
+      };
+      mockPrismaService.product.findMany.mockResolvedValue([productWithCompany]);
+
+      // Act
+      const result = await repository.findAll('org-123');
+
+      // Assert
+      expect(result[0].companyId).toBe('company-1');
+      expect(result[0].companyName).toBe('Acme Corp');
+    });
+
+    it('Given: inactive products When: finding all Then: should map status as INACTIVE', async () => {
+      // Arrange
+      mockPrismaService.product.findMany.mockResolvedValue([mockInactiveProductData]);
+
+      // Act
+      const result = await repository.findAll('org-123');
+
+      // Assert
+      expect(result[0].status.getValue()).toBe('INACTIVE');
+    });
+
+    it('Given: products with null categories When: finding all Then: categories should default to empty array', async () => {
+      // Arrange
+      const productNullCats = {
+        ...mockProductData,
+        categories: null,
+        company: null,
+        companyId: null,
+      };
+      mockPrismaService.product.findMany.mockResolvedValue([productNullCats]);
+
+      // Act
+      const result = await repository.findAll('org-123');
+
+      // Assert
+      expect(result[0].categories).toEqual([]);
+    });
+
+    it('Given: products with null costMethod When: finding all Then: should default to AVG', async () => {
+      // Arrange
+      const productNullCostMethod = {
+        ...mockProductData,
+        costMethod: null,
+        company: null,
+        companyId: null,
+      };
+      mockPrismaService.product.findMany.mockResolvedValue([productNullCostMethod]);
+
+      // Act
+      const result = await repository.findAll('org-123');
+
+      // Assert
+      expect(result[0].costMethod.getValue()).toBe('AVG');
+    });
+  });
+
+  describe('findBySku - optional field branches', () => {
+    it('Given: product found by sku with null currency When: finding by sku Then: should default currency to COP', async () => {
+      // Arrange
+      const productWithPriceNoCurrency = {
+        ...mockProductData,
+        price: 5000,
+        currency: null,
+      };
+      mockPrismaService.product.findFirst.mockResolvedValue(productWithPriceNoCurrency);
+
+      // Act
+      const result = await repository.findBySku('SKU-001', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.price?.getCurrency()).toBe('COP');
+    });
+
+    it('Given: product with specific currency When: finding by sku Then: should use that currency', async () => {
+      // Arrange
+      mockPrismaService.product.findFirst.mockResolvedValue(mockProductDataWithDecimalPrice);
+
+      // Act
+      const result = await repository.findBySku('SKU-003', 'org-123');
+
+      // Assert
+      expect(result?.price?.getCurrency()).toBe('USD');
+    });
+
+    it('Given: product with null optional fields When: finding by sku Then: should map to undefined', async () => {
+      // Arrange
+      const productAllNulls = {
+        ...mockProductData,
+        description: null,
+        barcode: null,
+        brand: null,
+        model: null,
+        costMethod: null,
+      };
+      mockPrismaService.product.findFirst.mockResolvedValue(productAllNulls);
+
+      // Act
+      const result = await repository.findBySku('SKU-001', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.description).toBeUndefined();
+      expect(result?.barcode).toBeUndefined();
+      expect(result?.brand).toBeUndefined();
+      expect(result?.model).toBeUndefined();
+      expect(result?.costMethod.getValue()).toBe('AVG');
+    });
+
+    it('Given: inactive product found by sku When: finding by sku Then: should map status as INACTIVE', async () => {
+      // Arrange
+      const inactiveProduct = { ...mockProductData, isActive: false };
+      mockPrismaService.product.findFirst.mockResolvedValue(inactiveProduct);
+
+      // Act
+      const result = await repository.findBySku('SKU-001', 'org-123');
+
+      // Assert
+      expect(result?.status.getValue()).toBe('INACTIVE');
+    });
+  });
+
+  describe('findByCategory - optional field branches', () => {
+    it('Given: products with null categories from DB When: finding by category Then: should default to empty array', async () => {
+      // Arrange
+      const productNullCats = { ...mockProductData, categories: null };
+      mockPrismaService.product.findMany.mockResolvedValue([productNullCats]);
+
+      // Act
+      const result = await repository.findByCategory('cat-1', 'org-123');
+
+      // Assert
+      expect(result[0].categories).toEqual([]);
+    });
+
+    it('Given: inactive products in category When: finding by category Then: should map status as INACTIVE', async () => {
+      // Arrange
+      const inactiveInCategory = {
+        ...mockProductData,
+        isActive: false,
+        categories: [{ id: 'cat-1', name: 'Electronics' }],
+      };
+      mockPrismaService.product.findMany.mockResolvedValue([inactiveInCategory]);
+
+      // Act
+      const result = await repository.findByCategory('cat-1', 'org-123');
+
+      // Assert
+      expect(result[0].status.getValue()).toBe('INACTIVE');
+    });
+
+    it('Given: products with Decimal prices in category When: finding by category Then: should call toNumber', async () => {
+      // Arrange
+      const decimalPriceProduct = {
+        ...mockProductDataWithDecimalPrice,
+        categories: [{ id: 'cat-1', name: 'Electronics' }],
+      };
+      mockPrismaService.product.findMany.mockResolvedValue([decimalPriceProduct]);
+
+      // Act
+      const result = await repository.findByCategory('cat-1', 'org-123');
+
+      // Assert
+      expect(result[0].price?.getAmount()).toBe(15500.5);
+    });
+
+    it('Given: products with null costMethod in category When: finding by category Then: should default to AVG', async () => {
+      // Arrange
+      const productNullCostMethod = {
+        ...mockProductData,
+        costMethod: null,
+        categories: [{ id: 'cat-1', name: 'Electronics' }],
+      };
+      mockPrismaService.product.findMany.mockResolvedValue([productNullCostMethod]);
+
+      // Act
+      const result = await repository.findByCategory('cat-1', 'org-123');
+
+      // Assert
+      expect(result[0].costMethod.getValue()).toBe('AVG');
+    });
+  });
+
+  describe('findByStatus - optional field branches', () => {
+    it('Given: products with null optional fields When: finding by status Then: should map to undefined', async () => {
+      // Arrange
+      const productAllNulls = {
+        ...mockProductData,
+        description: null,
+        barcode: null,
+        brand: null,
+        model: null,
+      };
+      mockPrismaService.product.findMany.mockResolvedValue([productAllNulls]);
+
+      // Act
+      const result = await repository.findByStatus('ACTIVE', 'org-123');
+
+      // Assert
+      expect(result[0].description).toBeUndefined();
+      expect(result[0].barcode).toBeUndefined();
+      expect(result[0].brand).toBeUndefined();
+      expect(result[0].model).toBeUndefined();
+    });
+
+    it('Given: products with null costMethod When: finding by status Then: should default to AVG', async () => {
+      // Arrange
+      const productNullCostMethod = { ...mockProductData, costMethod: null };
+      mockPrismaService.product.findMany.mockResolvedValue([productNullCostMethod]);
+
+      // Act
+      const result = await repository.findByStatus('ACTIVE', 'org-123');
+
+      // Assert
+      expect(result[0].costMethod.getValue()).toBe('AVG');
+    });
+  });
+
+  describe('findByWarehouse - optional field branches', () => {
+    it('Given: warehouse products with null optional fields When: finding by warehouse Then: should map to undefined', async () => {
+      // Arrange
+      const productAllNulls = {
+        ...mockProductData,
+        description: null,
+        barcode: null,
+        brand: null,
+        model: null,
+        costMethod: null,
+      };
+      mockPrismaService.stock.findMany.mockResolvedValue([
+        {
+          id: 'stock-1',
+          productId: 'product-123',
+          warehouseId: 'warehouse-1',
+          orgId: 'org-123',
+          quantity: 50,
+          product: productAllNulls,
+        },
+      ]);
+
+      // Act
+      const result = await repository.findByWarehouse('warehouse-1', 'org-123');
+
+      // Assert
+      expect(result[0].description).toBeUndefined();
+      expect(result[0].barcode).toBeUndefined();
+      expect(result[0].brand).toBeUndefined();
+      expect(result[0].model).toBeUndefined();
+      expect(result[0].costMethod.getValue()).toBe('AVG');
+    });
+
+    it('Given: inactive products in warehouse When: finding by warehouse Then: should map status as INACTIVE', async () => {
+      // Arrange
+      const inactiveProduct = { ...mockProductData, isActive: false };
+      mockPrismaService.stock.findMany.mockResolvedValue([
+        {
+          id: 'stock-1',
+          productId: 'product-123',
+          warehouseId: 'warehouse-1',
+          orgId: 'org-123',
+          quantity: 50,
+          product: inactiveProduct,
+        },
+      ]);
+
+      // Act
+      const result = await repository.findByWarehouse('warehouse-1', 'org-123');
+
+      // Assert
+      expect(result[0].status.getValue()).toBe('INACTIVE');
+    });
+  });
+
+  describe('findLowStock - optional field branches', () => {
+    it('Given: low stock products with null optional fields When: finding low stock Then: should map to undefined', async () => {
+      // Arrange
+      const productAllNulls = {
+        ...mockProductData,
+        description: null,
+        barcode: null,
+        brand: null,
+        model: null,
+        costMethod: null,
+      };
+      mockPrismaService.stock.findMany.mockResolvedValue([
+        {
+          id: 'stock-1',
+          productId: 'product-123',
+          warehouseId: 'warehouse-1',
+          orgId: 'org-123',
+          quantity: 2,
+          product: productAllNulls,
+        },
+      ]);
+
+      // Act
+      const result = await repository.findLowStock('org-123');
+
+      // Assert
+      expect(result[0].description).toBeUndefined();
+      expect(result[0].barcode).toBeUndefined();
+      expect(result[0].brand).toBeUndefined();
+      expect(result[0].model).toBeUndefined();
+      expect(result[0].costMethod.getValue()).toBe('AVG');
+    });
+
+    it('Given: inactive low stock products When: finding low stock Then: should map status as INACTIVE', async () => {
+      // Arrange
+      const inactiveProduct = { ...mockProductData, isActive: false };
+      mockPrismaService.stock.findMany.mockResolvedValue([
+        {
+          id: 'stock-1',
+          productId: 'product-123',
+          warehouseId: 'warehouse-1',
+          orgId: 'org-123',
+          quantity: 2,
+          product: inactiveProduct,
+        },
+      ]);
+
+      // Act
+      const result = await repository.findLowStock('org-123');
+
+      // Assert
+      expect(result[0].status.getValue()).toBe('INACTIVE');
+    });
+  });
+
+  describe('save - additional branch coverage', () => {
+    it('Given: update returns product with null categories When: saving Then: should default to empty array', async () => {
+      // Arrange
+      const product = Product.reconstitute(
+        {
+          sku: SKU.reconstitute('SKU-001'),
+          name: ProductName.reconstitute('Updated Product'),
+          unit: UnitValueObject.create('UNIT', 'Unit', 0),
+          status: ProductStatus.create('ACTIVE'),
+          costMethod: CostMethod.create('AVG'),
+        },
+        'product-123',
+        'org-123'
+      );
+      mockPrismaService.product.findUnique.mockResolvedValue(mockProductData);
+      mockPrismaService.product.update.mockResolvedValue({
+        ...mockProductData,
+        categories: null,
+      });
+
+      // Act
+      const result = await repository.save(product);
+
+      // Assert
+      expect(result.categories).toEqual([]);
+    });
+
+    it('Given: update returns product with null costMethod When: saving Then: should default to AVG', async () => {
+      // Arrange
+      const product = Product.reconstitute(
+        {
+          sku: SKU.reconstitute('SKU-001'),
+          name: ProductName.reconstitute('Updated'),
+          unit: UnitValueObject.create('UNIT', 'Unit', 0),
+          status: ProductStatus.create('ACTIVE'),
+          costMethod: CostMethod.create('AVG'),
+        },
+        'product-123',
+        'org-123'
+      );
+      mockPrismaService.product.findUnique.mockResolvedValue(mockProductData);
+      mockPrismaService.product.update.mockResolvedValue({
+        ...mockProductData,
+        costMethod: null,
+      });
+
+      // Act
+      const result = await repository.save(product);
+
+      // Assert
+      expect(result.costMethod.getValue()).toBe('AVG');
+    });
+
+    it('Given: update returns inactive product When: saving Then: should map status as INACTIVE', async () => {
+      // Arrange
+      const product = Product.reconstitute(
+        {
+          sku: SKU.reconstitute('SKU-001'),
+          name: ProductName.reconstitute('Updated'),
+          unit: UnitValueObject.create('UNIT', 'Unit', 0),
+          status: ProductStatus.create('INACTIVE'),
+          costMethod: CostMethod.create('AVG'),
+        },
+        'product-123',
+        'org-123'
+      );
+      mockPrismaService.product.findUnique.mockResolvedValue(mockProductData);
+      mockPrismaService.product.update.mockResolvedValue({
+        ...mockProductData,
+        isActive: false,
+      });
+
+      // Act
+      const result = await repository.save(product);
+
+      // Assert
+      expect(result.status.getValue()).toBe('INACTIVE');
+    });
+
+    it('Given: create returns product with null categories When: saving new Then: should default to empty array', async () => {
+      // Arrange
+      const product = Product.reconstitute(
+        {
+          sku: SKU.reconstitute('SKU-NEW'),
+          name: ProductName.reconstitute('New'),
+          unit: UnitValueObject.create('UNIT', 'Unit', 0),
+          status: ProductStatus.create('ACTIVE'),
+          costMethod: CostMethod.create('AVG'),
+        },
+        'product-new',
+        'org-123'
+      );
+      mockPrismaService.product.findUnique.mockResolvedValue(null);
+      mockPrismaService.product.create.mockResolvedValue({
+        id: 'product-new',
+        sku: 'SKU-NEW',
+        name: 'New',
+        description: null,
+        unit: 'UNIT',
+        barcode: null,
+        brand: null,
+        model: null,
+        isActive: true,
+        costMethod: 'AVG',
+        orgId: 'org-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        categories: null,
+        price: null,
+        currency: null,
+        statusChangedBy: null,
+        statusChangedAt: null,
+      });
+
+      // Act
+      const result = await repository.save(product);
+
+      // Assert
+      expect(result.categories).toEqual([]);
+    });
+
+    it('Given: create returns inactive product When: saving new Then: should map status as INACTIVE', async () => {
+      // Arrange
+      const product = Product.reconstitute(
+        {
+          sku: SKU.reconstitute('SKU-NEW'),
+          name: ProductName.reconstitute('New Inactive'),
+          unit: UnitValueObject.create('UNIT', 'Unit', 0),
+          status: ProductStatus.create('INACTIVE'),
+          costMethod: CostMethod.create('FIFO'),
+        },
+        'product-new',
+        'org-123'
+      );
+      mockPrismaService.product.findUnique.mockResolvedValue(null);
+      mockPrismaService.product.create.mockResolvedValue({
+        id: 'product-new',
+        sku: 'SKU-NEW',
+        name: 'New Inactive',
+        description: null,
+        unit: 'UNIT',
+        barcode: null,
+        brand: null,
+        model: null,
+        isActive: false,
+        costMethod: 'FIFO',
+        orgId: 'org-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        categories: [],
+        price: null,
+        currency: null,
+        statusChangedBy: null,
+        statusChangedAt: null,
+      });
+
+      // Act
+      const result = await repository.save(product);
+
+      // Assert
+      expect(result.status.getValue()).toBe('INACTIVE');
+      expect(result.costMethod.getValue()).toBe('FIFO');
+    });
+
+    it('Given: product with no categories When: saving new Then: should not include categories connect', async () => {
+      // Arrange
+      const product = Product.reconstitute(
+        {
+          sku: SKU.reconstitute('SKU-NO-CAT'),
+          name: ProductName.reconstitute('No Categories'),
+          categories: [],
+          unit: UnitValueObject.create('UNIT', 'Unit', 0),
+          status: ProductStatus.create('ACTIVE'),
+          costMethod: CostMethod.create('AVG'),
+        },
+        'product-no-cat',
+        'org-123'
+      );
+      mockPrismaService.product.findUnique.mockResolvedValue(null);
+      mockPrismaService.product.create.mockResolvedValue({
+        id: 'product-no-cat',
+        sku: 'SKU-NO-CAT',
+        name: 'No Categories',
+        description: null,
+        unit: 'UNIT',
+        barcode: null,
+        brand: null,
+        model: null,
+        isActive: true,
+        costMethod: 'AVG',
+        orgId: 'org-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        categories: [],
+        price: null,
+        currency: null,
+        statusChangedBy: null,
+        statusChangedAt: null,
+      });
+
+      // Act
+      await repository.save(product);
+
+      // Assert
+      const createCall = mockPrismaService.product.create.mock.calls[0][0] as {
+        data: { categories?: unknown };
+      };
+      expect(createCall.data.categories).toBeUndefined();
+    });
+
+    it('Given: product with price When: saving Then: should include price and currency in data', async () => {
+      // Arrange
+      const product = Product.reconstitute(
+        {
+          sku: SKU.reconstitute('SKU-PRICE'),
+          name: ProductName.reconstitute('Priced Product'),
+          unit: UnitValueObject.create('UNIT', 'Unit', 0),
+          price: Price.create(10000, 'USD', 2),
+          status: ProductStatus.create('ACTIVE'),
+          costMethod: CostMethod.create('AVG'),
+        },
+        'product-price',
+        'org-123'
+      );
+      mockPrismaService.product.findUnique.mockResolvedValue(null);
+      mockPrismaService.product.create.mockResolvedValue({
+        id: 'product-price',
+        sku: 'SKU-PRICE',
+        name: 'Priced Product',
+        description: null,
+        unit: 'UNIT',
+        barcode: null,
+        brand: null,
+        model: null,
+        isActive: true,
+        costMethod: 'AVG',
+        orgId: 'org-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        categories: [],
+        price: 10000,
+        currency: 'USD',
+        statusChangedBy: null,
+        statusChangedAt: null,
+      });
+
+      // Act
+      const result = await repository.save(product);
+
+      // Assert
+      const createCall = mockPrismaService.product.create.mock.calls[0][0] as {
+        data: { price: number | null; currency: string | null };
+      };
+      expect(createCall.data.price).toBe(10000);
+      expect(createCall.data.currency).toBe('USD');
+      expect(result.price?.getAmount()).toBe(10000);
+    });
+
+    it('Given: product without price When: saving Then: should set price and currency to null', async () => {
+      // Arrange
+      const product = Product.reconstitute(
+        {
+          sku: SKU.reconstitute('SKU-NO-PRICE'),
+          name: ProductName.reconstitute('No Price'),
+          unit: UnitValueObject.create('UNIT', 'Unit', 0),
+          status: ProductStatus.create('ACTIVE'),
+          costMethod: CostMethod.create('AVG'),
+        },
+        'product-no-price',
+        'org-123'
+      );
+      mockPrismaService.product.findUnique.mockResolvedValue(null);
+      mockPrismaService.product.create.mockResolvedValue({
+        id: 'product-no-price',
+        sku: 'SKU-NO-PRICE',
+        name: 'No Price',
+        description: null,
+        unit: 'UNIT',
+        barcode: null,
+        brand: null,
+        model: null,
+        isActive: true,
+        costMethod: 'AVG',
+        orgId: 'org-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        categories: [],
+        price: null,
+        currency: null,
+        statusChangedBy: null,
+        statusChangedAt: null,
+      });
+
+      // Act
+      await repository.save(product);
+
+      // Assert
+      const createCall = mockPrismaService.product.create.mock.calls[0][0] as {
+        data: { price: number | null; currency: string | null };
+      };
+      expect(createCall.data.price).toBeNull();
+      expect(createCall.data.currency).toBeNull();
+    });
+
+    it('Given: update returns product with null costMethod When: saving Then: should default to AVG via ||', async () => {
+      // Arrange
+      const product = Product.reconstitute(
+        {
+          sku: SKU.reconstitute('SKU-001'),
+          name: ProductName.reconstitute('Updated'),
+          unit: UnitValueObject.create('UNIT', 'Unit', 0),
+          status: ProductStatus.create('ACTIVE'),
+          costMethod: CostMethod.create('AVG'),
+        },
+        'product-123',
+        'org-123'
+      );
+      mockPrismaService.product.findUnique.mockResolvedValue(mockProductData);
+      mockPrismaService.product.update.mockResolvedValue({
+        ...mockProductData,
+        costMethod: '',
+        statusChangedBy: '',
+        statusChangedAt: null,
+      });
+
+      // Act
+      const result = await repository.save(product);
+
+      // Assert
+      expect(result.costMethod.getValue()).toBe('AVG');
+      expect(result.statusChangedBy).toBeUndefined();
+      expect(result.statusChangedAt).toBeUndefined();
+    });
+
+    it('Given: create returns product with null costMethod When: saving new Then: should default to AVG via ||', async () => {
+      // Arrange
+      const product = Product.reconstitute(
+        {
+          sku: SKU.reconstitute('SKU-NEW2'),
+          name: ProductName.reconstitute('New'),
+          unit: UnitValueObject.create('UNIT', 'Unit', 0),
+          status: ProductStatus.create('ACTIVE'),
+          costMethod: CostMethod.create('AVG'),
+        },
+        'product-new2',
+        'org-123'
+      );
+      mockPrismaService.product.findUnique.mockResolvedValue(null);
+      mockPrismaService.product.create.mockResolvedValue({
+        id: 'product-new2',
+        sku: 'SKU-NEW2',
+        name: 'New',
+        description: null,
+        unit: 'UNIT',
+        barcode: null,
+        brand: null,
+        model: null,
+        isActive: true,
+        costMethod: null,
+        orgId: 'org-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        categories: [],
+        price: null,
+        currency: null,
+        statusChangedBy: null,
+        statusChangedAt: null,
+      });
+
+      // Act
+      const result = await repository.save(product);
+
+      // Assert
+      expect(result.costMethod.getValue()).toBe('AVG');
+    });
+  });
+
+  describe('save - update with categories', () => {
+    it('Given: existing product with categories When: updating Then: should set categories via map', async () => {
+      // Arrange
+      const product = Product.reconstitute(
+        {
+          sku: SKU.reconstitute('SKU-CAT'),
+          name: ProductName.reconstitute('Categorized'),
+          categories: [
+            { id: 'cat-1', name: 'Electronics' },
+            { id: 'cat-2', name: 'Gadgets' },
+          ],
+          unit: UnitValueObject.create('UNIT', 'Unit', 0),
+          status: ProductStatus.create('ACTIVE'),
+          costMethod: CostMethod.create('AVG'),
+        },
+        'product-cat',
+        'org-123'
+      );
+      mockPrismaService.product.findUnique.mockResolvedValue(mockProductDataWithCategories);
+      mockPrismaService.product.update.mockResolvedValue({
+        ...mockProductDataWithCategories,
+        name: 'Categorized',
+      });
+
+      // Act
+      const result = await repository.save(product);
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result.categories).toHaveLength(2);
+      const updateCall = mockPrismaService.product.update.mock.calls[0][0] as {
+        data: { categories: { set: { id: string }[] } };
+      };
+      expect(updateCall.data.categories.set).toEqual([{ id: 'cat-1' }, { id: 'cat-2' }]);
+    });
+  });
+
+  describe('save - error instanceof branch in catch', () => {
+    it('Given: prisma throws a non-Error during save When: saving Then: should log unknown error and rethrow', async () => {
+      // Arrange
+      const product = Product.reconstitute(
+        {
+          sku: SKU.reconstitute('SKU-ERR'),
+          name: ProductName.reconstitute('Error Product'),
+          unit: UnitValueObject.create('UNIT', 'Unit', 0),
+          status: ProductStatus.create('ACTIVE'),
+          costMethod: CostMethod.create('AVG'),
+        },
+        'product-err',
+        'org-123'
+      );
+      mockPrismaService.product.findUnique.mockRejectedValue('non-error-object');
+
+      // Act & Assert
+      await expect(repository.save(product)).rejects.toBe('non-error-object');
+    });
   });
 });

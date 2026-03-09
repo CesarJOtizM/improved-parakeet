@@ -124,5 +124,98 @@ describe('GetRolesUseCase', () => {
         }
       );
     });
+
+    it('Given: system role When: getting roles Then: should include isSystem true and correct fields', async () => {
+      // Arrange
+      const systemRole = createMockRole({
+        name: 'SUPER_ADMIN',
+        description: 'System admin role',
+        isActive: true,
+        isSystem: true,
+      });
+      mockRoleRepository.findAvailableRolesForOrganization.mockResolvedValue([systemRole]);
+
+      const request = {
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(1);
+          expect(value.data[0].isSystem).toBe(true);
+          expect(value.data[0].name).toBe('SUPER_ADMIN');
+          expect(value.data[0].description).toBe('System admin role');
+          expect(value.data[0].isActive).toBe(true);
+          expect(value.data[0].orgId).toBeDefined();
+          expect(value.data[0].createdAt).toBeDefined();
+          expect(value.data[0].updatedAt).toBeDefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: role without description When: getting roles Then: should return undefined description', async () => {
+      // Arrange
+      const roleNoDesc = createMockRole({ name: 'BASIC', description: undefined });
+      mockRoleRepository.findAvailableRolesForOrganization.mockResolvedValue([roleNoDesc]);
+
+      const request = {
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].description).toBeUndefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: mix of system and custom roles When: getting roles Then: should return all roles with correct isSystem values', async () => {
+      // Arrange
+      const mockRoles = [
+        createMockRole({ name: 'ADMIN', isSystem: true }),
+        createMockRole({ name: 'EDITOR', isSystem: false }),
+        createMockRole({ name: 'VIEWER', isSystem: true }),
+      ];
+      mockRoleRepository.findAvailableRolesForOrganization.mockResolvedValue(mockRoles);
+
+      const request = {
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(3);
+          expect(value.data[0].isSystem).toBe(true);
+          expect(value.data[1].isSystem).toBe(false);
+          expect(value.data[2].isSystem).toBe(true);
+          expect(value.message).toBe('Roles retrieved successfully');
+          expect(value.timestamp).toBeDefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

@@ -353,5 +353,313 @@ describe('GetSaleByIdUseCase', () => {
       expect(result.isOk()).toBe(true);
       expect(mockProductRepository.findById).not.toHaveBeenCalled();
     });
+
+    it('Given: warehouse lookup throws When: getting sale by ID Then: should continue without warehouseName', async () => {
+      // Arrange
+      const mockSale = createMockSale();
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+      mockWarehouseRepository.findById.mockRejectedValue(new Error('DB error'));
+
+      const request = {
+        id: mockSaleId,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.warehouseName).toBeUndefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: contact lookup throws When: getting sale by ID Then: should continue without contactName', async () => {
+      // Arrange
+      const mockSale = createMockSale();
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+
+      // Mock prisma.contact to throw
+      (mockPrisma as unknown as { contact: { findUnique: jest.Mock } }).contact = {
+        findUnique: jest.fn().mockRejectedValue(new Error('Contact DB error')),
+      };
+
+      const request = {
+        id: mockSaleId,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.contactName).toBeUndefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: contact found When: getting sale by ID Then: contactName should be set', async () => {
+      // Arrange
+      const mockSale = createMockSale();
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+
+      (mockPrisma as unknown as { contact: { findUnique: jest.Mock } }).contact = {
+        findUnique: jest.fn().mockResolvedValue({ name: 'Acme Corp' }),
+      };
+
+      const request = {
+        id: mockSaleId,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.contactName).toBe('Acme Corp');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: contact not found When: getting sale by ID Then: contactName should be undefined', async () => {
+      // Arrange
+      const mockSale = createMockSale();
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+
+      (mockPrisma as unknown as { contact: { findUnique: jest.Mock } }).contact = {
+        findUnique: jest.fn().mockResolvedValue(null),
+      };
+
+      const request = {
+        id: mockSaleId,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.contactName).toBeUndefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: product lookup throws When: getting sale by ID Then: should continue without product info', async () => {
+      // Arrange
+      const mockSale = createMockSale();
+      const mockLine = {
+        id: 'line-1',
+        productId: 'product-abc',
+        locationId: undefined,
+        quantity: { getNumericValue: () => 10 },
+        salePrice: { getAmount: () => 50, getCurrency: () => 'COP' },
+        getTotalPrice: () => ({ getAmount: () => 500, getCurrency: () => 'COP' }),
+        extra: undefined,
+      };
+      (mockSale as unknown as { getLines: () => unknown[] }).getLines = jest
+        .fn()
+        .mockReturnValue([mockLine]);
+
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+      mockProductRepository.findById.mockRejectedValue(new Error('Product DB error'));
+
+      const request = {
+        id: mockSaleId,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.lines).toBeDefined();
+          expect(value.data.lines![0].productName).toBeUndefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: product not found for line When: getting sale by ID Then: line should not have productName', async () => {
+      // Arrange
+      const mockSale = createMockSale();
+      const mockLine = {
+        id: 'line-1',
+        productId: 'product-missing',
+        locationId: undefined,
+        quantity: { getNumericValue: () => 10 },
+        salePrice: { getAmount: () => 50, getCurrency: () => 'COP' },
+        getTotalPrice: () => ({ getAmount: () => 500, getCurrency: () => 'COP' }),
+        extra: undefined,
+      };
+      (mockSale as unknown as { getLines: () => unknown[] }).getLines = jest
+        .fn()
+        .mockReturnValue([mockLine]);
+
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+      mockProductRepository.findById.mockResolvedValue(null);
+
+      const request = {
+        id: mockSaleId,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.lines![0].productName).toBeUndefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: org settings found with pickingEnabled When: getting sale by ID Then: pickingEnabled should be true', async () => {
+      // Arrange
+      const mockSale = createMockSale();
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+
+      mockOrganizationRepository.findById.mockResolvedValue({
+        getSetting: (key: string) => (key === 'pickingEnabled' ? true : null),
+      } as never);
+
+      const request = {
+        id: mockSaleId,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.pickingEnabled).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: org settings lookup throws When: getting sale by ID Then: pickingEnabled should default to false', async () => {
+      // Arrange
+      const mockSale = createMockSale();
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+      mockOrganizationRepository.findById.mockRejectedValue(new Error('Org DB error'));
+
+      const request = {
+        id: mockSaleId,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.pickingEnabled).toBe(false);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: resolveUserName throws When: getting sale by ID Then: name should be undefined', async () => {
+      // Arrange
+      const mockSale = createMockSale();
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+
+      (mockPrisma.user.findUnique as jest.Mock).mockRejectedValue(new Error('User DB error'));
+
+      const request = {
+        id: mockSaleId,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.createdByName).toBeUndefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sale with no contactId When: getting sale by ID Then: should skip contact lookup', async () => {
+      // Arrange
+      const saleNumber = SaleNumber.create(2025, 2);
+      const props = SaleMapper.toDomainProps(
+        {
+          warehouseId: 'warehouse-123',
+          createdBy: 'user-123',
+          // contactId is omitted
+        },
+        saleNumber
+      );
+      const mockSale = Sale.reconstitute(props, mockSaleId, mockOrgId);
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+
+      // Track if contact lookup is made
+      const contactFindUnique = jest.fn();
+      (mockPrisma as unknown as { contact: { findUnique: jest.Mock } }).contact = {
+        findUnique: contactFindUnique,
+      };
+
+      const request = {
+        id: mockSaleId,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(contactFindUnique).not.toHaveBeenCalled();
+    });
   });
 });

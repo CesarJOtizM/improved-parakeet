@@ -82,5 +82,31 @@ describe('MovementVoidedAuditHandler', () => {
 
       errorSpy.mockRestore();
     });
+
+    it('Given: non-Error thrown When: handling event Then: should handle gracefully', async () => {
+      // Arrange
+      const mockMovement = createMockMovement();
+      const event = new MovementVoidedEvent(mockMovement);
+
+      let callCount = 0;
+      const errorSpy = jest.spyOn((handler as any).logger, 'log').mockImplementation(() => {
+        callCount++;
+        if (callCount === 2) {
+          throw 'string-error';
+        }
+      });
+      const errorLoggerSpy = jest.spyOn((handler as any).logger, 'error');
+
+      // Act & Assert - should not throw
+      await expect(handler.handle(event)).resolves.toBeUndefined();
+
+      // Assert
+      expect(errorLoggerSpy).toHaveBeenCalledWith('Error handling MovementVoided audit event', {
+        error: 'Unknown error',
+        movementId: 'mov-123',
+      });
+
+      errorSpy.mockRestore();
+    });
   });
 });

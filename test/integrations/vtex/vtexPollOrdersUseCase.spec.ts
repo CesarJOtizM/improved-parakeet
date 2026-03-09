@@ -192,6 +192,30 @@ describe('VtexPollOrdersUseCase', () => {
     );
   });
 
+  it('Given: connection without lastSyncAt When: polling Then: should not include date filter', async () => {
+    const connection = createMockConnection({ lastSyncAt: undefined });
+    mockConnectionRepository.findAllConnectedForPolling.mockResolvedValue([connection]);
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-key');
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-token');
+    mockVtexApiClient.listOrders.mockResolvedValue({
+      list: [],
+      paging: { total: 0, pages: 0, currentPage: 1, perPage: 50 },
+    });
+
+    await useCase.execute({});
+
+    expect(mockVtexApiClient.listOrders).toHaveBeenCalledWith(
+      'teststore',
+      'plain-key',
+      'plain-token',
+      expect.objectContaining({
+        creationDate: undefined,
+        orderBy: 'creationDate,asc',
+        perPage: 50,
+      })
+    );
+  });
+
   it('Given: connection with lastSyncAt When: polling Then: should include date filter', async () => {
     const lastSync = new Date('2024-01-01T00:00:00Z');
     const connection = createMockConnection({ lastSyncAt: lastSync });

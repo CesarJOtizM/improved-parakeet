@@ -232,6 +232,30 @@ describe('VtexOutboundSyncUseCase', () => {
     expect(mockVtexApiClient.startHandling).not.toHaveBeenCalled();
   });
 
+  it('Given: CANCEL action without cancelReason When: syncing Then: should use default reason', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-key');
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-token');
+    mockVtexApiClient.cancelOrder.mockResolvedValue(undefined);
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-123',
+      action: 'CANCEL',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isOk()).toBe(true);
+    expect(mockVtexApiClient.cancelOrder).toHaveBeenCalledWith(
+      'teststore',
+      'plain-key',
+      'plain-token',
+      'ORD-123',
+      'Cancelled from Nevada'
+    );
+  });
+
   it('Given: API throws error When: syncing Then: should return error result', async () => {
     const connection = createMockConnection();
     mockConnectionRepository.findById.mockResolvedValue(connection);

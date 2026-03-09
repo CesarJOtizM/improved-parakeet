@@ -258,5 +258,295 @@ describe('ReportTemplateController', () => {
         type: 'SALES',
       });
     });
+
+    it('Given: INVENTORY type When: getting by type Then: should pass type correctly', async () => {
+      // Arrange
+      const templatesResponse = {
+        success: true,
+        data: [],
+        message: 'Templates retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetReportTemplatesUseCase.execute.mockResolvedValue(ok(templatesResponse));
+
+      // Act
+      const result = await controller.getTemplatesByType('INVENTORY', mockOrgId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockGetReportTemplatesUseCase.execute).toHaveBeenCalledWith({
+        orgId: mockOrgId,
+        type: 'INVENTORY',
+      });
+    });
+
+    it('Given: error When: getting by type Then: should throw', async () => {
+      // Arrange
+      mockGetReportTemplatesUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Invalid type'))
+      );
+
+      // Act & Assert
+      await expect(controller.getTemplatesByType('INVALID', mockOrgId)).rejects.toThrow();
+    });
+  });
+
+  describe('getActiveTemplates - error branch', () => {
+    it('Given: error from use case When: getting active templates Then: should throw', async () => {
+      // Arrange
+      mockGetReportTemplatesUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Failed to retrieve'))
+      );
+
+      // Act & Assert
+      await expect(controller.getActiveTemplates(mockOrgId)).rejects.toThrow();
+    });
+  });
+
+  describe('getTemplates - additional branches', () => {
+    it('Given: createdBy filter When: getting templates Then: should pass createdBy', async () => {
+      // Arrange
+      const templatesResponse = {
+        success: true,
+        data: [mockTemplateData],
+        message: 'Templates retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetReportTemplatesUseCase.execute.mockResolvedValue(ok(templatesResponse));
+
+      // Act
+      const result = await controller.getTemplates(undefined, undefined, 'user-456', mockOrgId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockGetReportTemplatesUseCase.execute).toHaveBeenCalledWith({
+        orgId: mockOrgId,
+        type: undefined,
+        activeOnly: false,
+        createdBy: 'user-456',
+      });
+    });
+
+    it('Given: activeOnly is false string When: getting templates Then: should pass false', async () => {
+      // Arrange
+      const templatesResponse = {
+        success: true,
+        data: [mockTemplateData],
+        message: 'Templates retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetReportTemplatesUseCase.execute.mockResolvedValue(ok(templatesResponse));
+
+      // Act
+      const result = await controller.getTemplates(undefined, 'false', undefined, mockOrgId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockGetReportTemplatesUseCase.execute).toHaveBeenCalledWith({
+        orgId: mockOrgId,
+        type: undefined,
+        activeOnly: false,
+        createdBy: undefined,
+      });
+    });
+  });
+
+  describe('createTemplate - with defaultParameters', () => {
+    it('Given: no defaultParameters When: creating Then: should pass empty object', async () => {
+      // Arrange
+      const dto = { name: 'Report', type: 'SALES' };
+      const createResponse = {
+        success: true,
+        data: mockTemplateData,
+        message: 'Template created',
+        timestamp: new Date().toISOString(),
+      };
+      mockCreateReportTemplateUseCase.execute.mockResolvedValue(ok(createResponse));
+
+      // Act
+      const result = await controller.createTemplate(dto as any, mockOrgId, mockUserId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockCreateReportTemplateUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          defaultParameters: {},
+        })
+      );
+    });
+
+    it('Given: dateRange in defaultParameters When: creating Then: should convert dates', async () => {
+      // Arrange
+      const dto = {
+        name: 'Report with dates',
+        type: 'SALES',
+        defaultParameters: {
+          dateRange: {
+            startDate: '2026-01-01',
+            endDate: '2026-12-31',
+          },
+          warehouseId: 'wh-123',
+          productId: 'prod-123',
+          category: 'Electronics',
+          status: 'CONFIRMED',
+          returnType: 'CUSTOMER',
+          groupBy: 'MONTH',
+          period: 'MONTHLY',
+          movementType: 'OUT',
+          customerReference: 'CUST-001',
+          saleId: 'sale-123',
+          movementId: 'mov-123',
+          includeInactive: true,
+          locationId: 'loc-123',
+          severity: 'CRITICAL',
+        },
+      };
+      const createResponse = {
+        success: true,
+        data: mockTemplateData,
+        message: 'Template created',
+        timestamp: new Date().toISOString(),
+      };
+      mockCreateReportTemplateUseCase.execute.mockResolvedValue(ok(createResponse));
+
+      // Act
+      const result = await controller.createTemplate(dto as any, mockOrgId, mockUserId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockCreateReportTemplateUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          defaultParameters: expect.objectContaining({
+            dateRange: {
+              startDate: expect.any(Date),
+              endDate: expect.any(Date),
+            },
+            warehouseId: 'wh-123',
+            productId: 'prod-123',
+            category: 'Electronics',
+            status: 'CONFIRMED',
+            returnType: 'CUSTOMER',
+            groupBy: 'MONTH',
+            period: 'MONTHLY',
+            movementType: 'OUT',
+            customerReference: 'CUST-001',
+            saleId: 'sale-123',
+            movementId: 'mov-123',
+            includeInactive: true,
+            locationId: 'loc-123',
+            severity: 'CRITICAL',
+          }),
+        })
+      );
+    });
+
+    it('Given: defaultParameters without dateRange When: creating Then: should pass undefined dateRange', async () => {
+      // Arrange
+      const dto = {
+        name: 'Report',
+        type: 'INVENTORY',
+        defaultParameters: {
+          warehouseId: 'wh-123',
+        },
+      };
+      const createResponse = {
+        success: true,
+        data: mockTemplateData,
+        message: 'Template created',
+        timestamp: new Date().toISOString(),
+      };
+      mockCreateReportTemplateUseCase.execute.mockResolvedValue(ok(createResponse));
+
+      // Act
+      const result = await controller.createTemplate(dto as any, mockOrgId, mockUserId);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockCreateReportTemplateUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          defaultParameters: expect.objectContaining({
+            dateRange: undefined,
+            warehouseId: 'wh-123',
+          }),
+        })
+      );
+    });
+  });
+
+  describe('updateTemplate - with defaultParameters', () => {
+    it('Given: update with defaultParameters When: updating Then: should map parameters', async () => {
+      // Arrange
+      const dto = {
+        name: 'Updated',
+        defaultParameters: {
+          groupBy: 'WEEK',
+          severity: 'WARNING',
+        },
+        isActive: false,
+      };
+      const updateResponse = {
+        success: true,
+        data: { ...mockTemplateData, name: 'Updated', isActive: false },
+        message: 'Template updated',
+        timestamp: new Date().toISOString(),
+      };
+      mockUpdateReportTemplateUseCase.execute.mockResolvedValue(ok(updateResponse));
+
+      // Act
+      const result = await controller.updateTemplate(
+        'template-123',
+        dto as any,
+        mockOrgId,
+        mockUserId
+      );
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockUpdateReportTemplateUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          templateId: 'template-123',
+          name: 'Updated',
+          isActive: false,
+          defaultParameters: expect.objectContaining({
+            groupBy: 'WEEK',
+            severity: 'WARNING',
+          }),
+        })
+      );
+    });
+
+    it('Given: update without defaultParameters When: updating Then: should pass undefined', async () => {
+      // Arrange
+      const dto = {
+        name: 'Updated name only',
+        description: 'Updated desc',
+      };
+      const updateResponse = {
+        success: true,
+        data: { ...mockTemplateData, name: 'Updated name only' },
+        message: 'Template updated',
+        timestamp: new Date().toISOString(),
+      };
+      mockUpdateReportTemplateUseCase.execute.mockResolvedValue(ok(updateResponse));
+
+      // Act
+      const result = await controller.updateTemplate(
+        'template-123',
+        dto as any,
+        mockOrgId,
+        mockUserId
+      );
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockUpdateReportTemplateUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          templateId: 'template-123',
+          name: 'Updated name only',
+          description: 'Updated desc',
+          defaultParameters: undefined,
+        })
+      );
+    });
   });
 });

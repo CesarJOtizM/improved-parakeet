@@ -1784,4 +1784,201 @@ describe('PrismaReturnRepository', () => {
       expect(result).toHaveLength(0);
     });
   });
+
+  describe('mapToEntity - supplier return line mapping', () => {
+    it('Given: supplier return with unit cost lines When: mapping to entity Then: should create supplier lines', async () => {
+      // Arrange
+      const supplierReturnData = {
+        ...mockReturnData,
+        type: 'RETURN_SUPPLIER',
+        saleId: null,
+        sourceMovementId: 'mov-001',
+        warehouse: { id: 'wh-123', name: 'Main Warehouse' },
+        sale: null,
+        lines: [
+          {
+            id: 'line-1',
+            productId: 'product-001',
+            locationId: null,
+            quantity: 3,
+            originalSalePrice: null,
+            originalUnitCost: 50.0,
+            currency: 'COP',
+            extra: null,
+            orgId: 'org-123',
+            product: { id: 'product-001', name: 'Widget', sku: 'WDG-001' },
+          },
+        ],
+      };
+      mockPrismaService.return.findUnique.mockResolvedValue(supplierReturnData);
+
+      // Act
+      const result = await repository.findById('return-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.type.getValue()).toBe('RETURN_SUPPLIER');
+      expect(result?.getLines()).toHaveLength(1);
+    });
+  });
+
+  describe('mapToEntity - Decimal-like objects', () => {
+    it('Given: return lines with Decimal-like objects When: mapping Then: should use toNumber()', async () => {
+      // Arrange
+      const returnDataWithDecimals = {
+        ...mockReturnData,
+        lines: [
+          {
+            id: 'line-1',
+            productId: 'product-001',
+            locationId: null,
+            quantity: { toNumber: () => 5 },
+            originalSalePrice: { toNumber: () => 29.99 },
+            originalUnitCost: null,
+            currency: 'USD',
+            extra: null,
+            orgId: 'org-123',
+            product: { id: 'product-001', name: 'Widget', sku: 'WDG-001' },
+          },
+        ],
+      };
+      mockPrismaService.return.findUnique.mockResolvedValue(returnDataWithDecimals);
+
+      // Act
+      const result = await repository.findById('return-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.getLines()).toHaveLength(1);
+    });
+
+    it('Given: supplier return lines with Decimal-like unit cost When: mapping Then: should use toNumber()', async () => {
+      // Arrange
+      const supplierReturnWithDecimals = {
+        ...mockReturnData,
+        type: 'RETURN_SUPPLIER',
+        saleId: null,
+        sourceMovementId: 'mov-001',
+        sale: null,
+        lines: [
+          {
+            id: 'line-1',
+            productId: 'product-001',
+            locationId: null,
+            quantity: { toNumber: () => 3 },
+            originalSalePrice: null,
+            originalUnitCost: { toNumber: () => 75.0 },
+            currency: 'COP',
+            extra: null,
+            orgId: 'org-123',
+            product: { id: 'product-001', name: 'Widget', sku: 'WDG-001' },
+          },
+        ],
+      };
+      mockPrismaService.return.findUnique.mockResolvedValue(supplierReturnWithDecimals);
+
+      // Act
+      const result = await repository.findById('return-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.getLines()).toHaveLength(1);
+    });
+  });
+
+  describe('mapToEntity - read metadata', () => {
+    it('Given: return data without warehouse relation When: mapping Then: warehouseName should be undefined', async () => {
+      // Arrange
+      const returnNoWarehouse = {
+        ...mockReturnData,
+        warehouse: null,
+        sale: null,
+      };
+      mockPrismaService.return.findUnique.mockResolvedValue(returnNoWarehouse);
+
+      // Act
+      const result = await repository.findById('return-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.readMetadata?.warehouseName).toBeUndefined();
+      expect(result?.readMetadata?.saleNumber).toBeUndefined();
+    });
+
+    it('Given: return data with product info on lines When: mapping Then: should include lineProducts metadata', async () => {
+      // Arrange
+      const returnWithProducts = {
+        ...mockReturnData,
+        lines: [
+          {
+            id: 'line-1',
+            productId: 'product-001',
+            locationId: null,
+            quantity: 2,
+            originalSalePrice: 29.99,
+            originalUnitCost: null,
+            currency: 'USD',
+            extra: null,
+            orgId: 'org-123',
+            product: { id: 'product-001', name: 'Widget', sku: 'WDG-001' },
+          },
+          {
+            id: 'line-2',
+            productId: 'product-002',
+            locationId: null,
+            quantity: 1,
+            originalSalePrice: 15.0,
+            originalUnitCost: null,
+            currency: 'USD',
+            extra: null,
+            orgId: 'org-123',
+            product: null, // No product relation
+          },
+        ],
+      };
+      mockPrismaService.return.findUnique.mockResolvedValue(returnWithProducts);
+
+      // Act
+      const result = await repository.findById('return-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.readMetadata?.lineProducts?.['product-001']).toEqual({
+        name: 'Widget',
+        sku: 'WDG-001',
+      });
+      // product-002 should not be in lineProducts since product is null
+      expect(result?.readMetadata?.lineProducts?.['product-002']).toBeUndefined();
+    });
+  });
+
+  describe('findByStatus - comma-separated statuses', () => {
+    it('Given: comma-separated statuses When: finding Then: should use IN filter', async () => {
+      // Arrange
+      mockPrismaService.return.findMany.mockResolvedValue([mockReturnData]);
+
+      // Act
+      const result = await repository.findByStatus('DRAFT, CONFIRMED', 'org-123');
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(mockPrismaService.return.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: { in: ['DRAFT', 'CONFIRMED'] },
+          }),
+        })
+      );
+    });
+  });
+
+  describe('findById - error handling non-Error object', () => {
+    it('Given: non-Error thrown When: finding by id Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.return.findUnique.mockRejectedValue('string error');
+
+      // Act & Assert
+      await expect(repository.findById('return-123', 'org-123')).rejects.toBe('string error');
+    });
+  });
 });

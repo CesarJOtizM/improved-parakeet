@@ -223,5 +223,69 @@ describe('PostMovementUseCase', () => {
       );
       expect(mockMovementRepository.save).not.toHaveBeenCalled();
     });
+
+    it('Given: draft OUT movement with sufficient stock When: posting movement Then: should return success result', async () => {
+      // Arrange
+      const mockMovement = createMockMovement('OUT', 'DRAFT');
+      mockMovementRepository.findById.mockResolvedValue(mockMovement);
+      mockMovementRepository.findDraftMovements.mockResolvedValue([]);
+      mockMovementRepository.findPostedMovements.mockResolvedValue([]);
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(100, 0));
+
+      jest.spyOn(StockValidationService, 'validateStockForOutput').mockReturnValue({
+        isValid: true,
+        availableQuantity: Quantity.create(100, 0),
+        requestedQuantity: Quantity.create(10, 0),
+        errors: [],
+      });
+
+      const postedMovement = mockMovement.post('user-456');
+      mockMovementRepository.save.mockResolvedValue(postedMovement);
+
+      const request = {
+        movementId: mockMovementId,
+        orgId: mockOrgId,
+        postedBy: 'user-456',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data.status).toBe('POSTED');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+      expect(mockMovementRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('Given: draft IN movement with postedBy When: posting movement Then: should pass postedBy to post()', async () => {
+      // Arrange
+      const mockMovement = createMockMovement('IN', 'DRAFT');
+      mockMovementRepository.findById.mockResolvedValue(mockMovement);
+
+      const postedMovement = mockMovement.post('admin-user');
+      mockMovementRepository.save.mockResolvedValue(postedMovement);
+
+      const request = {
+        movementId: mockMovementId,
+        orgId: mockOrgId,
+        postedBy: 'admin-user',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockMovementRepository.save).toHaveBeenCalledTimes(1);
+      expect(mockEventDispatcher.markAndDispatch).toHaveBeenCalledTimes(1);
+    });
   });
 });

@@ -340,5 +340,124 @@ describe('CreateReturnUseCase', () => {
         }
       );
     });
+
+    it('Given: return with undefined lines When: creating return Then: should create return without lines', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+
+      jest
+        .spyOn(ReturnNumberGenerationService, 'generateNextReturnNumber')
+        .mockResolvedValue(ReturnNumber.create(2025, 1));
+
+      const requestWithNoLines = {
+        ...validCustomerReturnRequest,
+        lines: undefined,
+      };
+
+      const returnProps = ReturnMapper.toDomainProps(
+        requestWithNoLines,
+        ReturnNumber.create(2025, 1)
+      );
+      const returnWithId = Return.reconstitute(returnProps, mockReturnId, mockOrgId);
+
+      mockReturnRepository.save.mockResolvedValue(returnWithId);
+
+      // Act
+      const result = await useCase.execute(requestWithNoLines);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: valid supplier return data When: creating return Then: should return success result', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+
+      jest
+        .spyOn(ReturnNumberGenerationService, 'generateNextReturnNumber')
+        .mockResolvedValue(ReturnNumber.create(2025, 2));
+
+      const validSupplierReturnRequest = {
+        type: 'RETURN_SUPPLIER' as const,
+        warehouseId: mockWarehouseId,
+        sourceMovementId: 'movement-123',
+        reason: 'DEFECTIVE',
+        note: 'Test supplier return',
+        lines: [
+          {
+            productId: 'product-123',
+            locationId: 'location-123',
+            quantity: 5,
+            originalUnitCost: 50,
+            currency: 'COP',
+          },
+        ],
+        createdBy: mockUserId,
+        orgId: mockOrgId,
+      };
+
+      const returnProps = ReturnMapper.toDomainProps(
+        validSupplierReturnRequest,
+        ReturnNumber.create(2025, 2)
+      );
+      const returnWithId = Return.reconstitute(returnProps, mockReturnId, mockOrgId);
+
+      mockReturnRepository.save.mockResolvedValue(returnWithId);
+
+      // Act
+      const result = await useCase.execute(validSupplierReturnRequest);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.message).toBe('Return created successfully');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: customer return with valid saleId When: creating return Then: should not require sourceMovementId', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+
+      jest
+        .spyOn(ReturnNumberGenerationService, 'generateNextReturnNumber')
+        .mockResolvedValue(ReturnNumber.create(2025, 3));
+
+      const requestWithOptionals = {
+        ...validCustomerReturnRequest,
+        reason: undefined,
+        note: undefined,
+      };
+
+      const returnProps = ReturnMapper.toDomainProps(
+        requestWithOptionals,
+        ReturnNumber.create(2025, 3)
+      );
+      const returnWithId = Return.reconstitute(returnProps, mockReturnId, mockOrgId);
+
+      mockReturnRepository.save.mockResolvedValue(returnWithId);
+
+      // Act
+      const result = await useCase.execute(requestWithOptionals);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
   });
 });

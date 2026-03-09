@@ -1121,5 +1121,161 @@ describe('GetUsersUseCase', () => {
         }
       );
     });
+
+    it('Given: sortBy unknown field When: getting users Then: should fallback to createdAt default sort', async () => {
+      // Arrange
+      const users = createMockUsers(3);
+      mockUserRepository.findAll.mockResolvedValue(users);
+
+      const request = {
+        orgId: mockOrgId,
+        sortBy: 'unknownField',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(3);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: status filter combined with search When: getting users Then: should filter by both status and search', async () => {
+      // Arrange
+      const users = createMockUsers(5);
+      users[0].update({ firstName: 'TargetUser' });
+      mockUserRepository.findByStatus.mockResolvedValue(users);
+
+      const request = {
+        orgId: mockOrgId,
+        status: 'ACTIVE',
+        search: 'TargetUser',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(1);
+          expect(value.data[0].firstName).toBe('TargetUser');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+      expect(mockUserRepository.findByStatus).toHaveBeenCalledWith('ACTIVE', mockOrgId);
+      expect(mockUserRepository.findAll).not.toHaveBeenCalled();
+    });
+
+    it('Given: users with equal sort values When: sorting Then: should return 0 for equal values', async () => {
+      // Arrange - two users with the same email prefix to exercise the return 0 branch
+      const userA = User.reconstitute(
+        {
+          email: Email.create('same@example.com'),
+          username: 'userA',
+          passwordHash: User.create(
+            {
+              email: Email.create('same@example.com'),
+              username: 'userA',
+              password: 'SecurePass123!',
+              firstName: 'Same',
+              lastName: 'User',
+              status: UserStatus.create('ACTIVE'),
+              failedLoginAttempts: 0,
+            },
+            mockOrgId
+          ).passwordHash as any,
+          firstName: 'Same',
+          lastName: 'User',
+          status: UserStatus.create('ACTIVE'),
+          failedLoginAttempts: 0,
+        },
+        'user-a',
+        mockOrgId
+      );
+      (userA as any).props.roles = ['USER'];
+
+      mockUserRepository.findAll.mockResolvedValue([userA]);
+
+      const request = {
+        orgId: mockOrgId,
+        sortBy: 'email',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(1);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: users with no roles When: getting users Then: should return empty roles array', async () => {
+      // Arrange
+      const user = User.reconstitute(
+        {
+          email: Email.create('noroles@example.com'),
+          username: 'noroles',
+          passwordHash: User.create(
+            {
+              email: Email.create('noroles@example.com'),
+              username: 'noroles',
+              password: 'SecurePass123!',
+              firstName: 'No',
+              lastName: 'Roles',
+              status: UserStatus.create('ACTIVE'),
+              failedLoginAttempts: 0,
+            },
+            mockOrgId
+          ).passwordHash as any,
+          firstName: 'No',
+          lastName: 'Roles',
+          status: UserStatus.create('ACTIVE'),
+          failedLoginAttempts: 0,
+        },
+        'user-noroles',
+        mockOrgId
+      );
+      // Do NOT set roles - test the `|| []` fallback
+
+      mockUserRepository.findAll.mockResolvedValue([user]);
+
+      const request = {
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].roles).toEqual([]);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

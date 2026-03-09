@@ -408,5 +408,230 @@ describe('GetDashboardMetricsUseCase', () => {
         }
       );
     });
+
+    it('Given: companyId filter When: getting metrics Then: should pass companyId to all queries', async () => {
+      // Arrange
+      setupSuccessMocks();
+
+      // Act
+      const result = await useCase.execute({ orgId: mockOrgId, companyId: 'company-123' });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data.inventory).toBeDefined();
+          expect(value.data.sales).toBeDefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: movement without reference When: getting metrics Then: should use truncated ID', async () => {
+      // Arrange
+      setupSuccessMocks();
+      mockPrismaService.movement.findMany.mockResolvedValue([
+        {
+          id: 'mov-abcdefghij',
+          type: 'INPUT',
+          status: 'POSTED',
+          reference: null,
+          createdAt: new Date('2026-02-28T09:00:00Z'),
+        },
+      ]);
+
+      // Act
+      const result = await useCase.execute({ orgId: mockOrgId });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          const movementActivity = value.data.recentActivity.find(a => a.type === 'MOVEMENT');
+          if (movementActivity) {
+            expect(movementActivity.reference).toBe('mov-abcd');
+          }
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: return of type RETURN_SUPPLIER When: getting metrics Then: should show Supplier return description', async () => {
+      // Arrange
+      setupSuccessMocks();
+      mockPrismaService.return.findMany.mockResolvedValue([
+        {
+          returnNumber: 'R-002',
+          status: 'CONFIRMED',
+          type: 'RETURN_SUPPLIER',
+          createdAt: new Date('2026-02-28T08:00:00Z'),
+        },
+      ]);
+
+      // Act
+      const result = await useCase.execute({ orgId: mockOrgId });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          const returnActivity = value.data.recentActivity.find(a => a.type === 'RETURN');
+          if (returnActivity) {
+            expect(returnActivity.description).toContain('Supplier');
+          }
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: return of type RETURN_CUSTOMER When: getting metrics Then: should show Customer return description', async () => {
+      // Arrange
+      setupSuccessMocks();
+      mockPrismaService.return.findMany.mockResolvedValue([
+        {
+          returnNumber: 'R-003',
+          status: 'PENDING',
+          type: 'RETURN_CUSTOMER',
+          createdAt: new Date('2026-02-28T08:00:00Z'),
+        },
+      ]);
+
+      // Act
+      const result = await useCase.execute({ orgId: mockOrgId });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          const returnActivity = value.data.recentActivity.find(a => a.type === 'RETURN');
+          if (returnActivity) {
+            expect(returnActivity.description).toContain('Customer');
+          }
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: transfer activity When: getting metrics Then: should include transfer with truncated ID', async () => {
+      // Arrange
+      setupSuccessMocks();
+      mockPrismaService.transfer.findMany.mockResolvedValue([
+        {
+          id: 'tr-abcdefghijk',
+          status: 'IN_TRANSIT',
+          createdAt: new Date('2026-02-28T07:00:00Z'),
+        },
+      ]);
+
+      // Act
+      const result = await useCase.execute({ orgId: mockOrgId });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          const transferActivity = value.data.recentActivity.find(a => a.type === 'TRANSFER');
+          if (transferActivity) {
+            expect(transferActivity.reference).toBe('tr-abcde');
+            expect(transferActivity.description).toContain('Transfer');
+          }
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: non-Error thrown from database When: getting metrics Then: should return BusinessRuleError', async () => {
+      // Arrange
+      mockPrismaService.product.findFirst.mockRejectedValue('string error');
+      mockPrismaService.product.count.mockRejectedValue('string error');
+      mockPrismaService.sale.count.mockRejectedValue('string error');
+      mockPrismaService.$queryRaw.mockRejectedValue('string error');
+      mockPrismaService.sale.findMany.mockRejectedValue('string error');
+      mockPrismaService.movement.findMany.mockRejectedValue('string error');
+      mockPrismaService.return.findMany.mockRejectedValue('string error');
+      mockPrismaService.transfer.findMany.mockRejectedValue('string error');
+
+      // Act
+      const result = await useCase.execute({ orgId: mockOrgId });
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(BusinessRuleError);
+        }
+      );
+    });
+
+    it('Given: empty query raw results When: getting metrics Then: should handle gracefully with defaults', async () => {
+      // Arrange
+      mockPrismaService.product.findFirst.mockResolvedValue(null);
+      mockPrismaService.product.count.mockResolvedValue(0);
+      mockPrismaService.sale.count.mockResolvedValue(0);
+      mockPrismaService.$queryRaw
+        .mockResolvedValueOnce([]) // empty stockSummary
+        .mockResolvedValueOnce([]) // empty lowStockCount
+        .mockResolvedValueOnce([]) // empty salesRevenue
+        .mockResolvedValueOnce([]) // empty salesTrend
+        .mockResolvedValueOnce([]) // empty topProducts
+        .mockResolvedValueOnce([]); // empty stockByWarehouse
+      mockPrismaService.sale.findMany.mockResolvedValue([]);
+      mockPrismaService.movement.findMany.mockResolvedValue([]);
+      mockPrismaService.return.findMany.mockResolvedValue([]);
+      mockPrismaService.transfer.findMany.mockResolvedValue([]);
+
+      // Act
+      const result = await useCase.execute({ orgId: mockOrgId });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.inventory.totalStockQuantity).toBe(0);
+          expect(value.data.inventory.totalInventoryValue).toBe(0);
+          expect(value.data.inventory.currency).toBe('COP');
+          expect(value.data.lowStock.count).toBe(0);
+          expect(value.data.sales.monthlyRevenue).toBe(0);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: product with non-COP currency When: getting metrics Then: should return detected currency', async () => {
+      // Arrange
+      setupSuccessMocks();
+      mockPrismaService.product.findFirst.mockResolvedValue({ currency: 'USD' });
+
+      // Act
+      const result = await useCase.execute({ orgId: mockOrgId });
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.inventory.currency).toBe('USD');
+          expect(value.data.sales.currency).toBe('USD');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

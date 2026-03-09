@@ -179,5 +179,144 @@ describe('TenantMiddleware', () => {
       // Assert
       expect((mockRequest as any).organization).toEqual(mockOrganization);
     });
+
+    it('Given: www subdomain only When: extracting org with no other identifier Then: should call next without org', async () => {
+      // Arrange
+      mockRequest.headers = { host: 'www.example.com' };
+
+      // Act
+      await middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect((mockRequest as any).organization).toBeUndefined();
+      expect(mockPrismaService.organization.findFirst).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+
+    it('Given: api subdomain only When: extracting org with no other identifier Then: should call next without org', async () => {
+      // Arrange
+      mockRequest.headers = { host: 'api.example.com' };
+
+      // Act
+      await middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect((mockRequest as any).organization).toBeUndefined();
+      expect(mockPrismaService.organization.findFirst).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+
+    it('Given: valid subdomain only When: extracting org Then: should use subdomain', async () => {
+      // Arrange
+      mockRequest.headers = { host: 'mycompany.example.com' };
+      mockPrismaService.organization.findFirst.mockResolvedValue(mockOrganization);
+
+      // Act
+      await middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect((mockRequest as any).organization).toEqual(mockOrganization);
+      expect(mockPrismaService.organization.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([{ id: 'mycompany' }]),
+          }),
+        })
+      );
+    });
+
+    it('Given: host without dot When: extracting org Then: should not extract subdomain', async () => {
+      // Arrange
+      mockRequest.headers = { host: 'localhost' };
+
+      // Act
+      await middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect((mockRequest as any).organization).toBeUndefined();
+      expect(mockPrismaService.organization.findFirst).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+
+    it('Given: database error When: finding organization Then: should pass error to next', async () => {
+      // Arrange
+      mockRequest.headers = { 'x-organization-id': 'org-123' };
+      const dbError = new Error('Database connection failed');
+      mockPrismaService.organization.findFirst.mockRejectedValue(dbError);
+
+      // Act
+      await middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect(mockNext).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it('Given: X-Organization-ID header takes priority When: both header and subdomain exist Then: should use header', async () => {
+      // Arrange
+      mockRequest.headers = {
+        'x-organization-id': 'org-from-header',
+        host: 'subdomain.example.com',
+      };
+      mockPrismaService.organization.findFirst.mockResolvedValue(mockOrganization);
+
+      // Act
+      await middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect(mockPrismaService.organization.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([{ id: 'org-from-header' }]),
+          }),
+        })
+      );
+    });
+
+    it('Given: X-Organization-Slug takes priority over subdomain When: both exist Then: should use slug header', async () => {
+      // Arrange
+      mockRequest.headers = {
+        'x-organization-slug': 'my-org-slug',
+        host: 'subdomain.example.com',
+      };
+      mockPrismaService.organization.findFirst.mockResolvedValue(mockOrganization);
+
+      // Act
+      await middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect(mockPrismaService.organization.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([{ id: 'my-org-slug' }]),
+          }),
+        })
+      );
+    });
+
+    it('Given: authenticated user with no orgId When: accessing org Then: should allow', async () => {
+      // Arrange
+      mockRequest.headers = { 'x-organization-id': 'org-123' };
+      (mockRequest as any).user = { id: 'user-1' };
+      mockPrismaService.organization.findFirst.mockResolvedValue(mockOrganization);
+
+      // Act
+      await middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect((mockRequest as any).organization).toEqual(mockOrganization);
+      expect(mockNext).toHaveBeenCalledWith();
+    });
+
+    it('Given: non-Error thrown When: middleware fails Then: should still pass to next', async () => {
+      // Arrange
+      mockRequest.headers = { 'x-organization-id': 'org-123' };
+      mockPrismaService.organization.findFirst.mockRejectedValue('string error');
+
+      // Act
+      await middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect(mockNext).toHaveBeenCalledWith('string error');
+    });
   });
 });

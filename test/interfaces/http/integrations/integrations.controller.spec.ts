@@ -398,5 +398,211 @@ describe('IntegrationsController', () => {
       expect(result.data.succeeded).toBe(3);
       expect(result.data.failed).toBe(2);
     });
+
+    it('Given: use case error When: retrying all Then: should throw', async () => {
+      mockRetryAllFailedSyncsUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Failed to retry syncs'))
+      );
+
+      await expect(controller.retryAllFailedSyncs('conn-1', mockOrgId)).rejects.toThrow();
+    });
+  });
+
+  describe('createConnection - error paths', () => {
+    it('Given: invalid dto When: creating Then: should throw validation error', async () => {
+      const dto = {
+        provider: '',
+        accountName: '',
+        storeName: '',
+        appKey: '',
+        appToken: '',
+        defaultWarehouseId: '',
+      };
+      mockCreateConnectionUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Provider is required'))
+      );
+
+      await expect(controller.createConnection(dto, mockOrgId)).rejects.toThrow();
+    });
+
+    it('Given: optional fields When: creating Then: should pass optional fields', async () => {
+      const dto = {
+        provider: 'VTEX',
+        accountName: 'teststore',
+        storeName: 'Test Store',
+        appKey: 'key-123',
+        appToken: 'token-123',
+        defaultWarehouseId: 'wh-1',
+        syncStrategy: 'POLL',
+        syncDirection: 'INBOUND',
+        defaultContactId: 'contact-1',
+        companyId: 'company-1',
+      };
+      const responseData = {
+        success: true,
+        message: 'Connection created',
+        data: { id: 'conn-1', ...dto },
+        timestamp: new Date().toISOString(),
+      };
+      mockCreateConnectionUseCase.execute.mockResolvedValue(ok(responseData));
+
+      const result = await controller.createConnection(dto, mockOrgId);
+
+      expect(result.success).toBe(true);
+      expect(mockCreateConnectionUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          syncStrategy: 'POLL',
+          syncDirection: 'INBOUND',
+          defaultContactId: 'contact-1',
+          companyId: 'company-1',
+        })
+      );
+    });
+  });
+
+  describe('updateConnection - error paths', () => {
+    it('Given: non-existent connection When: updating Then: should throw', async () => {
+      mockUpdateConnectionUseCase.execute.mockResolvedValue(
+        err(new NotFoundError('Connection not found'))
+      );
+
+      await expect(
+        controller.updateConnection('non-existent', { storeName: 'New' }, mockOrgId)
+      ).rejects.toThrow();
+    });
+
+    it('Given: all optional fields When: updating Then: should pass all fields', async () => {
+      const dto = {
+        storeName: 'Updated Store',
+        appKey: 'new-key',
+        appToken: 'new-token',
+        syncStrategy: 'WEBHOOK',
+        syncDirection: 'OUTBOUND',
+        defaultWarehouseId: 'wh-2',
+        defaultContactId: 'contact-2',
+        companyId: 'company-2',
+      };
+      mockUpdateConnectionUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          message: 'Updated',
+          data: { id: 'conn-1', ...dto },
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      const result = await controller.updateConnection('conn-1', dto, mockOrgId);
+
+      expect(result.success).toBe(true);
+      expect(mockUpdateConnectionUseCase.execute).toHaveBeenCalledWith({
+        connectionId: 'conn-1',
+        orgId: mockOrgId,
+        ...dto,
+      });
+    });
+  });
+
+  describe('deleteConnection - error paths', () => {
+    it('Given: non-existent connection When: deleting Then: should throw', async () => {
+      mockDeleteConnectionUseCase.execute.mockResolvedValue(
+        err(new NotFoundError('Connection not found'))
+      );
+
+      await expect(controller.deleteConnection('non-existent', mockOrgId)).rejects.toThrow();
+    });
+  });
+
+  describe('testConnection - error paths', () => {
+    it('Given: connection test fails When: testing Then: should throw', async () => {
+      mockVtexTestConnectionUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Connection test failed'))
+      );
+
+      await expect(controller.testConnection('conn-1', mockOrgId)).rejects.toThrow();
+    });
+  });
+
+  describe('syncConnection - error paths', () => {
+    it('Given: sync fails When: syncing Then: should throw', async () => {
+      mockVtexPollOrdersUseCase.execute.mockResolvedValue(err(new ValidationError('Sync failed')));
+
+      await expect(controller.syncConnection('conn-1', mockOrgId)).rejects.toThrow();
+    });
+  });
+
+  describe('syncOrder - error paths', () => {
+    it('Given: order sync fails When: syncing order Then: should throw', async () => {
+      mockVtexSyncOrderUseCase.execute.mockResolvedValue(err(new NotFoundError('Order not found')));
+
+      await expect(controller.syncOrder('conn-1', 'ORD-999', mockOrgId)).rejects.toThrow();
+    });
+  });
+
+  describe('registerWebhook - error paths', () => {
+    it('Given: registration fails When: registering webhook Then: should throw', async () => {
+      mockVtexRegisterWebhookUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Registration failed'))
+      );
+
+      await expect(
+        controller.registerWebhook('conn-1', { webhookBaseUrl: 'https://bad.url' }, mockOrgId)
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('getSkuMappings - error paths', () => {
+    it('Given: use case error When: getting mappings Then: should throw', async () => {
+      mockGetSkuMappingsUseCase.execute.mockResolvedValue(
+        err(new NotFoundError('Connection not found'))
+      );
+
+      await expect(controller.getSkuMappings('non-existent', mockOrgId)).rejects.toThrow();
+    });
+  });
+
+  describe('createSkuMapping - error paths', () => {
+    it('Given: duplicate mapping When: creating Then: should throw', async () => {
+      mockCreateSkuMappingUseCase.execute.mockResolvedValue(
+        err(new ValidationError('SKU mapping already exists'))
+      );
+
+      await expect(
+        controller.createSkuMapping(
+          'conn-1',
+          { externalSku: 'VTEX-001', productId: 'prod-1' },
+          mockOrgId
+        )
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('deleteSkuMapping - error paths', () => {
+    it('Given: non-existent mapping When: deleting Then: should throw', async () => {
+      mockDeleteSkuMappingUseCase.execute.mockResolvedValue(
+        err(new NotFoundError('SKU mapping not found'))
+      );
+
+      await expect(
+        controller.deleteSkuMapping('conn-1', 'non-existent', mockOrgId)
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('getUnmatchedSkus - error paths', () => {
+    it('Given: use case error When: getting unmatched Then: should throw', async () => {
+      mockGetUnmatchedSkusUseCase.execute.mockResolvedValue(
+        err(new NotFoundError('Connection not found'))
+      );
+
+      await expect(controller.getUnmatchedSkus('non-existent', mockOrgId)).rejects.toThrow();
+    });
+  });
+
+  describe('retrySync - error paths', () => {
+    it('Given: retry fails When: retrying Then: should throw', async () => {
+      mockRetrySyncUseCase.execute.mockResolvedValue(err(new ValidationError('Retry failed')));
+
+      await expect(controller.retrySync('conn-1', 'log-1', mockOrgId)).rejects.toThrow();
+    });
   });
 });

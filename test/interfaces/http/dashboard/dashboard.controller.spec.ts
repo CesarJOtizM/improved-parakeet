@@ -105,5 +105,34 @@ describe('DashboardController', () => {
       expect(result.data.salesTrend).toHaveLength(0);
       expect(result.data.topProducts).toHaveLength(0);
     });
+
+    it('Given: companyId filter When: getting metrics Then: should pass companyId to use case', async () => {
+      // Arrange
+      mockGetDashboardMetricsUseCase.execute.mockResolvedValue(ok(mockMetricsData));
+
+      // Act
+      const result = await controller.getMetrics('org-123', 'company-456');
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(mockGetDashboardMetricsUseCase.execute).toHaveBeenCalledWith({
+        orgId: 'org-123',
+        companyId: 'company-456',
+      });
+    });
+
+    it('Given: no companyId When: getting metrics Then: should pass undefined companyId', async () => {
+      // Arrange
+      mockGetDashboardMetricsUseCase.execute.mockResolvedValue(ok(mockMetricsData));
+
+      // Act
+      await controller.getMetrics('org-123', undefined);
+
+      // Assert
+      expect(mockGetDashboardMetricsUseCase.execute).toHaveBeenCalledWith({
+        orgId: 'org-123',
+        companyId: undefined,
+      });
+    });
   });
 });

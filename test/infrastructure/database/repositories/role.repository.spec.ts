@@ -610,4 +610,502 @@ describe('RoleRepository', () => {
       );
     });
   });
+
+  describe('non-Error throws', () => {
+    it('Given: non-Error thrown When: findById Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.role.findFirst.mockRejectedValue('string-error');
+
+      // Act & Assert
+      await expect(repository.findById('role-123', 'org-123')).rejects.toBe('string-error');
+    });
+
+    it('Given: non-Error thrown When: findByName Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.role.findFirst.mockRejectedValue('string-error');
+
+      // Act & Assert
+      await expect(repository.findByName('admin', 'org-123')).rejects.toBe('string-error');
+    });
+
+    it('Given: non-Error thrown When: findByStatus Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.role.findMany.mockRejectedValue(42);
+
+      // Act & Assert
+      await expect(repository.findByStatus(true, 'org-123')).rejects.toBe(42);
+    });
+
+    it('Given: non-Error thrown When: findRolesByUser Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.userRole.findMany.mockRejectedValue('user-role-error');
+
+      // Act & Assert
+      await expect(repository.findRolesByUser('user-123', 'org-123')).rejects.toBe(
+        'user-role-error'
+      );
+    });
+
+    it('Given: non-Error thrown When: existsByName Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.role.count.mockRejectedValue('count-error');
+
+      // Act & Assert
+      await expect(repository.existsByName('admin', 'org-123')).rejects.toBe('count-error');
+    });
+
+    it('Given: non-Error thrown When: countByStatus Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.role.count.mockRejectedValue('count-status-error');
+
+      // Act & Assert
+      await expect(repository.countByStatus(true, 'org-123')).rejects.toBe('count-status-error');
+    });
+
+    it('Given: non-Error thrown When: findRolesWithPermissions Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.role.findMany.mockRejectedValue('perm-error');
+
+      // Act & Assert
+      await expect(repository.findRolesWithPermissions(['perm-1'], 'org-123')).rejects.toBe(
+        'perm-error'
+      );
+    });
+
+    it('Given: non-Error thrown When: save Then: should log and rethrow', async () => {
+      // Arrange
+      const role = Role.reconstitute(
+        {
+          name: 'test-role',
+          isActive: true,
+          isSystem: false,
+        },
+        'role-123',
+        'org-123'
+      );
+      mockPrismaService.role.findUnique.mockRejectedValue('save-error');
+
+      // Act & Assert
+      await expect(repository.save(role)).rejects.toBe('save-error');
+    });
+
+    it('Given: non-Error thrown When: delete Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.role.delete.mockRejectedValue('delete-error');
+
+      // Act & Assert
+      await expect(repository.delete('role-123', 'org-123')).rejects.toBe('delete-error');
+    });
+
+    it('Given: non-Error thrown When: exists Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.role.count.mockRejectedValue('exists-error');
+
+      // Act & Assert
+      await expect(repository.exists('role-123', 'org-123')).rejects.toBe('exists-error');
+    });
+
+    it('Given: non-Error thrown When: findSystemRoles Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.role.findMany.mockRejectedValue('system-error');
+
+      // Act & Assert
+      await expect(repository.findSystemRoles()).rejects.toBe('system-error');
+    });
+
+    it('Given: non-Error thrown When: findCustomRoles Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.role.findMany.mockRejectedValue('custom-error');
+
+      // Act & Assert
+      await expect(repository.findCustomRoles('org-123')).rejects.toBe('custom-error');
+    });
+
+    it('Given: non-Error thrown When: findAvailableRolesForOrganization Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.role.findMany.mockRejectedValue('available-error');
+
+      // Act & Assert
+      await expect(repository.findAvailableRolesForOrganization('org-123')).rejects.toBe(
+        'available-error'
+      );
+    });
+  });
+
+  describe('null description handling', () => {
+    it('Given: role with null description When: findById Then: should map to undefined', async () => {
+      // Arrange
+      mockPrismaService.role.findFirst.mockResolvedValue({
+        ...mockRoleData,
+        description: null,
+      });
+
+      // Act
+      const result = await repository.findById('role-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.description).toBeUndefined();
+    });
+
+    it('Given: role with empty string description When: findById Then: should map to undefined', async () => {
+      // Arrange
+      mockPrismaService.role.findFirst.mockResolvedValue({
+        ...mockRoleData,
+        description: '',
+      });
+
+      // Act
+      const result = await repository.findById('role-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.description).toBeUndefined();
+    });
+  });
+
+  describe('null orgId handling', () => {
+    it('Given: system role with null orgId When: findById Then: should map orgId to empty string', async () => {
+      // Arrange
+      mockPrismaService.role.findFirst.mockResolvedValue(mockSystemRoleData);
+
+      // Act
+      const result = await repository.findById('role-system');
+
+      // Assert
+      expect(result).not.toBeNull();
+      // orgId || undefined passes undefined to reconstitute, Entity defaults to ''
+      expect(result?.orgId).toBe('');
+    });
+
+    it('Given: role with null orgId When: findByName Then: should map orgId to empty string', async () => {
+      // Arrange
+      mockPrismaService.role.findFirst.mockResolvedValue(mockSystemRoleData);
+
+      // Act
+      const result = await repository.findByName('super_admin');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.orgId).toBe('');
+    });
+
+    it('Given: system role with null orgId When: findByStatus Then: should map orgId to empty string', async () => {
+      // Arrange
+      mockPrismaService.role.findMany.mockResolvedValue([mockSystemRoleData]);
+
+      // Act
+      const result = await repository.findByStatus(true, 'org-123');
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(result[0].orgId).toBe('');
+    });
+
+    it('Given: user role with null orgId When: findRolesByUser Then: should map orgId to empty string', async () => {
+      // Arrange
+      mockPrismaService.userRole.findMany.mockResolvedValue([{ role: mockSystemRoleData }]);
+
+      // Act
+      const result = await repository.findRolesByUser('user-123', 'org-123');
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(result[0].orgId).toBe('');
+    });
+
+    it('Given: role with null orgId When: findRolesWithPermissions Then: should map orgId to empty string', async () => {
+      // Arrange
+      mockPrismaService.role.findMany.mockResolvedValue([mockSystemRoleData]);
+
+      // Act
+      const result = await repository.findRolesWithPermissions(['perm-1'], 'org-123');
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(result[0].orgId).toBe('');
+    });
+
+    it('Given: role with null orgId When: findSystemRoles Then: should map orgId to empty string', async () => {
+      // Arrange
+      mockPrismaService.role.findMany.mockResolvedValue([mockSystemRoleData]);
+
+      // Act
+      const result = await repository.findSystemRoles();
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(result[0].orgId).toBe('');
+    });
+
+    it('Given: role with null orgId When: findCustomRoles Then: should map orgId to empty string', async () => {
+      // Arrange
+      mockPrismaService.role.findMany.mockResolvedValue([{ ...mockRoleData, orgId: null }]);
+
+      // Act
+      const result = await repository.findCustomRoles('org-123');
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(result[0].orgId).toBe('');
+    });
+
+    it('Given: role with null orgId When: findAvailableRolesForOrganization Then: should map orgId to empty string', async () => {
+      // Arrange
+      mockPrismaService.role.findMany.mockResolvedValue([mockSystemRoleData]);
+
+      // Act
+      const result = await repository.findAvailableRolesForOrganization('org-123');
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(result[0].orgId).toBe('');
+    });
+  });
+
+  describe('save - system role with null description', () => {
+    it('Given: system role without orgId When: saving Then: should create role with null orgId', async () => {
+      // Arrange
+      const role = Role.reconstitute(
+        {
+          name: 'system-role',
+          isActive: true,
+          isSystem: true,
+        },
+        'role-system',
+        undefined
+      );
+      mockPrismaService.role.findUnique.mockResolvedValue(null);
+      mockPrismaService.role.create.mockResolvedValue({
+        id: 'role-system',
+        name: 'system-role',
+        description: null,
+        isActive: true,
+        isSystem: true,
+        orgId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // Act
+      const result = await repository.save(role);
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result.isSystem).toBe(true);
+      expect(result.orgId).toBe('');
+      expect(result.description).toBeUndefined();
+    });
+
+    it('Given: existing system role When: saving Then: should update with null orgId', async () => {
+      // Arrange
+      const role = Role.reconstitute(
+        {
+          name: 'system-role',
+          description: 'Updated desc',
+          isActive: true,
+          isSystem: true,
+        },
+        'role-system',
+        undefined
+      );
+      mockPrismaService.role.findUnique.mockResolvedValue({
+        id: 'role-system',
+        name: 'system-role',
+        description: null,
+        isActive: true,
+        isSystem: true,
+        orgId: null,
+      });
+      mockPrismaService.role.update.mockResolvedValue({
+        id: 'role-system',
+        name: 'system-role',
+        description: 'Updated desc',
+        isActive: true,
+        isSystem: true,
+        orgId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // Act
+      const result = await repository.save(role);
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result.orgId).toBe('');
+    });
+
+    it('Given: updated role with null description When: save update Then: should map description to undefined', async () => {
+      // Arrange
+      const role = Role.reconstitute(
+        {
+          name: 'test-role',
+          isActive: true,
+          isSystem: false,
+        },
+        'role-123',
+        'org-123'
+      );
+      mockPrismaService.role.findUnique.mockResolvedValue(mockRoleData);
+      mockPrismaService.role.update.mockResolvedValue({
+        ...mockRoleData,
+        description: null,
+      });
+
+      // Act
+      const result = await repository.save(role);
+
+      // Assert
+      expect(result.description).toBeUndefined();
+    });
+
+    it('Given: created role with null description When: save create Then: should map description to undefined', async () => {
+      // Arrange
+      const role = Role.reconstitute(
+        {
+          name: 'new-role',
+          isActive: true,
+          isSystem: false,
+        },
+        'role-new',
+        'org-123'
+      );
+      mockPrismaService.role.findUnique.mockResolvedValue(null);
+      mockPrismaService.role.create.mockResolvedValue({
+        id: 'role-new',
+        name: 'new-role',
+        description: null,
+        isActive: true,
+        isSystem: false,
+        orgId: 'org-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // Act
+      const result = await repository.save(role);
+
+      // Assert
+      expect(result.description).toBeUndefined();
+    });
+  });
+
+  describe('exists without orgId', () => {
+    it('Given: checking exists without orgId When: checking Then: should not set orgId in where clause', async () => {
+      // Arrange
+      mockPrismaService.role.count.mockResolvedValue(1);
+
+      // Act
+      const result = await repository.exists('role-system');
+
+      // Assert
+      expect(result).toBe(true);
+      expect(mockPrismaService.role.count).toHaveBeenCalledWith({
+        where: { id: 'role-system' },
+      });
+    });
+  });
+
+  describe('findByName with orgId', () => {
+    it('Given: orgId provided When: findByName Then: should set orgId in where clause', async () => {
+      // Arrange
+      mockPrismaService.role.findFirst.mockResolvedValue(mockRoleData);
+
+      // Act
+      await repository.findByName('admin', 'org-123');
+
+      // Assert
+      expect(mockPrismaService.role.findFirst).toHaveBeenCalledWith({
+        where: { name: 'admin', orgId: 'org-123' },
+      });
+    });
+
+    it('Given: no orgId When: findByName Then: should set orgId to null for system role search', async () => {
+      // Arrange
+      mockPrismaService.role.findFirst.mockResolvedValue(null);
+
+      // Act
+      await repository.findByName('system-role');
+
+      // Assert
+      expect(mockPrismaService.role.findFirst).toHaveBeenCalledWith({
+        where: { name: 'system-role', orgId: null },
+      });
+    });
+  });
+
+  describe('existsByName with orgId', () => {
+    it('Given: orgId provided When: existsByName Then: should set orgId in where clause', async () => {
+      // Arrange
+      mockPrismaService.role.count.mockResolvedValue(1);
+
+      // Act
+      await repository.existsByName('admin', 'org-123');
+
+      // Assert
+      expect(mockPrismaService.role.count).toHaveBeenCalledWith({
+        where: { name: 'admin', orgId: 'org-123' },
+      });
+    });
+  });
+
+  describe('findById with orgId', () => {
+    it('Given: orgId provided When: findById Then: should include orgId in where clause', async () => {
+      // Arrange
+      mockPrismaService.role.findFirst.mockResolvedValue(mockRoleData);
+
+      // Act
+      await repository.findById('role-123', 'org-123');
+
+      // Assert
+      expect(mockPrismaService.role.findFirst).toHaveBeenCalledWith({
+        where: { id: 'role-123', orgId: 'org-123' },
+      });
+    });
+
+    it('Given: no orgId When: findById Then: should not include orgId in where clause', async () => {
+      // Arrange
+      mockPrismaService.role.findFirst.mockResolvedValue(mockSystemRoleData);
+
+      // Act
+      await repository.findById('role-system');
+
+      // Assert
+      expect(mockPrismaService.role.findFirst).toHaveBeenCalledWith({
+        where: { id: 'role-system' },
+      });
+    });
+  });
+
+  describe('multiple roles mapping', () => {
+    it('Given: multiple roles with mixed descriptions When: findByStatus Then: should handle each correctly', async () => {
+      // Arrange
+      mockPrismaService.role.findMany.mockResolvedValue([
+        { ...mockRoleData, description: 'Has desc' },
+        { ...mockRoleData, id: 'role-2', description: null },
+        { ...mockRoleData, id: 'role-3', description: '' },
+      ]);
+
+      // Act
+      const result = await repository.findByStatus(true, 'org-123');
+
+      // Assert
+      expect(result).toHaveLength(3);
+      expect(result[0].description).toBe('Has desc');
+      expect(result[1].description).toBeUndefined();
+      expect(result[2].description).toBeUndefined();
+    });
+
+    it('Given: empty roles list When: findRolesWithPermissions Then: should return empty array', async () => {
+      // Arrange
+      mockPrismaService.role.findMany.mockResolvedValue([]);
+
+      // Act
+      const result = await repository.findRolesWithPermissions([], 'org-123');
+
+      // Assert
+      expect(result).toHaveLength(0);
+    });
+  });
 });

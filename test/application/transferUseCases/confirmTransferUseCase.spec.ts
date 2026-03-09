@@ -378,5 +378,63 @@ describe('ConfirmTransferUseCase', () => {
       // Assert
       expect(mockTransferRepository.findById).toHaveBeenCalledWith(mockTransferId, mockOrgId);
     });
+
+    it('Given: a PARTIAL transfer with lines When: confirming Then: should return BusinessRuleError since PARTIAL cannot be confirmed', async () => {
+      // Arrange
+      const partialTransfer = createTransferWithStatus('PARTIAL', [createTransferLine()]);
+      mockTransferRepository.findById.mockResolvedValue(partialTransfer);
+
+      // Act
+      const result = await useCase.execute(validRequest);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(BusinessRuleError);
+          expect(error.message).toContain('cannot be confirmed');
+        }
+      );
+      expect(mockMovementRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('Given: a DRAFT transfer without note When: confirming Then: should use default note for movement', async () => {
+      // Arrange
+      const line = createTransferLine();
+      const draftTransferNoNote = Transfer.reconstitute(
+        {
+          fromWarehouseId: mockFromWarehouseId,
+          toWarehouseId: mockToWarehouseId,
+          status: TransferStatus.create('DRAFT'),
+          createdBy: mockUserId,
+          // no note provided - exercises the `transfer.note || 'Transfer to warehouse'` branch
+        },
+        mockTransferId,
+        mockOrgId,
+        [line]
+      );
+      mockTransferRepository.findById.mockResolvedValue(draftTransferNoNote);
+
+      const savedDraftMovement = createMockDraftMovement();
+      const postedMovement = createMockPostedMovement();
+      mockMovementRepository.save
+        .mockResolvedValueOnce(savedDraftMovement)
+        .mockResolvedValueOnce(postedMovement);
+
+      const confirmedTransfer = createTransferWithStatus('IN_TRANSIT', [createTransferLine()]);
+      mockTransferRepository.save.mockResolvedValue(confirmedTransfer);
+
+      // Act
+      const result = await useCase.execute(validRequest);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      // The movement should have been created with fallback note
+      const firstSaveArg = mockMovementRepository.save.mock.calls[0][0];
+      expect(firstSaveArg.note).toBe('Transfer to warehouse');
+    });
   });
 });

@@ -598,5 +598,342 @@ describe('GetSalesUseCase', () => {
         }
       );
     });
+
+    it('Given: empty results When: getting sales Then: should return empty data with pagination', async () => {
+      // Arrange
+      mockSaleRepository.findBySpecification.mockResolvedValue({
+        data: [],
+        total: 0,
+        hasMore: false,
+      });
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(0);
+          expect(value.pagination.total).toBe(0);
+          expect(value.pagination.totalPages).toBe(0);
+          expect(value.pagination.hasNext).toBe(false);
+          expect(value.pagination.hasPrev).toBe(false);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: no page/limit provided When: getting sales Then: should use defaults', async () => {
+      // Arrange
+      mockSaleRepository.findBySpecification.mockResolvedValue({
+        data: [],
+        total: 0,
+        hasMore: false,
+      });
+
+      const request = {
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.pagination.page).toBe(1);
+          expect(value.pagination.limit).toBe(10);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: combined filters When: getting sales Then: should compose all specifications', async () => {
+      // Arrange
+      mockSaleRepository.findBySpecification.mockResolvedValue({
+        data: [],
+        total: 0,
+        hasMore: false,
+      });
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        companyId: 'company-123',
+        warehouseId: 'warehouse-456',
+        status: 'CONFIRMED',
+        search: 'SALE-2025',
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-12-31'),
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockSaleRepository.findBySpecification).toHaveBeenCalled();
+    });
+
+    it('Given: enrichment with warehouse, contact, and user data When: getting sales Then: should enrich sale data', async () => {
+      // Arrange
+      const sale = createSaleWithDates({
+        saleNumber: SaleNumber.create(2025, 1),
+        status: 'CONFIRMED',
+        confirmedAt: new Date(),
+      });
+      // Set contactId and confirmedBy on the sale via reconstitute
+      const saleWithContact = Sale.reconstitute(
+        {
+          saleNumber: SaleNumber.create(2025, 1),
+          status: SaleStatus.create('CONFIRMED'),
+          warehouseId: 'warehouse-123',
+          contactId: 'contact-456',
+          confirmedBy: 'user-789',
+          confirmedAt: new Date(),
+          cancelledBy: 'user-cancel-1',
+          createdBy: 'user-123',
+        },
+        'sale-enriched',
+        mockOrgId
+      );
+
+      mockSaleRepository.findBySpecification.mockResolvedValue({
+        data: [saleWithContact],
+        total: 1,
+        hasMore: false,
+      });
+
+      (mockPrisma.warehouse.findMany as jest.Mock).mockResolvedValue([
+        { id: 'warehouse-123', name: 'Main Warehouse', code: 'WH-01' },
+      ]);
+      (mockPrisma.contact.findMany as jest.Mock).mockResolvedValue([
+        { id: 'contact-456', name: 'John Doe' },
+      ]);
+      (mockPrisma.user.findMany as jest.Mock).mockResolvedValue([
+        { id: 'user-789', firstName: 'Jane', lastName: 'Smith' },
+        { id: 'user-cancel-1', firstName: 'Admin', lastName: 'User' },
+      ]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].warehouseName).toBe('Main Warehouse (WH-01)');
+          expect(value.data[0].contactName).toBe('John Doe');
+          expect(value.data[0].confirmedByName).toBe('Jane Smith');
+          expect(value.data[0].cancelledByName).toBe('Admin User');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: enrichment with null contact and null warehouse When: getting sales Then: should leave names undefined', async () => {
+      // Arrange
+      const sale = createSaleWithDates({
+        saleNumber: SaleNumber.create(2025, 1),
+      });
+
+      mockSaleRepository.findBySpecification.mockResolvedValue({
+        data: [sale],
+        total: 1,
+        hasMore: false,
+      });
+
+      // No warehouse/contact data returned
+      (mockPrisma.warehouse.findMany as jest.Mock).mockResolvedValue([]);
+      (mockPrisma.contact.findMany as jest.Mock).mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].warehouseName).toBeUndefined();
+          expect(value.data[0].contactName).toBeUndefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sale with lines and product data When: enriching Then: should enrich line product info', async () => {
+      // Arrange - use a sale with lines via includeLines: true mapping
+      const saleWithLines = Sale.reconstitute(
+        {
+          saleNumber: SaleNumber.create(2025, 1),
+          status: SaleStatus.create('DRAFT'),
+          warehouseId: 'warehouse-123',
+          createdBy: 'user-123',
+        },
+        'sale-with-lines',
+        mockOrgId
+      );
+      // Add a line to the sale
+      const saleLine = SaleMapper.createLineEntity(
+        {
+          productId: 'product-abc',
+          quantity: 5,
+          salePrice: 100,
+        },
+        mockOrgId
+      );
+      saleWithLines.addLine(saleLine);
+
+      mockSaleRepository.findBySpecification.mockResolvedValue({
+        data: [saleWithLines],
+        total: 1,
+        hasMore: false,
+      });
+
+      (mockPrisma.product.findMany as jest.Mock).mockResolvedValue([
+        { id: 'product-abc', name: 'Widget', sku: 'WDG-001', barcode: 'BAR123' },
+      ]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].lines).toBeDefined();
+          expect(value.data[0].lines![0].productName).toBe('Widget');
+          expect(value.data[0].lines![0].productSku).toBe('WDG-001');
+          expect(value.data[0].lines![0].productBarcode).toBe('BAR123');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy with no sortOrder When: getting sales Then: should default to asc', async () => {
+      // Arrange
+      const saleDraft = createSaleWithDates({
+        saleNumber: SaleNumber.create(2025, 1),
+        status: 'DRAFT',
+      });
+      const saleConfirmed = createSaleWithDates({
+        saleNumber: SaleNumber.create(2025, 2),
+        status: 'CONFIRMED',
+        confirmedAt: new Date(),
+      });
+      mockSaleRepository.findBySpecification.mockResolvedValue({
+        data: [saleDraft, saleConfirmed],
+        total: 2,
+        hasMore: false,
+      });
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'status',
+        // no sortOrder - should default to 'asc'
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+          // CONFIRMED < DRAFT alphabetically (asc default)
+          expect(value.data[0].status).toBe('CONFIRMED');
+          expect(value.data[1].status).toBe('DRAFT');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: companyId filter When: getting sales Then: should add company specification', async () => {
+      // Arrange
+      mockSaleRepository.findBySpecification.mockResolvedValue({
+        data: [],
+        total: 0,
+        hasMore: false,
+      });
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        companyId: 'company-123',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockSaleRepository.findBySpecification).toHaveBeenCalled();
+    });
+
+    it('Given: only startDate without endDate When: getting sales Then: should not add date range spec', async () => {
+      // Arrange
+      mockSaleRepository.findBySpecification.mockResolvedValue({
+        data: [],
+        total: 0,
+        hasMore: false,
+      });
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        startDate: new Date('2024-01-01'),
+        // no endDate
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+    });
   });
 });

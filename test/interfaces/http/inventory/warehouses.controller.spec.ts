@@ -175,6 +175,64 @@ describe('WarehousesController', () => {
         expect.objectContaining({ orgId: 'org-123', search: 'main' })
       );
     });
+
+    it('Given: isActive filter When: getting warehouses Then: should pass isActive to use case', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10, isActive: true };
+      mockGetWarehousesUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: [mockWarehouseData],
+          pagination: {},
+          message: 'OK',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getWarehouses(query as any, 'org-123');
+
+      // Assert
+      expect(mockGetWarehousesUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ isActive: true })
+      );
+    });
+
+    it('Given: sort params When: getting warehouses Then: should pass sortBy and sortOrder', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10, sortBy: 'name', sortOrder: 'asc' };
+      mockGetWarehousesUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: [],
+          pagination: {},
+          message: 'OK',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getWarehouses(query as any, 'org-123');
+
+      // Assert
+      expect(mockGetWarehousesUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sortBy: 'name',
+          sortOrder: 'asc',
+        })
+      );
+    });
+
+    it('Given: use case error When: getting warehouses Then: should throw', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10 };
+      mockGetWarehousesUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Failed to retrieve warehouses'))
+      );
+
+      // Act & Assert
+      await expect(controller.getWarehouses(query as any, 'org-123')).rejects.toThrow();
+    });
   });
 
   describe('getWarehouseById', () => {
@@ -271,6 +329,82 @@ describe('WarehousesController', () => {
       await expect(
         controller.updateWarehouse('non-existent', dto as any, 'org-123', mockRequest as any)
       ).rejects.toThrow();
+    });
+
+    it('Given: all update fields When: updating warehouse Then: should pass all fields to use case', async () => {
+      // Arrange
+      const dto = {
+        name: 'Updated Warehouse',
+        description: 'New description',
+        address: '456 New St',
+        isActive: false,
+      };
+      mockUpdateWarehouseUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { ...mockWarehouseData, ...dto },
+          message: 'Warehouse updated',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.updateWarehouse('wh-123', dto as any, 'org-123', mockRequest as any);
+
+      // Assert
+      expect(mockUpdateWarehouseUseCase.execute).toHaveBeenCalledWith({
+        warehouseId: 'wh-123',
+        orgId: 'org-123',
+        name: 'Updated Warehouse',
+        description: 'New description',
+        address: '456 New St',
+        isActive: false,
+        updatedBy: 'user-123',
+      });
+    });
+
+    it('Given: use case rejects When: updating warehouse Then: should propagate error', async () => {
+      // Arrange
+      const dto = { name: 'Updated' };
+      mockUpdateWarehouseUseCase.execute.mockRejectedValue(new Error('Database error'));
+
+      // Act & Assert
+      await expect(
+        controller.updateWarehouse('wh-123', dto as any, 'org-123', mockRequest as any)
+      ).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('getWarehouseById - additional branches', () => {
+    it('Given: valid warehouse When: getting by id Then: should pass correct params', async () => {
+      // Arrange
+      mockGetWarehouseByIdUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockWarehouseData,
+          message: 'Warehouse retrieved',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getWarehouseById('wh-123', 'org-123');
+
+      // Assert
+      expect(mockGetWarehouseByIdUseCase.execute).toHaveBeenCalledWith({
+        warehouseId: 'wh-123',
+        orgId: 'org-123',
+      });
+    });
+
+    it('Given: use case rejects When: getting warehouse Then: should propagate error', async () => {
+      // Arrange
+      mockGetWarehouseByIdUseCase.execute.mockRejectedValue(new Error('Database error'));
+
+      // Act & Assert
+      await expect(controller.getWarehouseById('wh-123', 'org-123')).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 });

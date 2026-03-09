@@ -457,5 +457,83 @@ describe('ReceiveTransferUseCase', () => {
       expect(mockTransferRepository.findById).toHaveBeenCalledWith(mockTransferId, mockOrgId);
       expect(mockTransferRepository.save).toHaveBeenCalledTimes(1);
     });
+
+    it('Given: an IN_TRANSIT transfer without note When: receiving Then: should use fallback note for movement', async () => {
+      // Arrange
+      const line = createTransferLine();
+      const transferNoNote = Transfer.reconstitute(
+        {
+          fromWarehouseId: mockFromWarehouseId,
+          toWarehouseId: mockToWarehouseId,
+          status: TransferStatus.create('IN_TRANSIT'),
+          createdBy: mockUserId,
+          // no note - exercises the `transfer.note || 'Transfer from warehouse'` branch
+        },
+        mockTransferId,
+        mockOrgId,
+        [line]
+      );
+      mockTransferRepository.findById.mockResolvedValue(transferNoNote);
+
+      const savedDraftMovement = createMockDraftMovement();
+      const postedMovement = createMockPostedMovement();
+      mockMovementRepository.save
+        .mockResolvedValueOnce(savedDraftMovement)
+        .mockResolvedValueOnce(postedMovement);
+
+      const receivedTransfer = createTransferWithStatus('RECEIVED');
+      mockTransferRepository.save.mockResolvedValue(receivedTransfer);
+
+      // Act
+      const result = await useCase.execute(validRequest);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      const firstSaveArg = mockMovementRepository.save.mock.calls[0][0];
+      expect(firstSaveArg.note).toBe('Transfer from warehouse');
+    });
+
+    it('Given: transfer lines with toLocationId When: receiving Then: should use toLocationId in movement lines', async () => {
+      // Arrange
+      const lineWithLocation = TransferLine.reconstitute(
+        {
+          productId: 'product-1',
+          quantity: Quantity.create(5),
+          fromLocationId: 'loc-from-1',
+          toLocationId: 'loc-to-specific',
+        },
+        'line-loc',
+        mockOrgId
+      );
+      const inTransitTransfer = Transfer.reconstitute(
+        {
+          fromWarehouseId: mockFromWarehouseId,
+          toWarehouseId: mockToWarehouseId,
+          status: TransferStatus.create('IN_TRANSIT'),
+          createdBy: mockUserId,
+          note: 'Test',
+        },
+        mockTransferId,
+        mockOrgId,
+        [lineWithLocation]
+      );
+      mockTransferRepository.findById.mockResolvedValue(inTransitTransfer);
+
+      const savedDraftMovement = createMockDraftMovement();
+      const postedMovement = createMockPostedMovement();
+      mockMovementRepository.save
+        .mockResolvedValueOnce(savedDraftMovement)
+        .mockResolvedValueOnce(postedMovement);
+
+      const receivedTransfer = createTransferWithStatus('RECEIVED');
+      mockTransferRepository.save.mockResolvedValue(receivedTransfer);
+
+      // Act
+      const result = await useCase.execute(validRequest);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockMovementRepository.save).toHaveBeenCalledTimes(2);
+    });
   });
 });

@@ -108,6 +108,14 @@ describe('PrismaIntegrationSkuMappingRepository', () => {
     });
   });
 
+  describe('findByConnectionId - non-Error throw', () => {
+    it('Given: non-Error thrown When: finding by connectionId Then: should propagate non-Error', async () => {
+      mockPrismaService.integrationSkuMapping.findMany.mockRejectedValue('string-error');
+
+      await expect(repository.findByConnectionId('conn-1')).rejects.toBe('string-error');
+    });
+  });
+
   describe('delete', () => {
     it('Given: valid id When: deleting Then: should call prisma delete', async () => {
       mockPrismaService.integrationSkuMapping.delete.mockResolvedValue(mockMappingData);

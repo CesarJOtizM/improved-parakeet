@@ -83,5 +83,32 @@ describe('ProductCreatedEventHandler', () => {
 
       errorSpy.mockRestore();
     });
+
+    it('Given: non-Error thrown When: handling event Then: should handle gracefully', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      const event = new ProductCreatedEvent(mockProduct);
+
+      let callCount = 0;
+      const errorSpy = jest.spyOn((handler as any).logger, 'log').mockImplementation(() => {
+        callCount++;
+        if (callCount === 2) {
+          throw 'string-error';
+        }
+      });
+      const errorLoggerSpy = jest.spyOn((handler as any).logger, 'error');
+
+      // Act & Assert - should not throw
+      await expect(handler.handle(event)).resolves.toBeUndefined();
+
+      // Assert
+      expect(errorLoggerSpy).toHaveBeenCalledWith('Error handling ProductCreated event', {
+        error: 'Unknown error',
+        productId: 'prod-123',
+        sku: 'SKU-001',
+      });
+
+      errorSpy.mockRestore();
+    });
   });
 });

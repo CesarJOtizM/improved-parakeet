@@ -337,5 +337,307 @@ describe('GetProductsUseCase', () => {
         }
       );
     });
+
+    it('Given: unrecognized sortBy value When: getting products Then: should fall back to createdAt sorting (switch default)', async () => {
+      // Arrange
+      const mockProducts = [
+        createMockProduct('PROD-001', 'Product A'),
+        createMockProduct('PROD-002', 'Product B'),
+      ];
+
+      mockProductRepository.findAll.mockResolvedValue(mockProducts);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'unknownField',
+        sortOrder: 'desc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy without sortOrder When: getting products Then: should default to asc', async () => {
+      // Arrange
+      const mockProducts = [
+        createMockProduct('PROD-002', 'Product B'),
+        createMockProduct('PROD-001', 'Product A'),
+      ];
+
+      mockProductRepository.findAll.mockResolvedValue(mockProducts);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'name',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].name).toBe('Product A');
+          expect(value.data[1].name).toBe('Product B');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy sku When: getting products Then: should sort by sku', async () => {
+      // Arrange
+      const mockProducts = [
+        createMockProduct('PROD-002', 'Product B'),
+        createMockProduct('PROD-001', 'Product A'),
+      ];
+
+      mockProductRepository.findAll.mockResolvedValue(mockProducts);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'sku',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].sku).toBe('PROD-001');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy status When: getting products Then: should sort by status', async () => {
+      // Arrange
+      const mockProducts = [
+        createMockProduct('PROD-001', 'Product A'),
+        createMockProduct('PROD-002', 'Product B'),
+      ];
+
+      mockProductRepository.findAll.mockResolvedValue(mockProducts);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'status',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy createdAt When: getting products Then: should sort by createdAt', async () => {
+      // Arrange
+      const mockProducts = [
+        createMockProduct('PROD-001', 'Product A'),
+        createMockProduct('PROD-002', 'Product B'),
+      ];
+
+      mockProductRepository.findAll.mockResolvedValue(mockProducts);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'createdAt',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy updatedAt When: getting products Then: should sort by updatedAt', async () => {
+      // Arrange
+      const mockProducts = [
+        createMockProduct('PROD-001', 'Product A'),
+        createMockProduct('PROD-002', 'Product B'),
+      ];
+
+      mockProductRepository.findAll.mockResolvedValue(mockProducts);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'updatedAt',
+        sortOrder: 'desc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy price When: getting products Then: should sort by price', async () => {
+      // Arrange
+      const mockProducts = [
+        createMockProduct('PROD-001', 'Product A'),
+        createMockProduct('PROD-002', 'Product B'),
+      ];
+
+      mockProductRepository.findAll.mockResolvedValue(mockProducts);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'price',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: request with categoryIds filter When: getting products Then: should use specification', async () => {
+      // Arrange
+      const mockProducts = [createMockProduct('PROD-001', 'Product 1')];
+
+      mockProductRepository.findBySpecification.mockResolvedValue({
+        data: mockProducts,
+        total: 1,
+        hasMore: false,
+      });
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        categoryIds: ['cat-1', 'cat-2'],
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockProductRepository.findBySpecification).toHaveBeenCalled();
+    });
+
+    it('Given: request with companyId filter When: getting products Then: should use specification', async () => {
+      // Arrange
+      const mockProducts = [createMockProduct('PROD-001', 'Product 1')];
+
+      mockProductRepository.findBySpecification.mockResolvedValue({
+        data: mockProducts,
+        total: 1,
+        hasMore: false,
+      });
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        companyId: 'company-123',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockProductRepository.findBySpecification).toHaveBeenCalled();
+    });
+
+    it('Given: request with status + categoryIds + companyId When: getting products Then: should combine specifications', async () => {
+      // Arrange
+      const mockProducts = [createMockProduct('PROD-001', 'Product 1')];
+
+      mockProductRepository.findBySpecification.mockResolvedValue({
+        data: mockProducts,
+        total: 1,
+        hasMore: false,
+      });
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        status: 'ACTIVE',
+        categoryIds: ['cat-1'],
+        companyId: 'company-123',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockProductRepository.findBySpecification).toHaveBeenCalled();
+    });
   });
 });

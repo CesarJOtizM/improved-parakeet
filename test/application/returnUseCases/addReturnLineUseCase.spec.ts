@@ -821,5 +821,105 @@ describe('AddReturnLineUseCase', () => {
         }
       );
     });
+
+    it('Given: no currency provided When: adding line Then: should default to COP', async () => {
+      // Arrange
+      const mockReturn = createMockReturn();
+      const mockProduct = createMockProduct();
+      const mockSavedLine = createMockReturnLine();
+
+      const saleNumber = SaleNumber.create(2025, 1);
+      const saleProps = SaleMapper.toDomainProps(
+        {
+          warehouseId: 'warehouse-123',
+          contactId: 'contact-123',
+          createdBy: 'user-123',
+        },
+        saleNumber
+      );
+      const mockSale = Sale.create(saleProps, mockOrgId);
+      const saleLine = SaleLine.create(
+        {
+          productId: mockProductId,
+          locationId: 'location-123',
+          quantity: Quantity.create(10, 6),
+          salePrice: SalePrice.create(100, 'COP', 2),
+        },
+        mockOrgId
+      );
+      mockSale.addLine(saleLine);
+
+      mockReturnRepository.findById.mockResolvedValue(mockReturn);
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+      mockReturnRepository.addLine.mockResolvedValue(mockSavedLine);
+
+      const request = {
+        returnId: mockReturnId,
+        productId: mockProductId,
+        locationId: 'location-123',
+        quantity: 5,
+        // currency is omitted - should default to COP
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.currency).toBe('COP');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: addLine throws generic Error When: adding line Then: should rethrow the error', async () => {
+      // Arrange
+      const mockReturn = createMockReturn();
+      const mockProduct = createMockProduct();
+
+      const saleNumber = SaleNumber.create(2025, 1);
+      const saleProps = SaleMapper.toDomainProps(
+        {
+          warehouseId: 'warehouse-123',
+          contactId: 'contact-123',
+          createdBy: 'user-123',
+        },
+        saleNumber
+      );
+      const mockSale = Sale.create(saleProps, mockOrgId);
+      const saleLine = SaleLine.create(
+        {
+          productId: mockProductId,
+          locationId: 'location-123',
+          quantity: Quantity.create(10, 6),
+          salePrice: SalePrice.create(100, 'COP', 2),
+        },
+        mockOrgId
+      );
+      mockSale.addLine(saleLine);
+
+      mockReturnRepository.findById.mockResolvedValue(mockReturn);
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+      mockSaleRepository.findById.mockResolvedValue(mockSale);
+      mockReturnRepository.addLine.mockRejectedValue(new Error('Unexpected DB failure'));
+
+      const request = {
+        returnId: mockReturnId,
+        productId: mockProductId,
+        locationId: 'location-123',
+        quantity: 5,
+        currency: 'COP',
+        orgId: mockOrgId,
+      };
+
+      // Act & Assert
+      await expect(useCase.execute(request)).rejects.toThrow('Unexpected DB failure');
+    });
   });
 });

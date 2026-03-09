@@ -131,5 +131,137 @@ describe('CreateWarehouseUseCase', () => {
         }
       );
     });
+
+    it('Given: no address provided When: creating warehouse Then: should return success with undefined address', async () => {
+      // Arrange
+      const requestWithoutAddress = {
+        code: 'WH-002',
+        name: 'No Address Warehouse',
+        orgId: mockOrgId,
+      };
+      mockWarehouseRepository.existsByCode.mockResolvedValue(false);
+
+      const warehouseProps = {
+        code: WarehouseCode.create('WH-002'),
+        name: 'No Address Warehouse',
+        isActive: true,
+      };
+      const warehouseWithId = Warehouse.reconstitute(warehouseProps, mockWarehouseId, mockOrgId);
+      mockWarehouseRepository.save.mockResolvedValue(warehouseWithId);
+
+      // Act
+      const result = await useCase.execute(requestWithoutAddress);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.address).toBeUndefined();
+          expect(value.data.description).toBeUndefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: isActive explicitly false When: creating warehouse Then: should create inactive warehouse', async () => {
+      // Arrange
+      const requestInactive = {
+        ...validRequest,
+        isActive: false,
+      };
+      mockWarehouseRepository.existsByCode.mockResolvedValue(false);
+
+      const warehouseProps = {
+        code: WarehouseCode.create('WH-001'),
+        name: validRequest.name,
+        isActive: false,
+      };
+      const warehouseWithId = Warehouse.reconstitute(warehouseProps, mockWarehouseId, mockOrgId);
+      mockWarehouseRepository.save.mockResolvedValue(warehouseWithId);
+
+      // Act
+      const result = await useCase.execute(requestInactive);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.isActive).toBe(false);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: isActive undefined When: creating warehouse Then: should default to true', async () => {
+      // Arrange
+      const requestNoActiveFlag = {
+        code: 'WH-003',
+        name: 'Default Active',
+        orgId: mockOrgId,
+        // isActive is not specified
+      };
+      mockWarehouseRepository.existsByCode.mockResolvedValue(false);
+
+      const warehouseProps = {
+        code: WarehouseCode.create('WH-003'),
+        name: 'Default Active',
+        isActive: true,
+      };
+      const warehouseWithId = Warehouse.reconstitute(warehouseProps, mockWarehouseId, mockOrgId);
+      mockWarehouseRepository.save.mockResolvedValue(warehouseWithId);
+
+      // Act
+      const result = await useCase.execute(requestNoActiveFlag);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.isActive).toBe(true);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: no description When: creating warehouse Then: should return success with undefined description', async () => {
+      // Arrange
+      const requestNoDesc = {
+        code: 'WH-004',
+        name: 'No Desc',
+        address: validRequest.address,
+        orgId: mockOrgId,
+      };
+      mockWarehouseRepository.existsByCode.mockResolvedValue(false);
+
+      const warehouseProps = {
+        code: WarehouseCode.create('WH-004'),
+        name: 'No Desc',
+        address: Address.create('123 Main St, Test City'),
+        isActive: true,
+      };
+      const warehouseWithId = Warehouse.reconstitute(warehouseProps, mockWarehouseId, mockOrgId);
+      mockWarehouseRepository.save.mockResolvedValue(warehouseWithId);
+
+      // Act
+      const result = await useCase.execute(requestNoDesc);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.description).toBeUndefined();
+          expect(value.data.address).toBeDefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

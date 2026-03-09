@@ -211,6 +211,95 @@ describe('TransfersController', () => {
       expect(callArgs.startDate).toBeInstanceOf(Date);
       expect(callArgs.endDate).toBeInstanceOf(Date);
     });
+
+    it('Given: no date filters When: getting transfers Then: dates should be undefined', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10 };
+      mockGetTransfersUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: [],
+          pagination: {},
+          message: 'OK',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getTransfers(query as any, 'org-123');
+
+      // Assert
+      const callArgs = mockGetTransfersUseCase.execute.mock.calls[0][0];
+      expect(callArgs.startDate).toBeUndefined();
+      expect(callArgs.endDate).toBeUndefined();
+    });
+
+    it('Given: warehouse filters When: getting transfers Then: should pass warehouse IDs', async () => {
+      // Arrange
+      const query = {
+        page: 1,
+        limit: 10,
+        fromWarehouseId: 'wh-origin',
+        toWarehouseId: 'wh-dest',
+      };
+      mockGetTransfersUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: [],
+          pagination: {},
+          message: 'OK',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getTransfers(query as any, 'org-123');
+
+      // Assert
+      expect(mockGetTransfersUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fromWarehouseId: 'wh-origin',
+          toWarehouseId: 'wh-dest',
+          orgId: 'org-123',
+        })
+      );
+    });
+
+    it('Given: sort params When: getting transfers Then: should pass sortBy and sortOrder', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10, sortBy: 'createdAt', sortOrder: 'desc' };
+      mockGetTransfersUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: [],
+          pagination: {},
+          message: 'OK',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getTransfers(query as any, 'org-123');
+
+      // Assert
+      expect(mockGetTransfersUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        })
+      );
+    });
+
+    it('Given: use case error When: getting transfers Then: should throw', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10 };
+      mockGetTransfersUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Failed to retrieve transfers'))
+      );
+
+      // Act & Assert
+      await expect(controller.getTransfers(query as any, 'org-123')).rejects.toThrow();
+    });
   });
 
   describe('getTransferById', () => {
@@ -398,6 +487,61 @@ describe('TransfersController', () => {
       await expect(
         controller.rejectTransfer('transfer-123', 'org-123', { reason: 'Test' })
       ).rejects.toThrow();
+    });
+  });
+
+  describe('rejectTransfer - no reason branch', () => {
+    it('Given: in-transit transfer without reason When: rejecting Then: should pass undefined reason', async () => {
+      // Arrange
+      mockRejectTransferUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { ...mockTransferData, status: 'REJECTED' },
+          message: 'Transfer rejected',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.rejectTransfer('transfer-123', 'org-123', {});
+
+      // Assert
+      expect(mockRejectTransferUseCase.execute).toHaveBeenCalledWith({
+        transferId: 'transfer-123',
+        orgId: 'org-123',
+        reason: undefined,
+      });
+    });
+  });
+
+  describe('initiateTransfer - note mapping', () => {
+    it('Given: transfer with note When: initiating Then: should pass note to use case', async () => {
+      // Arrange
+      const dto = {
+        fromWarehouseId: 'wh-origin',
+        toWarehouseId: 'wh-dest',
+        note: 'Urgent transfer',
+        lines: [{ productId: 'prod-1', quantity: 10 }],
+      };
+      mockInitiateTransferUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockTransferData,
+          message: 'Created',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.initiateTransfer(dto as any, 'org-123', mockRequest as any);
+
+      // Assert
+      expect(mockInitiateTransferUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          note: 'Urgent transfer',
+          lines: [{ productId: 'prod-1', quantity: 10 }],
+        })
+      );
     });
   });
 

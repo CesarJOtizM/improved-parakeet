@@ -598,5 +598,510 @@ describe('SessionRepository', () => {
       // Act & Assert
       await expect(repository.findAll('org-123')).rejects.toThrow('FindAll failed');
     });
+
+    it('Given: non-Error thrown When: finding all Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.findMany.mockRejectedValue('findall error');
+
+      // Act & Assert
+      await expect(repository.findAll('org-123')).rejects.toBe('findall error');
+    });
+  });
+
+  describe('findById - optional field branches', () => {
+    it('Given: session with null ipAddress When: finding by id Then: ipAddress should be undefined', async () => {
+      // Arrange
+      const sessionNoIp = { ...mockSessionData, ipAddress: null };
+      mockPrismaService.session.findFirst.mockResolvedValue(sessionNoIp);
+
+      // Act
+      const result = await repository.findById('session-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.ipAddress).toBeUndefined();
+    });
+
+    it('Given: session with null userAgent When: finding by id Then: userAgent should be undefined', async () => {
+      // Arrange
+      const sessionNoUA = { ...mockSessionData, userAgent: null };
+      mockPrismaService.session.findFirst.mockResolvedValue(sessionNoUA);
+
+      // Act
+      const result = await repository.findById('session-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.userAgent).toBeUndefined();
+    });
+
+    it('Given: session with both ipAddress and userAgent null When: finding by id Then: both should be undefined', async () => {
+      // Arrange
+      const sessionNulls = { ...mockSessionData, ipAddress: null, userAgent: null };
+      mockPrismaService.session.findFirst.mockResolvedValue(sessionNulls);
+
+      // Act
+      const result = await repository.findById('session-123', 'org-123');
+
+      // Assert
+      expect(result?.ipAddress).toBeUndefined();
+      expect(result?.userAgent).toBeUndefined();
+    });
+
+    it('Given: non-Error thrown When: finding by id Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.findFirst.mockRejectedValue('string error');
+
+      // Act & Assert
+      await expect(repository.findById('session-123', 'org-123')).rejects.toBe('string error');
+    });
+
+    it('Given: inactive session When: finding by id Then: isActive should be false', async () => {
+      // Arrange
+      const inactiveSession = { ...mockSessionData, isActive: false };
+      mockPrismaService.session.findFirst.mockResolvedValue(inactiveSession);
+
+      // Act
+      const result = await repository.findById('session-123', 'org-123');
+
+      // Assert
+      expect(result?.isActive).toBe(false);
+    });
+  });
+
+  describe('findByUserId - optional field branches', () => {
+    it('Given: multiple sessions with different optional fields When: finding by userId Then: should map correctly', async () => {
+      // Arrange
+      const sessionWithAll = mockSessionData;
+      const sessionNoIp = { ...mockSessionData, id: 'session-2', ipAddress: null };
+      const sessionNoUA = { ...mockSessionData, id: 'session-3', userAgent: null };
+      const sessionNoBoth = {
+        ...mockSessionData,
+        id: 'session-4',
+        ipAddress: null,
+        userAgent: null,
+      };
+      mockPrismaService.session.findMany.mockResolvedValue([
+        sessionWithAll,
+        sessionNoIp,
+        sessionNoUA,
+        sessionNoBoth,
+      ]);
+
+      // Act
+      const result = await repository.findByUserId('user-123', 'org-123');
+
+      // Assert
+      expect(result).toHaveLength(4);
+      expect(result[0].ipAddress).toBe('192.168.1.1');
+      expect(result[0].userAgent).toBe('Mozilla/5.0');
+      expect(result[1].ipAddress).toBeUndefined();
+      expect(result[1].userAgent).toBe('Mozilla/5.0');
+      expect(result[2].ipAddress).toBe('192.168.1.1');
+      expect(result[2].userAgent).toBeUndefined();
+      expect(result[3].ipAddress).toBeUndefined();
+      expect(result[3].userAgent).toBeUndefined();
+    });
+
+    it('Given: non-Error thrown When: finding by userId Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.findMany.mockRejectedValue('user sessions error');
+
+      // Act & Assert
+      await expect(repository.findByUserId('user-123', 'org-123')).rejects.toBe(
+        'user sessions error'
+      );
+    });
+  });
+
+  describe('findActiveSessions - optional field branches', () => {
+    it('Given: active sessions with null ipAddress and userAgent When: finding active Then: should map to undefined', async () => {
+      // Arrange
+      const activeSessionNulls = { ...mockSessionData, ipAddress: null, userAgent: null };
+      mockPrismaService.session.findMany.mockResolvedValue([activeSessionNulls]);
+
+      // Act
+      const result = await repository.findActiveSessions('user-123', 'org-123');
+
+      // Assert
+      expect(result[0].ipAddress).toBeUndefined();
+      expect(result[0].userAgent).toBeUndefined();
+    });
+
+    it('Given: non-Error thrown When: finding active sessions Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.findMany.mockRejectedValue('active error');
+
+      // Act & Assert
+      await expect(repository.findActiveSessions('user-123', 'org-123')).rejects.toBe(
+        'active error'
+      );
+    });
+  });
+
+  describe('findActiveByUserIdAndToken - optional field branches', () => {
+    it('Given: session with null ipAddress and userAgent When: finding active by token Then: should map to undefined', async () => {
+      // Arrange
+      const sessionNulls = { ...mockSessionData, ipAddress: null, userAgent: null };
+      mockPrismaService.session.findFirst.mockResolvedValue(sessionNulls);
+
+      // Act
+      const result = await repository.findActiveByUserIdAndToken(
+        'user-123',
+        'org-123',
+        'jwt-token-123'
+      );
+
+      // Assert
+      expect(result?.ipAddress).toBeUndefined();
+      expect(result?.userAgent).toBeUndefined();
+    });
+
+    it('Given: non-Error thrown When: finding active by token Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.findFirst.mockRejectedValue('token active error');
+
+      // Act & Assert
+      await expect(
+        repository.findActiveByUserIdAndToken('user-123', 'org-123', 'token')
+      ).rejects.toBe('token active error');
+    });
+  });
+
+  describe('findByToken - optional field branches', () => {
+    it('Given: session with null ipAddress and userAgent When: finding by token Then: should map to undefined', async () => {
+      // Arrange
+      const sessionNulls = { ...mockSessionData, ipAddress: null, userAgent: null };
+      mockPrismaService.session.findFirst.mockResolvedValue(sessionNulls);
+
+      // Act
+      const result = await repository.findByToken('jwt-token-123');
+
+      // Assert
+      expect(result?.ipAddress).toBeUndefined();
+      expect(result?.userAgent).toBeUndefined();
+    });
+
+    it('Given: non-Error thrown When: finding by token Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.findFirst.mockRejectedValue('token find error');
+
+      // Act & Assert
+      await expect(repository.findByToken('token')).rejects.toBe('token find error');
+    });
+  });
+
+  describe('findExpiredSessions - optional field branches', () => {
+    it('Given: expired sessions without ipAddress/userAgent When: finding expired Then: session should not have those fields', async () => {
+      // Arrange
+      const expiredSession = {
+        ...mockSessionData,
+        expiresAt: new Date(Date.now() - 3600000),
+        ipAddress: null,
+        userAgent: null,
+      };
+      mockPrismaService.session.findMany.mockResolvedValue([expiredSession]);
+
+      // Act
+      const result = await repository.findExpiredSessions();
+
+      // Assert
+      expect(result).toHaveLength(1);
+      // findExpiredSessions doesn't map ipAddress/userAgent at all
+      expect(result[0].ipAddress).toBeUndefined();
+      expect(result[0].userAgent).toBeUndefined();
+    });
+
+    it('Given: non-Error thrown When: finding expired Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.findMany.mockRejectedValue('expired error');
+
+      // Act & Assert
+      await expect(repository.findExpiredSessions()).rejects.toBe('expired error');
+    });
+
+    it('Given: multiple expired sessions When: finding expired Then: should return all mapped correctly', async () => {
+      // Arrange
+      const session1 = {
+        ...mockSessionData,
+        id: 'exp-1',
+        expiresAt: new Date(Date.now() - 7200000),
+      };
+      const session2 = {
+        ...mockSessionData,
+        id: 'exp-2',
+        isActive: false,
+        expiresAt: new Date(Date.now() - 3600000),
+      };
+      mockPrismaService.session.findMany.mockResolvedValue([session1, session2]);
+
+      // Act
+      const result = await repository.findExpiredSessions();
+
+      // Assert
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe('exp-1');
+      expect(result[1].id).toBe('exp-2');
+      expect(result[1].isActive).toBe(false);
+    });
+  });
+
+  describe('findSessionsByIpAddress - optional field branches', () => {
+    it('Given: sessions with null userAgent When: finding by IP Then: userAgent should be undefined', async () => {
+      // Arrange
+      const sessionNoUA = { ...mockSessionData, userAgent: null };
+      mockPrismaService.session.findMany.mockResolvedValue([sessionNoUA]);
+
+      // Act
+      const result = await repository.findSessionsByIpAddress('192.168.1.1', 'org-123');
+
+      // Assert
+      expect(result[0].userAgent).toBeUndefined();
+      expect(result[0].ipAddress).toBe('192.168.1.1');
+    });
+
+    it('Given: non-Error thrown When: finding by IP Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.findMany.mockRejectedValue('ip error');
+
+      // Act & Assert
+      await expect(repository.findSessionsByIpAddress('192.168.1.1', 'org-123')).rejects.toBe(
+        'ip error'
+      );
+    });
+  });
+
+  describe('findSessionsByUserAgent - optional field branches', () => {
+    it('Given: sessions with null ipAddress When: finding by user agent Then: ipAddress should be undefined', async () => {
+      // Arrange
+      const sessionNoIp = { ...mockSessionData, ipAddress: null };
+      mockPrismaService.session.findMany.mockResolvedValue([sessionNoIp]);
+
+      // Act
+      const result = await repository.findSessionsByUserAgent('Mozilla/5.0', 'org-123');
+
+      // Assert
+      expect(result[0].ipAddress).toBeUndefined();
+      expect(result[0].userAgent).toBe('Mozilla/5.0');
+    });
+
+    it('Given: non-Error thrown When: finding by user agent Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.findMany.mockRejectedValue('ua error');
+
+      // Act & Assert
+      await expect(repository.findSessionsByUserAgent('Mozilla/5.0', 'org-123')).rejects.toBe(
+        'ua error'
+      );
+    });
+  });
+
+  describe('findSessionsByDateRange - optional field branches', () => {
+    it('Given: sessions with null optional fields When: finding by date range Then: should map to undefined', async () => {
+      // Arrange
+      const sessionNulls = { ...mockSessionData, ipAddress: null, userAgent: null };
+      mockPrismaService.session.findMany.mockResolvedValue([sessionNulls]);
+
+      // Act
+      const result = await repository.findSessionsByDateRange(
+        new Date(Date.now() - 86400000),
+        new Date(),
+        'org-123'
+      );
+
+      // Assert
+      expect(result[0].ipAddress).toBeUndefined();
+      expect(result[0].userAgent).toBeUndefined();
+    });
+
+    it('Given: non-Error thrown When: finding by date range Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.findMany.mockRejectedValue('date range error');
+
+      // Act & Assert
+      await expect(
+        repository.findSessionsByDateRange(new Date(), new Date(), 'org-123')
+      ).rejects.toBe('date range error');
+    });
+  });
+
+  describe('countActiveSessions - non-Error throw branch', () => {
+    it('Given: non-Error thrown When: counting active sessions Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.count.mockRejectedValue('count error');
+
+      // Act & Assert
+      await expect(repository.countActiveSessions('user-123', 'org-123')).rejects.toBe(
+        'count error'
+      );
+    });
+  });
+
+  describe('deleteExpiredSessions - non-Error throw branch', () => {
+    it('Given: non-Error thrown When: deleting expired sessions Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.deleteMany.mockRejectedValue('delete expired error');
+
+      // Act & Assert
+      await expect(repository.deleteExpiredSessions()).rejects.toBe('delete expired error');
+    });
+  });
+
+  describe('deleteExpired - non-Error throw branch', () => {
+    it('Given: non-Error thrown When: deleting expired for org Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.deleteMany.mockRejectedValue('delete org expired error');
+
+      // Act & Assert
+      await expect(repository.deleteExpired('org-123')).rejects.toBe('delete org expired error');
+    });
+  });
+
+  describe('deleteSessionsByUserId - non-Error throw branch', () => {
+    it('Given: non-Error thrown When: deleting by userId Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.deleteMany.mockRejectedValue('delete user sessions error');
+
+      // Act & Assert
+      await expect(repository.deleteSessionsByUserId('user-123', 'org-123')).rejects.toBe(
+        'delete user sessions error'
+      );
+    });
+  });
+
+  describe('deleteSessionsByToken - non-Error throw branch', () => {
+    it('Given: non-Error thrown When: deleting by token Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.deleteMany.mockRejectedValue('delete token error');
+
+      // Act & Assert
+      await expect(repository.deleteSessionsByToken('token')).rejects.toBe('delete token error');
+    });
+  });
+
+  describe('save - optional field branches', () => {
+    it('Given: session with null ipAddress and userAgent from DB When: saving Then: should map to undefined', async () => {
+      // Arrange
+      const session = Session.reconstitute(
+        {
+          userId: 'user-123',
+          token: 'new-token',
+          expiresAt: new Date(Date.now() + 3600000),
+          isActive: true,
+        },
+        'session-456',
+        'org-123'
+      );
+      mockPrismaService.session.upsert.mockResolvedValue({
+        ...mockSessionData,
+        id: 'session-456',
+        token: 'new-token',
+        ipAddress: null,
+        userAgent: null,
+      });
+
+      // Act
+      const result = await repository.save(session);
+
+      // Assert
+      expect(result.ipAddress).toBeUndefined();
+      expect(result.userAgent).toBeUndefined();
+    });
+
+    it('Given: session with ipAddress and userAgent from DB When: saving Then: should map them correctly', async () => {
+      // Arrange
+      const session = Session.reconstitute(
+        {
+          userId: 'user-123',
+          token: 'new-token',
+          expiresAt: new Date(Date.now() + 3600000),
+          isActive: true,
+          ipAddress: '10.0.0.1',
+          userAgent: 'Chrome/100',
+        },
+        'session-456',
+        'org-123'
+      );
+      mockPrismaService.session.upsert.mockResolvedValue({
+        ...mockSessionData,
+        id: 'session-456',
+        token: 'new-token',
+        ipAddress: '10.0.0.1',
+        userAgent: 'Chrome/100',
+      });
+
+      // Act
+      const result = await repository.save(session);
+
+      // Assert
+      expect(result.ipAddress).toBe('10.0.0.1');
+      expect(result.userAgent).toBe('Chrome/100');
+    });
+
+    it('Given: non-Error thrown When: saving session Then: should rethrow', async () => {
+      // Arrange
+      const session = Session.reconstitute(
+        {
+          userId: 'user-123',
+          token: 'token',
+          expiresAt: new Date(),
+          isActive: true,
+        },
+        'session-123',
+        'org-123'
+      );
+      mockPrismaService.session.upsert.mockRejectedValue('upsert error');
+
+      // Act & Assert
+      await expect(repository.save(session)).rejects.toBe('upsert error');
+    });
+
+    it('Given: inactive session When: saving Then: isActive should be false', async () => {
+      // Arrange
+      const session = Session.reconstitute(
+        {
+          userId: 'user-123',
+          token: 'expired-token',
+          expiresAt: new Date(Date.now() - 3600000),
+          isActive: false,
+        },
+        'session-expired',
+        'org-123'
+      );
+      mockPrismaService.session.upsert.mockResolvedValue({
+        ...mockSessionData,
+        id: 'session-expired',
+        token: 'expired-token',
+        isActive: false,
+      });
+
+      // Act
+      const result = await repository.save(session);
+
+      // Assert
+      expect(result.isActive).toBe(false);
+    });
+  });
+
+  describe('delete - non-Error throw branch', () => {
+    it('Given: non-Error thrown When: deleting session Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.deleteMany.mockRejectedValue('delete session error');
+
+      // Act & Assert
+      await expect(repository.delete('session-123', 'org-123')).rejects.toBe(
+        'delete session error'
+      );
+    });
+  });
+
+  describe('exists - non-Error throw branch', () => {
+    it('Given: non-Error thrown When: checking session existence Then: should rethrow', async () => {
+      // Arrange
+      mockPrismaService.session.count.mockRejectedValue('existence error');
+
+      // Act & Assert
+      await expect(repository.exists('session-123', 'org-123')).rejects.toBe('existence error');
+    });
   });
 });

@@ -458,4 +458,156 @@ describe('SwapSaleLineUseCase', () => {
       expect(dispatchedEvents[0].eventName).toBe('SaleLineSwapped');
     });
   });
+
+  describe('Additional branch coverage', () => {
+    it('Given: NEW_PRICE with custom currency When: swap Then: should use provided currency', async () => {
+      mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
+      mockUnitOfWork.execute.mockImplementation(async () => ({
+        swapId: 'swap-curr',
+        returnMovementId: 'mov-1',
+        deductMovementId: 'mov-2',
+        newLineId: undefined,
+      }));
+
+      const result = await useCase.execute({
+        ...baseRequest,
+        pricingStrategy: 'NEW_PRICE',
+        newSalePrice: 200,
+        currency: 'USD',
+      });
+
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.replacementSalePrice).toBe(200);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: non-InsufficientStockError during transaction When: swap Then: should rethrow error', async () => {
+      mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
+      mockUnitOfWork.execute.mockRejectedValue(new Error('Unexpected DB error'));
+
+      await expect(useCase.execute(baseRequest)).rejects.toThrow('Unexpected DB error');
+    });
+
+    it('Given: swap with reason When: swap Then: should include reason in response', async () => {
+      mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
+      mockUnitOfWork.execute.mockImplementation(async () => ({
+        swapId: 'swap-reason',
+        returnMovementId: 'mov-1',
+        deductMovementId: 'mov-2',
+        newLineId: undefined,
+      }));
+
+      const result = await useCase.execute({
+        ...baseRequest,
+        reason: 'Customer requested different product',
+      });
+
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.swapId).toBe('swap-reason');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: swap quantity equal to line quantity When: full swap Then: isPartial should be false', async () => {
+      mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
+      mockUnitOfWork.execute.mockImplementation(async () => ({
+        swapId: 'swap-full',
+        returnMovementId: 'mov-1',
+        deductMovementId: 'mov-2',
+        newLineId: undefined,
+      }));
+
+      // Original line quantity is 5, swap 5 = full swap
+      const result = await useCase.execute({ ...baseRequest, swapQuantity: 5 });
+
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.isPartial).toBe(false);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: swap quantity of 1 out of 5 When: partial swap Then: isPartial should be true', async () => {
+      mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
+      mockUnitOfWork.execute.mockImplementation(async () => ({
+        swapId: 'swap-partial-1',
+        returnMovementId: 'mov-1',
+        deductMovementId: 'mov-2',
+        newLineId: 'line-new-1',
+      }));
+
+      const result = await useCase.execute({ ...baseRequest, swapQuantity: 1 });
+
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.isPartial).toBe(true);
+          expect(value.data.swapQuantity).toBe(1);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: zero swap quantity When: swap Then: should return BusinessRuleError from validation', async () => {
+      mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
+
+      const result = await useCase.execute({ ...baseRequest, swapQuantity: 0 });
+
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(BusinessRuleError);
+        }
+      );
+    });
+
+    it('Given: successful full swap When: response Then: should include originalSalePrice', async () => {
+      mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
+      mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
+      mockUnitOfWork.execute.mockImplementation(async () => ({
+        swapId: 'swap-price',
+        returnMovementId: 'mov-1',
+        deductMovementId: 'mov-2',
+        newLineId: undefined,
+      }));
+
+      const result = await useCase.execute(baseRequest);
+
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.originalSalePrice).toBe(100);
+          expect(value.data.replacementSalePrice).toBe(100);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+  });
 });

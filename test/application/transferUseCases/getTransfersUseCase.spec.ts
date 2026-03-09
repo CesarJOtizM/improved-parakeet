@@ -384,5 +384,366 @@ describe('GetTransfersUseCase', () => {
         }
       );
     });
+
+    it('Given: empty results When: getting transfers Then: should return empty data with pagination', async () => {
+      // Arrange
+      mockTransferRepository.findAll.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(0);
+          expect(value.pagination.total).toBe(0);
+          expect(value.pagination.totalPages).toBe(0);
+          expect(value.pagination.hasNext).toBe(false);
+          expect(value.pagination.hasPrev).toBe(false);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: no page/limit provided When: getting transfers Then: should use defaults', async () => {
+      // Arrange
+      mockTransferRepository.findAll.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.pagination.page).toBe(1);
+          expect(value.pagination.limit).toBe(10);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: toWarehouseId filter without fromWarehouseId When: getting transfers Then: should use findByToWarehouse', async () => {
+      // Arrange
+      const mockTransfers = [createMockTransfer()];
+      mockTransferRepository.findByToWarehouse.mockResolvedValue(mockTransfers);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        toWarehouseId: 'warehouse-to-123',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockTransferRepository.findByToWarehouse).toHaveBeenCalledWith(
+        'warehouse-to-123',
+        mockOrgId
+      );
+    });
+
+    it('Given: sortBy initiatedAt When: getting transfers Then: should sort by initiatedAt', async () => {
+      // Arrange
+      const transfer1 = createTransferWithDates({
+        fromWarehouseId: 'wh-a',
+        toWarehouseId: 'wh-b',
+        status: 'IN_TRANSIT',
+        initiatedAt: new Date('2024-01-05T10:00:00.000Z'),
+      });
+      const transfer2 = createTransferWithDates({
+        fromWarehouseId: 'wh-c',
+        toWarehouseId: 'wh-d',
+        status: 'IN_TRANSIT',
+        initiatedAt: new Date('2024-01-10T10:00:00.000Z'),
+      });
+      mockTransferRepository.findAll.mockResolvedValue([transfer2, transfer1]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'initiatedAt',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy receivedAt When: getting transfers Then: should sort by receivedAt', async () => {
+      // Arrange
+      const transfer1 = createTransferWithDates({
+        fromWarehouseId: 'wh-a',
+        toWarehouseId: 'wh-b',
+        status: 'RECEIVED',
+        receivedAt: new Date('2024-01-15T10:00:00.000Z'),
+      });
+      const transfer2 = createTransferWithDates({
+        fromWarehouseId: 'wh-c',
+        toWarehouseId: 'wh-d',
+        status: 'RECEIVED',
+        receivedAt: new Date('2024-01-20T10:00:00.000Z'),
+      });
+      const transfer3 = createTransferWithDates({
+        fromWarehouseId: 'wh-e',
+        toWarehouseId: 'wh-f',
+        status: 'DRAFT',
+        // no receivedAt - should default to 0
+      });
+      mockTransferRepository.findAll.mockResolvedValue([transfer2, transfer3, transfer1]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'receivedAt',
+        sortOrder: 'asc' as const,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(3);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: warehouse not found When: enriching transfers Then: should return empty string for warehouse names', async () => {
+      // Arrange
+      const mockTransfers = [createMockTransfer()];
+      mockTransferRepository.findAll.mockResolvedValue(mockTransfers);
+
+      // No warehouses found
+      (mockPrisma.warehouse.findMany as jest.Mock).mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data[0].fromWarehouseName).toBe('');
+          expect(value.data[0].toWarehouseName).toBe('');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: comma-separated status filter When: getting transfers Then: should filter by multiple statuses', async () => {
+      // Arrange
+      const transferDraft = createTransferWithDates({
+        fromWarehouseId: 'wh-a',
+        toWarehouseId: 'wh-b',
+        status: 'DRAFT',
+      });
+      const transferInTransit = createTransferWithDates({
+        fromWarehouseId: 'wh-c',
+        toWarehouseId: 'wh-d',
+        status: 'IN_TRANSIT',
+        initiatedAt: new Date(),
+      });
+      const transferReceived = createTransferWithDates({
+        fromWarehouseId: 'wh-e',
+        toWarehouseId: 'wh-f',
+        status: 'RECEIVED',
+        receivedAt: new Date(),
+      });
+      mockTransferRepository.findByStatus.mockResolvedValue([
+        transferDraft,
+        transferInTransit,
+        transferReceived,
+      ]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        status: 'DRAFT,IN_TRANSIT',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+          const statuses = value.data.map(d => d.status);
+          expect(statuses).toContain('DRAFT');
+          expect(statuses).toContain('IN_TRANSIT');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: sortBy with no sortOrder When: getting transfers Then: should default to asc', async () => {
+      // Arrange
+      const transferDraft = createTransferWithDates({
+        fromWarehouseId: 'wh-a',
+        toWarehouseId: 'wh-b',
+        status: 'DRAFT',
+      });
+      const transferInTransit = createTransferWithDates({
+        fromWarehouseId: 'wh-c',
+        toWarehouseId: 'wh-d',
+        status: 'IN_TRANSIT',
+        initiatedAt: new Date(),
+      });
+      mockTransferRepository.findAll.mockResolvedValue([transferInTransit, transferDraft]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        sortBy: 'status',
+        // no sortOrder - should default to 'asc'
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(2);
+          // DRAFT < IN_TRANSIT alphabetically (asc default)
+          expect(value.data[0].status).toBe('DRAFT');
+          expect(value.data[1].status).toBe('IN_TRANSIT');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: fromWarehouseId filter with empty results When: getting transfers Then: should skip additional filtering', async () => {
+      // Arrange
+      mockTransferRepository.findByFromWarehouse.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        fromWarehouseId: 'wh-nonexistent',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(0);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: toWarehouseId additional filter with empty results When: getting transfers Then: should skip toWarehouse filtering', async () => {
+      // Arrange - fromWarehouseId triggers findByFromWarehouse,
+      // then toWarehouseId is applied as additional filter but returns is empty
+      mockTransferRepository.findByFromWarehouse.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        fromWarehouseId: 'wh-from',
+        toWarehouseId: 'wh-to',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(0);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: status filter with empty results When: getting transfers Then: should skip status post-filtering', async () => {
+      // Arrange
+      mockTransferRepository.findByStatus.mockResolvedValue([]);
+
+      const request = {
+        orgId: mockOrgId,
+        page: 1,
+        limit: 10,
+        status: 'IN_TRANSIT',
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data).toHaveLength(0);
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

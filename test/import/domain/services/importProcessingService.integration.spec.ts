@@ -673,4 +673,340 @@ describe('ImportProcessingService Integration Tests', () => {
       });
     });
   });
+
+  describe('processBatch - additional branch coverage', () => {
+    it('Given: row processor throws non-Error object When: processing batch Then: should capture Unknown error', async () => {
+      // Arrange
+      const type = ImportType.create('PRODUCTS');
+      const batch = ImportBatch.create(
+        {
+          type,
+          status: ImportStatus.create('PENDING'),
+          fileName: 'test.xlsx',
+          totalRows: 0,
+          processedRows: 0,
+          validRows: 0,
+          invalidRows: 0,
+          createdBy: 'user-123',
+        },
+        orgId
+      );
+
+      const row = ImportRow.create(
+        {
+          rowNumber: 1,
+          data: { SKU: 'PROD-001', Name: 'Product 1' },
+          validationResult: ValidationResult.valid(),
+        },
+        orgId
+      );
+
+      batch.start();
+      batch.setRows([row]);
+      batch.markAsValidated();
+
+      const rowProcessor = jest.fn<Promise<IRowProcessingResult>, [ImportRow, ImportType, string]>(
+        async () => {
+          throw 'string-error'; // Non-Error throw
+        }
+      );
+
+      // Act
+      const result = await ImportProcessingService.processBatch(batch, rowProcessor);
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect(result.failedCount).toBe(1);
+      expect(result.results[0].error).toBe('Unknown error');
+    });
+
+    it('Given: row processor returns failed result When: processing batch Then: should count as failure', async () => {
+      // Arrange
+      const type = ImportType.create('PRODUCTS');
+      const batch = ImportBatch.create(
+        {
+          type,
+          status: ImportStatus.create('PENDING'),
+          fileName: 'test.xlsx',
+          totalRows: 0,
+          processedRows: 0,
+          validRows: 0,
+          invalidRows: 0,
+          createdBy: 'user-123',
+        },
+        orgId
+      );
+
+      const rows = [
+        ImportRow.create(
+          {
+            rowNumber: 1,
+            data: { SKU: 'PROD-001', Name: 'Product 1' },
+            validationResult: ValidationResult.valid(),
+          },
+          orgId
+        ),
+        ImportRow.create(
+          {
+            rowNumber: 2,
+            data: { SKU: 'PROD-002', Name: 'Product 2' },
+            validationResult: ValidationResult.valid(),
+          },
+          orgId
+        ),
+      ];
+
+      batch.start();
+      batch.setRows(rows);
+      batch.markAsValidated();
+
+      const rowProcessor = jest.fn<Promise<IRowProcessingResult>, [ImportRow, ImportType, string]>(
+        async row => ({
+          rowNumber: row.rowNumber,
+          success: false,
+          error: 'Validation failed',
+        })
+      );
+
+      // Act
+      const result = await ImportProcessingService.processBatch(batch, rowProcessor);
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect(result.failedCount).toBe(2);
+      expect(result.processedCount).toBe(0);
+      expect(result.errorMessage).toBe('Failed to process 2 row(s)');
+    });
+
+    it('Given: batch with exactly checkpointInterval rows When: processing Then: should call onProgress at checkpoint and final', async () => {
+      // Arrange
+      const type = ImportType.create('PRODUCTS');
+      const batch = ImportBatch.create(
+        {
+          type,
+          status: ImportStatus.create('PENDING'),
+          fileName: 'test.xlsx',
+          totalRows: 0,
+          processedRows: 0,
+          validRows: 0,
+          invalidRows: 0,
+          createdBy: 'user-123',
+        },
+        orgId
+      );
+
+      const rows = Array.from({ length: 3 }, (_, i) =>
+        ImportRow.create(
+          {
+            rowNumber: i + 1,
+            data: { SKU: `PROD-00${i + 1}`, Name: `Product ${i + 1}` },
+            validationResult: ValidationResult.valid(),
+          },
+          orgId
+        )
+      );
+
+      batch.start();
+      batch.setRows(rows);
+      batch.markAsValidated();
+
+      const progressCallback = jest.fn();
+      const rowProcessor = jest.fn<Promise<IRowProcessingResult>, [ImportRow, ImportType, string]>(
+        async row => ({
+          rowNumber: row.rowNumber,
+          success: true,
+          entityId: `entity-${row.rowNumber}`,
+        })
+      );
+
+      // Act
+      await ImportProcessingService.processBatch(batch, rowProcessor, {
+        checkpointInterval: 3,
+        onProgress: progressCallback,
+      });
+
+      // Assert
+      // Should be called at i=2 (checkpoint: (2+1) % 3 === 0) and final
+      expect(progressCallback).toHaveBeenCalledWith(3, 3);
+    });
+
+    it('Given: batch with no onProgress When: processing Then: should complete without error', async () => {
+      // Arrange
+      const type = ImportType.create('PRODUCTS');
+      const batch = ImportBatch.create(
+        {
+          type,
+          status: ImportStatus.create('PENDING'),
+          fileName: 'test.xlsx',
+          totalRows: 0,
+          processedRows: 0,
+          validRows: 0,
+          invalidRows: 0,
+          createdBy: 'user-123',
+        },
+        orgId
+      );
+
+      const row = ImportRow.create(
+        {
+          rowNumber: 1,
+          data: { SKU: 'PROD-001', Name: 'Product 1' },
+          validationResult: ValidationResult.valid(),
+        },
+        orgId
+      );
+
+      batch.start();
+      batch.setRows([row]);
+      batch.markAsValidated();
+
+      const rowProcessor = jest.fn<Promise<IRowProcessingResult>, [ImportRow, ImportType, string]>(
+        async row => ({
+          rowNumber: row.rowNumber,
+          success: true,
+          entityId: `entity-${row.rowNumber}`,
+        })
+      );
+
+      // Act
+      const result = await ImportProcessingService.processBatch(batch, rowProcessor, {
+        // No onProgress
+      });
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.processedCount).toBe(1);
+    });
+  });
+
+  describe('toProductData - additional branch coverage', () => {
+    it('Given: row data with Company Code field When: converting Then: should include companyCode', () => {
+      // Arrange
+      const rowData: Record<string, unknown> = {
+        SKU: 'SKU-300',
+        Name: 'Product with Company',
+        'Unit Code': 'PCS',
+        'Unit Name': 'Pieces',
+        'Unit Precision': 0,
+        'Company Code': 'COMP-001',
+      };
+
+      // Act
+      const result = ImportProcessingService.toProductData(rowData);
+
+      // Assert
+      expect(result.companyCode).toBe('COMP-001');
+    });
+
+    it('Given: row data with empty optional string fields When: converting Then: should return undefined for empty strings', () => {
+      // Arrange
+      const rowData: Record<string, unknown> = {
+        SKU: 'SKU-400',
+        Name: 'Simple Product',
+        'Unit Code': 'EA',
+        'Unit Name': 'Each',
+        'Unit Precision': 0,
+        Description: '',
+        Barcode: '',
+        Brand: '',
+        Model: '',
+        Status: '',
+        'Cost Method': '',
+        Category: '',
+        'Company Code': '',
+      };
+
+      // Act
+      const result = ImportProcessingService.toProductData(rowData);
+
+      // Assert
+      // Empty strings are falsy, so ternary returns undefined
+      expect(result.description).toBeUndefined();
+      expect(result.barcode).toBeUndefined();
+      expect(result.brand).toBeUndefined();
+      expect(result.model).toBeUndefined();
+      expect(result.status).toBeUndefined();
+      expect(result.costMethod).toBeUndefined();
+      expect(result.category).toBeUndefined();
+      expect(result.companyCode).toBeUndefined();
+    });
+
+    it('Given: row data with missing keys When: converting Then: should use empty string defaults', () => {
+      // Arrange
+      const rowData: Record<string, unknown> = {};
+
+      // Act
+      const result = ImportProcessingService.toProductData(rowData);
+
+      // Assert
+      expect(result.sku).toBe('');
+      expect(result.name).toBe('');
+      expect(result.unitCode).toBe('');
+      expect(result.unitName).toBe('');
+      expect(result.unitPrecision).toBe(0);
+    });
+  });
+
+  describe('toMovementData - additional branch coverage', () => {
+    it('Given: row data with missing keys When: converting Then: should use defaults', () => {
+      // Arrange
+      const rowData: Record<string, unknown> = {};
+
+      // Act
+      const result = ImportProcessingService.toMovementData(rowData);
+
+      // Assert
+      expect(result.type).toBe('');
+      expect(result.warehouseCode).toBe('');
+      expect(result.productSku).toBe('');
+      expect(result.quantity).toBe(0);
+    });
+  });
+
+  describe('toWarehouseData - additional branch coverage', () => {
+    it('Given: row data with missing keys When: converting Then: should use defaults', () => {
+      // Arrange
+      const rowData: Record<string, unknown> = {};
+
+      // Act
+      const result = ImportProcessingService.toWarehouseData(rowData);
+
+      // Assert
+      expect(result.code).toBe('');
+      expect(result.name).toBe('');
+      expect(result.description).toBeUndefined();
+      expect(result.address).toBeUndefined();
+    });
+  });
+
+  describe('toStockData - additional branch coverage', () => {
+    it('Given: row data with missing keys When: converting Then: should use defaults', () => {
+      // Arrange
+      const rowData: Record<string, unknown> = {};
+
+      // Act
+      const result = ImportProcessingService.toStockData(rowData);
+
+      // Assert
+      expect(result.productSku).toBe('');
+      expect(result.warehouseCode).toBe('');
+      expect(result.quantity).toBe(0);
+    });
+  });
+
+  describe('toTransferData - additional branch coverage', () => {
+    it('Given: row data with missing keys When: converting Then: should use defaults', () => {
+      // Arrange
+      const rowData: Record<string, unknown> = {};
+
+      // Act
+      const result = ImportProcessingService.toTransferData(rowData);
+
+      // Assert
+      expect(result.fromWarehouseCode).toBe('');
+      expect(result.toWarehouseCode).toBe('');
+      expect(result.productSku).toBe('');
+      expect(result.quantity).toBe(0);
+    });
+  });
 });

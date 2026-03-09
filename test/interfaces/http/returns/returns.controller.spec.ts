@@ -113,6 +113,98 @@ describe('ReturnsController', () => {
       expect(result.success).toBe(true);
       expect((result.data as any).items || result.data).toHaveLength(1);
     });
+
+    it('Given: date range filters When: getting returns Then: should convert dates to Date objects', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10, startDate: '2026-01-01', endDate: '2026-01-31' };
+      const responseData = {
+        success: true,
+        data: { items: [], total: 0 },
+        message: 'Returns retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetReturnsUseCase.execute.mockResolvedValue(ok(responseData));
+
+      // Act
+      await controller.getReturns(query as any, 'org-123');
+
+      // Assert
+      const callArgs = mockGetReturnsUseCase.execute.mock.calls[0][0];
+      expect(callArgs.startDate).toBeInstanceOf(Date);
+      expect(callArgs.endDate).toBeInstanceOf(Date);
+    });
+
+    it('Given: no date filters When: getting returns Then: dates should be undefined', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10 };
+      const responseData = {
+        success: true,
+        data: { items: [], total: 0 },
+        message: 'Returns retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetReturnsUseCase.execute.mockResolvedValue(ok(responseData));
+
+      // Act
+      await controller.getReturns(query as any, 'org-123');
+
+      // Assert
+      const callArgs = mockGetReturnsUseCase.execute.mock.calls[0][0];
+      expect(callArgs.startDate).toBeUndefined();
+      expect(callArgs.endDate).toBeUndefined();
+    });
+
+    it('Given: all filters When: getting returns Then: should pass all filters to use case', async () => {
+      // Arrange
+      const query = {
+        page: 1,
+        limit: 10,
+        search: 'test',
+        warehouseId: 'wh-123',
+        companyId: 'comp-1',
+        status: 'DRAFT',
+        type: 'RETURN_CUSTOMER',
+        startDate: '2026-01-01',
+        endDate: '2026-01-31',
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      };
+      const responseData = {
+        success: true,
+        data: { items: [], total: 0 },
+        message: 'Returns retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetReturnsUseCase.execute.mockResolvedValue(ok(responseData));
+
+      // Act
+      await controller.getReturns(query as any, 'org-123');
+
+      // Assert
+      expect(mockGetReturnsUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orgId: 'org-123',
+          search: 'test',
+          warehouseId: 'wh-123',
+          companyId: 'comp-1',
+          status: 'DRAFT',
+          type: 'RETURN_CUSTOMER',
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        })
+      );
+    });
+
+    it('Given: use case error When: getting returns Then: should throw', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10 };
+      mockGetReturnsUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Failed to retrieve returns'))
+      );
+
+      // Act & Assert
+      await expect(controller.getReturns(query as any, 'org-123')).rejects.toThrow();
+    });
   });
 
   describe('getReturnById', () => {
@@ -251,6 +343,276 @@ describe('ReturnsController', () => {
 
       // Assert
       expect(result.success).toBe(true);
+    });
+
+    it('Given: valid line id When: removing Then: should pass correct params to use case', async () => {
+      // Arrange
+      mockRemoveReturnLineUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockReturnData,
+          message: 'Line removed',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.removeReturnLine('return-123', 'line-456', 'org-123');
+
+      // Assert
+      expect(mockRemoveReturnLineUseCase.execute).toHaveBeenCalledWith({
+        returnId: 'return-123',
+        lineId: 'line-456',
+        orgId: 'org-123',
+      });
+    });
+
+    it('Given: non-existent line When: removing Then: should throw', async () => {
+      // Arrange
+      mockRemoveReturnLineUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Line not found'))
+      );
+
+      // Act & Assert
+      await expect(
+        controller.removeReturnLine('return-123', 'non-existent', 'org-123')
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('createReturn - field mapping', () => {
+    it('Given: all fields When: creating return Then: should pass all fields to use case', async () => {
+      // Arrange
+      const dto = {
+        type: 'RETURN_CUSTOMER',
+        warehouseId: 'wh-123',
+        saleId: 'sale-123',
+        sourceMovementId: 'mov-123',
+        reason: 'Defective product',
+        note: 'Customer complaint',
+        lines: [{ productId: 'prod-1', quantity: 2, locationId: 'loc-1' }],
+      };
+      mockCreateReturnUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockReturnData,
+          message: 'Return created',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.createReturn(dto as any, 'org-123', mockRequest as any);
+
+      // Assert
+      expect(mockCreateReturnUseCase.execute).toHaveBeenCalledWith({
+        type: 'RETURN_CUSTOMER',
+        warehouseId: 'wh-123',
+        saleId: 'sale-123',
+        sourceMovementId: 'mov-123',
+        reason: 'Defective product',
+        note: 'Customer complaint',
+        lines: dto.lines,
+        createdBy: 'user-123',
+        orgId: 'org-123',
+      });
+    });
+  });
+
+  describe('updateReturn - field mapping', () => {
+    it('Given: update with all fields When: updating return Then: should pass all fields', async () => {
+      // Arrange
+      const dto = { reason: 'Updated reason', note: 'Updated note' };
+      mockUpdateReturnUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { ...mockReturnData, reason: 'Updated reason', note: 'Updated note' },
+          message: 'Return updated',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.updateReturn('return-123', dto as any, 'org-123');
+
+      // Assert
+      expect(mockUpdateReturnUseCase.execute).toHaveBeenCalledWith({
+        id: 'return-123',
+        reason: 'Updated reason',
+        note: 'Updated note',
+        orgId: 'org-123',
+      });
+    });
+
+    it('Given: non-existent return When: updating Then: should throw', async () => {
+      // Arrange
+      const dto = { reason: 'Test' };
+      mockUpdateReturnUseCase.execute.mockResolvedValue(err(new NotFoundError('Return not found')));
+
+      // Act & Assert
+      await expect(
+        controller.updateReturn('non-existent', dto as any, 'org-123')
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('confirmReturn - error paths', () => {
+    it('Given: confirmed return id When: confirming Then: should pass correct params', async () => {
+      // Arrange
+      mockConfirmReturnUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { ...mockReturnData, status: 'CONFIRMED' },
+          message: 'Return confirmed',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.confirmReturn('return-123', 'org-123');
+
+      // Assert
+      expect(mockConfirmReturnUseCase.execute).toHaveBeenCalledWith({
+        id: 'return-123',
+        orgId: 'org-123',
+      });
+    });
+
+    it('Given: non-draft return When: confirming Then: should throw', async () => {
+      // Arrange
+      mockConfirmReturnUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Return cannot be confirmed'))
+      );
+
+      // Act & Assert
+      await expect(controller.confirmReturn('return-123', 'org-123')).rejects.toThrow();
+    });
+
+    it('Given: non-existent return When: confirming Then: should throw', async () => {
+      // Arrange
+      mockConfirmReturnUseCase.execute.mockResolvedValue(
+        err(new NotFoundError('Return not found'))
+      );
+
+      // Act & Assert
+      await expect(controller.confirmReturn('non-existent', 'org-123')).rejects.toThrow();
+    });
+  });
+
+  describe('cancelReturn - field mapping', () => {
+    it('Given: return with reason When: cancelling Then: should pass cancelledBy and reason', async () => {
+      // Arrange
+      mockCancelReturnUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { ...mockReturnData, status: 'CANCELLED' },
+          message: 'Return cancelled',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.cancelReturn('return-123', 'Defective', 'org-123', mockRequest as any);
+
+      // Assert
+      expect(mockCancelReturnUseCase.execute).toHaveBeenCalledWith({
+        id: 'return-123',
+        reason: 'Defective',
+        cancelledBy: 'user-123',
+        orgId: 'org-123',
+      });
+    });
+
+    it('Given: return without reason When: cancelling Then: should pass undefined reason', async () => {
+      // Arrange
+      mockCancelReturnUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: { ...mockReturnData, status: 'CANCELLED' },
+          message: 'Return cancelled',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.cancelReturn('return-123', undefined, 'org-123', mockRequest as any);
+
+      // Assert
+      expect(mockCancelReturnUseCase.execute).toHaveBeenCalledWith({
+        id: 'return-123',
+        reason: undefined,
+        cancelledBy: 'user-123',
+        orgId: 'org-123',
+      });
+    });
+
+    it('Given: non-existent return When: cancelling Then: should throw', async () => {
+      // Arrange
+      mockCancelReturnUseCase.execute.mockResolvedValue(err(new NotFoundError('Return not found')));
+
+      // Act & Assert
+      await expect(
+        controller.cancelReturn('non-existent', undefined, 'org-123', mockRequest as any)
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('addReturnLine - field mapping', () => {
+    it('Given: line with currency When: adding Then: should pass currency to use case', async () => {
+      // Arrange
+      const lineDto = {
+        productId: 'prod-1',
+        locationId: 'loc-1',
+        quantity: 5,
+        currency: 'USD',
+      };
+      mockAddReturnLineUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockReturnData,
+          message: 'Line added',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.addReturnLine('return-123', lineDto as any, 'org-123');
+
+      // Assert
+      expect(mockAddReturnLineUseCase.execute).toHaveBeenCalledWith({
+        returnId: 'return-123',
+        productId: 'prod-1',
+        locationId: 'loc-1',
+        quantity: 5,
+        currency: 'USD',
+        orgId: 'org-123',
+      });
+    });
+
+    it('Given: non-existent return When: adding line Then: should throw', async () => {
+      // Arrange
+      const lineDto = { productId: 'prod-1', locationId: 'loc-1', quantity: 3 };
+      mockAddReturnLineUseCase.execute.mockResolvedValue(
+        err(new NotFoundError('Return not found'))
+      );
+
+      // Act & Assert
+      await expect(
+        controller.addReturnLine('non-existent', lineDto as any, 'org-123')
+      ).rejects.toThrow();
+    });
+
+    it('Given: invalid data When: adding line Then: should throw validation error', async () => {
+      // Arrange
+      const lineDto = { productId: '', locationId: '', quantity: -1 };
+      mockAddReturnLineUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Invalid line data'))
+      );
+
+      // Act & Assert
+      await expect(
+        controller.addReturnLine('return-123', lineDto as any, 'org-123')
+      ).rejects.toThrow();
     });
   });
 });

@@ -580,4 +580,304 @@ describe('Sale', () => {
       expect(sale.movementId).toBe('mov-001');
     });
   });
+
+  describe('swapLine', () => {
+    it('Given: CONFIRMED sale When: swapping full quantity Then: should replace line in-place', () => {
+      // Arrange
+      const line = createLine('org-123');
+      const props = { ...defaultProps(), status: SaleStatus.create('CONFIRMED') };
+      const sale = Sale.reconstitute(props, 'sale-001', 'org-123', [line]);
+      const replacementLine = SaleLine.create(
+        {
+          productId: 'prod-002',
+          quantity: Quantity.create(5),
+          salePrice: SalePrice.create(300, 'COP', 2),
+        },
+        'org-123'
+      );
+
+      // Act
+      const result = sale.swapLine(line.id, replacementLine, 5);
+
+      // Assert
+      expect(result.isPartial).toBe(false);
+      expect(result.newLineId).toBeUndefined();
+    });
+
+    it('Given: CONFIRMED sale When: swapping partial quantity Then: should reduce original and add new line', () => {
+      // Arrange
+      const line = createLine('org-123');
+      const props = { ...defaultProps(), status: SaleStatus.create('CONFIRMED') };
+      const sale = Sale.reconstitute(props, 'sale-001', 'org-123', [line]);
+      const replacementLine = SaleLine.create(
+        {
+          productId: 'prod-002',
+          quantity: Quantity.create(2),
+          salePrice: SalePrice.create(300, 'COP', 2),
+        },
+        'org-123'
+      );
+
+      // Act
+      const result = sale.swapLine(line.id, replacementLine, 2);
+
+      // Assert
+      expect(result.isPartial).toBe(true);
+      expect(result.newLineId).toBe(replacementLine.id);
+      expect(sale.getLines()).toHaveLength(2);
+    });
+
+    it('Given: PICKING sale When: swapping line Then: should allow swap', () => {
+      // Arrange
+      const line = createLine('org-123');
+      const props = { ...defaultProps(), status: SaleStatus.create('PICKING') };
+      const sale = Sale.reconstitute(props, 'sale-001', 'org-123', [line]);
+      const replacementLine = SaleLine.create(
+        {
+          productId: 'prod-002',
+          quantity: Quantity.create(5),
+          salePrice: SalePrice.create(300, 'COP', 2),
+        },
+        'org-123'
+      );
+
+      // Act & Assert
+      expect(() => sale.swapLine(line.id, replacementLine, 5)).not.toThrow();
+    });
+
+    it('Given: DRAFT sale When: swapping line Then: should throw error', () => {
+      // Arrange
+      const sale = Sale.create(defaultProps(), 'org-123');
+      sale.addLine(createLine('org-123'));
+      const lineId = sale.getLines()[0].id;
+      const replacementLine = createLine('org-123');
+
+      // Act & Assert
+      expect(() => sale.swapLine(lineId, replacementLine, 1)).toThrow(
+        'Sale line swap is only allowed in CONFIRMED or PICKING status'
+      );
+    });
+
+    it('Given: CONFIRMED sale When: swapping non-existent line Then: should throw error', () => {
+      // Arrange
+      const props = { ...defaultProps(), status: SaleStatus.create('CONFIRMED') };
+      const sale = Sale.reconstitute(props, 'sale-001', 'org-123', [createLine('org-123')]);
+      const replacementLine = createLine('org-123');
+
+      // Act & Assert
+      expect(() => sale.swapLine('non-existent', replacementLine, 1)).toThrow(
+        'Line with id non-existent not found'
+      );
+    });
+
+    it('Given: CONFIRMED sale When: swap quantity is zero Then: should throw error', () => {
+      // Arrange
+      const line = createLine('org-123');
+      const props = { ...defaultProps(), status: SaleStatus.create('CONFIRMED') };
+      const sale = Sale.reconstitute(props, 'sale-001', 'org-123', [line]);
+      const replacementLine = createLine('org-123');
+
+      // Act & Assert
+      expect(() => sale.swapLine(line.id, replacementLine, 0)).toThrow(
+        'Swap quantity must be positive'
+      );
+    });
+
+    it('Given: CONFIRMED sale When: swap quantity exceeds line quantity Then: should throw error', () => {
+      // Arrange
+      const line = createLine('org-123'); // qty 5
+      const props = { ...defaultProps(), status: SaleStatus.create('CONFIRMED') };
+      const sale = Sale.reconstitute(props, 'sale-001', 'org-123', [line]);
+      const replacementLine = createLine('org-123');
+
+      // Act & Assert
+      expect(() => sale.swapLine(line.id, replacementLine, 10)).toThrow(
+        'Swap quantity 10 exceeds line quantity 5'
+      );
+    });
+
+    it('Given: CONFIRMED sale When: swap quantity is negative Then: should throw error', () => {
+      // Arrange
+      const line = createLine('org-123');
+      const props = { ...defaultProps(), status: SaleStatus.create('CONFIRMED') };
+      const sale = Sale.reconstitute(props, 'sale-001', 'org-123', [line]);
+      const replacementLine = createLine('org-123');
+
+      // Act & Assert
+      expect(() => sale.swapLine(line.id, replacementLine, -1)).toThrow(
+        'Swap quantity must be positive'
+      );
+    });
+  });
+
+  describe('emitSwapEvent', () => {
+    it('Given: sale When: emitting swap event Then: should add domain event', () => {
+      // Arrange
+      const sale = Sale.create(defaultProps(), 'org-123');
+      const eventProps = {
+        saleId: sale.id,
+        orgId: 'org-123',
+        originalLineId: 'line-1',
+        replacementLineId: 'line-2',
+        originalProductId: 'prod-1',
+        replacementProductId: 'prod-2',
+        swapQuantity: 3,
+        isPartial: false,
+        warehouseId: 'wh-001',
+      };
+
+      // Act
+      sale.emitSwapEvent(eventProps);
+
+      // Assert - sale should have at least 2 domain events (created + swap)
+      expect(sale.domainEvents.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('confirm', () => {
+    it('Given: DRAFT sale When: confirming without userId Then: confirmedBy should be undefined', () => {
+      // Arrange
+      const sale = Sale.create(defaultProps(), 'org-123');
+      sale.addLine(createLine('org-123'));
+
+      // Act
+      sale.confirm('mov-001');
+
+      // Assert
+      expect(sale.confirmedBy).toBeUndefined();
+    });
+  });
+
+  describe('startPicking', () => {
+    it('Given: CONFIRMED sale When: starting picking without userId Then: pickedBy should be undefined', () => {
+      // Arrange
+      const props = { ...defaultProps(), status: SaleStatus.create('CONFIRMED') };
+      const sale = Sale.reconstitute(props, 'sale-001', 'org-123', [createLine('org-123')]);
+
+      // Act
+      sale.startPicking();
+
+      // Assert
+      expect(sale.pickedBy).toBeUndefined();
+    });
+  });
+
+  describe('ship', () => {
+    it('Given: PICKING sale When: shipping without optional params Then: tracking fields should be undefined', () => {
+      // Arrange
+      const props = { ...defaultProps(), status: SaleStatus.create('PICKING') };
+      const sale = Sale.reconstitute(props, 'sale-001', 'org-123', [createLine('org-123')]);
+
+      // Act
+      sale.ship();
+
+      // Assert
+      expect(sale.status.isShipped()).toBe(true);
+      expect(sale.trackingNumber).toBeUndefined();
+      expect(sale.shippingCarrier).toBeUndefined();
+      expect(sale.shippingNotes).toBeUndefined();
+      expect(sale.shippedBy).toBeUndefined();
+    });
+  });
+
+  describe('complete', () => {
+    it('Given: SHIPPED sale When: completing without userId Then: completedBy should be undefined', () => {
+      // Arrange
+      const props = { ...defaultProps(), status: SaleStatus.create('SHIPPED') };
+      const sale = Sale.reconstitute(props, 'sale-001', 'org-123');
+
+      // Act
+      sale.complete();
+
+      // Assert
+      expect(sale.completedBy).toBeUndefined();
+    });
+  });
+
+  describe('markAsReturned', () => {
+    it('Given: COMPLETED sale When: marking as returned without userId Then: returnedBy should be undefined', () => {
+      // Arrange
+      const props = { ...defaultProps(), status: SaleStatus.create('COMPLETED') };
+      const sale = Sale.reconstitute(props, 'sale-001', 'org-123');
+
+      // Act
+      sale.markAsReturned();
+
+      // Assert
+      expect(sale.returnedBy).toBeUndefined();
+    });
+  });
+
+  describe('cancel', () => {
+    it('Given: DRAFT sale When: cancelling without params Then: cancelledBy should be undefined', () => {
+      // Arrange
+      const sale = Sale.create(defaultProps(), 'org-123');
+
+      // Act
+      sale.cancel();
+
+      // Assert
+      expect(sale.cancelledBy).toBeUndefined();
+    });
+  });
+
+  describe('update', () => {
+    it('Given: DRAFT sale When: updating contactId Then: should update contactId', () => {
+      // Arrange
+      const sale = Sale.create(defaultProps(), 'org-123');
+
+      // Act
+      const updated = sale.update({ contactId: 'contact-001' });
+
+      // Assert
+      expect(updated.contactId).toBe('contact-001');
+    });
+
+    it('Given: DRAFT sale When: updating externalReference Then: should update externalReference', () => {
+      // Arrange
+      const sale = Sale.create(defaultProps(), 'org-123');
+
+      // Act
+      const updated = sale.update({ externalReference: 'EXT-NEW' });
+
+      // Assert
+      expect(updated.externalReference).toBe('EXT-NEW');
+    });
+
+    it('Given: DRAFT sale with lines When: updating Then: should preserve lines', () => {
+      // Arrange
+      const sale = Sale.create(defaultProps(), 'org-123');
+      sale.addLine(createLine('org-123'));
+
+      // Act
+      const updated = sale.update({ note: 'Updated note' });
+
+      // Assert
+      expect(updated.getLines()).toHaveLength(1);
+    });
+  });
+
+  describe('getTotalAmount', () => {
+    it('Given: sale with multiple lines When: getting total amount Then: should sum all line totals', () => {
+      // Arrange
+      const sale = Sale.create(defaultProps(), 'org-123');
+      sale.addLine(createLine('org-123')); // qty 5, price 200 = 1000
+      sale.addLine(
+        SaleLine.create(
+          {
+            productId: 'prod-002',
+            quantity: Quantity.create(3),
+            salePrice: SalePrice.create(100, 'COP', 2),
+          },
+          'org-123'
+        )
+      ); // qty 3, price 100 = 300
+
+      // Act
+      const total = sale.getTotalAmount();
+
+      // Assert
+      expect(total.getAmount()).toBe(1300);
+    });
+  });
 });

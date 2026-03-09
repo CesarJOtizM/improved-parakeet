@@ -650,5 +650,258 @@ describe('ImportRowProcessorFactory', () => {
       expect(result.success).toBe(false);
       expect(result.error).toBe('Insufficient stock for transfer');
     });
+
+    it('should fail if to location code not found', async () => {
+      const processor = factory.createProcessor(ImportType.create('TRANSFERS'));
+      const row = createRow(2, {
+        'From Warehouse Code': 'WH-001',
+        'To Warehouse Code': 'WH-002',
+        'Product SKU': 'PROD-001',
+        'From Location Code': 'LOC-A1',
+        'To Location Code': 'BAD-LOC',
+        Quantity: 50,
+      });
+
+      mockWarehouseRepo.findByCode
+        .mockResolvedValueOnce({ id: 'wh-1' })
+        .mockResolvedValueOnce({ id: 'wh-2' });
+      mockProductRepo.findBySku.mockResolvedValue({ id: 'prod-1' });
+      mockLocationRepo.findByCode
+        .mockResolvedValueOnce({ id: 'loc-a1' }) // from location found
+        .mockResolvedValueOnce(null); // to location not found
+
+      const result = await processor(row, ImportType.create('TRANSFERS'), 'org-1');
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('To location code "BAD-LOC" not found');
+    });
+
+    it('should handle unexpected exceptions gracefully in transfer', async () => {
+      const processor = factory.createProcessor(ImportType.create('TRANSFERS'));
+      const row = createRow(2, {
+        'From Warehouse Code': 'WH-001',
+        'To Warehouse Code': 'WH-002',
+        'Product SKU': 'PROD-001',
+        Quantity: 50,
+      });
+
+      mockWarehouseRepo.findByCode.mockRejectedValue(new Error('DB connection lost'));
+
+      const result = await processor(row, ImportType.create('TRANSFERS'), 'org-1');
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('DB connection lost');
+    });
+
+    it('should handle non-Error exception gracefully in transfer', async () => {
+      const processor = factory.createProcessor(ImportType.create('TRANSFERS'));
+      const row = createRow(2, {
+        'From Warehouse Code': 'WH-001',
+        'To Warehouse Code': 'WH-002',
+        'Product SKU': 'PROD-001',
+        Quantity: 50,
+      });
+
+      mockWarehouseRepo.findByCode.mockRejectedValue('string-error');
+
+      const result = await processor(row, ImportType.create('TRANSFERS'), 'org-1');
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Unknown error');
+    });
+  });
+
+  describe('MOVEMENTS processor - additional branch coverage', () => {
+    it('should handle unexpected exceptions gracefully in movement', async () => {
+      const processor = factory.createProcessor(ImportType.create('MOVEMENTS'));
+      const row = createRow(2, {
+        Type: 'IN',
+        'Warehouse Code': 'WH-001',
+        'Product SKU': 'PROD-001',
+        Quantity: 100,
+      });
+
+      mockWarehouseRepo.findByCode.mockRejectedValue(new Error('Connection lost'));
+
+      const result = await processor(row, ImportType.create('MOVEMENTS'), 'org-1');
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Connection lost');
+    });
+
+    it('should handle non-Error exception in movement', async () => {
+      const processor = factory.createProcessor(ImportType.create('MOVEMENTS'));
+      const row = createRow(2, {
+        Type: 'IN',
+        'Warehouse Code': 'WH-001',
+        'Product SKU': 'PROD-001',
+        Quantity: 100,
+      });
+
+      mockWarehouseRepo.findByCode.mockRejectedValue(42);
+
+      const result = await processor(row, ImportType.create('MOVEMENTS'), 'org-1');
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Unknown error');
+    });
+  });
+
+  describe('WAREHOUSES processor - additional branch coverage', () => {
+    it('should handle unexpected exceptions gracefully in warehouse', async () => {
+      const processor = factory.createProcessor(ImportType.create('WAREHOUSES'));
+      const row = createRow(2, {
+        Code: 'WH-003',
+        Name: 'New Warehouse',
+      });
+
+      mockCreateWarehouseUseCase.execute.mockRejectedValue(new Error('DB error'));
+
+      const result = await processor(row, ImportType.create('WAREHOUSES'), 'org-1');
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('DB error');
+    });
+
+    it('should handle non-Error exception in warehouse', async () => {
+      const processor = factory.createProcessor(ImportType.create('WAREHOUSES'));
+      const row = createRow(2, {
+        Code: 'WH-003',
+        Name: 'New Warehouse',
+      });
+
+      mockCreateWarehouseUseCase.execute.mockRejectedValue('string-error');
+
+      const result = await processor(row, ImportType.create('WAREHOUSES'), 'org-1');
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Unknown error');
+    });
+
+    it('should pass undefined address when not provided', async () => {
+      const processor = factory.createProcessor(ImportType.create('WAREHOUSES'));
+      const row = createRow(2, {
+        Code: 'WH-003',
+        Name: 'New Warehouse',
+      });
+
+      mockCreateWarehouseUseCase.execute.mockResolvedValue({
+        isOk: () => true,
+        unwrap: () => ({ data: { id: 'wh-3' } }),
+      });
+
+      await processor(row, ImportType.create('WAREHOUSES'), 'org-1');
+      expect(mockCreateWarehouseUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          address: undefined,
+        })
+      );
+    });
+  });
+
+  describe('STOCK processor - additional branch coverage', () => {
+    it('should resolve location code for stock import', async () => {
+      const processor = factory.createProcessor(ImportType.create('STOCK'));
+      const row = createRow(2, {
+        'Product SKU': 'PROD-001',
+        'Warehouse Code': 'WH-001',
+        'Location Code': 'LOC-A1',
+        Quantity: 100,
+        'Unit Cost': 10.5,
+        Currency: 'USD',
+      });
+
+      mockWarehouseRepo.findByCode.mockResolvedValue({ id: 'wh-1' });
+      mockProductRepo.findBySku.mockResolvedValue({ id: 'prod-1' });
+      mockLocationRepo.findByCode.mockResolvedValue({ id: 'loc-1' });
+      mockCreateMovementUseCase.execute.mockResolvedValue({
+        isOk: () => true,
+        unwrap: () => ({ data: { id: 'mov-1' } }),
+      });
+
+      const result = await processor(row, ImportType.create('STOCK'), 'org-1');
+      expect(result.success).toBe(true);
+      expect(mockLocationRepo.findByCode).toHaveBeenCalledWith('LOC-A1', 'wh-1', 'org-1');
+    });
+
+    it('should fail if location code not found for stock import', async () => {
+      const processor = factory.createProcessor(ImportType.create('STOCK'));
+      const row = createRow(2, {
+        'Product SKU': 'PROD-001',
+        'Warehouse Code': 'WH-001',
+        'Location Code': 'BAD-LOC',
+        Quantity: 100,
+      });
+
+      mockWarehouseRepo.findByCode.mockResolvedValue({ id: 'wh-1' });
+      mockProductRepo.findBySku.mockResolvedValue({ id: 'prod-1' });
+      mockLocationRepo.findByCode.mockResolvedValue(null);
+
+      const result = await processor(row, ImportType.create('STOCK'), 'org-1');
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Location code "BAD-LOC" not found');
+    });
+
+    it('should fail if create movement use case returns error for stock', async () => {
+      const processor = factory.createProcessor(ImportType.create('STOCK'));
+      const row = createRow(2, {
+        'Product SKU': 'PROD-001',
+        'Warehouse Code': 'WH-001',
+        Quantity: 100,
+      });
+
+      mockWarehouseRepo.findByCode.mockResolvedValue({ id: 'wh-1' });
+      mockProductRepo.findBySku.mockResolvedValue({ id: 'prod-1' });
+      mockCreateMovementUseCase.execute.mockResolvedValue({
+        isOk: () => false,
+        unwrapErr: () => ({ message: 'Invalid quantity' }),
+      });
+
+      const result = await processor(row, ImportType.create('STOCK'), 'org-1');
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Invalid quantity');
+    });
+
+    it('should handle unexpected exceptions in stock processor', async () => {
+      const processor = factory.createProcessor(ImportType.create('STOCK'));
+      const row = createRow(2, {
+        'Product SKU': 'PROD-001',
+        'Warehouse Code': 'WH-001',
+        Quantity: 100,
+      });
+
+      mockWarehouseRepo.findByCode.mockRejectedValue(new Error('Timeout'));
+
+      const result = await processor(row, ImportType.create('STOCK'), 'org-1');
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Timeout');
+    });
+
+    it('should handle non-Error exception in stock processor', async () => {
+      const processor = factory.createProcessor(ImportType.create('STOCK'));
+      const row = createRow(2, {
+        'Product SKU': 'PROD-001',
+        'Warehouse Code': 'WH-001',
+        Quantity: 100,
+      });
+
+      mockWarehouseRepo.findByCode.mockRejectedValue(null);
+
+      const result = await processor(row, ImportType.create('STOCK'), 'org-1');
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Unknown error');
+    });
+  });
+
+  describe('PRODUCTS processor - additional branch coverage', () => {
+    it('should handle non-Error exception in product processor', async () => {
+      const processor = factory.createProcessor(ImportType.create('PRODUCTS'));
+      const row = createRow(2, {
+        SKU: 'PROD-001',
+        Name: 'Test Product',
+        'Unit Code': 'UND',
+        'Unit Name': 'Unit',
+        'Unit Precision': 0,
+      });
+
+      mockCreateProductUseCase.execute.mockRejectedValue(undefined);
+
+      const result = await processor(row, ImportType.create('PRODUCTS'), 'org-1');
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Unknown error');
+    });
   });
 });

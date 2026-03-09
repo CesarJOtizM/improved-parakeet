@@ -212,5 +212,98 @@ describe('AddSaleLineUseCase', () => {
         }
       );
     });
+
+    it('Given: no currency provided When: adding line Then: should default to COP', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      const mockSavedLine = createMockSaleLine();
+
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+      mockSaleRepository.addLine.mockResolvedValue(mockSavedLine);
+
+      const request = {
+        saleId: mockSaleId,
+        productId: mockProductId,
+        locationId: 'location-123',
+        quantity: 10,
+        salePrice: 100,
+        // currency is omitted - should default to COP
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.currency).toBe('COP');
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: no locationId provided When: adding line Then: should succeed without locationId', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      const savedLineWithoutLocation = SaleLine.reconstitute(
+        {
+          productId: mockProductId,
+          locationId: undefined,
+          quantity: Quantity.create(10, 6),
+          salePrice: SalePrice.create(100, 'COP', 2),
+        },
+        'line-456',
+        mockOrgId
+      );
+
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+      mockSaleRepository.addLine.mockResolvedValue(savedLineWithoutLocation);
+
+      const request = {
+        saleId: mockSaleId,
+        productId: mockProductId,
+        // locationId is omitted
+        quantity: 10,
+        salePrice: 100,
+        orgId: mockOrgId,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.locationId).toBeUndefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
+
+    it('Given: addLine throws generic Error When: adding line Then: should rethrow the error', async () => {
+      // Arrange
+      const mockProduct = createMockProduct();
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+      mockSaleRepository.addLine.mockRejectedValue(new Error('Unexpected DB failure'));
+
+      const request = {
+        saleId: mockSaleId,
+        productId: mockProductId,
+        locationId: 'location-123',
+        quantity: 10,
+        salePrice: 100,
+        orgId: mockOrgId,
+      };
+
+      // Act & Assert
+      await expect(useCase.execute(request)).rejects.toThrow('Unexpected DB failure');
+    });
   });
 });

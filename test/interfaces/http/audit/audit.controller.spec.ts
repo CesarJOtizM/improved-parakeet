@@ -294,5 +294,146 @@ describe('AuditController', () => {
         controller.getEntityHistory('Product', 'prod-123', undefined, undefined, mockOrgId)
       ).rejects.toThrow();
     });
+
+    it('Given: no orgId When: getting entity history Then: should default orgId to empty string', async () => {
+      // Arrange
+      const historyResponse = {
+        success: true,
+        data: [],
+        pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
+        message: 'Entity history retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetEntityHistoryUseCase.execute.mockResolvedValue(ok(historyResponse));
+
+      // Act
+      await controller.getEntityHistory('Product', 'prod-123', undefined, undefined, undefined);
+
+      // Assert
+      expect(mockGetEntityHistoryUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orgId: '',
+        })
+      );
+    });
+  });
+
+  describe('getAuditLogs - date branch coverage', () => {
+    it('Given: no dates When: getting audit logs Then: startDate and endDate should be undefined', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10 };
+      const logsResponse = {
+        success: true,
+        data: [],
+        pagination: { page: 1, limit: 10, total: 0, totalPages: 0, hasNext: false, hasPrev: false },
+        message: 'Audit logs retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetAuditLogsUseCase.execute.mockResolvedValue(ok(logsResponse));
+
+      // Act
+      await controller.getAuditLogs(query as any, mockOrgId);
+
+      // Assert
+      expect(mockGetAuditLogsUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          startDate: undefined,
+          endDate: undefined,
+        })
+      );
+    });
+
+    it('Given: only startDate When: getting audit logs Then: endDate should be undefined', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10, startDate: '2026-01-01' };
+      const logsResponse = {
+        success: true,
+        data: [],
+        pagination: { page: 1, limit: 10, total: 0, totalPages: 0, hasNext: false, hasPrev: false },
+        message: 'Audit logs retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetAuditLogsUseCase.execute.mockResolvedValue(ok(logsResponse));
+
+      // Act
+      await controller.getAuditLogs(query as any, mockOrgId);
+
+      // Assert
+      const callArgs = mockGetAuditLogsUseCase.execute.mock.calls[0][0];
+      expect(callArgs.startDate).toBeInstanceOf(Date);
+      expect(callArgs.endDate).toBeUndefined();
+    });
+
+    it('Given: entityId filter When: getting audit logs Then: should pass entityId to use case', async () => {
+      // Arrange
+      const query = { page: 1, limit: 10, entityId: 'entity-456' };
+      const logsResponse = {
+        success: true,
+        data: [],
+        pagination: { page: 1, limit: 10, total: 0, totalPages: 0, hasNext: false, hasPrev: false },
+        message: 'Audit logs retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetAuditLogsUseCase.execute.mockResolvedValue(ok(logsResponse));
+
+      // Act
+      await controller.getAuditLogs(query as any, mockOrgId);
+
+      // Assert
+      expect(mockGetAuditLogsUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityId: 'entity-456',
+        })
+      );
+    });
+  });
+
+  describe('getUserActivity - branch coverage', () => {
+    it('Given: no orgId When: getting user activity Then: should default orgId to empty string', async () => {
+      // Arrange
+      const activityResponse = {
+        success: true,
+        data: [],
+        pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
+        message: 'User activity retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      mockGetUserActivityUseCase.execute.mockResolvedValue(ok(activityResponse));
+
+      // Act
+      await controller.getUserActivity('user-123', undefined, undefined, undefined);
+
+      // Assert
+      expect(mockGetUserActivityUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user-123',
+          orgId: '',
+          page: undefined,
+          limit: undefined,
+        })
+      );
+    });
+
+    it('Given: use case error When: getting user activity Then: should throw', async () => {
+      // Arrange
+      mockGetUserActivityUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Failed to retrieve user activity'))
+      );
+
+      // Act & Assert
+      await expect(
+        controller.getUserActivity('user-123', undefined, undefined, mockOrgId)
+      ).rejects.toThrow();
+    });
+
+    it('Given: use case rejects When: getting user activity Then: should propagate error', async () => {
+      // Arrange
+      mockGetUserActivityUseCase.execute.mockRejectedValue(new Error('Database error'));
+
+      // Act & Assert
+      await expect(
+        controller.getUserActivity('user-123', undefined, undefined, mockOrgId)
+      ).rejects.toThrow('Database error');
+    });
   });
 });

@@ -329,5 +329,143 @@ describe('Product Entity', () => {
       // Act & Assert
       expect(product.isActive).toBe(false);
     });
+
+    it('Given: product with companyId and companyName When: accessing getters Then: should return values', () => {
+      // Arrange
+      const props = {
+        ...createDefaultProps(),
+        companyId: 'company-001',
+        companyName: 'Acme Corp',
+      };
+      const product = Product.reconstitute(props, 'p-1', 'org-1');
+
+      // Act & Assert
+      expect(product.companyId).toBe('company-001');
+      expect(product.companyName).toBe('Acme Corp');
+    });
+
+    it('Given: product without companyId and companyName When: accessing getters Then: should return undefined', () => {
+      // Arrange
+      const props = createDefaultProps();
+      const product = Product.reconstitute(props, 'p-1', 'org-1');
+
+      // Act & Assert
+      expect(product.companyId).toBeUndefined();
+      expect(product.companyName).toBeUndefined();
+    });
+
+    it('Given: product with price When: accessing price getter Then: should return price', () => {
+      // Arrange
+      const { Price } = require('@product/domain/valueObjects/price.valueObject');
+      const props = {
+        ...createDefaultProps(),
+        price: Price.create(99.99, 'USD', 2),
+      };
+      const product = Product.reconstitute(props, 'p-1', 'org-1');
+
+      // Act & Assert
+      expect(product.price).toBeDefined();
+    });
+  });
+
+  describe('update', () => {
+    it('Given: active product When: updating multiple fields Then: should update all provided fields', () => {
+      // Arrange
+      const product = Product.reconstitute(createDefaultProps(), 'p-1', 'org-1');
+
+      // Act
+      const updated = product.update({
+        description: 'New description',
+        barcode: '9999999999',
+        model: 'Model-Y',
+        companyId: 'company-new',
+        companyName: 'New Corp',
+      });
+
+      // Assert
+      expect(updated.description).toBe('New description');
+      expect(updated.barcode).toBe('9999999999');
+      expect(updated.model).toBe('Model-Y');
+      expect(updated.companyId).toBe('company-new');
+      expect(updated.companyName).toBe('New Corp');
+    });
+
+    it('Given: active product When: updating categories Then: should update categories', () => {
+      // Arrange
+      const product = Product.reconstitute(createDefaultProps(), 'p-1', 'org-1');
+      const newCategories = [
+        { id: 'cat-2', name: 'Appliances' },
+        { id: 'cat-3', name: 'Tools' },
+      ];
+
+      // Act
+      const updated = product.update({ categories: newCategories });
+
+      // Assert
+      expect(updated.categories).toEqual(newCategories);
+    });
+
+    it('Given: active product When: updating unit Then: should update unit', () => {
+      // Arrange
+      const product = Product.reconstitute(createDefaultProps(), 'p-1', 'org-1');
+      const newUnit = UnitValueObject.create('KG', 'Kilogram', 2);
+
+      // Act
+      const updated = product.update({ unit: newUnit });
+
+      // Assert
+      expect(updated.unit).toBe(newUnit);
+    });
+
+    it('Given: active product When: updating costMethod Then: should update costMethod', () => {
+      // Arrange
+      const product = Product.reconstitute(createDefaultProps(), 'p-1', 'org-1');
+
+      // Act
+      const updated = product.update({ costMethod: CostMethod.create('FIFO') });
+
+      // Assert
+      expect(updated.costMethod.getValue()).toBe('FIFO');
+    });
+
+    it('Given: active product When: updating sku Then: should update sku', () => {
+      // Arrange
+      const product = Product.reconstitute(createDefaultProps(), 'p-1', 'org-1');
+
+      // Act
+      const updated = product.update({ sku: SKU.reconstitute('SKU-NEW') });
+
+      // Assert
+      expect(updated.sku.getValue()).toBe('SKU-NEW');
+    });
+
+    it('Given: active product When: updating status to same value Then: should not change statusChangedBy', () => {
+      // Arrange
+      const props = {
+        ...createDefaultProps(),
+        statusChangedBy: 'original-user',
+        statusChangedAt: new Date('2026-01-01'),
+      };
+      const product = Product.reconstitute(props, 'p-1', 'org-1');
+
+      // Act
+      const updated = product.update({ status: ProductStatus.create('ACTIVE') });
+
+      // Assert
+      expect(updated.statusChangedBy).toBe('original-user');
+      expect(updated.statusChangedAt).toEqual(new Date('2026-01-01'));
+    });
+
+    it('Given: discontinued product When: updating non-status field Then: should still update', () => {
+      // Arrange
+      const props = { ...createDefaultProps(), status: ProductStatus.create('DISCONTINUED') };
+      const product = Product.reconstitute(props, 'p-1', 'org-1');
+
+      // Act
+      const updated = product.update({ brand: 'NewBrand' });
+
+      // Assert
+      expect(updated.brand).toBe('NewBrand');
+    });
   });
 });

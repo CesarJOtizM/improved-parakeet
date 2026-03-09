@@ -204,5 +204,149 @@ describe('UpdateUserUseCase', () => {
         }
       );
     });
+
+    it('Given: only optional fields When: updating user Then: should return success with optional fields', async () => {
+      // Arrange
+      const user = createMockUser();
+      mockUserRepository.findById.mockResolvedValue(user);
+      mockUserRepository.save.mockResolvedValue(user);
+
+      const request = {
+        userId: mockUserId,
+        orgId: mockOrgId,
+        phone: '+1234567890',
+        timezone: 'America/New_York',
+        language: 'en',
+        jobTitle: 'Engineer',
+        department: 'Engineering',
+        updatedBy: mockUpdatedBy,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.success).toBe(true);
+          expect(value.message).toBe('User updated successfully');
+        },
+        () => fail('Should not return error')
+      );
+      expect(mockUserRepository.save).toHaveBeenCalled();
+    });
+
+    it('Given: same email as current When: updating user Then: should skip email uniqueness check', async () => {
+      // Arrange
+      const user = createMockUser();
+      mockUserRepository.findById.mockResolvedValue(user);
+      mockUserRepository.save.mockResolvedValue(user);
+
+      const request = {
+        userId: mockUserId,
+        orgId: mockOrgId,
+        email: 'old@example.com', // Same as current user email
+        updatedBy: mockUpdatedBy,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockUserRepository.existsByEmail).not.toHaveBeenCalled();
+    });
+
+    it('Given: same username as current When: updating user Then: should skip username uniqueness check', async () => {
+      // Arrange
+      const user = createMockUser();
+      mockUserRepository.findById.mockResolvedValue(user);
+      mockUserRepository.save.mockResolvedValue(user);
+
+      const request = {
+        userId: mockUserId,
+        orgId: mockOrgId,
+        username: 'oldusername', // Same as current username
+        updatedBy: mockUpdatedBy,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockUserRepository.existsByUsername).not.toHaveBeenCalled();
+    });
+
+    it('Given: no fields to update When: updating user Then: should still succeed', async () => {
+      // Arrange
+      const user = createMockUser();
+      mockUserRepository.findById.mockResolvedValue(user);
+      mockUserRepository.save.mockResolvedValue(user);
+
+      const request = {
+        userId: mockUserId,
+        orgId: mockOrgId,
+        updatedBy: mockUpdatedBy,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.id).toBe(mockUserId);
+          expect(value.data.orgId).toBe(mockOrgId);
+        },
+        () => fail('Should not return error')
+      );
+    });
+
+    it('Given: new email is available When: updating email Then: should succeed', async () => {
+      // Arrange
+      const user = createMockUser();
+      mockUserRepository.findById.mockResolvedValue(user);
+      mockUserRepository.existsByEmail.mockResolvedValue(false);
+      mockUserRepository.save.mockResolvedValue(user);
+
+      const request = {
+        userId: mockUserId,
+        orgId: mockOrgId,
+        email: 'newemail@example.com',
+        updatedBy: mockUpdatedBy,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockUserRepository.existsByEmail).toHaveBeenCalled();
+    });
+
+    it('Given: new username is available When: updating username Then: should succeed', async () => {
+      // Arrange
+      const user = createMockUser();
+      mockUserRepository.findById.mockResolvedValue(user);
+      mockUserRepository.existsByUsername.mockResolvedValue(false);
+      mockUserRepository.save.mockResolvedValue(user);
+
+      const request = {
+        userId: mockUserId,
+        orgId: mockOrgId,
+        username: 'newusername',
+        updatedBy: mockUpdatedBy,
+      };
+
+      // Act
+      const result = await useCase.execute(request);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockUserRepository.existsByUsername).toHaveBeenCalled();
+    });
   });
 });

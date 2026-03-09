@@ -308,4 +308,198 @@ describe('AuthController', () => {
       ).rejects.toThrow('Too many refresh attempts');
     });
   });
+
+  describe('login - additional branches', () => {
+    it('Given: no req.orgId When: logging in Then: should use orgId from decorator', async () => {
+      // Arrange
+      const loginRequest = {
+        email: 'test@example.com',
+        password: 'ValidPass123!',
+        orgId: 'org-123',
+      };
+      const mockLoginData = {
+        success: true as const,
+        data: {
+          user: { id: 'user-123', email: 'test@example.com' },
+          accessToken: 'access-token',
+          refreshToken: 'refresh-token',
+          sessionId: 'session-1',
+        },
+        message: 'Login successful',
+        timestamp: new Date().toISOString(),
+      };
+      mockLoginUseCase.execute.mockResolvedValue(ok(mockLoginData));
+
+      const mockReq = {} as any; // no orgId on req
+
+      // Act
+      const result = await authController.login(
+        loginRequest,
+        '192.168.1.1',
+        'Mozilla/5.0',
+        'org-from-decorator',
+        mockReq
+      );
+
+      // Assert
+      expect(mockLoginUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orgId: 'org-from-decorator',
+        })
+      );
+      expect(result).toEqual(mockLoginData);
+    });
+
+    it('Given: req.orgId present When: logging in Then: should use req.orgId', async () => {
+      // Arrange
+      const loginRequest = {
+        email: 'test@example.com',
+        password: 'ValidPass123!',
+        orgId: 'org-body',
+      };
+      const mockLoginData = {
+        success: true as const,
+        data: {
+          user: { id: 'user-123', email: 'test@example.com' },
+          accessToken: 'at',
+          refreshToken: 'rt',
+          sessionId: 's1',
+        },
+        message: 'Login successful',
+        timestamp: new Date().toISOString(),
+      };
+      mockLoginUseCase.execute.mockResolvedValue(ok(mockLoginData));
+
+      const mockReq = { orgId: 'org-middleware' } as any;
+
+      // Act
+      await authController.login(loginRequest, '10.0.0.1', 'TestAgent', 'org-decorator', mockReq);
+
+      // Assert
+      expect(mockLoginUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orgId: 'org-middleware',
+          ipAddress: '10.0.0.1',
+          userAgent: 'TestAgent',
+        })
+      );
+    });
+  });
+
+  describe('logout - additional branches', () => {
+    it('Given: no user on request When: logging out Then: should throw UnauthorizedException', async () => {
+      // Arrange
+      const logoutRequest = { accessToken: 'token-123' };
+      const mockReq = { user: null } as any;
+
+      // Act & Assert
+      await expect(authController.logout(logoutRequest, mockReq, '192.168.1.1')).rejects.toThrow(
+        'User not authenticated'
+      );
+    });
+
+    it('Given: undefined user on request When: logging out Then: should throw UnauthorizedException', async () => {
+      // Arrange
+      const logoutRequest = { accessToken: 'token-123' };
+      const mockReq = {} as any;
+
+      // Act & Assert
+      await expect(authController.logout(logoutRequest, mockReq, '192.168.1.1')).rejects.toThrow(
+        'User not authenticated'
+      );
+    });
+  });
+
+  describe('logoutAllSessions', () => {
+    it('Given: authenticated user When: logging out all sessions Then: should return success', async () => {
+      // Arrange
+      const mockUser = {
+        id: 'user-123',
+        orgId: 'org-123',
+        email: 'test@example.com',
+        username: 'testuser',
+        roles: ['USER'],
+        permissions: ['USERS:READ'],
+      };
+      const mockReq = {
+        user: mockUser,
+        headers: { authorization: 'Bearer some-token-123' },
+      } as any;
+      const mockLogoutData = {
+        success: true as const,
+        message: 'All sessions logged out',
+        data: { blacklistedTokens: 5 },
+        timestamp: new Date().toISOString(),
+      };
+      mockLogoutUseCase.execute.mockResolvedValue(ok(mockLogoutData));
+
+      // Act
+      const result = await authController.logoutAllSessions(mockReq, '192.168.1.1');
+
+      // Assert
+      expect(mockLogoutUseCase.execute).toHaveBeenCalledWith({
+        accessToken: 'some-token-123',
+        userId: 'user-123',
+        orgId: 'org-123',
+        ipAddress: '192.168.1.1',
+        reason: 'SECURITY',
+      });
+      expect(result).toEqual(mockLogoutData);
+    });
+
+    it('Given: no user on request When: logging out all sessions Then: should throw UnauthorizedException', async () => {
+      // Arrange
+      const mockReq = { user: null, headers: {} } as any;
+
+      // Act & Assert
+      await expect(authController.logoutAllSessions(mockReq, '192.168.1.1')).rejects.toThrow(
+        'User not authenticated'
+      );
+    });
+
+    it('Given: no authorization header When: logging out all Then: should pass empty access token', async () => {
+      // Arrange
+      const mockUser = {
+        id: 'user-123',
+        orgId: 'org-123',
+      };
+      const mockReq = {
+        user: mockUser,
+        headers: {},
+      } as any;
+      const mockLogoutData = {
+        success: true as const,
+        message: 'All sessions logged out',
+        data: { blacklistedTokens: 3 },
+        timestamp: new Date().toISOString(),
+      };
+      mockLogoutUseCase.execute.mockResolvedValue(ok(mockLogoutData));
+
+      // Act
+      const result = await authController.logoutAllSessions(mockReq, '10.0.0.1');
+
+      // Assert
+      expect(mockLogoutUseCase.execute).toHaveBeenCalledWith({
+        accessToken: '',
+        userId: 'user-123',
+        orgId: 'org-123',
+        ipAddress: '10.0.0.1',
+        reason: 'SECURITY',
+      });
+      expect(result).toEqual(mockLogoutData);
+    });
+
+    it('Given: error from use case When: logging out all sessions Then: should throw', async () => {
+      // Arrange
+      const mockUser = { id: 'user-123', orgId: 'org-123' };
+      const mockReq = {
+        user: mockUser,
+        headers: { authorization: 'Bearer token-123' },
+      } as any;
+      mockLogoutUseCase.execute.mockResolvedValue(err(new TokenError('token_blacklisted')));
+
+      // Act & Assert
+      await expect(authController.logoutAllSessions(mockReq, '192.168.1.1')).rejects.toThrow();
+    });
+  });
 });

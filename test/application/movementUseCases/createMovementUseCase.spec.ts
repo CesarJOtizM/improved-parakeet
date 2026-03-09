@@ -9,6 +9,7 @@ import { NotFoundError, ValidationError } from '@shared/domain/result/domainErro
 import { Warehouse } from '@warehouse/domain/entities/warehouse.entity';
 import { WarehouseCode } from '@warehouse/domain/valueObjects/warehouseCode.valueObject';
 
+import type { IContactRepository } from '@contacts/domain/ports/repositories/iContactRepository.port';
 import type { IMovementRepository } from '@movement/domain/ports/repositories';
 import type { IProductRepository } from '@product/domain/ports/repositories';
 import type { IWarehouseRepository } from '@warehouse/domain/ports/repositories';
@@ -26,6 +27,7 @@ describe('CreateMovementUseCase', () => {
   let mockProductRepository: jest.Mocked<IProductRepository>;
   let mockWarehouseRepository: jest.Mocked<IWarehouseRepository>;
   let mockEventDispatcher: jest.Mocked<IDomainEventDispatcher>;
+  let mockContactRepository: jest.Mocked<IContactRepository>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -78,11 +80,26 @@ describe('CreateMovementUseCase', () => {
       markAndDispatch: jest.fn().mockResolvedValue(undefined as never),
     } as jest.Mocked<IDomainEventDispatcher>;
 
+    mockContactRepository = {
+      save: jest.fn(),
+      findById: jest.fn(),
+      findAll: jest.fn(),
+      findBySpecification: jest.fn(),
+      exists: jest.fn(),
+      delete: jest.fn(),
+      findByIdentification: jest.fn(),
+      existsByIdentification: jest.fn(),
+      findByEmail: jest.fn(),
+      findByType: jest.fn(),
+      countSales: jest.fn(),
+    } as jest.Mocked<IContactRepository>;
+
     useCase = new CreateMovementUseCase(
       mockMovementRepository,
       mockProductRepository,
       mockWarehouseRepository,
-      mockEventDispatcher
+      mockEventDispatcher,
+      mockContactRepository
     );
   });
 
@@ -371,6 +388,145 @@ describe('CreateMovementUseCase', () => {
         }
       );
       expect(mockMovementRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('Given: valid contactId When: creating movement Then: should validate contact exists', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      const mockProduct = createMockProduct();
+
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+      mockContactRepository.findById.mockResolvedValue({ id: 'contact-123' } as never);
+
+      const movementProps = MovementMapper.toDomainProps(validRequest);
+      const movementWithId = Movement.reconstitute(movementProps, mockMovementId, mockOrgId, []);
+      mockMovementRepository.save.mockResolvedValue(movementWithId);
+
+      const requestWithContact = {
+        ...validRequest,
+        contactId: 'contact-123',
+      };
+
+      // Act
+      const result = await useCase.execute(requestWithContact);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockContactRepository.findById).toHaveBeenCalledWith('contact-123', mockOrgId);
+    });
+
+    it('Given: non-existent contactId When: creating movement Then: should return NotFoundError', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+      mockContactRepository.findById.mockResolvedValue(null);
+
+      const requestWithContact = {
+        ...validRequest,
+        contactId: 'non-existent-contact',
+      };
+
+      // Act
+      const result = await useCase.execute(requestWithContact);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(NotFoundError);
+          expect(error.message).toBe('Contact not found');
+        }
+      );
+      expect(mockMovementRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('Given: no contactId When: creating movement Then: should skip contact validation', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      const mockProduct = createMockProduct();
+
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      const movementProps = MovementMapper.toDomainProps(validRequest);
+      const movementWithId = Movement.reconstitute(movementProps, mockMovementId, mockOrgId, []);
+      mockMovementRepository.save.mockResolvedValue(movementWithId);
+
+      const requestWithoutContact = {
+        ...validRequest,
+        contactId: undefined,
+      };
+
+      // Act
+      const result = await useCase.execute(requestWithoutContact);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      expect(mockContactRepository.findById).not.toHaveBeenCalled();
+    });
+
+    it('Given: non-Error thrown When: creating movement Then: should return generic ValidationError', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      const mockProduct = createMockProduct();
+
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+      mockMovementRepository.save.mockRejectedValue('string error');
+
+      // Act
+      const result = await useCase.execute(validRequest);
+
+      // Assert
+      expect(result.isErr()).toBe(true);
+      result.match(
+        () => {
+          throw new Error('Expected Err result');
+        },
+        error => {
+          expect(error).toBeInstanceOf(ValidationError);
+          expect(error.message).toBe('Failed to create movement');
+        }
+      );
+    });
+
+    it('Given: movement with optional fields null When: creating movement Then: should succeed', async () => {
+      // Arrange
+      const mockWarehouse = createMockWarehouse();
+      const mockProduct = createMockProduct();
+
+      mockWarehouseRepository.findById.mockResolvedValue(mockWarehouse);
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
+
+      const requestMinimal = {
+        type: 'IN' as const,
+        warehouseId: mockWarehouseId,
+        reference: undefined,
+        reason: undefined,
+        note: undefined,
+        lines: [
+          {
+            productId: mockProductId,
+            quantity: 10,
+          },
+        ],
+        createdBy: mockUserId,
+        orgId: mockOrgId,
+      };
+
+      const movementProps = MovementMapper.toDomainProps(requestMinimal);
+      const movementWithId = Movement.reconstitute(movementProps, mockMovementId, mockOrgId, []);
+      mockMovementRepository.save.mockResolvedValue(movementWithId);
+
+      // Act
+      const result = await useCase.execute(requestMinimal);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
     });
   });
 });

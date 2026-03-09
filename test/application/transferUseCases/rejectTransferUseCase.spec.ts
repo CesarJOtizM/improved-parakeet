@@ -306,5 +306,33 @@ describe('RejectTransferUseCase', () => {
         }
       );
     });
+
+    it('Given: an IN_TRANSIT transfer When: rejecting Then: should return all transfer data fields', async () => {
+      // Arrange
+      const inTransitTransfer = createTransferWithStatus('IN_TRANSIT');
+      mockTransferRepository.findById.mockResolvedValue(inTransitTransfer);
+
+      const rejectedTransfer = createTransferWithStatus('REJECTED');
+      mockTransferRepository.save.mockResolvedValue(rejectedTransfer);
+
+      // Act
+      const result = await useCase.execute(validRequest);
+
+      // Assert
+      expect(result.isOk()).toBe(true);
+      result.match(
+        value => {
+          expect(value.data.note).toBe('Test transfer');
+          expect(value.data.linesCount).toBeGreaterThanOrEqual(0);
+          expect(value.data.orgId).toBe(mockOrgId);
+          expect(value.data.createdBy).toBe(mockUserId);
+          expect(value.data.createdAt).toBeDefined();
+          expect(value.data.updatedAt).toBeDefined();
+        },
+        () => {
+          throw new Error('Expected Ok result');
+        }
+      );
+    });
   });
 });

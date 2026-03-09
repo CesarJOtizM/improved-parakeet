@@ -81,6 +81,14 @@ describe('PrismaReorderRuleRepository', () => {
       // Act & Assert
       await expect(repository.findAll('org-123')).rejects.toThrow('DB Error');
     });
+
+    it('Given: non-Error thrown When: finding all Then: should propagate non-Error', async () => {
+      // Arrange
+      mockPrismaService.reorderRule.findMany.mockRejectedValue('string-error');
+
+      // Act & Assert
+      await expect(repository.findAll('org-123')).rejects.toBe('string-error');
+    });
   });
 
   describe('findById', () => {

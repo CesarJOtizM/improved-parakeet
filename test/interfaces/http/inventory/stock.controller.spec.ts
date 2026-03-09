@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { StockController } from '@interface/http/inventory/stock.controller';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { ok } from '@shared/domain/result';
+import { ok, err } from '@shared/domain/result';
+import { ValidationError } from '@shared/domain/result/domainError';
 
 describe('StockController', () => {
   let controller: StockController;
@@ -190,6 +191,169 @@ describe('StockController', () => {
           warehouseIds: undefined,
         })
       );
+    });
+
+    it('Given: companyId filter When: getting stock Then: should pass companyId to use case', async () => {
+      // Arrange
+      mockGetStockUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockStockData,
+          message: 'OK',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getStock('org-123', undefined, undefined, undefined, 'company-456');
+
+      // Assert
+      expect(mockGetStockUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orgId: 'org-123',
+          companyId: 'company-456',
+        })
+      );
+    });
+
+    it('Given: single warehouseId When: getting stock Then: should create array with single element', async () => {
+      // Arrange
+      mockGetStockUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: [mockStockData[0]],
+          message: 'OK',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getStock('org-123', 'wh-1');
+
+      // Assert
+      expect(mockGetStockUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          warehouseIds: ['wh-1'],
+        })
+      );
+    });
+
+    it('Given: warehouseId with spaces When: getting stock Then: should trim ids', async () => {
+      // Arrange
+      mockGetStockUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockStockData,
+          message: 'OK',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getStock('org-123', 'wh-1 , wh-2 ');
+
+      // Assert
+      expect(mockGetStockUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          warehouseIds: ['wh-1', 'wh-2'],
+        })
+      );
+    });
+
+    it('Given: warehouseId with empty segments When: getting stock Then: should filter empty strings', async () => {
+      // Arrange
+      mockGetStockUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockStockData,
+          message: 'OK',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getStock('org-123', 'wh-1,,wh-2,');
+
+      // Assert
+      expect(mockGetStockUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          warehouseIds: ['wh-1', 'wh-2'],
+        })
+      );
+    });
+
+    it('Given: lowStock undefined When: getting stock Then: should pass false', async () => {
+      // Arrange
+      mockGetStockUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockStockData,
+          message: 'OK',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getStock('org-123');
+
+      // Assert
+      expect(mockGetStockUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          lowStock: false,
+        })
+      );
+    });
+
+    it('Given: use case error When: getting stock Then: should throw', async () => {
+      // Arrange
+      mockGetStockUseCase.execute.mockResolvedValue(
+        err(new ValidationError('Failed to retrieve stock'))
+      );
+
+      // Act & Assert
+      await expect(controller.getStock('org-123')).rejects.toThrow();
+    });
+
+    it('Given: use case rejects When: getting stock Then: should propagate error', async () => {
+      // Arrange
+      mockGetStockUseCase.execute.mockRejectedValue(new Error('Database error'));
+
+      // Act & Assert
+      await expect(controller.getStock('org-123')).rejects.toThrow('Database error');
+    });
+
+    it('Given: all params When: getting stock Then: should pass all to use case', async () => {
+      // Arrange
+      mockGetStockUseCase.execute.mockResolvedValue(
+        ok({
+          success: true,
+          data: mockStockData,
+          message: 'OK',
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Act
+      await controller.getStock(
+        'org-123',
+        'wh-1',
+        'prod-1',
+        'true',
+        'company-1',
+        'quantity',
+        'desc'
+      );
+
+      // Assert
+      expect(mockGetStockUseCase.execute).toHaveBeenCalledWith({
+        orgId: 'org-123',
+        warehouseIds: ['wh-1'],
+        productId: 'prod-1',
+        companyId: 'company-1',
+        lowStock: true,
+        sortBy: 'quantity',
+        sortOrder: 'desc',
+      });
     });
   });
 });

@@ -114,5 +114,41 @@ describe('PermissionChangedEventHandler', () => {
 
       errorSpy.mockRestore();
     });
+
+    it('Given: non-Error thrown When: handling event Then: should handle gracefully', async () => {
+      // Arrange
+      const permission = Permission.reconstitute(
+        {
+          name: 'USERS:CREATE',
+          description: 'Create users',
+          module: 'USERS',
+          action: 'CREATE',
+        },
+        'perm-123',
+        'org-123'
+      );
+      const event = new PermissionChangedEvent(permission, 'CREATED', 'admin-789');
+
+      let callCount = 0;
+      const errorSpy = jest.spyOn((handler as any).logger, 'log').mockImplementation(() => {
+        callCount++;
+        if (callCount === 2) {
+          throw 'string-error';
+        }
+      });
+      const errorLoggerSpy = jest.spyOn((handler as any).logger, 'error');
+
+      // Act & Assert - should not throw
+      await expect(handler.handle(event)).resolves.toBeUndefined();
+
+      // Assert
+      expect(errorLoggerSpy).toHaveBeenCalledWith('Error handling PermissionChanged event', {
+        error: 'Unknown error',
+        permissionId: 'perm-123',
+        changeType: 'CREATED',
+      });
+
+      errorSpy.mockRestore();
+    });
   });
 });

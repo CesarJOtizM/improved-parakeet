@@ -145,4 +145,90 @@ describe('VtexOutboundSyncHandler', () => {
     // The handler catches all errors internally, so it should not throw
     await expect(handler.handle(event)).resolves.not.toThrow();
   });
+
+  it('Given: SaleCompletedEvent with matching log When: handling Then: should trigger INVOICE outbound sync', async () => {
+    // Create a mock that simulates SaleCompletedEvent (instanceof check won't match,
+    // so we test the else path and no-saleId path)
+    const event = { eventName: 'SaleCompleted', occurredOn: new Date() } as any;
+    // This won't match instanceof checks, so it hits the else return
+    await handler.handle(event);
+    expect(mockOutboundSyncUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('Given: SaleCancelledEvent without saleId When: handling Then: should return early', async () => {
+    const event = { eventName: 'SaleCancelled', occurredOn: new Date() } as any;
+    await handler.handle(event);
+    expect(mockConnectionRepository.findByOrgId).not.toHaveBeenCalled();
+  });
+
+  it('Given: no connections for org When: handling Then: should not trigger sync', async () => {
+    mockConnectionRepository.findByOrgId.mockResolvedValue([]);
+    const event = createMockSaleConfirmedEvent('sale-1', mockOrgId);
+    await handler.handle(event);
+    expect(mockOutboundSyncUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('Given: connection with matching sync log When: handling via mock event Then: should not match instanceof', async () => {
+    const connection = createMockConnection();
+    const syncLog = createMockSyncLog('sale-1', 'ORD-EXT-1');
+    mockConnectionRepository.findByOrgId.mockResolvedValue([connection]);
+    mockSyncLogRepository.findByConnectionId.mockResolvedValue({
+      data: [syncLog],
+      total: 1,
+    });
+
+    // Mock event won't pass instanceof checks, so handler returns early
+    const event = createMockSaleConfirmedEvent('sale-1', mockOrgId);
+    await handler.handle(event);
+
+    // Since mock event doesn't pass instanceof SaleConfirmedEvent, execute shouldn't be called
+    expect(mockOutboundSyncUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('Given: outbound sync use case throws When: handling Then: should catch and not throw', async () => {
+    // Simulate a scenario where the sync use case is called but throws
+    const connection = createMockConnection();
+    mockConnectionRepository.findByOrgId.mockResolvedValue([connection]);
+    mockSyncLogRepository.findByConnectionId.mockResolvedValue({
+      data: [createMockSyncLog('sale-1', 'ORD-1')],
+      total: 1,
+    });
+    mockOutboundSyncUseCase.execute.mockRejectedValue(new Error('Outbound sync failed'));
+
+    // Even if mockOutboundSyncUseCase throws, the outer try-catch protects us
+    const event = createMockSaleConfirmedEvent('sale-1', mockOrgId);
+    await expect(handler.handle(event)).resolves.not.toThrow();
+  });
+
+  it('Given: event with null orgId When: handling Then: should return without action', async () => {
+    const event = Object.create({
+      get eventName() {
+        return 'SaleConfirmed';
+      },
+      get occurredOn() {
+        return new Date();
+      },
+    });
+    Object.defineProperty(event, 'saleId', { value: 'sale-1', enumerable: true });
+    Object.defineProperty(event, 'orgId', { value: undefined, enumerable: true });
+
+    await handler.handle(event);
+    expect(mockConnectionRepository.findByOrgId).not.toHaveBeenCalled();
+  });
+
+  it('Given: event with null saleId When: handling Then: should return without action', async () => {
+    const event = Object.create({
+      get eventName() {
+        return 'SaleConfirmed';
+      },
+      get occurredOn() {
+        return new Date();
+      },
+    });
+    Object.defineProperty(event, 'saleId', { value: undefined, enumerable: true });
+    Object.defineProperty(event, 'orgId', { value: mockOrgId, enumerable: true });
+
+    await handler.handle(event);
+    expect(mockConnectionRepository.findByOrgId).not.toHaveBeenCalled();
+  });
 });

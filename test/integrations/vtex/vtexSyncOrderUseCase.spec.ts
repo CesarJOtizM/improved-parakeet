@@ -184,6 +184,665 @@ describe('VtexSyncOrderUseCase', () => {
     expect(mockVtexApiClient.getOrder).not.toHaveBeenCalled();
   });
 
+  it('Given: valid order with matched SKU via mapping When: syncing Then: should sync successfully', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockSyncLogRepository.findByExternalOrderId.mockResolvedValue(null);
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-key');
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-token');
+    mockVtexApiClient.getOrder.mockResolvedValue({
+      orderId: 'ORD-200',
+      sequence: '1',
+      status: 'handling',
+      creationDate: new Date().toISOString(),
+      value: 5000,
+      totals: [],
+      items: [
+        {
+          id: 'item-1',
+          productId: 'vtex-prod-1',
+          refId: 'MAPPED-SKU',
+          name: 'Product',
+          skuName: 'SKU',
+          quantity: 2,
+          price: 5000,
+          sellingPrice: 5000,
+          imageUrl: '',
+        },
+      ],
+      clientProfileData: {
+        email: 'test@test.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        document: '123456',
+        documentType: 'CC',
+        phone: '555-0100',
+        isCorporate: false,
+      },
+      shippingData: {
+        address: {
+          street: 'Main St',
+          number: '123',
+          neighborhood: 'Downtown',
+          city: 'Test City',
+          state: 'TS',
+          postalCode: '12345',
+          country: 'COL',
+        },
+      },
+      paymentData: { transactions: [] },
+    });
+    mockContactRepository.findByEmail.mockResolvedValue({ id: 'existing-contact' } as any);
+    mockSkuMappingRepository.findByExternalSku.mockResolvedValue({
+      productId: 'local-product-1',
+    } as any);
+    mockSyncLogRepository.save.mockImplementation(async l => l);
+    mockConnectionRepository.update.mockImplementation(async c => c);
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-200',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isOk()).toBe(true);
+    result.match(
+      value => {
+        expect(value.data.action).toBe('SYNCED');
+        expect(value.data.contactId).toBe('existing-contact');
+      },
+      () => {
+        throw new Error('Expected Ok result');
+      }
+    );
+  });
+
+  it('Given: order with no clientProfileData When: syncing Then: should use defaultContactId', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockSyncLogRepository.findByExternalOrderId.mockResolvedValue(null);
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-key');
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-token');
+    mockVtexApiClient.getOrder.mockResolvedValue({
+      orderId: 'ORD-300',
+      sequence: '1',
+      status: 'handling',
+      creationDate: new Date().toISOString(),
+      value: 5000,
+      totals: [],
+      items: [
+        {
+          id: 'item-1',
+          productId: 'vtex-prod-1',
+          refId: 'SKU-1',
+          name: 'Product',
+          skuName: 'SKU',
+          quantity: 1,
+          price: 5000,
+          sellingPrice: 5000,
+          imageUrl: '',
+        },
+      ],
+      clientProfileData: undefined as any,
+      shippingData: undefined as any,
+      paymentData: { transactions: [] },
+    });
+    mockSkuMappingRepository.findByExternalSku.mockResolvedValue({
+      productId: 'local-product-1',
+    } as any);
+    mockSyncLogRepository.save.mockImplementation(async l => l);
+    mockConnectionRepository.update.mockImplementation(async c => c);
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-300',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isOk()).toBe(true);
+    result.match(
+      value => {
+        expect(value.data.action).toBe('SYNCED');
+        expect(value.data.contactId).toBe('contact-1');
+      },
+      () => {
+        throw new Error('Expected Ok result');
+      }
+    );
+  });
+
+  it('Given: order with document-matched contact When: syncing Then: should use document contact', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockSyncLogRepository.findByExternalOrderId.mockResolvedValue(null);
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-key');
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-token');
+    mockVtexApiClient.getOrder.mockResolvedValue({
+      orderId: 'ORD-400',
+      sequence: '1',
+      status: 'handling',
+      creationDate: new Date().toISOString(),
+      value: 5000,
+      totals: [],
+      items: [
+        {
+          id: 'item-1',
+          productId: 'vtex-prod-1',
+          refId: 'SKU-1',
+          name: 'Product',
+          skuName: 'SKU',
+          quantity: 1,
+          price: 5000,
+          sellingPrice: 5000,
+          imageUrl: '',
+        },
+      ],
+      clientProfileData: {
+        email: 'new@test.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        document: 'DOC-999',
+        documentType: 'CC',
+        phone: '555-0100',
+        isCorporate: false,
+      },
+      shippingData: {
+        address: {
+          street: 'Main St',
+          number: '123',
+          neighborhood: 'Downtown',
+          city: 'Test City',
+          state: 'TS',
+          postalCode: '12345',
+          country: 'COL',
+        },
+      },
+      paymentData: { transactions: [] },
+    });
+    mockContactRepository.findByEmail.mockResolvedValue(null);
+    mockContactRepository.findByIdentification.mockResolvedValue({ id: 'doc-contact' } as any);
+    mockSkuMappingRepository.findByExternalSku.mockResolvedValue({
+      productId: 'local-product-1',
+    } as any);
+    mockSyncLogRepository.save.mockImplementation(async l => l);
+    mockConnectionRepository.update.mockImplementation(async c => c);
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-400',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isOk()).toBe(true);
+    result.match(
+      value => {
+        expect(value.data.contactId).toBe('doc-contact');
+      },
+      () => {
+        throw new Error('Expected Ok result');
+      }
+    );
+  });
+
+  it('Given: corporate order When: syncing Then: should use corporateName', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockSyncLogRepository.findByExternalOrderId.mockResolvedValue(null);
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-key');
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-token');
+    mockVtexApiClient.getOrder.mockResolvedValue({
+      orderId: 'ORD-500',
+      sequence: '1',
+      status: 'handling',
+      creationDate: new Date().toISOString(),
+      value: 5000,
+      totals: [],
+      items: [
+        {
+          id: 'item-1',
+          productId: 'vtex-prod-1',
+          refId: 'SKU-1',
+          name: 'Product',
+          skuName: 'SKU',
+          quantity: 1,
+          price: 5000,
+          sellingPrice: 5000,
+          imageUrl: '',
+        },
+      ],
+      clientProfileData: {
+        email: 'corp@company.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        document: 'NIT-001',
+        documentType: 'NIT',
+        phone: '555-0100',
+        isCorporate: true,
+        corporateName: 'Big Corp Inc',
+      },
+      shippingData: undefined as any,
+      paymentData: { transactions: [] },
+    });
+    mockContactRepository.findByEmail.mockResolvedValue(null);
+    mockContactRepository.findByIdentification.mockResolvedValue(null);
+    mockContactRepository.save.mockImplementation(async c => c);
+    mockSkuMappingRepository.findByExternalSku.mockResolvedValue({
+      productId: 'local-product-1',
+    } as any);
+    mockSyncLogRepository.save.mockImplementation(async l => l);
+    mockConnectionRepository.update.mockImplementation(async c => c);
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-500',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isOk()).toBe(true);
+    // Contact was created (save was called)
+    expect(mockContactRepository.save).toHaveBeenCalled();
+  });
+
+  it('Given: VTEX API fetch fails When: syncing Then: should log failure and return error', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockSyncLogRepository.findByExternalOrderId.mockResolvedValue(null);
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-key');
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-token');
+    mockVtexApiClient.getOrder.mockRejectedValue(new Error('API timeout'));
+    mockSyncLogRepository.save.mockImplementation(async l => l);
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-ERR',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isErr()).toBe(true);
+    result.match(
+      () => {
+        throw new Error('Expected Err result');
+      },
+      error => {
+        expect(error.code).toBe('VTEX_ORDER_FETCH_ERROR');
+      }
+    );
+    expect(mockSyncLogRepository.save).toHaveBeenCalled();
+  });
+
+  it('Given: product found by SKU directly When: syncing Then: should match without mapping', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockSyncLogRepository.findByExternalOrderId.mockResolvedValue(null);
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-key');
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-token');
+    mockVtexApiClient.getOrder.mockResolvedValue({
+      orderId: 'ORD-600',
+      sequence: '1',
+      status: 'handling',
+      creationDate: new Date().toISOString(),
+      value: 5000,
+      totals: [],
+      items: [
+        {
+          id: 'item-1',
+          productId: 'vtex-prod-1',
+          refId: 'LOCAL-SKU',
+          name: 'Product',
+          skuName: 'SKU',
+          quantity: 1,
+          price: 5000,
+          sellingPrice: 5000,
+          imageUrl: '',
+        },
+      ],
+      clientProfileData: undefined as any,
+      shippingData: undefined as any,
+      paymentData: { transactions: [] },
+    });
+    mockSkuMappingRepository.findByExternalSku.mockResolvedValue(null);
+    mockProductRepository.findBySku.mockResolvedValue({ id: 'direct-product' } as any);
+    mockSyncLogRepository.save.mockImplementation(async l => l);
+    mockConnectionRepository.update.mockImplementation(async c => c);
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-600',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isOk()).toBe(true);
+    result.match(
+      value => {
+        expect(value.data.action).toBe('SYNCED');
+      },
+      () => {
+        throw new Error('Expected Ok result');
+      }
+    );
+  });
+
+  it('Given: item without refId When: syncing Then: should fall back to item.id for SKU matching', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockSyncLogRepository.findByExternalOrderId.mockResolvedValue(null);
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-key');
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-token');
+    mockVtexApiClient.getOrder.mockResolvedValue({
+      orderId: 'ORD-700',
+      sequence: '1',
+      status: 'handling',
+      creationDate: new Date().toISOString(),
+      value: 5000,
+      totals: [],
+      items: [
+        {
+          id: 'vtex-item-id-fallback',
+          productId: 'vtex-prod-1',
+          refId: undefined as any,
+          name: 'Product',
+          skuName: 'SKU',
+          quantity: 1,
+          price: 5000,
+          sellingPrice: 5000,
+          imageUrl: '',
+        },
+      ],
+      clientProfileData: undefined as any,
+      shippingData: undefined as any,
+      paymentData: { transactions: [] },
+    });
+    // Should use item.id as refId fallback
+    mockSkuMappingRepository.findByExternalSku.mockResolvedValue({
+      productId: 'local-product-fallback',
+    } as any);
+    mockSyncLogRepository.save.mockImplementation(async l => l);
+    mockConnectionRepository.update.mockImplementation(async c => c);
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-700',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isOk()).toBe(true);
+    expect(mockSkuMappingRepository.findByExternalSku).toHaveBeenCalledWith(
+      'conn-1',
+      'vtex-item-id-fallback'
+    );
+  });
+
+  it('Given: contact resolution throws error When: syncing Then: should fall back to defaultContactId', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockSyncLogRepository.findByExternalOrderId.mockResolvedValue(null);
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-key');
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-token');
+    mockVtexApiClient.getOrder.mockResolvedValue({
+      orderId: 'ORD-800',
+      sequence: '1',
+      status: 'handling',
+      creationDate: new Date().toISOString(),
+      value: 5000,
+      totals: [],
+      items: [
+        {
+          id: 'item-1',
+          productId: 'vtex-prod-1',
+          refId: 'SKU-1',
+          name: 'Product',
+          skuName: 'SKU',
+          quantity: 1,
+          price: 5000,
+          sellingPrice: 5000,
+          imageUrl: '',
+        },
+      ],
+      clientProfileData: {
+        email: 'error@test.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        document: '999',
+        documentType: 'CC',
+        phone: '555',
+        isCorporate: false,
+      },
+      shippingData: undefined as any,
+      paymentData: { transactions: [] },
+    });
+    // Contact resolution will throw
+    mockContactRepository.findByEmail.mockRejectedValue(new Error('Contact DB error'));
+    mockSkuMappingRepository.findByExternalSku.mockResolvedValue({
+      productId: 'local-product-1',
+    } as any);
+    mockSyncLogRepository.save.mockImplementation(async l => l);
+    mockConnectionRepository.update.mockImplementation(async c => c);
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-800',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isOk()).toBe(true);
+    result.match(
+      value => {
+        // Falls back to defaultContactId from connection
+        expect(value.data.contactId).toBe('contact-1');
+      },
+      () => {
+        throw new Error('Expected Ok result');
+      }
+    );
+  });
+
+  it('Given: existing FAILED sync log When: syncing successfully Then: should update existing log', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+
+    const existingLog = IntegrationSyncLog.reconstitute(
+      {
+        connectionId: 'conn-1',
+        externalOrderId: 'ORD-900',
+        action: 'FAILED',
+        errorMessage: 'Previous failure',
+        processedAt: new Date(),
+      },
+      'log-existing',
+      mockOrgId
+    );
+    mockSyncLogRepository.findByExternalOrderId.mockResolvedValue(existingLog);
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-key');
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-token');
+    mockVtexApiClient.getOrder.mockResolvedValue({
+      orderId: 'ORD-900',
+      sequence: '1',
+      status: 'handling',
+      creationDate: new Date().toISOString(),
+      value: 5000,
+      totals: [],
+      items: [
+        {
+          id: 'item-1',
+          productId: 'vtex-prod-1',
+          refId: 'SKU-1',
+          name: 'Product',
+          skuName: 'SKU',
+          quantity: 1,
+          price: 5000,
+          sellingPrice: 5000,
+          imageUrl: '',
+        },
+      ],
+      clientProfileData: undefined as any,
+      shippingData: undefined as any,
+      paymentData: { transactions: [] },
+    });
+    mockSkuMappingRepository.findByExternalSku.mockResolvedValue({
+      productId: 'local-product-1',
+    } as any);
+    mockSyncLogRepository.update.mockImplementation(async l => l);
+    mockConnectionRepository.update.mockImplementation(async c => c);
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-900',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isOk()).toBe(true);
+    // Should have called update (not save) on the existing log
+    expect(mockSyncLogRepository.update).toHaveBeenCalled();
+    expect(mockSyncLogRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('Given: unexpected error during sync When: syncing Then: should return generic error', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockSyncLogRepository.findByExternalOrderId.mockResolvedValue(null);
+    mockEncryptionService.decrypt.mockImplementation(() => {
+      throw new Error('Decryption failed');
+    });
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-ERR2',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isErr()).toBe(true);
+    result.match(
+      () => {
+        throw new Error('Expected Err result');
+      },
+      error => {
+        expect(error.code).toBe('VTEX_SYNC_ORDER_ERROR');
+        expect(error.message).toContain('Decryption failed');
+      }
+    );
+  });
+
+  it('Given: non-Error thrown during sync When: syncing Then: should return Unknown error', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockSyncLogRepository.findByExternalOrderId.mockRejectedValue('string error');
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-ERR3',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isErr()).toBe(true);
+    result.match(
+      () => {
+        throw new Error('Expected Err result');
+      },
+      error => {
+        expect(error.message).toContain('Unknown error');
+      }
+    );
+  });
+
+  it('Given: VTEX API fetch fails with existing log When: syncing Then: should update existing log with failure', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+
+    const existingLog = IntegrationSyncLog.reconstitute(
+      {
+        connectionId: 'conn-1',
+        externalOrderId: 'ORD-FAIL2',
+        action: 'FAILED',
+        processedAt: new Date(),
+      },
+      'log-existing',
+      mockOrgId
+    );
+    mockSyncLogRepository.findByExternalOrderId.mockResolvedValue(existingLog);
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-key');
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-token');
+    mockVtexApiClient.getOrder.mockRejectedValue(new Error('VTEX 500'));
+    mockSyncLogRepository.update.mockImplementation(async l => l);
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-FAIL2',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isErr()).toBe(true);
+    // Should call update on existing log (not save)
+    expect(mockSyncLogRepository.update).toHaveBeenCalled();
+  });
+
+  it('Given: order with new contact without document When: syncing Then: should create contact with email as identification', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockSyncLogRepository.findByExternalOrderId.mockResolvedValue(null);
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-key');
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-token');
+    mockVtexApiClient.getOrder.mockResolvedValue({
+      orderId: 'ORD-CONTACT1',
+      sequence: '1',
+      status: 'handling',
+      creationDate: new Date().toISOString(),
+      value: 5000,
+      totals: [],
+      items: [
+        {
+          id: 'item-1',
+          productId: 'vtex-prod-1',
+          refId: 'SKU-1',
+          name: 'Product',
+          skuName: 'SKU',
+          quantity: 1,
+          price: 5000,
+          sellingPrice: 5000,
+          imageUrl: '',
+        },
+      ],
+      clientProfileData: {
+        email: 'newuser@test.com',
+        firstName: 'Jane',
+        lastName: 'Smith',
+        document: undefined as any,
+        documentType: undefined as any,
+        phone: '555-1234',
+        isCorporate: false,
+      },
+      shippingData: {
+        address: {
+          street: '5th Ave',
+          number: '100',
+          neighborhood: 'Midtown',
+          city: 'NYC',
+          state: 'NY',
+          postalCode: '10001',
+          country: 'USA',
+        },
+      },
+      paymentData: { transactions: [] },
+    });
+    mockContactRepository.findByEmail.mockResolvedValue(null);
+    // No document, so findByIdentification should not be called or returns null
+    mockContactRepository.findByIdentification.mockResolvedValue(null);
+    mockContactRepository.save.mockImplementation(async c => c);
+    mockSkuMappingRepository.findByExternalSku.mockResolvedValue({
+      productId: 'local-product-1',
+    } as any);
+    mockSyncLogRepository.save.mockImplementation(async l => l);
+    mockConnectionRepository.update.mockImplementation(async c => c);
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-CONTACT1',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isOk()).toBe(true);
+    expect(mockContactRepository.save).toHaveBeenCalled();
+  });
+
   it('Given: valid order with unmatched SKUs When: syncing Then: should return error and log failure', async () => {
     const connection = createMockConnection();
     mockConnectionRepository.findById.mockResolvedValue(connection);

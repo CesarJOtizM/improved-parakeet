@@ -1916,4 +1916,201 @@ describe('PrismaSaleRepository', () => {
       );
     });
   });
+
+  describe('mapToEntity - contact and optional fields', () => {
+    it('Given: sale data with contactId When: mapping to entity Then: should include contactId', async () => {
+      // Arrange
+      const saleWithContact = {
+        ...mockSaleData,
+        contactId: 'contact-001',
+      };
+      mockPrismaService.sale.findUnique.mockResolvedValue(saleWithContact);
+
+      // Act
+      const result = await repository.findById('sale-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.contactId).toBe('contact-001');
+    });
+
+    it('Given: sale data with all populated fields When: mapping to entity Then: should include all fields', async () => {
+      // Arrange
+      const fullSaleData = {
+        ...mockSaleData,
+        contactId: 'contact-001',
+        customerReference: 'CUST-001',
+        externalReference: 'EXT-001',
+        note: 'Full sale note',
+        confirmedAt: new Date('2026-02-01'),
+        confirmedBy: 'user-confirmer',
+        cancelledAt: new Date('2026-02-05'),
+        cancelledBy: 'user-canceller',
+        pickedAt: new Date('2026-02-02'),
+        pickedBy: 'user-picker',
+        shippedAt: new Date('2026-02-03'),
+        shippedBy: 'user-shipper',
+        trackingNumber: 'TRACK-001',
+        shippingCarrier: 'FedEx',
+        shippingNotes: 'Handle with care',
+        completedAt: new Date('2026-02-04'),
+        completedBy: 'user-completer',
+        returnedAt: new Date('2026-02-06'),
+        returnedBy: 'user-returner',
+        movementId: 'mov-001',
+        status: 'COMPLETED',
+      };
+      mockPrismaService.sale.findUnique.mockResolvedValue(fullSaleData);
+
+      // Act
+      const result = await repository.findById('sale-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.contactId).toBe('contact-001');
+      expect(result?.trackingNumber).toBe('TRACK-001');
+      expect(result?.shippingCarrier).toBe('FedEx');
+      expect(result?.shippingNotes).toBe('Handle with care');
+      expect(result?.completedBy).toBe('user-completer');
+      expect(result?.returnedBy).toBe('user-returner');
+      expect(result?.movementId).toBe('mov-001');
+    });
+  });
+
+  describe('createSaleLine - Decimal object handling', () => {
+    it('Given: sale lines with Decimal-like objects When: mapping Then: should use toNumber()', async () => {
+      // Arrange
+      const saleWithDecimalLines = {
+        ...mockSaleData,
+        lines: [
+          {
+            id: 'line-1',
+            productId: 'product-001',
+            locationId: null,
+            quantity: { toNumber: () => 10 },
+            salePrice: { toNumber: () => 29.99 },
+            currency: 'USD',
+            extra: null,
+            orgId: 'org-123',
+          },
+        ],
+      };
+      mockPrismaService.sale.findUnique.mockResolvedValue(saleWithDecimalLines);
+
+      // Act
+      const result = await repository.findById('sale-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.getLines()).toHaveLength(1);
+      expect(result?.getLines()[0].quantity.getNumericValue()).toBe(10);
+    });
+
+    it('Given: sale lines with string quantities When: mapping Then: should convert to number', async () => {
+      // Arrange
+      const saleWithStringLines = {
+        ...mockSaleData,
+        lines: [
+          {
+            id: 'line-1',
+            productId: 'product-001',
+            locationId: 'loc-001',
+            quantity: '7',
+            salePrice: '15.50',
+            currency: 'USD',
+            extra: { tag: 'test' },
+            orgId: 'org-123',
+          },
+        ],
+      };
+      mockPrismaService.sale.findUnique.mockResolvedValue(saleWithStringLines);
+
+      // Act
+      const result = await repository.findById('sale-123', 'org-123');
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.getLines()[0].quantity.getNumericValue()).toBe(7);
+      expect(result?.getLines()[0].locationId).toBe('loc-001');
+      expect(result?.getLines()[0].extra).toEqual({ tag: 'test' });
+    });
+  });
+
+  describe('loadLines - Decimal object handling', () => {
+    it('Given: sale lines with Decimal-like quantity When: loading lines Then: should use toNumber()', async () => {
+      // Arrange
+      const linesData = [
+        {
+          id: 'line-1',
+          saleId: 'sale-123',
+          productId: 'product-001',
+          locationId: null,
+          quantity: { toNumber: () => 8 },
+          salePrice: { toNumber: () => 20.0 },
+          currency: 'COP',
+          extra: null,
+          orgId: 'org-123',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+      mockPrismaService.saleLine.findMany.mockResolvedValue(linesData);
+
+      // Act
+      const result = await repository.loadLines('sale-123', 'org-123');
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(result[0].quantity.getNumericValue()).toBe(8);
+    });
+
+    it('Given: sale lines with numeric quantity When: loading lines Then: should convert correctly', async () => {
+      // Arrange
+      const linesData = [
+        {
+          id: 'line-1',
+          saleId: 'sale-123',
+          productId: 'product-001',
+          locationId: 'loc-a',
+          quantity: 12,
+          salePrice: 30.0,
+          currency: 'USD',
+          extra: null,
+          orgId: 'org-123',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+      mockPrismaService.saleLine.findMany.mockResolvedValue(linesData);
+
+      // Act
+      const result = await repository.loadLines('sale-123', 'org-123');
+
+      // Assert
+      expect(result).toHaveLength(1);
+      expect(result[0].locationId).toBe('loc-a');
+    });
+  });
+
+  describe('findById - error handling non-Error object', () => {
+    it('Given: non-Error thrown When: finding by id Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.sale.findUnique.mockRejectedValue('string error');
+
+      // Act & Assert
+      await expect(repository.findById('sale-123', 'org-123')).rejects.toBe('string error');
+    });
+  });
+
+  describe('findByIdWithoutLines - error handling non-Error object', () => {
+    it('Given: non-Error thrown When: finding by id without lines Then: should log and rethrow', async () => {
+      // Arrange
+      mockPrismaService.sale.findUnique.mockRejectedValue('string error');
+
+      // Act & Assert
+      await expect(repository.findByIdWithoutLines('sale-123', 'org-123')).rejects.toBe(
+        'string error'
+      );
+    });
+  });
 });
