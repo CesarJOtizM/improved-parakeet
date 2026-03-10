@@ -393,6 +393,38 @@ export class PermissionsSeed {
         action: 'DELETE',
       },
 
+      // Integraciones (e-commerce)
+      {
+        name: 'INTEGRATIONS:CREATE',
+        description: 'Crear conexiones de integración',
+        module: 'INTEGRATIONS',
+        action: 'CREATE',
+      },
+      {
+        name: 'INTEGRATIONS:READ',
+        description: 'Ver integraciones',
+        module: 'INTEGRATIONS',
+        action: 'READ',
+      },
+      {
+        name: 'INTEGRATIONS:UPDATE',
+        description: 'Actualizar integraciones',
+        module: 'INTEGRATIONS',
+        action: 'UPDATE',
+      },
+      {
+        name: 'INTEGRATIONS:DELETE',
+        description: 'Eliminar integraciones',
+        module: 'INTEGRATIONS',
+        action: 'DELETE',
+      },
+      {
+        name: 'INTEGRATIONS:SYNC',
+        description: 'Sincronizar y probar integraciones',
+        module: 'INTEGRATIONS',
+        action: 'SYNC',
+      },
+
       // Configuración
       {
         name: 'SETTINGS:MANAGE',
