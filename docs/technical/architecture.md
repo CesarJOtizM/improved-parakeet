@@ -1,31 +1,33 @@
-# Arquitectura del Backend
+> **[English](./architecture.md)** | [Español](./architecture.es.md)
 
-## Tabla de Contenidos
+# Backend Architecture
 
-- [Vision General](#vision-general)
-- [Principios Arquitectonicos](#principios-arquitectonicos)
-- [Capas de la Arquitectura](#capas-de-la-arquitectura)
-- [Estructura del Proyecto](#estructura-del-proyecto)
-- [Flujo de una Peticion HTTP](#flujo-de-una-peticion-http)
+## Table of Contents
+
+- [Overview](#overview)
+- [Architectural Principles](#architectural-principles)
+- [Architecture Layers](#architecture-layers)
+- [Project Structure](#project-structure)
+- [HTTP Request Flow](#http-request-flow)
 - [Multi-Tenancy](#multi-tenancy)
-- [Sistema de Autenticacion](#sistema-de-autenticacion)
-- [Sistema de Autorizacion (RBAC)](#sistema-de-autorizacion-rbac)
-- [Eventos de Dominio](#eventos-de-dominio)
-- [Gestion de Errores](#gestion-de-errores)
-- [Infraestructura](#infraestructura)
-- [Despliegue](#despliegue)
+- [Authentication System](#authentication-system)
+- [Authorization System (RBAC)](#authorization-system-rbac)
+- [Domain Events](#domain-events)
+- [Error Handling](#error-handling)
+- [Infrastructure](#infrastructure)
+- [Deployment](#deployment)
 
 ---
 
-## Vision General
+## Overview
 
-El backend del Nevada Inventory System es una API REST construida con **NestJS 11** que sigue tres paradigmas arquitectonicos:
+The Nevada Inventory System backend is a REST API built with **NestJS 11** that follows three architectural paradigms:
 
-1. **Domain-Driven Design (DDD)**: El codigo se organiza alrededor de los conceptos del negocio
-2. **Clean Architecture**: Las capas internas no dependen de las externas
-3. **Hexagonal Architecture (Ports & Adapters)**: El dominio define interfaces; la infraestructura las implementa
+1. **Domain-Driven Design (DDD)**: Code is organized around business concepts
+2. **Clean Architecture**: Inner layers do not depend on outer layers
+3. **Hexagonal Architecture (Ports & Adapters)**: The domain defines interfaces; infrastructure implements them
 
-### Diagrama de Alto Nivel
+### High-Level Diagram
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -45,39 +47,43 @@ El backend del Nevada Inventory System es una API REST construida con **NestJS 1
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-**Regla de dependencia**: Las flechas siempre apuntan hacia adentro. Interfaces → Application → Domain ← Infrastructure.
+**Dependency rule**: Arrows always point inward. Interfaces -> Application -> Domain <- Infrastructure.
 
 ---
 
-## Principios Arquitectonicos
+## Architectural Principles
 
 ### Screaming Architecture
 
-La estructura de carpetas "grita" el dominio del negocio:
+The folder structure "screams" the business domain:
 
 ```
 src/
-├── inventory/        # Se ve que es un sistema de inventario
-├── sales/            # Se ve que tiene ventas
-├── returns/          # Se ve que tiene devoluciones
-├── authentication/   # Se ve que tiene autenticacion
-└── organization/     # Se ve que es multi-tenant
+├── inventory/        # Core: inventory management
+├── sales/            # Sales order management
+├── returns/          # Return order management
+├── contacts/         # Customer/supplier contacts
+├── integrations/     # Third-party integrations (VTEX)
+├── authentication/   # Authentication and RBAC
+├── organization/     # Multi-tenancy management
+├── report/           # 17 report types
+└── import/           # Bulk import operations
 ```
 
-No es `src/controllers/`, `src/services/`, `src/models/` — es el negocio lo que organiza el codigo.
+It is not `src/controllers/`, `src/services/`, `src/models/` -- the business is what organizes the code.
 
 ### Dependency Inversion
 
-El dominio define **puertos** (interfaces). La infraestructura implementa **adaptadores**:
+The domain defines **ports** (interfaces). Infrastructure implements **adapters**:
 
 ```typescript
-// DOMINIO: Define lo que necesita (Puerto)
+// DOMAIN: Defines what it needs (Port)
 interface IProductRepository {
   findById(id: string, orgId: string): Promise<Product | null>;
   save(product: Product): Promise<void>;
 }
 
-// INFRAESTRUCTURA: Implementa como se hace (Adaptador)
+// INFRASTRUCTURE: Implements how it's done (Adapter)
 class PrismaProductRepository implements IProductRepository {
   constructor(private prisma: PrismaService) {}
   async findById(id, orgId) { return this.prisma.product.findUnique(...); }
@@ -87,34 +93,34 @@ class PrismaProductRepository implements IProductRepository {
 
 ### Single Responsibility
 
-Cada use case tiene **una sola responsabilidad**:
+Each use case has **a single responsibility**:
 
 ```
 src/application/
 ├── productUseCases/
-│   ├── createProductUseCase.ts      # Solo crea productos
-│   ├── getProductByIdUseCase.ts     # Solo consulta un producto
-│   ├── updateProductUseCase.ts      # Solo actualiza productos
-│   └── deleteProductUseCase.ts      # Solo elimina productos
+│   ├── createProductUseCase.ts      # Only creates products
+│   ├── getProductByIdUseCase.ts     # Only queries a single product
+│   ├── updateProductUseCase.ts      # Only updates products
+│   └── deleteProductUseCase.ts      # Only deletes products
 ```
 
 ---
 
-## Capas de la Arquitectura
+## Architecture Layers
 
-### 1. Domain Layer (Nucleo)
+### 1. Domain Layer (Core)
 
-La capa mas interna. No depende de nada externo.
+The innermost layer. Does not depend on anything external.
 
-| Concepto | Ubicacion | Descripcion |
-|----------|-----------|-------------|
-| **Entity** | `{module}/domain/entities/` | Objetos con identidad (id + orgId) |
-| **Aggregate Root** | `{module}/domain/entities/` | Entidad raiz que controla su grafo |
-| **Value Object** | `{module}/domain/valueObjects/` | Objetos inmutables sin identidad |
-| **Domain Event** | `{module}/domain/events/` | Eventos que representan algo que paso |
-| **Domain Service** | `{module}/domain/services/` | Logica que no pertenece a una entidad |
-| **Repository Port** | `{module}/domain/ports/` | Interfaces de acceso a datos |
-| **Specification** | `{module}/domain/specifications/` | Reglas de negocio reutilizables |
+| Concept | Location | Description |
+|---------|----------|-------------|
+| **Entity** | `{module}/domain/entities/` | Objects with identity (id + orgId) |
+| **Aggregate Root** | `{module}/domain/entities/` | Root entity controlling its graph |
+| **Value Object** | `{module}/domain/valueObjects/` | Immutable objects without identity |
+| **Domain Event** | `{module}/domain/events/` | Events representing something that happened |
+| **Domain Service** | `{module}/domain/services/` | Logic that does not belong to a single entity |
+| **Repository Port** | `{module}/domain/ports/` | Data access interfaces |
+| **Specification** | `{module}/domain/specifications/` | Reusable business rules |
 
 #### Entity Base
 
@@ -146,7 +152,7 @@ abstract class AggregateRoot<T> extends Entity<T> {
 
 ### 2. Application Layer (Use Cases)
 
-Orquesta la logica de negocio. Recibe DTOs, opera con entidades de dominio, retorna Results.
+Orchestrates business logic. Receives DTOs, operates with domain entities, returns Results.
 
 ```typescript
 // src/application/productUseCases/createProductUseCase.ts
@@ -157,29 +163,29 @@ class CreateProductUseCase {
   ) {}
 
   async execute(dto: CreateProductDto, orgId: string): Promise<Result<Product, DomainError>> {
-    // 1. Validar reglas de negocio
+    // 1. Validate business rules
     const existingProduct = await this.productRepo.findBySku(dto.sku, orgId);
     if (existingProduct) return err(new ConflictError('SKU already exists'));
 
-    // 2. Crear entidad de dominio
+    // 2. Create domain entity
     const product = Product.create({ ...dto, orgId });
 
-    // 3. Persistir
+    // 3. Persist
     await this.productRepo.save(product);
 
-    // 4. Publicar eventos de dominio
+    // 4. Publish domain events
     await this.eventDispatcher.dispatchAll(product.getDomainEvents());
 
-    // 5. Retornar resultado
+    // 5. Return result
     return ok(product);
   }
 }
 ```
 
-**131 use cases** organizados por dominio:
+**150+ use cases** organized by domain:
 
-| Dominio | Cantidad | Ejemplos |
-|---------|----------|----------|
+| Domain | Count | Examples |
+|--------|-------|----------|
 | Auth | 6 | Login, Logout, Refresh, PasswordReset |
 | Users | 6 | Create, Get, GetAll, Update, ChangeStatus, AssignRole |
 | Roles | 8 | CRUD + Permissions management |
@@ -191,30 +197,36 @@ class CreateProductUseCase {
 | Transfers | 6 | Create, Get, GetAll, Initiate, Receive, Reject |
 | Sales | 8 | CRUD + Confirm, Pick, Ship, Complete, Cancel |
 | Returns | 5 | CRUD + Confirm, Cancel |
-| Reports | 17 | Uno por tipo de reporte |
+| Reports | 17 | One per report type |
 | Dashboard | 1 | GetDashboardMetrics |
 | Audit | 4 | GetLogs, GetLog, GetUserActivity, GetEntityHistory |
 | Import | 2 | Preview, Execute |
 | Organization | 2 | Get, Update |
+| Contacts | 4 | Create, Get, GetById, Update |
+| Integrations | 11 | Connection CRUD, SkuMapping CRUD, Sync, Retry |
 
-### 3. Infrastructure Layer (Adaptadores de Salida)
+### 3. Infrastructure Layer (Output Adapters)
 
-Implementa las interfaces definidas en el dominio:
+Implements the interfaces defined in the domain:
 
-| Adaptador | Ubicacion | Implementa |
-|-----------|-----------|------------|
+| Adapter | Location | Implements |
+|---------|----------|------------|
 | PrismaProductRepository | `infrastructure/database/repositories/` | IProductRepository |
 | PrismaSaleRepository | `infrastructure/database/repositories/` | ISaleRepository |
+| PrismaContactRepository | `infrastructure/database/repositories/` | IContactRepository |
+| IntegrationConnectionRepository | `infrastructure/database/repositories/` | IIntegrationConnectionRepository |
+| IntegrationSkuMappingRepository | `infrastructure/database/repositories/` | IIntegrationSkuMappingRepository |
+| IntegrationSyncLogRepository | `infrastructure/database/repositories/` | IIntegrationSyncLogRepository |
 | EmailService | `infrastructure/externalServices/` | IEmailService |
 | NotificationService | `infrastructure/externalServices/` | INotificationService |
 | FileParsingService | `infrastructure/externalServices/` | IFileParsingService |
 | FunctionalCacheService | `shared/infrastructure/cache/` | ICacheService |
 
-**15+ repositorios Prisma** para todas las entidades principales.
+**20+ Prisma repositories** for all main entities.
 
-### 4. Interface Layer (Adaptadores de Entrada)
+### 4. Interface Layer (Input Adapters)
 
-Controllers HTTP con NestJS:
+HTTP controllers with NestJS:
 
 ```typescript
 // src/interfaces/http/inventory/products.controller.ts
@@ -235,72 +247,92 @@ class ProductsController {
 }
 ```
 
-**20+ controllers** organizados por dominio.
+**20+ controllers** organized by domain.
 
 ---
 
-## Estructura del Proyecto
+## Project Structure
 
 ```
 src/
 ├── main.ts                          # Bootstrap: Swagger, CORS, security
 ├── app.module.ts                    # Root module + middleware config
 │
-├── authentication/                  # Autenticacion y RBAC
-│   ├── authentication.module.ts     # DI central
+├── authentication/                  # Authentication and RBAC
+│   ├── authentication.module.ts     # Central DI
 │   ├── config/                      # auth.config.ts (JWT, BCRYPT)
 │   ├── domain/                      # Entities, Services, Ports, Events, VOs
 │   ├── security/                    # Guards, Strategies, Decorators
 │   └── dto/                         # Auth DTOs
 │
-├── inventory/                       # Dominio de Inventario
+├── inventory/                       # Inventory Domain
 │   ├── inventory.module.ts
 │   ├── products/                    # Product domain
 │   ├── warehouses/                  # Warehouse domain
-│   ├── locations/                   # Location domain (jerarquico)
+│   ├── locations/                   # Location domain (hierarchical)
 │   ├── movements/                   # Movement domain (IN/OUT/ADJUSTMENT)
 │   ├── transfers/                   # Transfer domain
 │   └── stock/                       # Stock domain
 │
-├── sales/                           # Dominio de Ventas
+├── sales/                           # Sales Domain
 │   ├── domain/entities/             # Sale (AggregateRoot), SaleLine
 │   ├── domain/events/               # SaleCreated, SaleConfirmed, etc.
 │   ├── domain/valueObjects/         # SaleNumber, SaleStatus, Money, Quantity
 │   └── domain/specifications/       # Query specifications
 │
-├── returns/                         # Dominio de Devoluciones
+├── returns/                         # Returns Domain
 │   ├── domain/entities/             # Return (AggregateRoot), ReturnLine
 │   └── domain/valueObjects/         # ReturnStatus, ReturnType
 │
-├── report/                          # Dominio de Reportes
+├── contacts/                        # Contact management domain
+│   ├── domain/entities/             # Contact entity
+│   ├── domain/ports/                # IContactRepository
+│   ├── dto/                         # Create/Update DTOs
+│   └── mappers/                     # Contact mapper
+│
+├── integrations/                    # Third-party integrations
+│   ├── integrations.module.ts       # Main integrations module
+│   ├── shared/                      # Shared integration components
+│   │   ├── domain/entities/         # Connection, SkuMapping, SyncLog
+│   │   ├── domain/ports/            # Repository interfaces
+│   │   └── encryption/              # EncryptionService
+│   └── vtex/                        # VTEX e-commerce integration
+│       ├── application/             # Sync, Poll, Webhook use cases
+│       ├── infrastructure/          # VtexApiClient
+│       ├── events/                  # OutboundSyncHandler
+│       └── jobs/                    # VtexPollingJob
+│
+├── report/                          # Report domain (17 types)
 ├── organization/                    # Multi-tenancy
-├── import/                          # Importaciones masivas
+├── import/                          # Bulk import
 ├── healthCheck/                     # Health checks
 │
-├── application/                     # Casos de Uso (131 archivos)
+├── application/                     # Use Cases (150+ files)
 │   ├── authUseCases/
 │   ├── userUseCases/
 │   ├── roleUseCases/
 │   ├── productUseCases/
 │   ├── saleUseCases/
 │   ├── returnUseCases/
+│   ├── contactUseCases/             # Contact CRUD
+│   ├── integrationUseCases/         # Connection, SkuMapping, Sync management
 │   ├── reportUseCases/
 │   ├── dashboardUseCases/
 │   ├── eventHandlers/               # Event subscribers
 │   └── ...
 │
-├── infrastructure/                  # Adaptadores de Infraestructura
+├── infrastructure/                  # Infrastructure Adapters
 │   ├── database/
-│   │   ├── prisma/schema.prisma     # Schema de BD (25+ modelos)
-│   │   ├── prisma/migrations/       # Migraciones
-│   │   ├── prisma/seeds/            # Seeds de datos
-│   │   ├── prisma.service.ts        # Cliente Prisma
-│   │   ├── unitOfWork.service.ts    # Transacciones
-│   │   └── repositories/            # 15+ repositorios Prisma
+│   │   ├── prisma/schema.prisma     # DB schema (25+ models)
+│   │   ├── prisma/migrations/       # Migrations
+│   │   ├── prisma/seeds/            # Data seeds
+│   │   ├── prisma.service.ts        # Prisma client
+│   │   ├── unitOfWork.service.ts    # Transactions
+│   │   └── repositories/            # 20+ Prisma repositories
 │   ├── externalServices/            # Email, Notifications, FileParsing
 │   └── jobs/                        # Scheduled jobs (stock alerts)
 │
-├── interfaces/http/                 # Controllers HTTP
+├── interfaces/http/                 # HTTP Controllers
 │   ├── routes/                      # Auth, Users, Roles, Settings
 │   ├── inventory/                   # Products, Categories, Warehouses, etc.
 │   ├── sales/                       # Sales controller
@@ -308,6 +340,8 @@ src/
 │   ├── report/                      # Reports controller
 │   ├── dashboard/                   # Dashboard metrics
 │   ├── audit/                       # Audit logs
+│   ├── contacts/                    # Contact management endpoints
+│   ├── integrations/                # Integration + VTEX webhook endpoints
 │   ├── import/                      # Bulk import
 │   └── middlewares/                 # Tenant, ClientIP
 │
@@ -316,7 +350,7 @@ src/
     ├── domain/events/               # DomainEventBus, Dispatcher, Idempotency
     ├── domain/result/               # Result<T, E> monad
     ├── domain/specifications/       # Specification pattern
-    ├── infrastructure/cache/        # Redis cache con decoradores
+    ├── infrastructure/cache/        # Redis cache with decorators
     ├── infrastructure/resilience/   # CircuitBreaker, Retry, Timeout
     ├── guards/                      # PermissionGuard
     ├── decorators/                  # @RequirePermissions, @OrgId
@@ -328,59 +362,59 @@ src/
 
 ---
 
-## Flujo de una Peticion HTTP
+## HTTP Request Flow
 
 ```
-1. Cliente HTTP envia request
+1. HTTP client sends request
    ↓
-2. TenantMiddleware extrae x-organization-slug
+2. TenantMiddleware extracts x-organization-slug
    ↓
-3. JwtAuthGuard valida el token JWT
+3. JwtAuthGuard validates the JWT token
    ↓
-4. RoleBasedAuthGuard verifica roles del usuario
+4. RoleBasedAuthGuard verifies user roles
    ↓
-5. PermissionGuard verifica @RequirePermissions metadata
+5. PermissionGuard verifies @RequirePermissions metadata
    ↓
-6. Controller recibe request con DTO validado
+6. Controller receives request with validated DTO
    ↓
-7. Controller invoca UseCase.execute(dto, orgId)
+7. Controller invokes UseCase.execute(dto, orgId)
    ↓
-8. UseCase opera con entidades de dominio
+8. UseCase operates with domain entities
    ↓
-9. UseCase llama al repositorio (puerto)
+9. UseCase calls the repository (port)
    ↓
-10. Repositorio Prisma ejecuta query SQL
+10. Prisma repository executes SQL query
    ↓
-11. UseCase retorna Result<T, DomainError>
+11. UseCase returns Result<T, DomainError>
    ↓
-12. Controller convierte Result a HTTP response
+12. Controller converts Result to HTTP response
    ↓
-13. ResponseInterceptor envuelve la respuesta
+13. ResponseInterceptor wraps the response
    ↓
-14. GlobalExceptionFilter captura errores no manejados
+14. GlobalExceptionFilter catches unhandled errors
    ↓
-15. Cliente recibe respuesta HTTP
+15. Client receives HTTP response
 ```
 
-### Cadena de Guards
+### Guard Chain
 
 ```typescript
 @UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
 ```
 
-1. **JwtAuthGuard**: Extrae y valida JWT → inyecta `request.user`
-2. **RoleBasedAuthGuard**: Verifica que el usuario tiene los roles requeridos
-3. **PermissionGuard**: Lee metadata de `@RequirePermissions()` y verifica contra `request.user.permissions`
+1. **JwtAuthGuard**: Extracts and validates JWT -> injects `request.user`
+2. **RoleBasedAuthGuard**: Verifies the user has the required roles
+3. **PermissionGuard**: Reads metadata from `@RequirePermissions()` and verifies against `request.user.permissions`
 
-Roles **ADMIN** y **SYSTEM_ADMIN** hacen bypass de permission checks.
+**ADMIN** and **SYSTEM_ADMIN** roles bypass permission checks.
 
 ---
 
 ## Multi-Tenancy
 
-### Modelo de Aislamiento
+### Isolation Model
 
-Cada organizacion tiene datos completamente aislados:
+Each organization has completely isolated data:
 
 ```
 Organization A          Organization B
@@ -391,23 +425,23 @@ Organization A          Organization B
 └── Roles (custom)      └── Roles (custom)
 ```
 
-### Implementacion
+### Implementation
 
-**TenantMiddleware** extrae el contexto de organizacion:
+**TenantMiddleware** extracts the organization context:
 
 ```typescript
 // src/interfaces/http/middlewares/tenant.middleware.ts
 class TenantMiddleware {
   use(req, res, next) {
     const slug = req.headers['x-organization-slug'];
-    // Normalizar y validar
+    // Normalize and validate
     req.organizationSlug = slug;
     next();
   }
 }
 ```
 
-**Todas las entidades** tienen campo `orgId`:
+**All entities** have an `orgId` field:
 
 ```prisma
 model Product {
@@ -415,11 +449,11 @@ model Product {
   orgId     String
   sku       String
   // ...
-  @@unique([sku, orgId])  // SKU unico por org
+  @@unique([sku, orgId])  // SKU unique per org
 }
 ```
 
-**Repositorios** filtran por `orgId` automaticamente:
+**Repositories** filter by `orgId` automatically:
 
 ```typescript
 async findAll(orgId: string, filters) {
@@ -431,59 +465,59 @@ async findAll(orgId: string, filters) {
 
 ---
 
-## Sistema de Autenticacion
+## Authentication System
 
-### Flujo de Login
+### Login Flow
 
 ```
 POST /auth/login { email, password, organizationSlug }
   ↓
-1. Buscar usuario por email + org
-2. Verificar password con bcrypt
-3. Generar access token (15 min) y refresh token (7 dias)
-4. Crear registro de Session en BD
-5. Retornar tokens + user data
+1. Find user by email + org
+2. Verify password with bcrypt
+3. Generate access token (15 min) and refresh token (7 days)
+4. Create Session record in DB
+5. Return tokens + user data
 ```
 
-### Tokens JWT
+### JWT Tokens
 
-| Token | Duracion | Contenido |
-|-------|----------|-----------|
+| Token | Duration | Content |
+|-------|----------|---------|
 | Access Token | 15 min | userId, orgId, roles, permissions |
-| Refresh Token | 7 dias | userId, sessionId |
+| Refresh Token | 7 days | userId, sessionId |
 
 ### Token Blacklist
 
-Redis almacena tokens invalidados (logout):
+Redis stores invalidated tokens (logout):
 
 ```typescript
-// Al hacer logout, el access token se agrega al blacklist
+// On logout, the access token is added to the blacklist
 await this.redis.set(`blacklist:${token}`, '1', 'EX', remainingTTL);
 ```
 
 ### OTP (One-Time Password)
 
-Para password reset y activacion de cuenta:
+For password reset and account activation:
 
 ```
-POST /auth/password-reset/request → Genera OTP y envia email
-POST /auth/password-reset/verify  → Valida OTP
-POST /auth/password-reset/confirm → Cambia password
+POST /auth/password-reset/request → Generates OTP and sends email
+POST /auth/password-reset/verify  → Validates OTP
+POST /auth/password-reset/confirm → Changes password
 ```
 
 ---
 
-## Sistema de Autorizacion (RBAC)
+## Authorization System (RBAC)
 
-### Formato de Permisos
+### Permission Format
 
 ```
 MODULE:ACTION
 ```
 
-Ejemplo: `PRODUCTS:CREATE`, `SALES:CONFIRM`, `REPORTS:VIEW`
+Example: `PRODUCTS:CREATE`, `SALES:CONFIRM`, `REPORTS:VIEW`
 
-### 80+ Permisos Definidos
+### 80+ Defined Permissions
 
 ```typescript
 // src/shared/constants/security.constants.ts
@@ -495,11 +529,11 @@ const SYSTEM_PERMISSIONS = {
   // Sales
   'SALES:CREATE', 'SALES:READ', 'SALES:UPDATE', 'SALES:CONFIRM', 'SALES:PICK',
   'SALES:SHIP', 'SALES:COMPLETE', 'SALES:CANCEL',
-  // ... y muchos mas
+  // ... and many more
 };
 ```
 
-### Guard de Permisos
+### Permission Guard
 
 ```typescript
 // src/shared/guards/permission.guard.ts
@@ -513,18 +547,18 @@ class PermissionGuard implements CanActivate {
 
     const user = request.user;
 
-    // ADMIN y SYSTEM_ADMIN hacen bypass
+    // ADMIN and SYSTEM_ADMIN bypass
     if (user.roles.includes('ADMIN') || user.roles.includes('SYSTEM_ADMIN')) {
       return true;
     }
 
-    // Verificar permisos
+    // Verify permissions
     return requiredPermissions.every(p => user.permissions.includes(p));
   }
 }
 ```
 
-### Uso en Controllers
+### Usage in Controllers
 
 ```typescript
 @Post()
@@ -538,9 +572,9 @@ async confirm(@Param('id') id) { ... }
 
 ---
 
-## Eventos de Dominio
+## Domain Events
 
-### Arquitectura de Eventos
+### Event Architecture
 
 ```
 Entity (Aggregate Root)
@@ -555,10 +589,10 @@ DomainEventBus
 Side effects (audit log, notifications, etc.)
 ```
 
-### Eventos Definidos
+### Defined Events
 
-| Dominio | Eventos |
-|---------|---------|
+| Domain | Events |
+|--------|--------|
 | Products | ProductCreated, ProductUpdated, ProductActivated, ProductDeactivated |
 | Sales | SaleCreated, SaleConfirmed, SalePickingStarted, SaleShipped, SaleCompleted, SaleCancelled |
 | Returns | ReturnCreated, ReturnConfirmed, ReturnCancelled |
@@ -566,8 +600,9 @@ Side effects (audit log, notifications, etc.)
 | Transfers | TransferInitiated, TransferReceived, TransferRejected |
 | Users | UserCreated, UserStatusChanged |
 | Roles | RoleAssigned, PermissionChanged |
+| Integrations | VtexOutboundSync (sale confirmed triggers outbound sync to VTEX) |
 
-### Idempotencia
+### Idempotency
 
 ```typescript
 // src/shared/domain/events/eventIdempotency.service.ts
@@ -577,20 +612,20 @@ class EventIdempotencyService {
 }
 ```
 
-Cada evento tiene un `eventId` unico. El servicio de idempotencia previene procesamiento duplicado.
+Each event has a unique `eventId`. The idempotency service prevents duplicate processing.
 
 ---
 
-## Gestion de Errores
+## Error Handling
 
 ### Result Monad
 
-En lugar de lanzar excepciones, los use cases retornan `Result<T, E>`:
+Instead of throwing exceptions, use cases return `Result<T, E>`:
 
 ```typescript
 type Result<T, E> = Ok<T> | Err<E>;
 
-// Uso
+// Usage
 const result = await createProduct.execute(dto, orgId);
 if (result.isErr()) {
   return resultToHttp(result); // 400, 404, 409, etc.
@@ -598,20 +633,20 @@ if (result.isErr()) {
 return result.value;
 ```
 
-### Tipos de Error de Dominio
+### Domain Error Types
 
-| Error | HTTP Status | Uso |
-|-------|-------------|-----|
-| `ValidationError` | 400 | Datos de entrada invalidos |
-| `NotFoundError` | 404 | Entidad no encontrada |
-| `ConflictError` | 409 | SKU duplicado, estado invalido |
-| `BusinessRuleError` | 422 | Regla de negocio violada |
-| `UnauthorizedError` | 401 | No autenticado |
-| `ForbiddenError` | 403 | Sin permisos |
+| Error | HTTP Status | Usage |
+|-------|-------------|-------|
+| `ValidationError` | 400 | Invalid input data |
+| `NotFoundError` | 404 | Entity not found |
+| `ConflictError` | 409 | Duplicate SKU, invalid state |
+| `BusinessRuleError` | 422 | Business rule violated |
+| `UnauthorizedError` | 401 | Not authenticated |
+| `ForbiddenError` | 403 | Insufficient permissions |
 
 ### GlobalExceptionFilter
 
-Captura excepciones no manejadas y las convierte en respuestas HTTP estructuradas:
+Catches unhandled exceptions and converts them into structured HTTP responses:
 
 ```typescript
 // src/shared/filters/globalExceptionFilter.ts
@@ -629,23 +664,23 @@ class GlobalExceptionFilter implements ExceptionFilter {
 }
 ```
 
-> Para la guia completa del Result Monad, ver [result-monad-guide.md](result-monad-guide.md)
+> For the full Result Monad guide, see [result-monad-guide.md](result-monad-guide.md)
 
 ---
 
-## Infraestructura
+## Infrastructure
 
-### Base de Datos (PostgreSQL + Prisma)
+### Database (PostgreSQL + Prisma)
 
-- **25+ modelos** en el schema
-- **UnitOfWork** para transacciones atomicas
-- **Soft delete** con campo `deletedAt`
-- **Indexes** optimizados para queries frecuentes (orgId, status, createdAt)
+- **25+ models** in the schema
+- **UnitOfWork** for atomic transactions
+- **Soft delete** with `deletedAt` field
+- **Indexes** optimized for frequent queries (orgId, status, createdAt)
 
 ### Cache (Redis)
 
 ```typescript
-// Decoradores de cache
+// Cache decorators
 @Cacheable({ key: 'products:{orgId}', ttl: 300 })
 async getAll(orgId: string) { ... }
 
@@ -653,19 +688,19 @@ async getAll(orgId: string) { ... }
 async create(product: Product) { ... }
 ```
 
-Usado para: rate limiting, token blacklist, cache de queries.
+Used for: rate limiting, token blacklist, query cache.
 
-### Resiliencia
+### Resilience
 
 ```
 src/shared/infrastructure/resilience/
 ├── circuitBreaker.ts     # CLOSED → OPEN → HALF_OPEN
 ├── retry.ts              # Exponential backoff + jitter
 ├── timeout.ts            # Request timeout wrapper
-└── resilientCall.ts      # Compone los tres patrones
+└── resilientCall.ts      # Composes all three patterns
 ```
 
-Aplicado a: EmailService, NotificationService.
+Applied to: EmailService, NotificationService.
 
 ```typescript
 const result = await resilientCall(
@@ -678,21 +713,21 @@ const result = await resilientCall(
 );
 ```
 
-### Jobs Programados
+### Scheduled Jobs
 
-**StockValidationJob**: Verifica alertas de stock cada hora.
+**StockValidationJob**: Checks stock alerts every hour.
 
 ```
-Cada hora → Lee AlertConfiguration por org → Si coincide con cronFrequency
-  → Verificar stock por debajo del minimo
-  → Enviar notificaciones a recipientEmails
+Every hour → Read AlertConfiguration per org → If matches cronFrequency
+  → Check stock below minimum
+  → Send notifications to recipientEmails
 ```
 
-Frecuencias configurables: EVERY_HOUR, EVERY_6_HOURS, EVERY_12_HOURS, EVERY_DAY.
+Configurable frequencies: EVERY_HOUR, EVERY_6_HOURS, EVERY_12_HOURS, EVERY_DAY.
 
 ---
 
-## Despliegue
+## Deployment
 
 ### Render (`render.yaml`)
 
@@ -715,7 +750,7 @@ services:
 
 ### Docker Production
 
-Multi-stage build con Bun:
+Multi-stage build with Bun:
 
 ```dockerfile
 # Stage 1: Build
@@ -736,26 +771,38 @@ CMD ["bun", "run", "prod"]
 # .github/workflows/ci.yml
 jobs:
   lint:     # ESLint
-  test:     # Jest con 90% coverage threshold
-  build:    # Build de produccion
+  test:     # Jest with 90% coverage threshold
+  build:    # Production build
 ```
 
-### Servicios Externos
+### External Services
 
-| Servicio | Proveedor | Proposito |
-|----------|-----------|-----------|
-| PostgreSQL | Neon | Base de datos principal |
+| Service | Provider | Purpose |
+|---------|----------|---------|
+| PostgreSQL | Neon | Main database |
 | Redis | Upstash | Cache, rate limiting, token blacklist |
-| Monitoring | Sentry | Error tracking (opcional) |
+| Monitoring | Sentry | Error tracking (optional) |
 
 ---
 
-## Documentacion Relacionada
+## Related Documentation
 
-| Documento | Descripcion |
-|-----------|-------------|
-| [Bounded Context Map](bounded-context-map.md) | Mapa de contextos acotados (DDD) |
-| [Result Monad Guide](result-monad-guide.md) | Guia del patron Result<T, E> |
-| [Data Model](data_model.md) | Modelo de datos y relaciones |
-| [Testing Structure](testing-structure.md) | Estructura y convenciones de tests |
-| [Patterns](patterns.md) | Patrones de diseno implementados |
+| Document | Description |
+|----------|-------------|
+| [Bounded Context Map](bounded-context-map.md) | DDD context map |
+| [Result Monad Guide](result-monad-guide.md) | Result<T, E> pattern guide |
+| [Data Model](data_model.md) | Database structure |
+| [Testing Structure](testing-structure.md) | Test conventions |
+| [Patterns](patterns.md) | Design patterns |
+| [Error Codes](error-codes.md) | Error code catalog |
+| [Module: Inventory](../modules/inventory.md) | Inventory module docs |
+| [Module: Authentication](../modules/authentication.md) | Auth module docs |
+| [Module: Sales](../modules/sales.md) | Sales module docs |
+| [Module: Returns](../modules/returns.md) | Returns module docs |
+| [Module: Contacts](../modules/contacts.md) | Contacts module docs |
+| [Module: Integrations](../modules/integrations.md) | Integrations module docs |
+| [Module: Reports](../modules/reports.md) | Reports module docs |
+| [Module: Import](../modules/import.md) | Import module docs |
+| [Module: Organization](../modules/organization.md) | Organization module docs |
+| [Module: Shared](../modules/shared.md) | Shared module docs |
+| [Module: Infrastructure](../modules/infrastructure.md) | Infrastructure module docs |

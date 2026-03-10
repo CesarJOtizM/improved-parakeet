@@ -1,98 +1,98 @@
-> **[English](./data_model.md)** | [Español](./data_model.es.md)
+> [English](./data_model.md) | **[Español](./data_model.es.md)**
 
-# Data Model
+# Modelo de Datos
 
-## 0) Design Principles
+## 0) Principios de diseno
 
-- **Multi-tenant:** everything belongs to an `organization` (org_id).
-- **Full traceability:** every movement generates a trail (user, date, origin, destination, reason).
-- **Pragmatic normalization:** single catalog for `products`, `units`, `categories`, and `warehouses`.
-- **Valuation:** cost by **Weighted Moving Average** (WMA) per product and warehouse (default).
-- **Integrity:** foreign keys, stock >= 0 constraints, unique SKU.
-- **Auditing:** audit table with _before/after_ in JSON.
+- **Multi-tenant:** todo pertenece a una `organizacion` (org_id).
+- **Trazabilidad total:** todo movimiento genera rastro (usuario, fecha, origen, destino, motivo).
+- **Normalizacion pragmatica:** catalogo unico de `productos`, `unidades`, `categorias` y `bodegas`.
+- **Valorizacion:** costo por **Promedio Ponderado Movil** (PPM) por producto y bodega (defecto).
+- **Integridad:** claves foraneas, restricciones de stock >= 0, SKU unico.
+- **Auditoria:** tabla de auditoria con _before/after_ en JSON.
   ***
 
-## 1) Entities (data dictionary)
+## 1) Entidades (diccionario de datos)
 
-> Keys: id = UUID v4.
+> Claves: id = UUID v4.
 >
 > Timestamps: `created_at`, `updated_at` (UTC).
 >
-> `org_id` present in all "business" tables.
+> `org_id` presente en todas las tablas "de negocio".
 
-### 1.1 Organization & Security
+### 1.1 Organizacion & Seguridad
 
 - **organizations**: `id`, `name`, `tax_id`, `settings(jsonb)`, `timezone`, `currency`, `date_format`
 - **organization_branding**: `id`, `org_id`, `logo_url`, `logo_alt_text`, `primary_color`, `secondary_color`, `accent_color`, `font_family`, `custom_css`
-- **users**: `id`, `org_id`, `email(unique per org)`, `username(unique per org)`, `password_hash`, `name`, `status` (`ACTIVE`,`INACTIVE`,`LOCKED`), `last_login_at`, `failed_login_attempts`, `locked_until`
+- **users**: `id`, `org_id`, `email(unico por org)`, `username(unico por org)`, `password_hash`, `name`, `status` (`ACTIVE`,`INACTIVE`,`LOCKED`), `last_login_at`, `failed_login_attempts`, `locked_until`
 - **user_sessions**: `id`, `user_id`, `token_hash`, `refresh_token_hash`, `ip_address`, `user_agent`, `expires_at`, `created_at`
-- **roles**: `id`, `org_id`, `name`, `description`, `is_system_role` (for predefined roles)
+- **roles**: `id`, `org_id`, `name`, `description`, `is_system_role` (para roles predefinidos)
 - **permissions**: `id`, `org_id`, `module` (`USERS`,`PRODUCTS`,`WAREHOUSES`,`MOVEMENTS`,`REPORTS`,`IMPORTS`,`SETTINGS`), `action` (`CREATE`,`READ`,`UPDATE`,`DELETE`,`POST`,`VOID`,`IMPORT`), `description`
-- **user_roles**: `user_id`, `role_id` (composite PK)
-- **role_permissions**: `role_id`, `permission_id` (composite PK)
+- **user_roles**: `user_id`, `role_id` (PK compuesta)
+- **role_permissions**: `role_id`, `permission_id` (PK compuesta)
 
-### 1.2 Master Data
+### 1.2 Maestros
 
-- **units**: `id`, `org_id`, `code` (e.g. `UNIT`, `KG`), `name`, `precision` (decimals)
+- **units**: `id`, `org_id`, `code` (ej. `UND`, `KG`), `name`, `precision` (decimales)
 - **categories**: `id`, `org_id`, `name`, `parent_id(NULL)`
 - **warehouses**: `id`, `org_id`, `code`, `name`, `address`
 - **locations**: `id`, `org_id`, `warehouse_id`, `code`, `name`, `is_default`
-- **products**: `id`, `org_id`, `sku(unique per org)`, `name`, `description`, `unit_id`,
+- **products**: `id`, `org_id`, `sku(unico por org)`, `name`, `description`, `unit_id`,
   `barcode(NULL)`, `brand(NULL)`, `model(NULL)`, `status`
-  `cost_method` ENUM(`AVG`=average, `FIFO`) -- _default `AVG`_
-- **product_prices** _(optional)_: `id`, `org_id`, `product_id`, `currency`, `price_type` (e.g. `LIST`, `WHOLESALE`), `amount`
+  `cost_method` ENUM(`AVG`=promedio, `FIFO`) -- _default `AVG`_
+- **product_prices** _(opcional)_: `id`, `org_id`, `product_id`, `currency`, `price_type` (ej. `LIST`, `WHOLESALE`), `amount`
 - **reorder_rules**: `id`, `org_id`, `product_id`, `warehouse_id`, `min_qty`, `max_qty`, `safety_qty`
 
-### 1.3 Movements (Kardex)
+### 1.3 Movimientos (Kardex)
 
-- **movements** (header): `id`, `org_id`, `type` ENUM(`IN`,`OUT`,`ADJUST_IN`,`ADJUST_OUT`,`TRANSFER_OUT`,`TRANSFER_IN`),
-  `status` ENUM(`DRAFT`,`POSTED`,`VOID`), `warehouse_id`, `reference` (external doc),
+- **movements** (encabezado): `id`, `org_id`, `type` ENUM(`IN`,`OUT`,`ADJUST_IN`,`ADJUST_OUT`,`TRANSFER_OUT`,`TRANSFER_IN`),
+  `status` ENUM(`DRAFT`,`POSTED`,`VOID`), `warehouse_id`, `reference` (doc externo),
   `reason` ENUM(`PURCHASE`,`SALE`,`RETURN_SUPPLIER`,`RETURN_CUSTOMER`,`CONSUMPTION`,`CORRECTION`,`OTHER`),
   `note`, `posted_at`, `created_by`
-- **movement_lines** (detail): `id`, `org_id`, `movement_id`, `product_id`, `location_id`,
-  `qty` (always positive sign; the actual sign is determined by `type`),
-  `unit_cost` (affects WMA only on inbound entries), `currency`, `extra(jsonb)`
-- **transfers** (warehouse-to-warehouse flow): `id`, `org_id`, `from_warehouse_id`, `to_warehouse_id`,
+- **movement_lines** (detalle): `id`, `org_id`, `movement_id`, `product_id`, `location_id`,
+  `qty` (signo positivo SIEMPRE; el signo real lo determina `type`),
+  `unit_cost` (afecta PPM solo en entradas), `currency`, `extra(jsonb)`
+- **transfers** (flujo de bodega a bodega): `id`, `org_id`, `from_warehouse_id`, `to_warehouse_id`,
   `status` ENUM(`DRAFT`,`IN_TRANSIT`,`PARTIAL`,`RECEIVED`,`REJECTED`,`CANCELED`), `created_by`
 - **transfer_lines**: `id`, `org_id`, `transfer_id`, `product_id`, `qty`, `from_location_id(NULL)`, `to_location_id(NULL)`
-  - When posting the transfer, two linked movements are generated: `TRANSFER_OUT` and `TRANSFER_IN` (upon receipt).
+  - Al _postear_ la transferencia se generan dos movimientos enlazados: `TRANSFER_OUT` y `TRANSFER_IN` (cuando recibe).
 
-### 1.4 Computed Inventory & Auditing
+### 1.4 Inventario calculado & auditoria
 
-- **inventory_snapshots** _(optional)_: `id`, `org_id`, `as_of_date`, `warehouse_id(NULL)`, `payload(jsonb)`
+- **inventory_snapshots** _(opcional)_: `id`, `org_id`, `as_of_date`, `warehouse_id(NULL)`, `payload(jsonb)`
 - **audit_log**: `id`, `org_id`, `entity`, `entity_id`, `action` (`CREATE|UPDATE|DELETE|POST|VOID|IMPORT`),
   `user_id`, `at`, `before(jsonb)`, `after(jsonb)`, `ip(NULL)`
 
-### 1.5 Imports (Excel/CSV)
+### 1.5 Importaciones (Excel/CSV)
 
 - **import_batches**: `id`, `org_id`, `type` (`PRODUCTS`,`STOCK_ADJUSTMENT`,`PRICES`), `status` (`RECEIVED`,`VALIDATED`,`APPLIED`,`FAILED`), `created_by`
 - **import_rows**: `id`, `batch_id`, `row_number`, `raw(jsonb)`, `is_valid`, `errors(text[])`, `applied_at(NULL)`
 
-### 1.6 Contacts
+### 1.6 Contactos
 
-- **contacts**: `id`, `org_id`, `name`, `identification(unique per org)`, `type` ENUM(`CUSTOMER`, `SUPPLIER`, `OTHER`), `email(NULL)`, `phone(NULL)`, `address(NULL)`, `notes(NULL)`, `created_at`, `updated_at`
-  - Contacts represent customers, suppliers, or other business parties associated with sales and integrations.
+- **contacts**: `id`, `org_id`, `name`, `identification(unico por org)`, `type` ENUM(`CUSTOMER`, `SUPPLIER`, `OTHER`), `email(NULL)`, `phone(NULL)`, `address(NULL)`, `notes(NULL)`, `created_at`, `updated_at`
+  - Los contactos representan clientes, proveedores u otras partes de negocio asociadas a ventas e integraciones.
 
-### 1.7 Integrations
+### 1.7 Integraciones
 
 - **integration_connections**: `id`, `org_id`, `provider` ENUM(`VTEX`), `account_name`, `store_name(NULL)`, `status` ENUM(`CONNECTED`, `DISCONNECTED`, `ERROR`), `sync_strategy` ENUM(`POLLING`, `WEBHOOK`, `BOTH`), `sync_direction` ENUM(`INBOUND`, `OUTBOUND`, `BIDIRECTIONAL`), `encrypted_app_key`, `encrypted_app_token`, `webhook_secret(NULL)`, `default_warehouse_id(NULL)`, `default_contact_id(NULL)`, `last_sync_at(NULL)`, `created_by`, `created_at`, `updated_at`
-  - Stores credentials (encrypted) and configuration for each external platform connection.
+  - Almacena credenciales (encriptadas) y configuracion de cada conexion a plataforma externa.
 
 - **integration_sku_mappings**: `id`, `org_id`, `connection_id`, `external_sku`, `product_id`, `created_at`, `updated_at`
-  - Maps external SKUs (e.g., VTEX product IDs) to internal product IDs.
+  - Mapea SKUs externos (ej. IDs de producto VTEX) a IDs de producto internos.
 
 - **integration_sync_logs**: `id`, `org_id`, `connection_id`, `external_order_id`, `action` ENUM(`SYNCED`, `FAILED`, `RETRYING`), `sale_id(NULL)`, `contact_id(NULL)`, `error_message(NULL)`, `raw_payload(jsonb, NULL)`, `processed_at(NULL)`, `created_at`, `updated_at`
-  - Records every sync attempt with full payload for debugging and retry.
+  - Registra cada intento de sincronizacion con payload completo para depuracion y reintentos.
 
-### 1.8 Customization and Configuration
+### 1.8 Personalizacion y Configuracion
 
 - **organization_settings**: `id`, `org_id`, `key`, `value`, `type` (`STRING`,`NUMBER`,`BOOLEAN`,`JSON`), `description`
 - **user_preferences**: `id`, `user_id`, `key`, `value`, `type` (`STRING`,`NUMBER`,`BOOLEAN`,`JSON`)
-- **notification_settings**: `id`, `org_id`, `user_id(NULL)`, `type` (`EMAIL`,`SMS`,`PUSH`,`IN_APP`), `events` (event array), `enabled`, `config(jsonb)`
+- **notification_settings**: `id`, `org_id`, `user_id(NULL)`, `type` (`EMAIL`,`SMS`,`PUSH`,`IN_APP`), `events` (array de eventos), `enabled`, `config(jsonb)`
 
 ---
 
-## 2) Relationships (ERD Mermaid)
+## 2) Relaciones (ERD Mermaid)
 
 ```mermaid
 erDiagram
@@ -119,7 +119,7 @@ erDiagram
   UNITS ||--o{ PRODUCTS : measures
 
   PRODUCTS ||--o{ PRODUCT_PRICES : has
-  PRODUCTS ||--o{ REORDER_RULES : "min/max per warehouse"
+  PRODUCTS ||--o{ REORDER_RULES : "min/max por bodega"
   WAREHOUSES ||--o{ REORDER_RULES : rules
 
   WAREHOUSES ||--o{ MOVEMENTS : postsIn
@@ -152,17 +152,17 @@ erDiagram
 
 ---
 
-## 3) Transfer States
+## 3) Estados de Transferencia
 
 ```mermaid
 stateDiagram-v2
   [*] --> DRAFT
-  DRAFT --> IN_TRANSIT: Confirm dispatch
-  IN_TRANSIT --> RECEIVED: Confirm full receipt
-  IN_TRANSIT --> PARTIAL: Partial receipt
-  PARTIAL --> RECEIVED: Complete receipt
-  IN_TRANSIT --> REJECTED: Reject receipt
-  DRAFT --> CANCELED: Cancel
+  DRAFT --> IN_TRANSIT: Confirmar despacho
+  IN_TRANSIT --> RECEIVED: Confirmar recepcion total
+  IN_TRANSIT --> PARTIAL: Recepcion parcial
+  PARTIAL --> RECEIVED: Completar recepcion
+  IN_TRANSIT --> REJECTED: Rechazar recepcion
+  DRAFT --> CANCELED: Anular
   RECEIVED --> [*]
   REJECTED --> [*]
   CANCELED --> [*]
@@ -171,48 +171,48 @@ stateDiagram-v2
 
 ---
 
-## 4) Key Rules & Validations
+## 4) Reglas & validaciones clave
 
-- **Unique SKU** per organization.
-- **Stock never negative** when posting `OUT`/`TRANSFER_OUT`/`ADJUST_OUT`.
-- **WMA**: `new_cost = (on_hand*wma + inbound*unit_cost) / (on_hand + inbound)` (per product+warehouse).
-- **Transfers**: only complete when status reaches `RECEIVED`.
-- **Permissions**: operators restricted to their assigned warehouse(s).
-- **Authentication**: passwords with bcrypt (salt rounds: 12), JWT with configurable expiration.
-- **Sessions**: token blacklisting on logout, rate limiting per IP/user.
+- **SKU unico** por organizacion.
+- **Stock nunca negativo** al postear `OUT`/`TRANSFER_OUT`/`ADJUST_OUT`.
+- **PPM**: `nuevo_cost = (existencias*ppm + entrada*unit_cost) / (existencias + entrada)` (por producto+bodega).
+- **Transferencias**: solo se completan al pasar a `RECEIVED`.
+- **Permisos**: operadores restringidos a su(s) bodega(s).
+- **Autenticacion**: contrasenas con bcrypt (salt rounds: 12), JWT con expiracion configurable.
+- **Sesiones**: blacklisting de tokens en logout, rate limiting por IP/usuario.
 
-## 4.1) Predefined System Roles
+## 4.1) Roles Predefinidos del Sistema
 
-### **Administrator (ADMIN)**
+### **Administrador (ADMIN)**
 
-- Full access to all modules
-- User, role, and permission management
-- Organization configuration and customization
-- Bulk imports and full auditing
+- Acceso total a todos los modulos
+- Gestion de usuarios, roles y permisos
+- Configuracion de organizacion y personalizacion
+- Importaciones masivas y auditoria completa
 
-### **Warehouse Operator (WAREHOUSE_OPERATOR)**
+### **Operador de Bodega (WAREHOUSE_OPERATOR)**
 
-- Product management in assigned warehouses
-- Registration of inbound, outbound, and transfer entries
-- Basic report queries
-- Imports if enabled
+- Gestion de productos en bodegas asignadas
+- Registro de entradas, salidas y transferencias
+- Consulta de reportes basicos
+- Importaciones si esta habilitado
 
-### **Consultant/Auditor (CONSULTANT)**
+### **Consultor/Auditor (CONSULTANT)**
 
-- Read-only access to all modules
-- Access to reports and auditing
-- No modification capability
+- Solo lectura en todos los modulos
+- Acceso a reportes y auditoria
+- Sin capacidad de modificacion
 
 ### **Supervisor (SUPERVISOR)**
 
-- Movement and transfer management
-- Inventory adjustment approval
-- Advanced reports
-- No user management
+- Gestion de movimientos y transferencias
+- Aprobacion de ajustes de inventario
+- Reportes avanzados
+- Sin gestion de usuarios
 
-## 4.2) Modules and Permissions
+## 4.2) Modulos y Permisos
 
-| Module     | CREATE               | READ  | UPDATE            | DELETE     | POST       | VOID       | IMPORT              |
+| Modulo     | CREATE               | READ  | UPDATE            | DELETE     | POST       | VOID       | IMPORT              |
 | ---------- | -------------------- | ----- | ----------------- | ---------- | ---------- | ---------- | ------------------- |
 | USERS      | ADMIN                | ALL   | ADMIN             | ADMIN      | -          | -          | -                   |
 | PRODUCTS   | ADMIN, SUPERVISOR    | ALL   | ADMIN, SUPERVISOR | ADMIN      | -          | ADMIN      | ADMIN, SUPERVISOR\* |
@@ -221,13 +221,13 @@ stateDiagram-v2
 | REPORTS    | -                    | ALL   | -                 | -          | -          | -          | -                   |
 | SETTINGS   | ADMIN                | ADMIN | ADMIN             | ADMIN      | -          | -          | -                   |
 
-\*Only if enabled by administrator
+\*Solo si esta habilitado por administrador
 
 ---
 
-## 5) Recommended Views and Queries
+## 5) Vistas y consultas recomendadas
 
-- **v_inventory_balance**: balance by `product_id`, `warehouse_id`, `location_id`
+- **v_inventory_balance**: saldo por `product_id`, `warehouse_id`, `location_id`
 
   ```sql
   CREATE VIEW v_inventory_balance AS
@@ -251,7 +251,7 @@ stateDiagram-v2
 
   ```
 
-- **v_low_stock**: products below minimum
+- **v_low_stock**: productos bajo minimo
 
   ```sql
   CREATE VIEW v_low_stock AS
@@ -267,86 +267,86 @@ stateDiagram-v2
 
   ```
 
-- **v_inventory_valuation** (WMA): total cost per product+warehouse (`qty * current_wma`).
+- **v_inventory_valuation** (PPM): costo total por producto+bodega (`qty * ppm_actual`).
 
 ---
 
-## 6) Suggested Indexes
+## 6) Indices sugeridos
 
 - `products(org_id, sku)` **UNIQUE**
 - `movement_lines(movement_id)`
 - `movements(org_id, status, posted_at)`
-- `v_inventory_balance(product_id, warehouse_id)` _(index on materialized view if used)_
+- `v_inventory_balance(product_id, warehouse_id)` _(indice en materialized view si se usa)_
 - `reorder_rules(org_id, product_id, warehouse_id)` **UNIQUE**
 
 ---
 
-## 6.1) Brand Customization
+## 6.1) Personalizacion de Marca
 
-### **Color Configuration**
+### **Configuracion de Colores**
 
-- **Primary Color**: Main brand color (hex)
-- **Secondary Color**: Secondary color (hex)
-- **Accent Color**: Accent color for buttons and links (hex)
-- **Font Family**: Main font family (e.g.: 'Inter', 'Roboto')
+- **Primary Color**: Color principal de la marca (hex)
+- **Secondary Color**: Color secundario (hex)
+- **Accent Color**: Color de acento para botones y enlaces (hex)
+- **Font Family**: Familia de fuente principal (ej: 'Inter', 'Roboto')
 
-### **Logo and Branding**
+### **Logo y Branding**
 
-- **Logo URL**: Organization logo URL
-- **Logo Alt Text**: Alternative text for accessibility
-- **Custom CSS**: Additional custom CSS (optional)
+- **Logo URL**: URL del logo de la organizacion
+- **Logo Alt Text**: Texto alternativo para accesibilidad
+- **Custom CSS**: CSS personalizado adicional (opcional)
 
-### **Organization Settings**
+### **Configuraciones de Organizacion**
 
-- **Timezone**: Default timezone (e.g.: 'America/Bogota')
-- **Currency**: Default currency (e.g.: 'COP', 'USD')
-- **Date Format**: Date format (e.g.: 'DD/MM/YYYY', 'MM/DD/YYYY')
+- **Timezone**: Zona horaria por defecto (ej: 'America/Bogota')
+- **Currency**: Moneda por defecto (ej: 'COP', 'USD')
+- **Date Format**: Formato de fecha (ej: 'DD/MM/YYYY', 'MM/DD/YYYY')
 
-## 7) Import Templates (Excel/CSV)
+## 7) Plantillas de Importacion (Excel/CSV)
 
-### 7.1 Stock Adjustment/Initialization
+### 7.1 Ajuste/Inicializacion de stock
 
-Supported fields (exact header):
+Campos soportados (cabecera exacta):
 
-- `Location`, `Code` (SKU), `Name` (optional), `Unit of Measure`, `Quantity`,
-  `Unit Cost`, `Total Cost` _(optional; if provided, validates ~ Quantity x Unit Cost)_,
-  `Unit Sale Price` _(optional)_, `Total Sale Price` _(optional)_
+- `Ubicacion`, `Codigo` (SKU), `Nombre` (opcional), `Unidad de medida`, `Cantidad`,
+  `Costo Unitario`, `Costo Total` _(opcional; si viene, valida ~ Cantidad x Costo Unitario)_,
+  `Precio Venta Unitario` _(opcional)_, `Precio Venta Total` _(opcional)_
 
-Example (CSV):
-
-```
-Location,Code,Name,Unit of Measure,Quantity,Unit Cost,Total Cost,Unit Sale Price,Total Sale Price
-WH-CENTER:A1,SKU-001,Screw 1",UNIT,100,120,12000,200,20000
-WH-CENTER:B2,SKU-002,Washer 10mm,UNIT,50,80,4000,150,7500
+Ejemplo (CSV):
 
 ```
-
-**Mapping**:
-
-- `Location` -> `locations.code`
-- `Code` -> `products.sku` _(if it doesn't exist and creation is allowed, it is created with `Name` and `Unit of Measure`)_
-- `Quantity` -> `movement_lines.qty` (type `ADJUST_IN` if positive initialization)
-- `Unit Cost` -> `movement_lines.unit_cost` (affects WMA)
-- `Unit Sale Price` -> `product_prices.amount` (`price_type='LIST'`)
-
-### 7.2 Product Catalog
-
-```
-SKU,Name,Unit,Category,Barcode,Brand,Model,Status
-SKU-001,Screw 1",UNIT,HARDWARE,7701234567890,ACME,TX-1,ACTIVE
+Ubicacion,Codigo,Nombre,Unidad de medida,Cantidad,Costo Unitario,Costo Total,Precio Venta Unitario,Precio Venta Total
+BOD-CENTRO:A1,SKU-001,Tornillo 1",UND,100,120,12000,200,20000
+BOD-CENTRO:B2,SKU-002,Arandela 10mm,UND,50,80,4000,150,7500
 
 ```
 
-Import validations:
+**Mapeo**:
 
-- SKU not duplicated; unit must exist; quantities >= 0; costs >= 0.
-- Error report per row in `import_rows.errors`.
+- `Ubicacion` -> `locations.code`
+- `Codigo` -> `products.sku` _(si no existe y se permite, se crea con `Nombre` y `Unidad de medida`)_
+- `Cantidad` -> `movement_lines.qty` (tipo `ADJUST_IN` si es inicializacion positiva)
+- `Costo Unitario` -> `movement_lines.unit_cost` (afecta PPM)
+- `Precio Venta Unitario` -> `product_prices.amount` (`price_type='LIST'`)
+
+### 7.2 Catalogo de productos
+
+```
+SKU,Nombre,Unidad,Categoria,Barcode,Marca,Modelo,Estado
+SKU-001,Tornillo 1",UND,FERRETERIA,7701234567890,ACME,TX-1,ACTIVE
+
+```
+
+Validaciones de carga:
+
+- SKU no duplicado; unidad existente; cantidades >= 0; costos >= 0.
+- Reporte de errores por fila en `import_rows.errors`.
 
 ---
 
-## 8) Base DDL (PostgreSQL, excerpt)
+## 8) DDL base (PostgreSQL, extracto)
 
-> Note: Abbreviated example for critical tables.
+> Nota: Ejemplo abreviado para tablas criticas.
 
 ```sql
 -- PRODUCTS
@@ -409,7 +409,7 @@ CREATE TABLE movement_lines (
 
 ---
 
-## 9) Type Diagrams (Mermaid)
+## 9) Diagramas de tipos (Mermaid)
 
 ```mermaid
 classDiagram-v2
@@ -457,15 +457,15 @@ class Reason {
 
 ---
 
-## 10) Implementation Notes
+## 10) Notas de implementacion
 
-- **API**: exposes endpoints for catalog, movements (posting and reversal), transfers, and reports.
-- **Concurrency**: apply _row-level locking_ when posting movements by `(org_id, product_id, warehouse_id)` for WMA and stock integrity.
-- **Materialization**: if volume grows, materialize `v_inventory_balance` and refresh in batches.
+- **API**: expone endpoints para catalogo, movimientos (posteo y reversa), transferencias y reportes.
+- **Concurrencia**: aplicar _row-level locking_ al postear movimientos por `(org_id, product_id, warehouse_id)` para integridad de PPM y stock.
+- **Materializacion**: si el volumen crece, materializar `v_inventory_balance` y refrescar por lotes.
 
-## 10.1) JWT and Security Implementation
+## 10.1) Implementacion de JWT y Seguridad
 
-### **JWT Token Structure**
+### **Estructura del Token JWT**
 
 ```json
 {
@@ -485,22 +485,22 @@ class Reason {
 }
 ```
 
-### **Refresh Token Strategy**
+### **Estrategia de Refresh Token**
 
-- **Access Token**: 15-minute duration
-- **Refresh Token**: 7-day duration
-- **Rotation**: New refresh token on each renewal
-- **Blacklisting**: Tokens invalidated on logout
+- **Access Token**: 15 minutos de duracion
+- **Refresh Token**: 7 dias de duracion
+- **Rotacion**: Nuevo refresh token en cada renovacion
+- **Blacklisting**: Tokens invalidados en logout
 
 ### **Rate Limiting**
 
-- **Per IP**: 100 requests/minute
-- **Per User**: 1000 requests/hour
-- **Per Endpoint**: Configurable per operation type
+- **Por IP**: 100 requests/minuto
+- **Por Usuario**: 1000 requests/hora
+- **Por Endpoint**: Configurable por tipo de operacion
 
-### **Permission Validation**
+### **Validacion de Permisos**
 
-- Authorization middleware on every endpoint
-- `org_id` validation on all operations
-- User permission cache (5 minutes)
-- Denied access auditing
+- Middleware de autorizacion en cada endpoint
+- Validacion de `org_id` en todas las operaciones
+- Cache de permisos del usuario (5 minutos)
+- Auditoria de accesos denegados

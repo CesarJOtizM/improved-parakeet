@@ -1,69 +1,69 @@
-> **[English](./result-monad-guide.md)** | [Español](./result-monad-guide.es.md)
+> [English](./result-monad-guide.md) | **[Español](./result-monad-guide.es.md)**
 
-# Result<T, E> Monad - Usage Guide
+# Result<T, E> Monad - Guia de Uso
 
-## Introduction
+## Introduccion
 
-The `Result<T, E>` monad is a functional programming pattern for explicit error handling. Instead of throwing exceptions, functions return a `Result` type that can be either a success (`Ok`) or an error (`Err`).
+El monad `Result<T, E>` es un patron de programacion funcional para el manejo explicito de errores. En lugar de lanzar excepciones, las funciones retornan un tipo `Result` que puede ser un exito (`Ok`) o un error (`Err`).
 
-## Core Types
+## Tipos Base
 
-### Result Type
+### Tipo Result
 
 ```typescript
 import { Result, ok, err } from '@shared/domain/result';
 import { ValidationError, NotFoundError, ConflictError, BusinessRuleError } from '@shared/domain/result/domainError';
 ```
 
-### Domain Error Types
+### Tipos de Error de Dominio
 
-| Error Type | HTTP Status | Use Case |
-|------------|-------------|----------|
-| `ValidationError` | 400 Bad Request | Input validation failures |
-| `NotFoundError` | 404 Not Found | Entity not found |
-| `ConflictError` | 409 Conflict | Duplicate entities, uniqueness violations |
-| `BusinessRuleError` | 400 Bad Request | Business rule violations |
+| Tipo de Error | Estado HTTP | Caso de Uso |
+|---------------|-------------|-------------|
+| `ValidationError` | 400 Bad Request | Fallas de validacion de entrada |
+| `NotFoundError` | 404 Not Found | Entidad no encontrada |
+| `ConflictError` | 409 Conflict | Entidades duplicadas, violaciones de unicidad |
+| `BusinessRuleError` | 400 Bad Request | Violaciones de reglas de negocio |
 
-## Basic Usage
+## Uso Basico
 
-### Creating Results
+### Crear Results
 
 ```typescript
-// Success result
+// Resultado exitoso
 const success = ok({ id: '123', name: 'Product' });
 
-// Error result
+// Resultado de error
 const error = err(new NotFoundError('Product not found'));
 ```
 
-### Checking Result Type
+### Verificar el Tipo de Result
 
 ```typescript
 if (result.isOk()) {
   const value = result.unwrap();
-  // Use value safely
+  // Usar el valor de forma segura
 }
 
 if (result.isErr()) {
-  const error = result.unwrap(); // Returns the error
-  // Handle error
+  const error = result.unwrap(); // Retorna el error
+  // Manejar el error
 }
 ```
 
-### Using match()
+### Usar match()
 
-The `match()` method provides exhaustive pattern matching:
+El metodo `match()` proporciona pattern matching exhaustivo:
 
 ```typescript
 const message = result.match(
-  (value) => `Success: ${value.name}`,
+  (value) => `Exito: ${value.name}`,
   (error) => `Error: ${error.message}`
 );
 ```
 
-## Use Case Implementation
+## Implementacion en Use Cases
 
-### Before (Exception-based)
+### Antes (Basado en excepciones)
 
 ```typescript
 async execute(request: ICreateProductRequest): Promise<ICreateProductResponse> {
@@ -83,7 +83,7 @@ async execute(request: ICreateProductRequest): Promise<ICreateProductResponse> {
 }
 ```
 
-### After (Result-based)
+### Despues (Basado en Result)
 
 ```typescript
 import { Result, ok, err } from '@shared/domain/result';
@@ -106,9 +106,9 @@ async execute(request: ICreateProductRequest): Promise<Result<ICreateProductResp
 }
 ```
 
-## Controller Integration
+## Integracion con Controllers
 
-### Using resultToHttpResponse
+### Usar resultToHttpResponse
 
 ```typescript
 import { resultToHttpResponse } from '@shared/utils/resultToHttp';
@@ -120,24 +120,24 @@ async createProduct(@Body() dto: CreateProductDto, @OrgId() orgId: string) {
 }
 ```
 
-The `resultToHttpResponse` function:
-- Returns the value if `Result` is `Ok`
-- Throws the appropriate `HttpException` if `Result` is `Err`
+La funcion `resultToHttpResponse`:
+- Retorna el valor si el `Result` es `Ok`
+- Lanza la `HttpException` apropiada si el `Result` es `Err`
 
-### Error Mapping
+### Mapeo de Errores
 
-| Domain Error | HTTP Exception |
-|--------------|----------------|
+| Error de Dominio | Excepcion HTTP |
+|------------------|----------------|
 | `ValidationError` | `BadRequestException` |
 | `NotFoundError` | `NotFoundException` |
 | `ConflictError` | `ConflictException` |
 | `BusinessRuleError` | `BadRequestException` |
 
-## Utility Functions
+## Funciones de Utilidad
 
 ### fromPromise
 
-Wraps a Promise in a Result:
+Envuelve una Promise en un Result:
 
 ```typescript
 import { fromPromise } from '@shared/domain/result/resultUtils';
@@ -151,7 +151,7 @@ const entity = result.unwrap();
 
 ### fromThrowable
 
-Wraps a throwing function in a Result:
+Envuelve una funcion que puede lanzar excepciones en un Result:
 
 ```typescript
 import { fromThrowable } from '@shared/domain/result/resultUtils';
@@ -169,7 +169,7 @@ const sku = skuResult.unwrap();
 
 ### combine
 
-Combines multiple Results into one:
+Combina multiples Results en uno:
 
 ```typescript
 import { combine } from '@shared/domain/result/resultUtils';
@@ -181,11 +181,11 @@ if (results.isErr()) {
 const [value1, value2, value3] = results.unwrap();
 ```
 
-## Functional Composition
+## Composicion Funcional
 
 ### map
 
-Transform the success value:
+Transforma el valor de exito:
 
 ```typescript
 const result = ok(5);
@@ -194,7 +194,7 @@ const doubled = result.map(x => x * 2); // Ok(10)
 
 ### flatMap
 
-Chain operations that return Results:
+Encadena operaciones que retornan Results:
 
 ```typescript
 const result = ok(5)
@@ -204,26 +204,26 @@ const result = ok(5)
 
 ### mapErr
 
-Transform the error value:
+Transforma el valor de error:
 
 ```typescript
 const result = err(new ValidationError('Invalid'))
   .mapErr(e => new BusinessRuleError(e.message));
 ```
 
-## Safe Value Extraction
+## Extraccion Segura de Valores
 
 ### unwrap
 
-Returns the value or throws if error:
+Retorna el valor o lanza excepcion si es error:
 
 ```typescript
-const value = result.unwrap(); // Throws if Err
+const value = result.unwrap(); // Lanza si es Err
 ```
 
 ### unwrapOr
 
-Returns the value or a default:
+Retorna el valor o un valor por defecto:
 
 ```typescript
 const value = result.unwrapOr(defaultValue);
@@ -231,15 +231,15 @@ const value = result.unwrapOr(defaultValue);
 
 ### unwrapOrElse
 
-Returns the value or computes a default from the error:
+Retorna el valor o computa un valor por defecto a partir del error:
 
 ```typescript
 const value = result.unwrapOrElse(error => computeDefault(error));
 ```
 
-## Testing with Results
+## Testing con Results
 
-### Success Cases
+### Casos de Exito
 
 ```typescript
 it('Given: valid data When: creating Then: should return success result', async () => {
@@ -261,7 +261,7 @@ it('Given: valid data When: creating Then: should return success result', async 
 });
 ```
 
-### Error Cases
+### Casos de Error
 
 ```typescript
 it('Given: duplicate email When: creating Then: should return ConflictError', async () => {
@@ -283,45 +283,45 @@ it('Given: duplicate email When: creating Then: should return ConflictError', as
 });
 ```
 
-## Best Practices
+## Mejores Practicas
 
-### 1. Use Specific Error Types
+### 1. Usar Tipos de Error Especificos
 
 ```typescript
-// Good
+// Correcto
 return err(new NotFoundError('Product not found'));
 
-// Bad
+// Incorrecto
 return err(new Error('Product not found'));
 ```
 
-### 2. Early Returns for Errors
+### 2. Retornos Tempranos para Errores
 
 ```typescript
-// Good
+// Correcto
 const productResult = await fromPromise(this.repo.findById(id, orgId));
 if (productResult.isErr() || !productResult.unwrap()) {
   return err(new NotFoundError('Product not found'));
 }
 const product = productResult.unwrap();
 
-// Continue with product...
+// Continuar con el producto...
 ```
 
-### 3. Use match() for Exhaustive Handling
+### 3. Usar match() para Manejo Exhaustivo
 
 ```typescript
-// Good - Forces handling both cases
+// Correcto - Fuerza el manejo de ambos casos
 return result.match(
   (value) => ({ status: 'success', data: value }),
   (error) => ({ status: 'error', message: error.message })
 );
 ```
 
-### 4. Keep Controllers Thin
+### 4. Mantener Controllers Delgados
 
 ```typescript
-// Good - Controller just delegates and converts
+// Correcto - El controller solo delega y convierte
 @Post()
 async create(@Body() dto: CreateDto, @OrgId() orgId: string) {
   const result = await this.useCase.execute({ ...dto, orgId });
@@ -329,33 +329,33 @@ async create(@Body() dto: CreateDto, @OrgId() orgId: string) {
 }
 ```
 
-### 5. Don't Mix Exceptions and Results
+### 5. No Mezclar Excepciones y Results
 
 ```typescript
-// Good - Consistent Result usage
+// Correcto - Uso consistente de Result
 if (!validation.isValid) {
   return err(new ValidationError(validation.errors.join(', ')));
 }
 
-// Bad - Mixing patterns
+// Incorrecto - Mezcla de patrones
 if (!validation.isValid) {
   throw new BadRequestException(validation.errors.join(', '));
 }
 ```
 
-## Migration Guide
+## Guia de Migracion
 
-When refactoring existing use cases:
+Al refactorizar use cases existentes:
 
-1. Change return type to `Promise<Result<T, DomainError>>`
-2. Replace `throw new XxxException()` with `return err(new XxxError())`
-3. Replace `return response` with `return ok(response)`
-4. Update controller to use `resultToHttpResponse()`
-5. Update tests to use `isOk()`, `isErr()`, and `match()`
+1. Cambiar el tipo de retorno a `Promise<Result<T, DomainError>>`
+2. Reemplazar `throw new XxxException()` por `return err(new XxxError())`
+3. Reemplazar `return response` por `return ok(response)`
+4. Actualizar el controller para usar `resultToHttpResponse()`
+5. Actualizar los tests para usar `isOk()`, `isErr()` y `match()`
 
-## File Locations
+## Ubicacion de Archivos
 
-- **Result types**: `src/shared/domain/result/`
-- **Domain errors**: `src/shared/domain/result/domainError.ts`
-- **Utilities**: `src/shared/domain/result/resultUtils.ts`
-- **HTTP conversion**: `src/shared/utils/resultToHttp.ts`
+- **Tipos de Result**: `src/shared/domain/result/`
+- **Errores de dominio**: `src/shared/domain/result/domainError.ts`
+- **Utilidades**: `src/shared/domain/result/resultUtils.ts`
+- **Conversion HTTP**: `src/shared/utils/resultToHttp.ts`

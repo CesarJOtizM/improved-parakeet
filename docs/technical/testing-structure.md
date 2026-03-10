@@ -1,48 +1,80 @@
-# Estructura de Tests - Sistema de Inventarios
+> **[English](./testing-structure.md)** | [Español](./testing-structure.es.md)
 
-## 📋 Descripción
+# Testing Structure - Inventory System
 
-Este documento describe la estructura de tests del sistema de inventarios, que sigue los patrones **AAA (Arrange, Act, Assert)** y **Given-When-Then** para mayor claridad y mantenibilidad.
+## Description
 
-## 🏗️ Estructura de Carpetas
+This document describes the test structure of the inventory system, which follows the **AAA (Arrange, Act, Assert)** and **Given-When-Then** patterns for greater clarity and maintainability.
 
-La estructura de tests refleja exactamente la estructura de `src/` para mantener consistencia:
+## Folder Structure
+
+The test structure mirrors the `src/` structure exactly to maintain consistency:
 
 ```
 test/
-├── shared/
-│   └── domain/
-│       └── healthCheck.service.spec.ts
-├── application/
-│   └── healthCheck/
-│       └── healthCheck.application.service.spec.ts
-├── infrastructure/
-│   ├── database/
-│   └── healthCheck/
-│       └── healthCheck.adapter.spec.ts
-├── interfaces/
-│   └── http/
-│       └── healthCheck/
-│           └── healthCheck.controller.spec.ts
-└── healthCheck.e2e-spec.ts
+├── application/              # 140 files - Use cases and event handlers
+│   ├── auditUseCases/        #   Audit log queries
+│   ├── authUseCases/         #   Login, registration, refresh token
+│   ├── categoryUseCases/     #   Category CRUD
+│   ├── companyUseCases/      #   Company CRUD + listing
+│   ├── contactUseCases/      #   Contact CRUD
+│   ├── dashboardUseCases/    #   Dashboard metrics
+│   ├── eventHandlers/        #   Domain event handlers (20+)
+│   ├── importUseCases/       #   Import preview/execution
+│   ├── integrationUseCases/  #   Connections, SKU mapping, synchronization
+│   ├── movementUseCases/     #   Movement CRUD + confirmation
+│   ├── productUseCases/      #   Product CRUD + search
+│   ├── returnUseCases/       #   Return CRUD + confirmation
+│   ├── saleUseCases/         #   Sale lifecycle + swap
+│   ├── transferUseCases/     #   Transfer workflow
+│   └── ...                   #   + organization, report, role, stock, user, warehouse
+├── authentication/           # Authentication domain (guards, strategies, decorators)
+├── infrastructure/           # 34 files - Repositories + services
+│   ├── database/repositories/ #  20+ Prisma repository tests
+│   ├── externalServices/     #   Email, notifications, templates, file parsing
+│   └── jobs/                 #   Scheduled tasks
+├── integrations/             # 12 files - VTEX
+│   ├── shared/               #   Encryption, shared entities
+│   └── vtex/                 #   API client, sync, polling, webhook
+├── interfaces/http/          # 24 files - Controllers
+│   ├── audit/                #   Audit endpoints
+│   ├── contacts/             #   Contact endpoints
+│   ├── integrations/         #   Integration endpoints + VTEX webhook
+│   ├── inventory/            #   Products, categories, warehouses, stock
+│   ├── report/               #   Report view/export/stream
+│   └── ...                   #   + dashboard, import, returns, sales, users
+├── inventory/                # 71 files - Core domain
+│   ├── products/             #   Product entities, factories, mappers
+│   ├── movements/            #   Movement entities, mappers
+│   ├── transfers/            #   Transfer entities
+│   ├── warehouses/           #   Warehouse entities, factories, mappers
+│   └── ...                   #   + locations, stock
+├── shared/                   # 57 files - Cross-cutting
+│   ├── domain/               #   Result monad, base classes, events, specs
+│   ├── infrastructure/       #   Cache, resilience patterns
+│   └── ...                   #   + filters, guards, interceptors, services
+├── report/                   # Report domain (196 tests in reportGeneration)
+├── sales/                    # Sales domain
+├── returns/                  # Returns domain
+└── organization/             # Organization domain
 ```
 
-## 🔧 Patrones de Testing
+## Testing Patterns
 
 ### **AAA (Arrange, Act, Assert)**
 
-Cada test se estructura en tres secciones claras:
+Each test is structured in three clear sections:
 
 ```typescript
 it('Given: condition When: action Then: expected result', () => {
-  // Arrange: Preparar datos y mocks
+  // Arrange: Prepare data and mocks
   const mockData = { status: 'healthy' };
   mockService.getHealth.mockResolvedValue(mockData);
 
-  // Act: Ejecutar la función a testear
+  // Act: Execute the function under test
   const result = await service.getHealth();
 
-  // Assert: Verificar el resultado
+  // Assert: Verify the result
   expect(result).toEqual(mockData);
   expect(mockService.getHealth).toHaveBeenCalled();
 });
@@ -50,7 +82,7 @@ it('Given: condition When: action Then: expected result', () => {
 
 ### **Given-When-Then**
 
-Los nombres de los tests siguen el patrón BDD (Behavior Driven Development):
+Test names follow the BDD (Behavior Driven Development) pattern:
 
 ```typescript
 it('Given: healthy database When: checking health Then: should return healthy status', () => {
@@ -62,28 +94,28 @@ it('Given: database failure When: checking health Then: should return unhealthy 
 });
 ```
 
-## 📝 Convenciones de Naming
+## Naming Conventions
 
-### **Archivos de Test**
+### **Test Files**
 
-- **Unitarios**: `*.spec.ts`
+- **Unit**: `*.spec.ts`
 - **End-to-End**: `*.e2e-spec.ts`
-- **Integración**: `*.integration-spec.ts`
+- **Integration**: `*.integration-spec.ts`
 
-### **Nombres de Tests**
+### **Test Names**
 
-- **Formato**: `Given: precondition When: action Then: expected result`
-- **Ejemplo**: `Given: valid user credentials When: logging in Then: should return JWT token`
+- **Format**: `Given: precondition When: action Then: expected result`
+- **Example**: `Given: valid user credentials When: logging in Then: should return JWT token`
 
-### **Variables y Mocks**
+### **Variables and Mocks**
 
 - **Mocks**: `mockServiceName`
-- **Variables de test**: `expectedResult`, `actualResult`
-- **Datos de prueba**: `validUserData`, `invalidUserData`
+- **Test variables**: `expectedResult`, `actualResult`
+- **Test data**: `validUserData`, `invalidUserData`
 
-## 🧪 Tipos de Tests
+## Test Types
 
-### **1. Tests Unitarios (Domain Layer)**
+### **1. Unit Tests (Domain Layer)**
 
 ```typescript
 // test/shared/domain/healthCheck.service.spec.ts
@@ -107,7 +139,7 @@ describe('Health Check Domain Service', () => {
 });
 ```
 
-### **2. Tests Unitarios (Application Layer)**
+### **2. Unit Tests (Application Layer)**
 
 ```typescript
 // test/application/healthCheck/healthCheck.application.service.spec.ts
@@ -131,7 +163,7 @@ describe('HealthCheckApplicationService', () => {
 });
 ```
 
-### **3. Tests Unitarios (Infrastructure Layer)**
+### **3. Unit Tests (Infrastructure Layer)**
 
 ```typescript
 // test/infrastructure/healthCheck/healthCheck.adapter.spec.ts
@@ -152,7 +184,7 @@ describe('HealthCheckAdapter', () => {
 });
 ```
 
-### **4. Tests Unitarios (Interface Layer)**
+### **4. Unit Tests (Interface Layer)**
 
 ```typescript
 // test/interfaces/http/healthCheck/healthCheck.controller.spec.ts
@@ -176,108 +208,144 @@ describe('HealthCheckController', () => {
 });
 ```
 
-## 🎯 Beneficios de esta Estructura
+## Benefits of This Structure
 
-### **1. Claridad**
+### **1. Clarity**
 
-- **AAA**: Separación clara de responsabilidades en cada test
-- **Given-When-Then**: Descripción natural del comportamiento esperado
+- **AAA**: Clear separation of responsibilities in each test
+- **Given-When-Then**: Natural description of expected behavior
 
-### **2. Mantenibilidad**
+### **2. Maintainability**
 
-- **Estructura consistente**: Fácil de navegar y entender
+- **Consistent structure**: Easy to navigate and understand
 - **Descriptive names**: Self-documenting code
 
 ### **3. Debugging**
 
-- **Fácil identificación**: Problemas claramente identificables
-- **Contexto claro**: Cada test tiene su propio contexto
+- **Easy identification**: Problems clearly identifiable
+- **Clear context**: Each test has its own context
 
-### **4. Colaboración**
+### **4. Collaboration**
 
-- **Lenguaje común**: Equipo puede entender tests fácilmente
+- **Common language**: Team can understand tests easily
 - **Living documentation**: Tests as behavior specification
 
-## 🚀 Ejecución de Tests
+## Running Tests
 
-### **Tests Unitarios**
+### **Unit Tests**
 
 ```bash
-# Ejecutar todos los tests unitarios
+# Run all unit tests
 bun run test
 
-# Ejecutar tests específicos
+# Run specific tests
 bun run test test/shared/domain/healthCheck.service.spec.ts
 
-# Ejecutar tests con coverage
+# Run tests with coverage
 bun run test:cov
+
+# Run tests in CI mode (no e2e)
+npx jest --ci --coverage --watchAll=false --forceExit --testPathIgnorePatterns='e2e'
+
+# Run a specific directory
+npx jest --testPathPatterns='test/application/companyUseCases'
 ```
 
-### **Tests End-to-End**
+### **End-to-End Tests**
 
 ```bash
-# Ejecutar tests e2e
+# Run e2e tests
 bun run test:e2e
 
-# Ejecutar tests e2e específicos
+# Run specific e2e tests
 bun run test:e2e healthCheck.e2e-spec.ts
 ```
 
-### **Tests de Integración**
+### **Integration Tests**
 
 ```bash
-# Ejecutar tests de integración
+# Run integration tests
 bun run test:integration
 ```
 
-## 📊 Cobertura de Tests
+## Test Coverage
 
-### **Métricas Objetivo**
+### **Current Metrics**
 
-- **Statements**: > 80%
-- **Branches**: > 80%
-- **Functions**: > 80%
-- **Lines**: > 80%
+| Metric | Percentage | Threshold |
+|--------|-----------|-----------|
+| **Statements** | 97.26% | 70% |
+| **Branches** | 88.43% | 70% |
+| **Functions** | 96.66% | 70% |
+| **Lines** | 97.35% | 70% |
 
-### **Reportes**
+### **Test Statistics**
+
+| Type | Files | Tests | Status |
+|------|-------|-------|--------|
+| Unit | 450 | 7,661 | Passing |
+| E2E | 14 | 88+ | Passing |
+| **Total** | **465** | **7,749** | **7,661 passing** |
+
+### **Distribution by Layer**
+
+| Layer | Test Files | Description |
+|-------|-----------|-------------|
+| Application (Use Cases) | 140 | Use case tests, event handlers |
+| Domain (Entities/VOs) | 163 | Entity tests, value objects, domain services |
+| Infrastructure | 34 | Prisma repository tests, external services, jobs |
+| Interfaces (Controllers) | 24 | HTTP controller tests |
+| Integrations (VTEX) | 12 | External platform integration tests |
+| Shared (Cross-cutting) | 57 | Utility, guard, interceptor, filter tests |
+| Inventory (Core Domain) | 71 | Product, warehouse, movement, transfer tests |
+
+### **Reports**
 
 ```bash
-# Generar reporte HTML
+# Generate HTML report
 bun run test:cov
 
-# Ver en navegador
+# View in browser
 open coverage/lcov-report/index.html
 ```
 
-## 🔍 Mejores Prácticas
+### **Notes on Branch Coverage**
 
-### **1. Organización**
+The branch coverage (88.43%) is lower than the other metrics due to:
 
-- **Un test por comportamiento**: Cada test debe verificar una cosa
-- **Agrupación lógica**: Usar `describe` para agrupar tests relacionados
-- **Orden de ejecución**: Tests independientes entre sí
+1. **NestJS decorator branches**: Istanbul counts decorator metadata branches (`@Controller`, `@Get`, `@ApiOperation`, etc.) that are not testable in unit tests. This accounts for ~300+ uncoverable branches.
+2. **`error instanceof Error` pattern**: Each catch block has the check `error instanceof Error ? error.message : 'Unknown error'`. Both branches are tested (Error and non-Error throw).
+3. **Optional chaining and nullish coalescing**: Expressions like `data?.field ?? defaultValue` generate multiple implicit branches.
 
-### **2. Mocks y Stubs**
+## Best Practices
 
-- **Mocks realistas**: Simular comportamiento real de dependencias
-- **Cleanup**: Restaurar estado después de cada test
-- **Verificación**: Verificar que mocks fueron llamados correctamente
+### **1. Organization**
 
-### **3. Datos de Test**
+- **One test per behavior**: Each test should verify one thing
+- **Logical grouping**: Use `describe` to group related tests
+- **Execution order**: Tests independent of each other
 
-- **Datos representativos**: Usar datos que reflejen casos reales
-- **Casos edge**: Incluir casos límite y de error
-- **Consistencia**: Mantener datos consistentes entre tests
+### **2. Mocks and Stubs**
+
+- **Realistic mocks**: Simulate real behavior of dependencies
+- **Cleanup**: Restore state after each test
+- **Verification**: Verify that mocks were called correctly
+
+### **3. Test Data**
+
+- **Representative data**: Use data that reflects real cases
+- **Edge cases**: Include edge cases and error cases
+- **Consistency**: Keep data consistent across tests
 
 ### **4. Naming**
 
-- **Descriptivo**: Nombres que expliquen qué se está probando
-- **Consistente**: Seguir convenciones establecidas
-- **Legible**: Fácil de entender para otros desarrolladores
+- **Descriptive**: Names that explain what is being tested
+- **Consistent**: Follow established conventions
+- **Readable**: Easy to understand for other developers
 
-## 📚 Ejemplos Completos
+## Complete Examples
 
-### **Test Completo de Dominio**
+### **Complete Domain Test**
 
 ```typescript
 describe('Health Check Domain Service', () => {
@@ -303,7 +371,7 @@ describe('Health Check Domain Service', () => {
 });
 ```
 
-### **Test Completo de Aplicación**
+### **Complete Application Test**
 
 ```typescript
 describe('HealthCheckApplicationService', () => {
@@ -325,14 +393,104 @@ describe('HealthCheckApplicationService', () => {
 });
 ```
 
-## 🎉 Conclusión
+## Advanced Testing Patterns
 
-Esta estructura de tests proporciona:
+### **Result Monad Testing**
 
-1. **Claridad**: Tests fáciles de entender y mantener
-2. **Consistencia**: Estructura uniforme en todo el proyecto
-3. **Mantenibilidad**: Fácil de modificar y extender
-4. **Colaboración**: Equipo puede trabajar eficientemente
-5. **Calidad**: Tests como documentación viva del sistema
+The project uses `Result<T, DomainError>` instead of exceptions. Tests verify both branches:
 
-Siguiendo estos patrones, el sistema de tests se convierte en una herramienta poderosa para garantizar la calidad y estabilidad del código.
+```typescript
+// Success path
+const result = await useCase.execute(validRequest);
+result.match(
+  (value) => {
+    expect(value.success).toBe(true);
+    expect(value.data).toBeDefined();
+  },
+  () => fail('Expected success'),
+);
+
+// Error path
+const result = await useCase.execute(invalidRequest);
+result.match(
+  () => fail('Expected error'),
+  (error) => {
+    expect(error.code).toBe('ENTITY_NOT_FOUND');
+  },
+);
+```
+
+### **Non-Error Throw Testing**
+
+Each catch block has `error instanceof Error ? error.message : 'Unknown error'`. Both branches are tested:
+
+```typescript
+// Error instance
+mockRepo.findById.mockRejectedValue(new Error('DB connection failed'));
+// ... assert error.message contains 'DB connection failed'
+
+// Non-Error throw (string, number, object)
+mockRepo.findById.mockRejectedValue('string-error');
+// ... assert error.message contains 'Unknown error'
+```
+
+### **Cache Service Testing**
+
+Repositories with cache have tests for cache-hit and cache-miss:
+
+```typescript
+// Cache miss - goes to DB
+mockCacheService.get.mockResolvedValue(null);
+mockPrisma.product.findUnique.mockResolvedValue(dbProduct);
+const result = await repository.findById(id, orgId);
+expect(mockPrisma.product.findUnique).toHaveBeenCalled();
+expect(mockCacheService.set).toHaveBeenCalled();
+
+// Cache hit - skips DB
+mockCacheService.get.mockResolvedValue(cachedProduct);
+const result = await repository.findById(id, orgId);
+expect(mockPrisma.product.findUnique).not.toHaveBeenCalled();
+```
+
+### **Mock Patterns with `@jest/globals`**
+
+```typescript
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+
+// Typed mock
+const mockRepository = {
+  findById: jest.fn<(id: string, orgId: string) => Promise<Entity | null>>(),
+  save: jest.fn<(entity: Entity) => Promise<Entity>>(),
+} as jest.Mocked<IRepository>;
+
+// Reset in beforeEach
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+```
+
+### **Controller Testing with Query Params**
+
+```typescript
+const result = await controller.findAll(
+  { orgId: 'org-1' } as any,  // req with orgId
+  'search-term',               // query param
+  1,                           // page
+  10,                          // limit
+);
+expect(mockUseCase.execute).toHaveBeenCalledWith(
+  expect.objectContaining({ orgId: 'org-1', search: 'search-term' }),
+);
+```
+
+## Conclusion
+
+This test structure provides:
+
+1. **Clarity**: Tests easy to understand and maintain
+2. **Consistency**: Uniform structure throughout the project
+3. **Maintainability**: Easy to modify and extend
+4. **Collaboration**: Team can work efficiently
+5. **Quality**: Tests as living documentation of the system
+
+Following these patterns, the test system becomes a powerful tool for ensuring code quality and stability.

@@ -1,21 +1,21 @@
-> **[English](./api-reference.md)** | [Español](./api-reference.es.md)
+> [English](./api-reference.md) | **[Español](./api-reference.es.md)**
 
-# API Reference
+# Referencia de la API
 
-Complete reference for all endpoints of the Nevada Inventory System API.
+Referencia completa de todos los endpoints del Nevada Inventory System API.
 
-**Base URL**: `http://localhost:3000` (development) | Configure for production
+**URL Base**: `http://localhost:3000` (desarrollo) | Configurar en produccion
 
-**Response format**: JSON
+**Formato de respuesta**: JSON
 
-**Authentication**: JWT Bearer Token (except login and health check)
+**Autenticacion**: JWT Bearer Token (excepto login y health check)
 
 ---
 
-## Table of Contents
+## Tabla de Contenidos
 
-- [Required Headers](#required-headers)
-- [Response Format](#response-format)
+- [Headers Requeridos](#headers-requeridos)
+- [Formato de Respuesta](#formato-de-respuesta)
 - [Health Check](#health-check)
 - [Authentication](#authentication)
 - [Users](#users)
@@ -41,29 +41,29 @@ Complete reference for all endpoints of the Nevada Inventory System API.
 
 ---
 
-## Required Headers
+## Headers Requeridos
 
-### All authenticated requests
+### Todas las peticiones autenticadas
 
-| Header | Value | Description |
+| Header | Valor | Descripcion |
 |--------|-------|-------------|
-| `Authorization` | `Bearer {accessToken}` | JWT access token |
-| `X-Organization-Slug` | `my-organization` | Active organization slug |
-| `Content-Type` | `application/json` | For POST/PUT/PATCH |
+| `Authorization` | `Bearer {accessToken}` | Token JWT de acceso |
+| `X-Organization-Slug` | `mi-organizacion` | Slug de la org activa |
+| `Content-Type` | `application/json` | Para POST/PUT/PATCH |
 
-### Optional
+### Opcionales
 
-| Header | Value | Description |
+| Header | Valor | Descripcion |
 |--------|-------|-------------|
-| `X-Organization-ID` | `cuid2...` | Organization ID |
-| `X-User-ID` | `cuid2...` | User ID |
-| `X-API-Version` | `1` | API version (default: 1) |
+| `X-Organization-ID` | `cuid2...` | ID de la organizacion |
+| `X-User-ID` | `cuid2...` | ID del usuario |
+| `X-API-Version` | `1` | Version de la API (default: 1) |
 
 ---
 
-## Response Format
+## Formato de Respuesta
 
-### Standard Response
+### Respuesta Estandar
 
 ```json
 {
@@ -74,7 +74,7 @@ Complete reference for all endpoints of the Nevada Inventory System API.
 }
 ```
 
-### Paginated Response
+### Respuesta Paginada
 
 ```json
 {
@@ -91,7 +91,7 @@ Complete reference for all endpoints of the Nevada Inventory System API.
 }
 ```
 
-### Error Response
+### Respuesta de Error
 
 ```json
 {
@@ -102,9 +102,9 @@ Complete reference for all endpoints of the Nevada Inventory System API.
 }
 ```
 
-### Note: Sales and Returns
+### Nota: Sales y Returns
 
-Sales and Returns responses are wrapped in Effect format:
+Las respuestas de Sales y Returns estan envueltas en formato Effect:
 
 ```json
 {
@@ -124,11 +124,11 @@ Sales and Returns responses are wrapped in Effect format:
 
 ### `GET /health`
 
-Checks the system status.
+Verifica el estado del sistema.
 
-**Auth**: Not required
+**Auth**: No requerida
 
-**Response**:
+**Respuesta**:
 ```json
 {
   "status": "ok",
@@ -143,20 +143,20 @@ Checks the system status.
 
 ### `POST /auth/login`
 
-Log in.
+Iniciar sesion.
 
-**Auth**: Not required
+**Auth**: No requerida
 
 **Body**:
 ```json
 {
   "email": "admin@example.com",
   "password": "password123",
-  "organizationSlug": "my-organization"
+  "organizationSlug": "mi-organizacion"
 }
 ```
 
-**Response** (200):
+**Respuesta** (200):
 ```json
 {
   "success": true,
@@ -178,7 +178,7 @@ Log in.
 
 ### `POST /auth/refresh`
 
-Renew the access token.
+Renovar el access token.
 
 **Body**:
 ```json
@@ -187,7 +187,7 @@ Renew the access token.
 }
 ```
 
-**Response** (200):
+**Respuesta** (200):
 ```json
 {
   "success": true,
@@ -201,28 +201,28 @@ Renew the access token.
 
 ### `POST /auth/logout`
 
-Log out. Invalidates the access token.
+Cerrar sesion. Invalida el access token.
 
-**Response** (200):
+**Respuesta** (200):
 ```json
 { "success": true, "message": "Logged out successfully" }
 ```
 
 ### `POST /auth/password-reset/request`
 
-Request a password reset. Sends an OTP via email.
+Solicitar reset de password. Envia OTP por email.
 
 **Body**: `{ "email": "user@example.com", "organizationSlug": "..." }`
 
 ### `POST /auth/password-reset/verify`
 
-Verify the OTP.
+Verificar OTP.
 
 **Body**: `{ "email": "...", "otp": "123456" }`
 
 ### `POST /auth/password-reset/confirm`
 
-Set a new password.
+Establecer nueva password.
 
 **Body**: `{ "email": "...", "otp": "123456", "newPassword": "..." }`
 
@@ -230,11 +230,11 @@ Set a new password.
 
 ## Users
 
-**Required permission**: `USERS:*`
+**Permiso requerido**: `USERS:*`
 
 ### `POST /users`
 
-Create a user. Permission: `USERS:CREATE`
+Crear usuario. Permiso: `USERS:CREATE`
 
 **Body**:
 ```json
@@ -248,77 +248,77 @@ Create a user. Permission: `USERS:CREATE`
 
 ### `GET /users`
 
-List users. Permission: `USERS:READ`
+Listar usuarios. Permiso: `USERS:READ`
 
 **Query params**:
-| Param | Type | Description |
+| Param | Tipo | Descripcion |
 |-------|------|-------------|
-| `page` | number | Page (default: 1) |
-| `limit` | number | Records per page (default: 10) |
-| `search` | string | Search by name or email |
+| `page` | number | Pagina (default: 1) |
+| `limit` | number | Registros por pagina (default: 10) |
+| `search` | string | Buscar por nombre o email |
 | `status` | string | ACTIVE, INACTIVE, LOCKED |
 
 ### `GET /users/:id`
 
-Get user by ID. Permission: `USERS:READ`
+Obtener usuario por ID. Permiso: `USERS:READ`
 
 ### `PUT /users/:id`
 
-Update user. Permission: `USERS:UPDATE`
+Actualizar usuario. Permiso: `USERS:UPDATE`
 
 ### `PATCH /users/:id/status`
 
-Change user status. Permission: `USERS:UPDATE`
+Cambiar estado del usuario. Permiso: `USERS:UPDATE`
 
 **Body**: `{ "status": "INACTIVE" }`
 
 ### `POST /users/:id/roles`
 
-Assign a role to a user. Permission: `USERS:MANAGE_ROLES`
+Asignar rol a usuario. Permiso: `USERS:MANAGE_ROLES`
 
 **Body**: `{ "roleId": "cuid2..." }`
 
 ### `DELETE /users/:id/roles/:roleId`
 
-Remove a role from a user. Permission: `USERS:MANAGE_ROLES`
+Remover rol de usuario. Permiso: `USERS:MANAGE_ROLES`
 
 ---
 
 ## Roles & Permissions
 
-**Required permission**: `ROLES:*`
+**Permiso requerido**: `ROLES:*`
 
 ### `POST /roles`
 
-Create a custom role. Permission: `ROLES:CREATE`
+Crear rol custom. Permiso: `ROLES:CREATE`
 
 **Body**: `{ "name": "Custom Role", "description": "..." }`
 
 ### `GET /roles`
 
-List roles. Permission: `ROLES:READ`
+Listar roles. Permiso: `ROLES:READ`
 
-**Note**: No pagination, returns all roles.
+**Nota**: No tiene paginacion, retorna todos los roles.
 
 ### `GET /roles/:id`
 
-Get role by ID. Permission: `ROLES:READ`
+Obtener rol por ID. Permiso: `ROLES:READ`
 
 ### `PUT /roles/:id`
 
-Update role. Permission: `ROLES:UPDATE`
+Actualizar rol. Permiso: `ROLES:UPDATE`
 
-**Note**: Only custom roles (isSystem=false).
+**Nota**: Solo roles custom (isSystem=false).
 
 ### `DELETE /roles/:id`
 
-Delete role. Permission: `ROLES:DELETE`
+Eliminar rol. Permiso: `ROLES:DELETE`
 
 ### `GET /roles/permissions`
 
-List all available system permissions.
+Listar todos los permisos disponibles del sistema.
 
-**Response**:
+**Respuesta**:
 ```json
 {
   "data": [
@@ -331,11 +331,11 @@ List all available system permissions.
 
 ### `GET /roles/:id/permissions`
 
-Get permissions assigned to a role.
+Obtener permisos asignados a un rol.
 
 ### `POST /roles/:id/permissions`
 
-Assign permissions to a role.
+Asignar permisos a un rol.
 
 **Body**:
 ```json
@@ -350,11 +350,11 @@ Assign permissions to a role.
 
 ### `GET /users/me`
 
-Get the current user's profile.
+Obtener perfil del usuario actual.
 
 ### `PUT /users/me`
 
-Update profile.
+Actualizar perfil.
 
 **Body**:
 ```json
@@ -369,11 +369,11 @@ Update profile.
 
 ### `GET /settings/alerts`
 
-Get alert configuration. Permission: `SETTINGS:MANAGE`
+Obtener configuracion de alertas. Permiso: `SETTINGS:MANAGE`
 
 ### `PUT /settings/alerts`
 
-Update alert configuration. Permission: `SETTINGS:MANAGE`
+Actualizar configuracion de alertas. Permiso: `SETTINGS:MANAGE`
 
 **Body**:
 ```json
@@ -391,11 +391,11 @@ Update alert configuration. Permission: `SETTINGS:MANAGE`
 
 ## Products
 
-**Required permission**: `PRODUCTS:*`
+**Permiso requerido**: `PRODUCTS:*`
 
 ### `POST /products`
 
-Create a product. Permission: `PRODUCTS:CREATE`
+Crear producto. Permiso: `PRODUCTS:CREATE`
 
 **Body**:
 ```json
@@ -403,7 +403,7 @@ Create a product. Permission: `PRODUCTS:CREATE`
   "sku": "PROD-001",
   "name": "Widget A",
   "description": "...",
-  "unit": { "code": "UNIT", "name": "Unit", "precision": 0 },
+  "unit": { "code": "UNIT", "name": "Unidad", "precision": 0 },
   "costMethod": "AVG",
   "price": 29.99,
   "currency": "USD",
@@ -414,43 +414,43 @@ Create a product. Permission: `PRODUCTS:CREATE`
 
 ### `GET /products`
 
-List products. Permission: `PRODUCTS:READ`
+Listar productos. Permiso: `PRODUCTS:READ`
 
 **Query params**:
-| Param | Type | Description |
+| Param | Tipo | Descripcion |
 |-------|------|-------------|
-| `page` | number | Page |
-| `limit` | number | Records per page |
-| `search` | string | Search by name or SKU |
-| `status` | string | `ACTIVE` or `INACTIVE` (do NOT use `isActive`) |
-| `categoryId` | string | Filter by category |
-| `warehouseId` | string | Filter by warehouse |
+| `page` | number | Pagina |
+| `limit` | number | Registros por pagina |
+| `search` | string | Buscar por nombre o SKU |
+| `status` | string | `ACTIVE` o `INACTIVE` (NO usar `isActive`) |
+| `categoryId` | string | Filtrar por categoria |
+| `warehouseId` | string | Filtrar por bodega |
 
 ### `GET /products/:id`
 
-Product detail with stock per warehouse.
+Detalle del producto con stock por bodega.
 
 ### `PUT /products/:id`
 
-Update product. Permission: `PRODUCTS:UPDATE`
+Actualizar producto. Permiso: `PRODUCTS:UPDATE`
 
 ### `PATCH /products/:id/status`
 
-Change active/inactive status. Permission: `PRODUCTS:UPDATE`
+Cambiar estado activo/inactivo. Permiso: `PRODUCTS:UPDATE`
 
 **Body**: `{ "status": "INACTIVE" }`
 
-Records `statusChangedBy` and `statusChangedAt`.
+Registra `statusChangedBy` y `statusChangedAt`.
 
 ### `DELETE /products/:id`
 
-Delete product (soft delete). Permission: `PRODUCTS:DELETE`
+Eliminar producto (soft delete). Permiso: `PRODUCTS:DELETE`
 
 ---
 
 ## Categories
 
-**Required permission**: `PRODUCTS:*`
+**Permiso requerido**: `PRODUCTS:*`
 
 ### `POST /categories`
 ### `GET /categories`
@@ -458,24 +458,24 @@ Delete product (soft delete). Permission: `PRODUCTS:DELETE`
 ### `PUT /categories/:id`
 ### `DELETE /categories/:id`
 
-Standard category CRUD.
+CRUD estandar de categorias.
 
 ---
 
 ## Warehouses
 
-**Required permission**: `WAREHOUSES:*`
+**Permiso requerido**: `WAREHOUSES:*`
 
 ### `POST /warehouses`
 ### `GET /warehouses`
 ### `GET /warehouses/:id`
 
-Includes locations.
+Incluye ubicaciones (locations).
 
 ### `PUT /warehouses/:id`
 ### `PATCH /warehouses/:id/status`
 
-Toggle active/inactive.
+Toggle activo/inactivo.
 
 ---
 
@@ -483,11 +483,11 @@ Toggle active/inactive.
 
 ### `POST /warehouses/:warehouseId/locations`
 
-Create a location within a warehouse. Supports hierarchy.
+Crear ubicacion dentro de una bodega. Soporta jerarquia.
 
 ### `GET /warehouses/:warehouseId/locations`
 
-List locations (hierarchical).
+Listar ubicaciones (jerarquicas).
 
 ### `GET /locations/:id`
 ### `PUT /locations/:id`
@@ -496,15 +496,15 @@ List locations (hierarchical).
 
 ## Stock
 
-**Required permission**: `PRODUCTS:READ`
+**Permiso requerido**: `PRODUCTS:READ`
 
 ### `GET /stock`
 
-List stock.
+Listar stock.
 
 **Query params**: `warehouseId`, `productId`, `page`, `limit`
 
-**Response**:
+**Respuesta**:
 ```json
 {
   "success": true,
@@ -522,12 +522,12 @@ List stock.
 }
 ```
 
-**Note**: Has no `id` field, does not include product/warehouse names.
+**Nota**: No tiene campo `id`, no incluye nombres de producto/bodega.
 
 ### `GET /stock/:id`
 ### `PATCH /stock/:id/adjust`
 
-Manually adjust quantity.
+Ajustar cantidad manualmente.
 
 ---
 
@@ -538,31 +538,31 @@ Manually adjust quantity.
 ### `PUT /reorder-rules/:id`
 ### `DELETE /reorder-rules/:id`
 
-Configure reorder rules (min stock, max stock, safety stock) per product-warehouse.
+Configurar reglas de reorden (min stock, max stock, safety stock) por producto-bodega.
 
 ---
 
 ## Movements
 
-**Required permission**: `MOVEMENTS:*`
+**Permiso requerido**: `MOVEMENTS:*`
 
 ### `POST /movements`
 
-Create a movement. Permission: `MOVEMENTS:CREATE`
+Crear movimiento. Permiso: `MOVEMENTS:CREATE`
 
 **Body**:
 ```json
 {
   "type": "IN",
   "warehouseId": "...",
-  "notes": "Supplier reception",
+  "notes": "Recepcion de proveedor",
   "lines": [
     { "productId": "...", "quantity": 100, "unitCost": 25.50 }
   ]
 }
 ```
 
-**Types**: `IN` (inbound), `OUT` (outbound), `ADJUSTMENT` (adjustment)
+**Tipos**: `IN` (entrada), `OUT` (salida), `ADJUSTMENT` (ajuste)
 
 ### `GET /movements`
 
@@ -570,29 +570,29 @@ Create a movement. Permission: `MOVEMENTS:CREATE`
 
 ### `GET /movements/:id`
 
-Detail with lines.
+Detalle con lineas.
 
 ### `POST /movements/:id/post`
 
-Confirm movement: DRAFT -> POSTED. Permission: `MOVEMENTS:CONFIRM`
+Confirmar movimiento: DRAFT -> POSTED. Permiso: `MOVEMENTS:CONFIRM`
 
-Updates actual stock.
+Actualiza el stock real.
 
 ### `POST /movements/:id/void`
 
-Void movement: -> VOID. Permission: `MOVEMENTS:VOID`
+Anular movimiento: -> VOID. Permiso: `MOVEMENTS:VOID`
 
-Reverts the stock effect.
+Revierte el efecto en stock.
 
 ---
 
 ## Transfers
 
-**Required permission**: `TRANSFERS:*`
+**Permiso requerido**: `TRANSFERS:*`
 
 ### `POST /transfers`
 
-Create a transfer between warehouses.
+Crear transferencia entre bodegas.
 
 **Body**:
 ```json
@@ -608,37 +608,37 @@ Create a transfer between warehouses.
 
 ### `GET /transfers`
 
-**Note**: The list does not include `lines`, `fromWarehouseName`, `toWarehouseName`.
+**Nota**: La lista no incluye `lines`, `fromWarehouseName`, `toWarehouseName`.
 
 ### `GET /transfers/:id`
 
-Full detail with lines and names.
+Detalle completo con lineas y nombres.
 
 ### `POST /transfers/:id/initiate`
 
-DRAFT -> IN_TRANSIT. Permission: `TRANSFERS:CONFIRM`
+DRAFT -> IN_TRANSIT. Permiso: `TRANSFERS:CONFIRM`
 
 ### `POST /transfers/:id/receive`
 
-IN_TRANSIT -> RECEIVED. Permission: `TRANSFERS:CONFIRM`
+IN_TRANSIT -> RECEIVED. Permiso: `TRANSFERS:CONFIRM`
 
 ### `POST /transfers/:id/reject`
 
-IN_TRANSIT -> REJECTED. Permission: `TRANSFERS:CONFIRM`
+IN_TRANSIT -> REJECTED. Permiso: `TRANSFERS:CONFIRM`
 
 ### `POST /transfers/:id/cancel`
 
--> CANCELLED. Permission: `TRANSFERS:CONFIRM`
+-> CANCELLED. Permiso: `TRANSFERS:CONFIRM`
 
 ---
 
 ## Sales
 
-**Required permission**: `SALES:*`
+**Permiso requerido**: `SALES:*`
 
 ### `POST /sales`
 
-Create a sale (DRAFT status).
+Crear venta (estado DRAFT).
 
 **Body**:
 ```json
@@ -656,47 +656,47 @@ Create a sale (DRAFT status).
 
 **Query params**: `status`, `customerId`, `warehouseId`, `startDate`, `endDate`, `page`, `limit`
 
-**Response**: Wrapped in Effect format (`_tag: "Ok"`, `_value: { ... }`).
+**Respuesta**: Envuelta en formato Effect (`_tag: "Ok"`, `_value: { ... }`).
 
 ### `GET /sales/:id`
 
-**Note**: `lines` may be missing from the response -- use the `fromApiRaw()` mapper.
+**Nota**: `lines` puede faltar en la respuesta -- usar mapper `fromApiRaw()`.
 
 ### `PUT /sales/:id`
 
-Update sale. Only in DRAFT status.
+Actualizar venta. Solo en estado DRAFT.
 
 ### `POST /sales/:id/confirm`
 
-DRAFT -> CONFIRMED. Permission: `SALES:CONFIRM`
+DRAFT -> CONFIRMED. Permiso: `SALES:CONFIRM`
 
 ### `POST /sales/:id/pick`
 
-CONFIRMED -> PICKING. Permission: `SALES:PICK`
+CONFIRMED -> PICKING. Permiso: `SALES:PICK`
 
 ### `POST /sales/:id/ship`
 
-PICKING -> SHIPPED. Permission: `SALES:SHIP`
+PICKING -> SHIPPED. Permiso: `SALES:SHIP`
 
-**Body** (optional): `{ "trackingNumber": "TRACK-123" }`
+**Body** (opcional): `{ "trackingNumber": "TRACK-123" }`
 
 ### `POST /sales/:id/complete`
 
-SHIPPED -> COMPLETED. Permission: `SALES:COMPLETE`
+SHIPPED -> COMPLETED. Permiso: `SALES:COMPLETE`
 
 ### `POST /sales/:id/cancel`
 
--> CANCELLED. Permission: `SALES:CANCEL`
+-> CANCELLED. Permiso: `SALES:CANCEL`
 
 ---
 
 ## Returns
 
-**Required permission**: `RETURNS:*`
+**Permiso requerido**: `RETURNS:*`
 
 ### `POST /returns`
 
-Create a return.
+Crear devolucion.
 
 **Body**:
 ```json
@@ -715,65 +715,65 @@ Create a return.
 }
 ```
 
-**Types**: `RETURN_CUSTOMER`, `RETURN_SUPPLIER`
+**Tipos**: `RETURN_CUSTOMER`, `RETURN_SUPPLIER`
 
 ### `GET /returns`
 
 **Query params**: `returnType`, `status`, `startDate`, `endDate`, `page`, `limit`
 
-**Response**: Wrapped in Effect format.
+**Respuesta**: Envuelta en formato Effect.
 
 ### `GET /returns/:id`
 
 ### `POST /returns/:id/confirm`
 
-DRAFT -> CONFIRMED. Permission: `RETURNS:CONFIRM`
+DRAFT -> CONFIRMED. Permiso: `RETURNS:CONFIRM`
 
 ### `POST /returns/:id/cancel`
 
--> CANCELLED. Permission: `RETURNS:CANCEL`
+-> CANCELLED. Permiso: `RETURNS:CANCEL`
 
 ---
 
 ## Reports
 
-**Required permission**: `REPORTS:VIEW` / `REPORTS:EXPORT`
+**Permiso requerido**: `REPORTS:VIEW` / `REPORTS:EXPORT`
 
 ### `GET /reports/{module}/{name}/view`
 
-Get report data.
+Obtener datos del reporte.
 
-**Modules and names**:
+**Modulos y nombres**:
 
-| Module | Name | Description |
-|--------|------|-------------|
-| `inventory` | `available-inventory` | Available stock |
-| `inventory` | `movement-history` | Movement history |
-| `inventory` | `valuation` | Inventory valuation |
-| `inventory` | `low-stock` | Low stock products |
-| `inventory` | `movements` | Inventory movements |
-| `inventory` | `abc-analysis` | Pareto ABC analysis |
-| `inventory` | `dead-stock` | Dead stock |
-| `sales` | `sales` | Sales summary |
-| `sales` | `sales-by-product` | Sales by product |
-| `sales` | `sales-by-warehouse` | Sales by warehouse |
-| `sales` | `financial` | Financial impact |
-| `sales` | `turnover` | Inventory turnover |
-| `returns` | `returns` | Returns summary |
-| `returns` | `returns-by-type` | By type (customer/supplier) |
-| `returns` | `returns-by-product` | By product |
-| `returns` | `returns-customer` | Customer returns |
-| `returns` | `returns-supplier` | Supplier returns |
+| Modulo | Nombre | Descripcion |
+|--------|--------|-------------|
+| `inventory` | `available-inventory` | Stock disponible |
+| `inventory` | `movement-history` | Historial de movimientos |
+| `inventory` | `valuation` | Valoracion del inventario |
+| `inventory` | `low-stock` | Productos con stock bajo |
+| `inventory` | `movements` | Movimientos de inventario |
+| `inventory` | `abc-analysis` | Analisis Pareto ABC |
+| `inventory` | `dead-stock` | Stock muerto |
+| `sales` | `sales` | Resumen de ventas |
+| `sales` | `sales-by-product` | Ventas por producto |
+| `sales` | `sales-by-warehouse` | Ventas por bodega |
+| `sales` | `financial` | Impacto financiero |
+| `sales` | `turnover` | Rotacion de inventario |
+| `returns` | `returns` | Resumen de devoluciones |
+| `returns` | `returns-by-type` | Por tipo (cliente/proveedor) |
+| `returns` | `returns-by-product` | Por producto |
+| `returns` | `returns-customer` | Devoluciones de clientes |
+| `returns` | `returns-supplier` | Devoluciones a proveedores |
 
-**Common query params**: `startDate`, `endDate`, `warehouseId`, `productId`, `page`, `limit`
+**Query params comunes**: `startDate`, `endDate`, `warehouseId`, `productId`, `page`, `limit`
 
-**Specific params**:
+**Params especificos**:
 - ABC Analysis: `category`
 - Dead Stock: `deadStockDays` (default: 90), `includeInactive`
 
 ### `POST /reports/{module}/{name}/export`
 
-Export report to Excel/CSV.
+Exportar reporte a Excel/CSV.
 
 ---
 
@@ -781,9 +781,9 @@ Export report to Excel/CSV.
 
 ### `GET /dashboard/metrics`
 
-Aggregated dashboard metrics. Optimized with 7 parallel queries.
+Metricas agregadas del dashboard. Optimizado con 7 queries en paralelo.
 
-**Response**:
+**Respuesta**:
 ```json
 {
   "success": true,
@@ -825,26 +825,26 @@ Aggregated dashboard metrics. Optimized with 7 parallel queries.
 
 ## Audit Logs
 
-**Required permission**: `AUDIT:VIEW`
+**Permiso requerido**: `AUDIT:VIEW`
 
 ### `GET /audit/logs`
 
-List audit logs.
+Listar logs de auditoria.
 
 **Query params**:
-| Param | Type | Description |
+| Param | Tipo | Descripcion |
 |-------|------|-------------|
 | `entityType` | string | Product, Sale, User, etc. |
-| `entityId` | string | Entity ID |
+| `entityId` | string | ID de la entidad |
 | `action` | string | CREATE, UPDATE, DELETE, etc. |
-| `performedBy` | string | User ID |
+| `performedBy` | string | ID del usuario |
 | `httpMethod` | string | GET, POST, PUT, PATCH, DELETE |
-| `startDate` | string | Start date (ISO 8601) |
-| `endDate` | string | End date (ISO 8601) |
-| `page` | number | Page |
-| `limit` | number | Records per page |
+| `startDate` | string | Fecha inicio (ISO 8601) |
+| `endDate` | string | Fecha fin (ISO 8601) |
+| `page` | number | Pagina |
+| `limit` | number | Registros por pagina |
 
-**Response**:
+**Respuesta**:
 ```json
 {
   "success": true,
@@ -868,31 +868,31 @@ List audit logs.
 
 ### `GET /audit/logs/:id`
 
-Full detail of a log entry.
+Detalle completo de un log.
 
 ### `GET /audit/users/:userId/activity`
 
-Activity for a specific user.
+Actividad de un usuario especifico.
 
 ### `GET /audit/entities/:entityType/:entityId/history`
 
-Change history for an entity.
+Historial de cambios de una entidad.
 
 ---
 
 ## Imports
 
-**Required permission**: `IMPORTS:EXECUTE`
+**Permiso requerido**: `IMPORTS:EXECUTE`
 
 ### `POST /imports/products`
 
-Import products from an Excel/CSV file.
+Importar productos desde archivo Excel/CSV.
 
 **Content-Type**: `multipart/form-data`
 
-**Form data**: `file` (Excel or CSV)
+**Form data**: `file` (Excel o CSV)
 
-**Response**: Import result with success/error counts.
+**Respuesta**: Resultado de la importacion con conteo de exitos/errores.
 
 ---
 
@@ -900,21 +900,21 @@ Import products from an Excel/CSV file.
 
 ### `GET /organizations/current`
 
-Get current organization details.
+Obtener detalles de la organizacion actual.
 
 ### `PUT /organizations/:id`
 
-Update organization.
+Actualizar organizacion.
 
 ---
 
 ## Contacts
 
-**Required permission**: `CONTACTS:*`
+**Permiso requerido**: `CONTACTS:*`
 
 ### `POST /contacts`
 
-Create a contact. Permission: `CONTACTS:CREATE`
+Crear contacto. Permiso: `CONTACTS:CREATE`
 
 **Body**:
 ```json
@@ -925,55 +925,55 @@ Create a contact. Permission: `CONTACTS:CREATE`
   "email": "juan@example.com",
   "phone": "+573001234567",
   "address": "Calle 123 #45-67, Bogota",
-  "notes": "Frequent customer"
+  "notes": "Cliente frecuente"
 }
 ```
 
-**Types**: `CUSTOMER`, `SUPPLIER`, `BOTH`
+**Tipos**: `CUSTOMER`, `SUPPLIER`, `BOTH`
 
 ### `GET /contacts`
 
-List contacts. Permission: `CONTACTS:READ`
+Listar contactos. Permiso: `CONTACTS:READ`
 
 **Query params**:
-| Param | Type | Description |
+| Param | Tipo | Descripcion |
 |-------|------|-------------|
-| `page` | number | Page (default: 1) |
-| `limit` | number | Records per page (default: 10) |
-| `search` | string | Search by name or identification |
+| `page` | number | Pagina (default: 1) |
+| `limit` | number | Registros por pagina (default: 10) |
+| `search` | string | Buscar por nombre o identificacion |
 | `type` | string | CUSTOMER, SUPPLIER, BOTH |
 
 ### `GET /contacts/:id`
 
-Get contact by ID. Permission: `CONTACTS:READ`
+Obtener contacto por ID. Permiso: `CONTACTS:READ`
 
 ### `PUT /contacts/:id`
 
-Update contact. Permission: `CONTACTS:UPDATE`
+Actualizar contacto. Permiso: `CONTACTS:UPDATE`
 
 ### `DELETE /contacts/:id`
 
-Delete contact. Permission: `CONTACTS:DELETE`
+Eliminar contacto. Permiso: `CONTACTS:DELETE`
 
 ---
 
 ## Integrations
 
-**Required permission**: `INTEGRATIONS:*`
+**Permiso requerido**: `INTEGRATIONS:*`
 
-**Feature gate**: Requires `integrationsEnabled = true` in the organization settings.
+**Feature gate**: Requiere `integrationsEnabled = true` en la configuracion de la organizacion.
 
 ### `GET /integrations/connections`
 
-List integration connections. Permission: `INTEGRATIONS:READ`
+Listar conexiones de integracion. Permiso: `INTEGRATIONS:READ`
 
 **Query params**:
-| Param | Type | Description |
+| Param | Tipo | Descripcion |
 |-------|------|-------------|
-| `provider` | string | Filter by provider (e.g., `VTEX`) |
+| `provider` | string | Filtrar por proveedor (e.g., `VTEX`) |
 | `status` | string | CONNECTED, DISCONNECTED, ERROR |
 
-**Response** (200):
+**Respuesta** (200):
 ```json
 {
   "success": true,
@@ -982,8 +982,8 @@ List integration connections. Permission: `INTEGRATIONS:READ`
     {
       "id": "clxyz...",
       "provider": "VTEX",
-      "accountName": "my-store",
-      "storeName": "My VTEX Store",
+      "accountName": "mi-tienda",
+      "storeName": "Mi Tienda VTEX",
       "status": "CONNECTED",
       "syncStrategy": "BOTH",
       "syncDirection": "BIDIRECTIONAL",
@@ -999,19 +999,19 @@ List integration connections. Permission: `INTEGRATIONS:READ`
 
 ### `GET /integrations/connections/:id`
 
-Get connection by ID. Permission: `INTEGRATIONS:READ`
+Obtener conexion por ID. Permiso: `INTEGRATIONS:READ`
 
 ### `POST /integrations/connections`
 
-Create a new connection. Permission: `INTEGRATIONS:CREATE`
+Crear nueva conexion. Permiso: `INTEGRATIONS:CREATE`
 
 **Body**:
 ```json
 {
   "provider": "VTEX",
-  "accountName": "my-store",
-  "storeName": "My VTEX Store",
-  "appKey": "vtexappkey-my-store-ABCDEF",
+  "accountName": "mi-tienda",
+  "storeName": "Mi Tienda VTEX",
+  "appKey": "vtexappkey-mi-tienda-ABCDEF",
   "appToken": "GHIJKLMNOPQRSTUVWXYZ...",
   "syncStrategy": "BOTH",
   "syncDirection": "BIDIRECTIONAL",
@@ -1021,18 +1021,18 @@ Create a new connection. Permission: `INTEGRATIONS:CREATE`
 }
 ```
 
-**Note**: `appKey` and `appToken` are sent as plaintext over HTTPS. The backend encrypts them with AES-256-GCM before storing. They are never returned in responses.
+**Nota**: `appKey` y `appToken` se envian en plaintext via HTTPS. El backend los encripta con AES-256-GCM antes de almacenarlos. Nunca se retornan en respuestas.
 
 ### `PUT /integrations/connections/:id`
 
-Update connection. Permission: `INTEGRATIONS:UPDATE`
+Actualizar conexion. Permiso: `INTEGRATIONS:UPDATE`
 
-**Body** (all fields optional):
+**Body** (todos los campos opcionales):
 ```json
 {
-  "storeName": "New Name",
-  "appKey": "new-key",
-  "appToken": "new-token",
+  "storeName": "Nuevo Nombre",
+  "appKey": "nueva-key",
+  "appToken": "nuevo-token",
   "syncStrategy": "WEBHOOK",
   "syncDirection": "INBOUND",
   "defaultWarehouseId": "clnew...",
@@ -1043,13 +1043,13 @@ Update connection. Permission: `INTEGRATIONS:UPDATE`
 
 ### `DELETE /integrations/connections/:id`
 
-Delete connection. Permission: `INTEGRATIONS:DELETE`
+Eliminar conexion. Permiso: `INTEGRATIONS:DELETE`
 
 ### `POST /integrations/connections/:id/test`
 
-Test connection (ping to VTEX OMS API). Permission: `INTEGRATIONS:SYNC`
+Probar conexion (ping a VTEX OMS API). Permiso: `INTEGRATIONS:SYNC`
 
-**Response** (200):
+**Respuesta** (200):
 ```json
 {
   "success": true,
@@ -1061,9 +1061,9 @@ Test connection (ping to VTEX OMS API). Permission: `INTEGRATIONS:SYNC`
 
 ### `POST /integrations/connections/:id/sync`
 
-Trigger manual synchronization (order polling). Permission: `INTEGRATIONS:SYNC`
+Disparar sincronizacion manual (polling de ordenes). Permiso: `INTEGRATIONS:SYNC`
 
-**Response** (200):
+**Respuesta** (200):
 ```json
 {
   "success": true,
@@ -1075,11 +1075,11 @@ Trigger manual synchronization (order polling). Permission: `INTEGRATIONS:SYNC`
 
 ### `POST /integrations/connections/:id/sync/:orderId`
 
-Synchronize a specific VTEX order. Permission: `INTEGRATIONS:SYNC`
+Sincronizar una orden especifica de VTEX. Permiso: `INTEGRATIONS:SYNC`
 
 ### `POST /integrations/connections/:id/register-webhook`
 
-Register webhook in VTEX. Permission: `INTEGRATIONS:SYNC`
+Registrar webhook en VTEX. Permiso: `INTEGRATIONS:SYNC`
 
 **Body**:
 ```json
@@ -1090,9 +1090,9 @@ Register webhook in VTEX. Permission: `INTEGRATIONS:SYNC`
 
 ### `GET /integrations/connections/:id/sku-mappings`
 
-List SKU mappings for a connection. Permission: `INTEGRATIONS:READ`
+Listar mapeos de SKU para una conexion. Permiso: `INTEGRATIONS:READ`
 
-**Response** (200):
+**Respuesta** (200):
 ```json
 {
   "success": true,
@@ -1110,7 +1110,7 @@ List SKU mappings for a connection. Permission: `INTEGRATIONS:READ`
 
 ### `POST /integrations/connections/:id/sku-mappings`
 
-Create SKU mapping. Permission: `INTEGRATIONS:CREATE`
+Crear mapeo de SKU. Permiso: `INTEGRATIONS:CREATE`
 
 **Body**:
 ```json
@@ -1122,32 +1122,32 @@ Create SKU mapping. Permission: `INTEGRATIONS:CREATE`
 
 ### `DELETE /integrations/connections/:id/sku-mappings/:mappingId`
 
-Delete SKU mapping. Permission: `INTEGRATIONS:DELETE`
+Eliminar mapeo de SKU. Permiso: `INTEGRATIONS:DELETE`
 
 ### `GET /integrations/connections/:id/unmatched`
 
-List unmatched SKUs and failed syncs. Permission: `INTEGRATIONS:READ`
+Listar SKUs sin mapear y syncs fallidos. Permiso: `INTEGRATIONS:READ`
 
 ### `POST /integrations/connections/:id/retry/:syncLogId`
 
-Retry an individual failed sync. Permission: `INTEGRATIONS:SYNC`
+Reintentar un sync fallido individual. Permiso: `INTEGRATIONS:SYNC`
 
 ### `POST /integrations/connections/:id/retry-all`
 
-Retry all failed syncs for a connection. Permission: `INTEGRATIONS:SYNC`
+Reintentar todos los syncs fallidos para una conexion. Permiso: `INTEGRATIONS:SYNC`
 
 ### `POST /vtex/webhook/:accountName`
 
-VTEX webhook. **Public endpoint** (no JWT authentication).
+Webhook de VTEX. **Endpoint publico** (sin autenticacion JWT).
 
-**Auth**: Validation via `secret` query param
+**Auth**: Validacion via query param `secret`
 
 **Query params**:
-| Param | Type | Description |
+| Param | Tipo | Descripcion |
 |-------|------|-------------|
-| `secret` | string | Connection webhook secret |
+| `secret` | string | Webhook secret de la conexion |
 
-**Body** (VTEX payload):
+**Body** (payload de VTEX):
 ```json
 {
   "Domain": "Fulfillment",
@@ -1157,25 +1157,25 @@ VTEX webhook. **Public endpoint** (no JWT authentication).
   "LastChange": "2026-03-08T11:00:00.000Z",
   "CurrentChange": "2026-03-08T11:05:00.000Z",
   "Origin": {
-    "Account": "my-store",
+    "Account": "mi-tienda",
     "Key": "..."
   }
 }
 ```
 
-**Processed states**: `order-completed`, `handling`, `invoiced`, `canceled`, `ready-for-handling`
+**Estados procesados**: `order-completed`, `handling`, `invoiced`, `canceled`, `ready-for-handling`
 
 ---
 
-## Error Codes
+## Codigos de Error
 
-| Status | Meaning |
-|--------|---------|
-| 400 | Bad Request - Invalid input data |
-| 401 | Unauthorized - Invalid or expired token |
-| 403 | Forbidden - Insufficient permissions |
-| 404 | Not Found - Resource not found |
-| 409 | Conflict - Duplicate SKU, invalid state |
-| 422 | Unprocessable Entity - Business rule violated |
-| 429 | Too Many Requests - Rate limit exceeded |
-| 500 | Internal Server Error - Server error |
+| Status | Significado |
+|--------|-------------|
+| 400 | Bad Request - Datos de entrada invalidos |
+| 401 | Unauthorized - Token invalido o expirado |
+| 403 | Forbidden - Sin permisos suficientes |
+| 404 | Not Found - Recurso no encontrado |
+| 409 | Conflict - SKU duplicado, estado invalido |
+| 422 | Unprocessable Entity - Regla de negocio violada |
+| 429 | Too Many Requests - Rate limit excedido |
+| 500 | Internal Server Error - Error del servidor |

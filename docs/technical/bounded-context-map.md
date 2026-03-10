@@ -1,3 +1,5 @@
+> **[English](./bounded-context-map.md)** | [Español](./bounded-context-map.es.md)
+
 # Bounded Context Map
 
 ## Overview
@@ -39,7 +41,7 @@ This document defines the bounded contexts in the multi-tenant inventory system 
 - **Upstream**: Authentication (requires user context)
 - **Downstream**: Sales, Returns, Reports
 
-**Integration Pattern**: 
+**Integration Pattern**:
 - **With Sales/Returns**: Shared Kernel (Product, Warehouse entities)
 - **With Reports**: Published Language (domain events)
 
@@ -128,6 +130,44 @@ This document defines the bounded contexts in the multi-tenant inventory system 
 
 ---
 
+### 8. Contacts Context
+**Responsibility**: Customer and supplier contact management
+
+**Key Entities**:
+- Contact (name, identification, type, email, phone, address)
+
+**Integration**:
+- **Upstream**: Authentication (requires user context), Organization (provides orgId)
+- **Downstream**: Sales (provides contact reference for sales), Integrations (provides contact resolution)
+
+**Integration Pattern**:
+- **With Sales**: Shared Kernel (Contact entity referenced in Sale)
+- **With Integrations**: Published Language (contact resolution by email/identification)
+
+---
+
+### 9. Integrations Context
+**Responsibility**: Third-party e-commerce platform integrations (VTEX, etc.)
+
+**Key Entities**:
+- IntegrationConnection (provider credentials, sync strategy, status)
+- IntegrationSkuMapping (external SKU to internal product mapping)
+- IntegrationSyncLog (sync history, error tracking, retry management)
+
+**Integration**:
+- **Upstream**: Inventory (references Product), Sales (creates Sale orders), Contacts (resolves/creates contacts), Authentication, Organization
+- **Downstream**: None (terminal context that syncs data inbound/outbound)
+
+**Integration Pattern**:
+- **With Inventory**: Shared Kernel (Product entity via SKU mapping)
+- **With Sales**: Published Language (creates sales from external orders)
+- **With Contacts**: Published Language (resolves contacts by email/document)
+
+**Sub-contexts**:
+- **VTEX**: Order synchronization via polling and webhooks, outbound sync for fulfillment
+
+---
+
 ## Integration Patterns Used
 
 ### Shared Kernel
@@ -163,15 +203,26 @@ This document defines the bounded contexts in the multi-tenant inventory system 
 ┌─────────────────────┐      ┌─────────────────────┐
 │  Inventory          │◄─────┤  Sales Context      │
 │  Context            │      │  (Shared Kernel)    │
-└──────────┬──────────┘      └──────────┬──────────┘
-           │                            │
-           │ (domain events)            │ (domain events)
-           │                            │
-           ▼                            ▼
-┌─────────────────────┐      ┌─────────────────────┐
-│  Reports Context    │◄─────┤  Returns Context    │
-│  (subscribes)       │      │  (references Sale)  │
-└─────────────────────┘      └─────────────────────┘
+└──────┬───┬──────────┘      └──────────┬──────────┘
+       │   │                            │
+       │   │  ┌─────────────────────┐   │
+       │   └──┤  Contacts Context   │   │
+       │      │  (customer/supplier)│───┘
+       │      └─────────┬───────────┘
+       │                │
+       │   (domain events)   │ (domain events)
+       │                │
+       ▼                ▼
+┌──────────────────┐  ┌─────────────────────┐
+│  Reports Context │◄─┤  Returns Context    │
+│  (subscribes)    │  │  (references Sale)  │
+└──────────────────┘  └─────────────────────┘
+       ▲
+       │
+┌──────┴──────────────┐
+│  Integrations       │──→ Inventory, Sales, Contacts
+│  Context (VTEX)     │
+└─────────────────────┘
 ```
 
 ## Upstream/Downstream Relationships
@@ -180,16 +231,18 @@ This document defines the bounded contexts in the multi-tenant inventory system 
 |---------|----------|------------|
 | Authentication | None | All contexts |
 | Organization | None | All contexts |
-| Inventory | Authentication, Organization | Sales, Returns, Reports, Import |
-| Sales | Inventory, Authentication, Organization | Returns, Reports |
+| Inventory | Authentication, Organization | Sales, Returns, Reports, Import, Integrations |
+| Sales | Inventory, Contacts, Authentication, Organization | Returns, Reports |
 | Returns | Sales, Inventory, Authentication, Organization | Reports |
 | Reports | Inventory, Sales, Returns | None |
 | Import | Inventory, Authentication, Organization | None |
+| Contacts | Authentication, Organization | Sales, Integrations |
+| Integrations | Inventory, Sales, Contacts, Authentication, Organization | None |
 
 ## Notes
 
-- **Tenant Isolation**: All contexts (except Organization) enforce orgId filtering
-- **Event-Driven**: Reports context uses domain events for real-time updates
-- **Shared Entities**: Product and Warehouse are shared kernel - changes require careful coordination
-- **Future**: Branding context will be added as a subdomain of Organization context
-
+- **Tenant Isolation**: All contexts (except Organization) enforce orgId filtering.
+- **Event-Driven**: Reports context uses domain events for real-time updates.
+- **Shared Entities**: Product, Warehouse, and Contact entities are shared kernel -- changes require careful coordination.
+- **Integrations**: The Integrations context bridges external e-commerce platforms (VTEX) with internal inventory and sales.
+- **Future**: Branding context will be added as a subdomain of Organization context.

@@ -1,3 +1,5 @@
+> **[English](./error-codes.md)** | [Español](./error-codes.es.md)
+
 # Error Codes Reference
 
 Every error response from the API includes an `errorCode` field that the frontend can use to display localized, user-friendly messages.
@@ -242,6 +244,43 @@ const errorMessage = t(response.errorCode, response.error?.details);
 | Code | HTTP | Description |
 |------|------|-------------|
 | `REORDER_RULE_NOT_FOUND` | 404 | Reorder rule doesn't exist |
+
+### Contacts
+
+| Code | HTTP | Description |
+|------|------|-------------|
+| `CONTACT_NOT_FOUND` | 404 | Contact with given ID doesn't exist |
+| `CONTACT_IDENTIFICATION_CONFLICT` | 409 | A contact with this identification already exists |
+| `CONTACT_CONFLICT` | 409 | Contact unique constraint violation |
+| `CONTACT_CREATION_ERROR` | 400 | Unexpected error during contact creation |
+| `CONTACT_UPDATE_ERROR` | 400 | Unexpected error during contact update |
+| `CONTACT_HAS_SALES` | 400 | Cannot delete contact because it has associated sales |
+
+### Integrations
+
+| Code | HTTP | Description |
+|------|------|-------------|
+| `INTEGRATION_CONNECTION_NOT_FOUND` | 404 | Integration connection doesn't exist |
+| `INTEGRATION_CONNECTION_CONFLICT` | 409 | Connection with this provider and account already exists |
+| `INTEGRATION_CONNECTION_CREATION_ERROR` | 400 | Unexpected error during connection creation |
+| `INTEGRATION_CONNECTION_UPDATE_ERROR` | 400 | Unexpected error during connection update |
+| `SKU_MAPPING_NOT_FOUND` | 404 | SKU mapping record doesn't exist |
+| `SKU_MAPPING_CONFLICT` | 409 | SKU mapping conflict detected |
+| `SKU_MAPPING_CREATION_ERROR` | 400 | Unexpected error during SKU mapping creation |
+| `SYNC_LOG_NOT_FOUND` | 404 | Sync log entry doesn't exist |
+| `SYNC_RETRY_ERROR` | 400 | Error retrying failed sync operation |
+
+### VTEX Integration
+
+| Code | HTTP | Description |
+|------|------|-------------|
+| `VTEX_ORDER_FETCH_ERROR` | 400 | Failed to fetch order from VTEX API |
+| `VTEX_SKU_MISMATCH` | 400 | Unmatched SKUs between local system and VTEX |
+| `VTEX_OUTBOUND_SYNC_ERROR` | 400 | Error during outbound sync operation |
+| `VTEX_POLL_ERROR` | 400 | Error polling orders from VTEX |
+| `VTEX_WEBHOOK_REGISTRATION_ERROR` | 400 | Error registering webhook with VTEX |
+| `VTEX_SYNC_ORDER_ERROR` | 400 | Generic error during order sync |
+| `VTEX_TEST_CONNECTION_ERROR` | 400 | Error testing VTEX connection |
 
 ### Generic
 

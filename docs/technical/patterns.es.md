@@ -1,12 +1,12 @@
-> **[English](./patterns.md)** | [Español](./patterns.es.md)
+> [English](./patterns.md) | **[Español](./patterns.es.md)**
 
-# Design Patterns
+# Patrones de Diseno
 
-Documentation of the design patterns implemented in the Nevada Inventory System backend.
+Documentacion de los patrones de diseno implementados en el backend del Nevada Inventory System.
 
 ---
 
-## Table of Contents
+## Tabla de Contenidos
 
 - [Result Monad](#result-monad)
 - [Repository Pattern](#repository-pattern)
@@ -18,7 +18,7 @@ Documentation of the design patterns implemented in the Nevada Inventory System 
 - [Mapper Pattern](#mapper-pattern)
 - [Use Case / Interactor](#use-case--interactor)
 - [Circuit Breaker](#circuit-breaker)
-- [Retry with Exponential Backoff](#retry-with-exponential-backoff)
+- [Retry con Exponential Backoff](#retry-con-exponential-backoff)
 - [Cache Decorators](#cache-decorators)
 - [Guard Chain](#guard-chain)
 - [Event-Driven Architecture](#event-driven-architecture)
@@ -27,33 +27,33 @@ Documentation of the design patterns implemented in the Nevada Inventory System 
 
 ## Result Monad
 
-### Problem
+### Problema
 
-Exceptions are "invisible gotos": they break control flow and are not visible in the types.
+Las excepciones son "goto invisibles": rompen el flujo de control y no se ven en los tipos.
 
-### Solution
+### Solucion
 
-`Result<T, E>` makes the error **explicit in the return type**:
+`Result<T, E>` hace el error **explicito en el tipo de retorno**:
 
 ```typescript
 import { Result, ok, err } from '@shared/domain/result';
 import { NotFoundError, ConflictError } from '@shared/domain/result/domainError';
 
 async execute(dto: CreateProductDto): Promise<Result<Product, DomainError>> {
-  // Error case: return err()
+  // Caso de error: retorna err()
   const existing = await this.repo.findBySku(dto.sku);
   if (existing) {
     return err(new ConflictError('Product with this SKU already exists'));
   }
 
-  // Success case: return ok()
+  // Caso exitoso: retorna ok()
   const product = Product.create(dto);
   await this.repo.save(product);
   return ok(product);
 }
 ```
 
-### Conversion to HTTP
+### Conversion a HTTP
 
 ```typescript
 // src/shared/utils/resultToHttp.ts
@@ -62,7 +62,7 @@ function resultToHttp<T>(result: Result<T, DomainError>) {
     return { success: true, data: result.value };
   }
 
-  // Maps DomainError to HTTP status code
+  // Mapea DomainError a HTTP status code
   const statusMap = {
     ValidationError: 400,
     NotFoundError: 404,
@@ -76,31 +76,31 @@ function resultToHttp<T>(result: Result<T, DomainError>) {
 }
 ```
 
-### Result API
+### API del Result
 
 ```typescript
-result.isOk()        // true if Ok
-result.isErr()       // true if Err
-result.value         // T (only on Ok)
-result.error         // E (only on Err)
-result.map(fn)       // Transforms the value if Ok
-result.flatMap(fn)   // Chains operations that return Result
-result.getOrThrow()  // T or throws exception
+result.isOk()        // true si es Ok
+result.isErr()       // true si es Err
+result.value         // T (solo en Ok)
+result.error         // E (solo en Err)
+result.map(fn)       // Transforma el valor si es Ok
+result.flatMap(fn)   // Encadena operaciones que retornan Result
+result.getOrThrow()  // T o lanza excepcion
 ```
 
-> Full guide: [result-monad-guide.md](result-monad-guide.md)
+> Guia completa: [result-monad-guide.md](result-monad-guide.md)
 
 ---
 
 ## Repository Pattern
 
-### Problem
+### Problema
 
-The domain should not know how data is persisted (SQL, NoSQL, API, etc.).
+El dominio no debe saber como se persisten los datos (SQL, NoSQL, API, etc.).
 
-### Solution
+### Solucion
 
-**Port** (interface in the domain):
+**Puerto** (interfaz en el dominio):
 
 ```typescript
 // src/inventory/products/domain/ports/productRepository.port.ts
@@ -113,7 +113,7 @@ interface IProductRepository {
 }
 ```
 
-**Adapter** (implementation in infrastructure):
+**Adaptador** (implementacion en infraestructura):
 
 ```typescript
 // src/infrastructure/database/repositories/product.repository.ts
@@ -140,10 +140,10 @@ class PrismaProductRepository implements IProductRepository {
 }
 ```
 
-**Injection** (NestJS DI):
+**Inyeccion** (NestJS DI):
 
 ```typescript
-// In the module
+// En el modulo
 {
   provide: 'IProductRepository',
   useClass: PrismaProductRepository,
@@ -154,20 +154,20 @@ class PrismaProductRepository implements IProductRepository {
 
 ## Aggregate Root
 
-### Problem
+### Problema
 
-Domain entities need to maintain invariants and control their object graph.
+Las entidades de dominio necesitan mantener invariantes y controlar su grafo de objetos.
 
-### Solution
+### Solucion
 
 ```typescript
-// Example: Sale as Aggregate Root
+// Ejemplo: Sale como Aggregate Root
 class Sale extends AggregateRoot<SaleProps> {
-  // Only the aggregate root controls its lines
+  // Solo el aggregate root controla sus lineas
   private _lines: SaleLine[] = [];
 
   addLine(product: Product, quantity: number, price: Money): void {
-    // Invariant: cannot add lines to a confirmed sale
+    // Invariante: no agregar lineas a una venta confirmada
     if (!this.status.isDraft()) {
       throw new BusinessRuleError('Cannot add lines to non-draft sale');
     }
@@ -176,7 +176,7 @@ class Sale extends AggregateRoot<SaleProps> {
   }
 
   confirm(confirmedBy: string): void {
-    // Invariant: needs at least one line
+    // Invariante: necesita al menos una linea
     if (this._lines.length === 0) {
       throw new BusinessRuleError('Sale must have at least one line');
     }
@@ -188,22 +188,22 @@ class Sale extends AggregateRoot<SaleProps> {
 }
 ```
 
-### Rules
+### Reglas
 
-1. The object graph is accessed only through the aggregate root
-2. The aggregate root maintains invariants
-3. Changes are persisted atomically (Unit of Work)
-4. Domain events are published after persisting
+1. Solo se accede al grafo a traves del aggregate root
+2. El aggregate root mantiene las invariantes
+3. Los cambios se persisten atomicamente (Unit of Work)
+4. Los domain events se publican despues de persistir
 
 ---
 
 ## Value Objects
 
-### Problem
+### Problema
 
-Some domain concepts have no identity -- their equality is defined by their attributes.
+Algunos conceptos de dominio no tienen identidad — su igualdad se define por sus atributos.
 
-### Solution
+### Solucion
 
 ```typescript
 // src/sales/domain/valueObjects/
@@ -244,26 +244,26 @@ class SaleStatus extends ValueObject<{ value: string }> {
 }
 ```
 
-### Rules
+### Reglas
 
-1. Immutable: never modified after creation
-2. Equality by value: `new Money(100, 'USD').equals(new Money(100, 'USD'))` → true
-3. Self-validating: they validate their invariants in the constructor
+1. Inmutables: nunca se modifican despues de crear
+2. Igualdad por valor: `new Money(100, 'USD').equals(new Money(100, 'USD'))` → true
+3. Auto-validacion: validan sus invariantes en el constructor
 
 ---
 
 ## Domain Events
 
-### Problem
+### Problema
 
-Side effects (sending email, creating audit log, updating cache) couple the domain to infrastructure.
+Los side effects (enviar email, crear audit log, actualizar cache) acoplan el dominio a la infraestructura.
 
-### Solution
+### Solucion
 
-Aggregates **register events**. A dispatcher **publishes** them after persisting.
+Los agregados **registran eventos**. Un despachador los **publica** despues de persistir.
 
 ```typescript
-// 1. Define the event
+// 1. Definir el evento
 class SaleConfirmedEvent extends DomainEvent {
   constructor(
     public readonly saleId: string,
@@ -273,7 +273,7 @@ class SaleConfirmedEvent extends DomainEvent {
   }
 }
 
-// 2. The aggregate registers it
+// 2. El aggregate lo registra
 class Sale extends AggregateRoot {
   confirm(confirmedBy: string): void {
     this._status = SaleStatus.CONFIRMED;
@@ -281,23 +281,23 @@ class Sale extends AggregateRoot {
   }
 }
 
-// 3. The use case dispatches it
+// 3. El use case lo despacha
 class ConfirmSaleUseCase {
   async execute(saleId: string, userId: string) {
     const sale = await this.repo.findById(saleId);
     sale.confirm(userId);
     await this.repo.save(sale);
 
-    // Publish events AFTER persisting
+    // Publicar eventos DESPUES de persistir
     await this.dispatcher.dispatchAll(sale.getDomainEvents());
     sale.clearDomainEvents();
   }
 }
 
-// 4. Event handler reacts
+// 4. Event handler reacciona
 class SaleConfirmedHandler {
   async handle(event: SaleConfirmedEvent): void {
-    // Side effects: audit log, email, notification, etc.
+    // Side effects: audit log, email, notificacion, etc.
     await this.auditLog.log('SALE', event.saleId, 'CONFIRMED');
     await this.notificationService.notify(event.confirmedBy, 'Sale confirmed');
   }
@@ -316,19 +316,19 @@ class DomainEventBus {
 }
 ```
 
-In-memory for simplicity. Ready to migrate to a message queue (RabbitMQ, SQS) if needed.
+In-memory para simplicidad. Preparado para migrar a message queue (RabbitMQ, SQS) si es necesario.
 
 ---
 
 ## Specification Pattern
 
-### Problem
+### Problema
 
-Business rules for filtering queries are duplicated between use cases and repositories.
+Las reglas de negocio para filtrar queries se duplican entre use cases y repositorios.
 
-### Solution
+### Solucion
 
-Encapsulate query rules in reusable objects:
+Encapsular reglas de query en objetos reutilizables:
 
 ```typescript
 // Specification base
@@ -337,7 +337,7 @@ interface ISpecification<T> {
   toPrismaWhere(): Record<string, unknown>;
 }
 
-// Concrete specification
+// Specification concreta
 class ProductByStatusSpecification implements ISpecification<Product> {
   constructor(private status: string) {}
 
@@ -359,10 +359,10 @@ class AuditLogByHttpMethodSpecification implements ISpecification<AuditLog> {
 }
 ```
 
-### Composition
+### Composicion
 
 ```typescript
-// Specifications can be combined
+// Las specifications se pueden combinar
 const spec = new AndSpecification(
   new ProductByStatusSpecification('ACTIVE'),
   new ProductByOrgSpecification(orgId),
@@ -376,11 +376,11 @@ const products = await this.prisma.product.findMany({ where });
 
 ## Unit of Work
 
-### Problem
+### Problema
 
-Operations that touch multiple tables need to be atomic.
+Operaciones que tocan multiples tablas necesitan ser atomicas.
 
-### Solution
+### Solucion
 
 ```typescript
 // src/infrastructure/database/unitOfWork.service.ts
@@ -394,20 +394,20 @@ class UnitOfWork {
   }
 }
 
-// Usage in a use case
+// Uso en un use case
 class ConfirmSaleUseCase {
   async execute(saleId: string) {
     return this.unitOfWork.execute(async (tx) => {
-      // 1. Update sale status
+      // 1. Actualizar estado de la venta
       await tx.sale.update({ where: { id: saleId }, data: { status: 'CONFIRMED' } });
 
-      // 2. Create stock movement (OUT)
+      // 2. Crear movimiento de stock (OUT)
       await tx.movement.create({ data: { type: 'OUT', saleId, ... } });
 
-      // 3. Reduce stock
+      // 3. Reducir stock
       await tx.stock.update({ ... });
 
-      // All in a single transaction: if anything fails, everything rolls back
+      // Todo en una sola transaccion: si algo falla, todo se revierte
     });
   }
 }
@@ -417,13 +417,13 @@ class ConfirmSaleUseCase {
 
 ## Mapper Pattern
 
-### Problem
+### Problema
 
-Domain entities should not be the same as database models or HTTP DTOs.
+Las entidades de dominio no deben ser iguales a los modelos de base de datos ni a los DTOs HTTP.
 
-### Solution
+### Solucion
 
-Mappers that convert between layers:
+Mappers que convierten entre capas:
 
 ```typescript
 // src/inventory/products/mappers/product.mapper.ts
@@ -470,16 +470,16 @@ class ProductMapper {
 
 ## Use Case / Interactor
 
-### Problem
+### Problema
 
-Business logic should not live in controllers or repositories.
+La logica de negocio no debe vivir en los controllers ni en los repositorios.
 
-### Solution
+### Solucion
 
-**One use case per business operation**:
+Un **use case por operacion de negocio**:
 
 ```typescript
-// One use case = one responsibility
+// Un use case = una responsabilidad
 @Injectable()
 class CreateProductUseCase {
   constructor(
@@ -494,13 +494,13 @@ class CreateProductUseCase {
     orgId: string,
     userId: string,
   ): Promise<Result<Product, DomainError>> {
-    // 1. Validate SKU uniqueness
+    // 1. Validar unicidad de SKU
     const existing = await this.productRepo.findBySku(dto.sku, orgId);
     if (existing) {
       return err(new ConflictError(`SKU ${dto.sku} already exists`));
     }
 
-    // 2. Create entity
+    // 2. Crear entidad
     const product = Product.create({
       orgId,
       sku: dto.sku,
@@ -508,10 +508,10 @@ class CreateProductUseCase {
       createdBy: userId,
     });
 
-    // 3. Persist
+    // 3. Persistir
     await this.productRepo.save(product);
 
-    // 4. Publish events
+    // 4. Publicar eventos
     await this.eventDispatcher.dispatchAll(product.getDomainEvents());
 
     return ok(product);
@@ -519,19 +519,19 @@ class CreateProductUseCase {
 }
 ```
 
-### Composition
+### Composicion
 
-Use cases **do not call each other**. If an operation needs multiple steps, the use case directly orchestrates repositories and services.
+Los use cases **no se llaman entre si**. Si una operacion necesita multiples pasos, el use case orquesta directamente los repositorios y servicios.
 
 ---
 
 ## Circuit Breaker
 
-### Problem
+### Problema
 
-Calls to external services (email, APIs) can fail and cause failure cascades.
+Llamadas a servicios externos (email, APIs) pueden fallar y causar cascadas de fallas.
 
-### Solution
+### Solucion
 
 ```typescript
 // src/shared/infrastructure/resilience/circuitBreaker.ts
@@ -559,30 +559,30 @@ class CircuitBreaker {
 }
 ```
 
-### States
+### Estados
 
 ```
-CLOSED ──(N failures)──→ OPEN ──(timeout)──→ HALF_OPEN
+CLOSED ──(N fallas)──→ OPEN ──(timeout)──→ HALF_OPEN
   ↑                                           │
-  └────────────(success)──────────────────────┘
-  OPEN ←────────(failure)─────────────────────┘
+  └────────────(exito)────────────────────────┘
+  OPEN ←────────(falla)───────────────────────┘
 ```
 
-| State | Behavior |
-|-------|----------|
-| CLOSED | Lets all calls through. Counts failures. |
-| OPEN | Rejects all calls immediately. Waits for timeout. |
-| HALF_OPEN | Lets one test call through. If it succeeds → CLOSED. If it fails → OPEN. |
+| Estado | Comportamiento |
+|--------|---------------|
+| CLOSED | Deja pasar todas las llamadas. Cuenta fallas. |
+| OPEN | Rechaza todas las llamadas inmediatamente. Espera timeout. |
+| HALF_OPEN | Deja pasar una llamada de prueba. Si funciona → CLOSED. Si falla → OPEN. |
 
 ---
 
-## Retry with Exponential Backoff
+## Retry con Exponential Backoff
 
-### Problem
+### Problema
 
-Transient failures (timeout, 503) can resolve if retried after some time.
+Las fallas transitorias (timeout, 503) pueden resolverse si se reintenta despues de un tiempo.
 
-### Solution
+### Solucion
 
 ```typescript
 // src/shared/infrastructure/resilience/retry.ts
@@ -607,7 +607,7 @@ async function withRetry<T>(
           options.initialDelay * Math.pow(options.backoffMultiplier, attempt - 1),
           options.maxDelay,
         );
-        // Jitter: adds randomness to avoid thundering herd
+        // Jitter: agrega aleatoriedad para evitar thundering herd
         const jitter = delay * (0.5 + Math.random() * 0.5);
         await sleep(jitter);
       }
@@ -618,11 +618,11 @@ async function withRetry<T>(
 }
 ```
 
-### ResilientCall (Composition)
+### ResilientCall (Composicion)
 
 ```typescript
 // src/shared/infrastructure/resilience/resilientCall.ts
-// Composes CircuitBreaker + Retry + Timeout
+// Compone CircuitBreaker + Retry + Timeout
 async function resilientCall<T>(
   fn: () => Promise<T>,
   config: ResilientConfig,
@@ -640,29 +640,29 @@ async function resilientCall<T>(
 
 ## Cache Decorators
 
-### Problem
+### Problema
 
-Manual caching is error-prone (forgetting to invalidate, inconsistent keys).
+Cache manual es propenso a errores (olvidar invalidar, keys inconsistentes).
 
-### Solution
+### Solucion
 
-Decorators that automate caching:
+Decoradores que automatizan el caching:
 
 ```typescript
-// Cache result for 5 minutes
+// Cachear resultado por 5 minutos
 @Cacheable({ key: 'products:{orgId}:list', ttl: 300 })
 async findAll(orgId: string): Promise<Product[]> {
   return this.prisma.product.findMany({ where: { orgId } });
 }
 
-// Invalidate cache on modification
+// Invalidar cache al modificar
 @CacheEvict({ key: 'products:{orgId}:list' })
 async save(product: Product): Promise<void> {
   await this.prisma.product.upsert({ ... });
 }
 ```
 
-### Implementation
+### Implementacion
 
 ```typescript
 // src/shared/infrastructure/cache/cacheDecorators.ts
@@ -686,36 +686,36 @@ function Cacheable(options: { key: string; ttl: number }) {
 
 ## Guard Chain
 
-### Problem
+### Problema
 
-Authorization has multiple layers (authentication, roles, permissions) that must execute in order.
+La autorizacion tiene multiples capas (autenticacion, roles, permisos) que deben ejecutarse en orden.
 
-### Solution
+### Solucion
 
-NestJS guards executed in sequence:
+NestJS guards ejecutados en secuencia:
 
 ```typescript
 @UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard)
 @Controller('products')
 class ProductsController {
-  // Each guard executes in order:
-  // 1. JwtAuthGuard: validates JWT, injects request.user
-  // 2. RoleBasedAuthGuard: verifies roles
-  // 3. PermissionGuard: verifies @RequirePermissions
+  // Cada guard se ejecuta en orden:
+  // 1. JwtAuthGuard: valida JWT, inyecta request.user
+  // 2. RoleBasedAuthGuard: verifica roles
+  // 3. PermissionGuard: verifica @RequirePermissions
 }
 ```
 
-### Composition with Decorators
+### Composicion con Decoradores
 
 ```typescript
-// Composite decorator for common endpoints
+// Decorador compuesto para endpoints comunes
 function Authenticated() {
   return applyDecorators(
     UseGuards(JwtAuthGuard, RoleBasedAuthGuard, PermissionGuard),
   );
 }
 
-// Simplified usage
+// Uso simplificado
 @Authenticated()
 @RequirePermissions('PRODUCTS:CREATE')
 @Post()
@@ -726,7 +726,7 @@ async create() { ... }
 
 ## Event-Driven Architecture
 
-### Components
+### Componentes
 
 ```
 ┌────────────────┐     ┌─────────────────┐     ┌──────────────────┐
@@ -738,19 +738,19 @@ async create() { ... }
 └────────────────┘     └─────────────────┘     └──────────────────┘
 ```
 
-### Current Implementation
+### Implementacion Actual
 
-- **In-memory**: `DomainEventBus` uses a Map of handlers
-- **Synchronous**: Handlers execute in the same transaction
-- **Idempotent**: `EventIdempotencyService` prevents duplicates
+- **In-memory**: `DomainEventBus` usa un Map de handlers
+- **Sincrono**: Los handlers se ejecutan en la misma transaccion
+- **Idempotente**: `EventIdempotencyService` previene duplicados
 
-### Ready to Scale
+### Preparado para Escalar
 
-The architecture is designed to migrate to message queues:
+La arquitectura esta diseñada para migrar a message queues:
 
 ```
-Current:           Aggregate → DomainEventBus (in-memory) → Handler
-Possible future:   Aggregate → Outbox Table → Message Broker → Handler
+Actual:          Aggregate → DomainEventBus (in-memory) → Handler
+Futuro posible:  Aggregate → Outbox Table → Message Broker → Handler
 ```
 
-Only the bus implementation would change, not the domain or the handlers.
+Solo se cambiaria la implementacion del bus, no el dominio ni los handlers.
