@@ -19,6 +19,7 @@ const FULL_ORG: OrgConfig = {
     dateFormat: 'DD/MM/YYYY',
     pickingEnabled: true,
     multiCompanyEnabled: true,
+    integrationsEnabled: true,
   },
 };
 

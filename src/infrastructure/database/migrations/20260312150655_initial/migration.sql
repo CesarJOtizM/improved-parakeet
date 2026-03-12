@@ -601,6 +601,12 @@ CREATE TABLE "integration_connections" (
     "lastSyncAt" TIMESTAMP(3),
     "lastSyncError" TEXT,
     "companyId" TEXT,
+    "encryptedAccessToken" TEXT,
+    "encryptedRefreshToken" TEXT,
+    "accessTokenExpiresAt" TIMESTAMP(3),
+    "refreshTokenExpiresAt" TIMESTAMP(3),
+    "meliUserId" TEXT,
+    "tokenStatus" TEXT,
     "orgId" TEXT NOT NULL,
     "createdBy" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -616,6 +622,7 @@ CREATE TABLE "integration_sync_logs" (
     "externalOrderId" TEXT NOT NULL,
     "action" TEXT NOT NULL,
     "saleId" TEXT,
+    "saleNumber" TEXT,
     "contactId" TEXT,
     "errorMessage" TEXT,
     "rawPayload" JSONB,
@@ -986,6 +993,9 @@ CREATE INDEX "integration_connections_orgId_provider_idx" ON "integration_connec
 
 -- CreateIndex
 CREATE INDEX "integration_connections_status_idx" ON "integration_connections"("status");
+
+-- CreateIndex
+CREATE INDEX "integration_connections_meliUserId_idx" ON "integration_connections"("meliUserId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "integration_connections_provider_accountName_orgId_key" ON "integration_connections"("provider", "accountName", "orgId");

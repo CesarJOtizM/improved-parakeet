@@ -103,7 +103,7 @@ export class MeliTokenService {
       await this.connectionRepository.update(connection);
 
       this.logger.log(`MeLi token refreshed for connection ${connection.id}`);
-      return access_token;
+      return accessToken;
     } catch (error) {
       this.logger.error(
         `MeLi token refresh failed for connection ${connection.id}: ${error instanceof Error ? error.message : 'Unknown error'}`
