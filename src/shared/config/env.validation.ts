@@ -8,6 +8,8 @@ import {
   IsUrl,
   validateSync,
   IsBoolean,
+  Length,
+  Matches,
   Min,
   Max,
 } from 'class-validator';
@@ -148,6 +150,8 @@ export class EnvironmentVariables {
 
   @IsString()
   @IsNotEmpty()
+  @Length(64, 64, { message: 'ENCRYPTION_KEY must be exactly 64 characters (32 bytes hex)' })
+  @Matches(/^[0-9a-fA-F]+$/, { message: 'ENCRYPTION_KEY must be a valid hexadecimal string' })
   ENCRYPTION_KEY!: string;
 
   @IsNumber()
@@ -476,10 +480,6 @@ function validateProductionRequirements(config: EnvironmentVariables): void {
       productionErrors.push('JWT_REFRESH_SECRET must be changed from default value in production');
     }
 
-    if (config.ENCRYPTION_KEY === 'your-encryption-key-change-in-production') {
-      productionErrors.push('ENCRYPTION_KEY must be changed from default value in production');
-    }
-
     // JWT secrets must be strong enough
     if (config.JWT_SECRET.length < 32) {
       productionErrors.push('JWT_SECRET must be at least 32 characters long in production');
@@ -487,10 +487,6 @@ function validateProductionRequirements(config: EnvironmentVariables): void {
 
     if (config.JWT_REFRESH_SECRET.length < 32) {
       productionErrors.push('JWT_REFRESH_SECRET must be at least 32 characters long in production');
-    }
-
-    if (config.ENCRYPTION_KEY.length < 32) {
-      productionErrors.push('ENCRYPTION_KEY must be at least 32 characters long in production');
     }
 
     // Swagger should be disabled in production

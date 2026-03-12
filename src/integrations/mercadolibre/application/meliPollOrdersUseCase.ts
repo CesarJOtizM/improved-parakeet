@@ -1,41 +1,40 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { IntegrationConnection } from '../../shared/domain/entities/integrationConnection.entity.js';
-import { EncryptionService } from '../../shared/encryption/encryption.service.js';
-import { VtexApiClient } from '../infrastructure/vtexApiClient.js';
-import { VtexSyncOrderUseCase } from './vtexSyncOrderUseCase.js';
+import { MeliApiClient } from '../infrastructure/meliApiClient.js';
+import { MeliSyncOrderUseCase } from './meliSyncOrderUseCase.js';
+import { MeliReauthRequiredError } from '../domain/meliReauthRequired.error.js';
 import { DomainError, ValidationError, Result, ok, err } from '@shared/domain/result';
 import { IApiResponseSuccess } from '@shared/types/apiResponse.types';
 
 import type { IIntegrationConnectionRepository } from '../../shared/domain/ports/iIntegrationConnectionRepository.port.js';
 
-export interface IVtexPollOrdersRequest {
+export interface IMeliPollOrdersRequest {
   connectionId?: string;
   orgId?: string;
 }
 
-export type IVtexPollOrdersResponse = IApiResponseSuccess<{
+export type IMeliPollOrdersResponse = IApiResponseSuccess<{
   polled: number;
   synced: number;
   failed: number;
 }>;
 
 @Injectable()
-export class VtexPollOrdersUseCase {
-  private readonly logger = new Logger(VtexPollOrdersUseCase.name);
+export class MeliPollOrdersUseCase {
+  private readonly logger = new Logger(MeliPollOrdersUseCase.name);
 
   constructor(
     @Inject('IntegrationConnectionRepository')
     private readonly connectionRepository: IIntegrationConnectionRepository,
-    private readonly encryptionService: EncryptionService,
-    private readonly vtexApiClient: VtexApiClient,
-    private readonly vtexSyncOrderUseCase: VtexSyncOrderUseCase
+    private readonly meliApiClient: MeliApiClient,
+    private readonly meliSyncOrderUseCase: MeliSyncOrderUseCase
   ) {}
 
   async execute(
-    request: IVtexPollOrdersRequest
-  ): Promise<Result<IVtexPollOrdersResponse, DomainError>> {
+    request: IMeliPollOrdersRequest
+  ): Promise<Result<IMeliPollOrdersResponse, DomainError>> {
     this.logger.log(
-      'Polling VTEX orders',
+      'Polling MeLi orders',
       request.connectionId ? { connectionId: request.connectionId } : 'all connected integrations'
     );
 
@@ -46,7 +45,8 @@ export class VtexPollOrdersUseCase {
         const conn = await this.connectionRepository.findById(request.connectionId, request.orgId);
         connections = conn ? [conn] : [];
       } else {
-        connections = await this.connectionRepository.findAllConnectedForPolling();
+        const allPolling = await this.connectionRepository.findAllConnectedForPolling();
+        connections = allPolling.filter(c => c.provider === 'MERCADOLIBRE');
       }
 
       let totalPolled = 0;
@@ -60,7 +60,11 @@ export class VtexPollOrdersUseCase {
           totalSynced += result.synced;
           totalFailed += result.failed;
         } catch (pollError) {
-          this.logger.error(`Error polling connection ${connection.id}`, {
+          if (pollError instanceof MeliReauthRequiredError) {
+            this.logger.warn(`Connection ${connection.id} requires re-auth, skipping`);
+            continue;
+          }
+          this.logger.error(`Error polling MeLi connection ${connection.id}`, {
             error: pollError instanceof Error ? pollError.message : 'Unknown error',
           });
           connection.markError(
@@ -77,13 +81,13 @@ export class VtexPollOrdersUseCase {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      this.logger.error('Error during VTEX polling', {
+      this.logger.error('Error during MeLi polling', {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       return err(
         new ValidationError(
           `Polling failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          'VTEX_POLL_ERROR'
+          'MELI_POLL_ERROR'
         )
       );
     }
@@ -92,30 +96,21 @@ export class VtexPollOrdersUseCase {
   private async pollConnection(
     connection: IntegrationConnection
   ): Promise<{ polled: number; synced: number; failed: number }> {
-    const appKey = this.encryptionService.decrypt(connection.encryptedAppKey);
-    const appToken = this.encryptionService.decrypt(connection.encryptedAppToken);
+    const dateFrom = connection.lastSyncAt ? connection.lastSyncAt.toISOString() : undefined;
 
-    // Build date filter from lastSyncAt
-    let creationDate: string | undefined;
-    if (connection.lastSyncAt) {
-      const from = connection.lastSyncAt.toISOString();
-      const to = new Date().toISOString();
-      creationDate = `creationDate:[${from} TO ${to}]`;
-    }
-
-    const response = await this.vtexApiClient.listOrders(connection.accountName, appKey, appToken, {
-      creationDate,
-      orderBy: 'creationDate,asc',
-      perPage: 50,
+    const response = await this.meliApiClient.listOrders(connection, {
+      sort: 'date_desc',
+      dateFrom,
+      limit: 50,
     });
 
     let synced = 0;
     let failed = 0;
 
-    for (const orderSummary of response.list) {
-      const result = await this.vtexSyncOrderUseCase.execute({
+    for (const order of response.results) {
+      const result = await this.meliSyncOrderUseCase.execute({
         connectionId: connection.id,
-        externalOrderId: orderSummary.orderId,
+        externalOrderId: String(order.id),
         orgId: connection.orgId,
       });
 
@@ -126,6 +121,6 @@ export class VtexPollOrdersUseCase {
       }
     }
 
-    return { polled: response.list.length, synced, failed };
+    return { polled: response.results.length, synced, failed };
   }
 }

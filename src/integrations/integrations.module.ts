@@ -14,13 +14,15 @@ import { DeleteIntegrationConnectionUseCase } from '@application/integrationUseC
 import { CreateSkuMappingUseCase } from '@application/integrationUseCases/createSkuMappingUseCase';
 import { DeleteSkuMappingUseCase } from '@application/integrationUseCases/deleteSkuMappingUseCase';
 import { GetSkuMappingsUseCase } from '@application/integrationUseCases/getSkuMappingsUseCase';
+import { GetSyncLogsUseCase } from '@application/integrationUseCases/getSyncLogsUseCase';
 import { GetUnmatchedSkusUseCase } from '@application/integrationUseCases/getUnmatchedSkusUseCase';
 import { RetrySyncUseCase } from '@application/integrationUseCases/retrySyncUseCase';
 import { RetryAllFailedSyncsUseCase } from '@application/integrationUseCases/retryAllFailedSyncsUseCase';
 import { VtexModule } from './vtex/vtex.module.js';
+import { MercadoLibreModule } from './mercadolibre/mercadolibre.module.js';
 
 @Module({
-  imports: [PrismaModule, ContactsModule, InventoryModule, VtexModule],
+  imports: [PrismaModule, ContactsModule, InventoryModule, VtexModule, MercadoLibreModule],
   providers: [
     // Repositories
     {
@@ -47,14 +49,16 @@ import { VtexModule } from './vtex/vtex.module.js';
     CreateSkuMappingUseCase,
     DeleteSkuMappingUseCase,
     GetSkuMappingsUseCase,
+    GetSyncLogsUseCase,
     GetUnmatchedSkusUseCase,
     // Retry Use Cases
     RetrySyncUseCase,
     RetryAllFailedSyncsUseCase,
   ],
   exports: [
-    // Re-export VtexModule so consumers (e.g., IntegrationsHttpModule) get VTEX use cases
+    // Re-export provider modules so consumers (e.g., IntegrationsHttpModule) get use cases
     VtexModule,
+    MercadoLibreModule,
     // CRUD Use Cases
     CreateIntegrationConnectionUseCase,
     GetIntegrationConnectionsUseCase,
@@ -65,6 +69,7 @@ import { VtexModule } from './vtex/vtex.module.js';
     CreateSkuMappingUseCase,
     DeleteSkuMappingUseCase,
     GetSkuMappingsUseCase,
+    GetSyncLogsUseCase,
     GetUnmatchedSkusUseCase,
     // Retry Use Cases
     RetrySyncUseCase,

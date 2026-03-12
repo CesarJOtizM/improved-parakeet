@@ -46,6 +46,8 @@ export class GetSkuMappingsUseCase {
       connectionId: m.connectionId,
       externalSku: m.externalSku,
       productId: m.productId,
+      productName: m.productName,
+      productSku: m.productSku,
       createdAt: m.createdAt,
     }));
 

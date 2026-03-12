@@ -10,18 +10,24 @@ export class PrismaIntegrationSkuMappingRepository implements IIntegrationSkuMap
 
   constructor(private readonly prisma: PrismaService) {}
 
-  private toDomain(data: {
-    id: string;
-    connectionId: string;
-    externalSku: string;
-    productId: string;
-    orgId: string;
-  }): IntegrationSkuMapping {
+  private toDomain(
+    data: {
+      id: string;
+      connectionId: string;
+      externalSku: string;
+      productId: string;
+      orgId: string;
+    },
+    productName?: string,
+    productSku?: string
+  ): IntegrationSkuMapping {
     return IntegrationSkuMapping.reconstitute(
       {
         connectionId: data.connectionId,
         externalSku: data.externalSku,
         productId: data.productId,
+        productName,
+        productSku,
       },
       data.id,
       data.orgId
@@ -32,9 +38,10 @@ export class PrismaIntegrationSkuMappingRepository implements IIntegrationSkuMap
     try {
       const data = await this.prisma.integrationSkuMapping.findMany({
         where: { connectionId },
+        include: { product: { select: { name: true, sku: true } } },
         orderBy: { createdAt: 'desc' },
       });
-      return data.map(item => this.toDomain(item));
+      return data.map(item => this.toDomain(item, item.product?.name, item.product?.sku));
     } catch (error) {
       this.logger.error(
         `Error finding SKU mappings by connection: ${error instanceof Error ? error.message : error}`

@@ -16,6 +16,12 @@ export interface IIntegrationConnectionProps {
   lastSyncAt?: Date;
   lastSyncError?: string;
   companyId?: string;
+  encryptedAccessToken?: string;
+  encryptedRefreshToken?: string;
+  accessTokenExpiresAt?: Date;
+  refreshTokenExpiresAt?: Date;
+  meliUserId?: string;
+  tokenStatus?: string;
   createdBy: string;
 }
 
@@ -96,6 +102,58 @@ export class IntegrationConnection extends Entity<IIntegrationConnectionProps> {
     this.updateTimestamp();
   }
 
+  public updateOAuthTokens(params: {
+    encryptedAccessToken: string;
+    encryptedRefreshToken: string;
+    accessTokenExpiresAt: Date;
+    refreshTokenExpiresAt: Date;
+    meliUserId: string;
+  }): void {
+    this.props.encryptedAccessToken = params.encryptedAccessToken;
+    this.props.encryptedRefreshToken = params.encryptedRefreshToken;
+    this.props.accessTokenExpiresAt = params.accessTokenExpiresAt;
+    this.props.refreshTokenExpiresAt = params.refreshTokenExpiresAt;
+    this.props.meliUserId = params.meliUserId;
+    this.props.tokenStatus = 'VALID';
+    this.connect();
+  }
+
+  public markTokenRefreshing(): void {
+    this.props.tokenStatus = 'REFRESHING';
+    this.updateTimestamp();
+  }
+
+  public markReauthRequired(): void {
+    this.props.tokenStatus = 'REAUTH_REQUIRED';
+    this.props.status = 'ERROR';
+    this.props.lastSyncError = 'MercadoLibre authentication expired. Please re-authenticate.';
+    this.updateTimestamp();
+  }
+
+  public clearOAuthTokens(): void {
+    this.props.encryptedAccessToken = undefined;
+    this.props.encryptedRefreshToken = undefined;
+    this.props.accessTokenExpiresAt = undefined;
+    this.props.refreshTokenExpiresAt = undefined;
+    this.props.tokenStatus = undefined;
+    this.updateTimestamp();
+  }
+
+  get isAccessTokenExpired(): boolean {
+    if (!this.props.accessTokenExpiresAt) return true;
+    const bufferMs = 5 * 60 * 1000; // 5 minutes buffer
+    return Date.now() >= this.props.accessTokenExpiresAt.getTime() - bufferMs;
+  }
+
+  get isRefreshTokenExpired(): boolean {
+    if (!this.props.refreshTokenExpiresAt) return true;
+    return Date.now() >= this.props.refreshTokenExpiresAt.getTime();
+  }
+
+  get needsReauth(): boolean {
+    return this.props.tokenStatus === 'REAUTH_REQUIRED';
+  }
+
   get provider(): string {
     return this.props.provider;
   }
@@ -140,6 +198,24 @@ export class IntegrationConnection extends Entity<IIntegrationConnectionProps> {
   }
   get companyId(): string | undefined {
     return this.props.companyId;
+  }
+  get encryptedAccessToken(): string | undefined {
+    return this.props.encryptedAccessToken;
+  }
+  get encryptedRefreshToken(): string | undefined {
+    return this.props.encryptedRefreshToken;
+  }
+  get accessTokenExpiresAt(): Date | undefined {
+    return this.props.accessTokenExpiresAt;
+  }
+  get refreshTokenExpiresAt(): Date | undefined {
+    return this.props.refreshTokenExpiresAt;
+  }
+  get meliUserId(): string | undefined {
+    return this.props.meliUserId;
+  }
+  get tokenStatus(): string | undefined {
+    return this.props.tokenStatus;
   }
   get createdBy(): string {
     return this.props.createdBy;

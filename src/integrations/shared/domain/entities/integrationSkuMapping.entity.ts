@@ -4,6 +4,8 @@ export interface IIntegrationSkuMappingProps {
   connectionId: string;
   externalSku: string;
   productId: string;
+  productName?: string;
+  productSku?: string;
 }
 
 export class IntegrationSkuMapping extends Entity<IIntegrationSkuMappingProps> {
@@ -31,5 +33,11 @@ export class IntegrationSkuMapping extends Entity<IIntegrationSkuMappingProps> {
   }
   get productId(): string {
     return this.props.productId;
+  }
+  get productName(): string | undefined {
+    return this.props.productName;
+  }
+  get productSku(): string | undefined {
+    return this.props.productSku;
   }
 }

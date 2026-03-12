@@ -16,6 +16,7 @@ export interface IIntegrationConnectionRepository {
     accountName: string
   ): Promise<IntegrationConnection | null>;
   findAllConnectedForPolling(): Promise<IntegrationConnection[]>;
+  findByMeliUserId(meliUserId: string): Promise<IntegrationConnection | null>;
   save(connection: IntegrationConnection): Promise<IntegrationConnection>;
   update(connection: IntegrationConnection): Promise<IntegrationConnection>;
   delete(id: string, orgId: string): Promise<void>;

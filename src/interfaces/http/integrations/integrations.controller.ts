@@ -6,6 +6,7 @@ import { UpdateIntegrationConnectionUseCase } from '@application/integrationUseC
 import { CreateSkuMappingUseCase } from '@application/integrationUseCases/createSkuMappingUseCase';
 import { DeleteSkuMappingUseCase } from '@application/integrationUseCases/deleteSkuMappingUseCase';
 import { GetSkuMappingsUseCase } from '@application/integrationUseCases/getSkuMappingsUseCase';
+import { GetSyncLogsUseCase } from '@application/integrationUseCases/getSyncLogsUseCase';
 import { GetUnmatchedSkusUseCase } from '@application/integrationUseCases/getUnmatchedSkusUseCase';
 import { RetrySyncUseCase } from '@application/integrationUseCases/retrySyncUseCase';
 import { RetryAllFailedSyncsUseCase } from '@application/integrationUseCases/retryAllFailedSyncsUseCase';
@@ -13,6 +14,9 @@ import { VtexTestConnectionUseCase } from '../../../integrations/vtex/applicatio
 import { VtexPollOrdersUseCase } from '../../../integrations/vtex/application/vtexPollOrdersUseCase.js';
 import { VtexSyncOrderUseCase } from '../../../integrations/vtex/application/vtexSyncOrderUseCase.js';
 import { VtexRegisterWebhookUseCase } from '../../../integrations/vtex/application/vtexRegisterWebhookUseCase.js';
+import { MeliTestConnectionUseCase } from '../../../integrations/mercadolibre/application/meliTestConnectionUseCase.js';
+import { MeliPollOrdersUseCase } from '../../../integrations/mercadolibre/application/meliPollOrdersUseCase.js';
+import { MeliSyncOrderUseCase } from '../../../integrations/mercadolibre/application/meliSyncOrderUseCase.js';
 import { JwtAuthGuard } from '@auth/security/guards/jwtAuthGuard';
 import { RoleBasedAuthGuard } from '@auth/security/guards/roleBasedAuthGuard';
 import { PermissionGuard } from '@shared/guards/permission.guard';
@@ -62,13 +66,17 @@ export class IntegrationsController {
     private readonly createSkuMappingUseCase: CreateSkuMappingUseCase,
     private readonly deleteSkuMappingUseCase: DeleteSkuMappingUseCase,
     private readonly getSkuMappingsUseCase: GetSkuMappingsUseCase,
+    private readonly getSyncLogsUseCase: GetSyncLogsUseCase,
     private readonly getUnmatchedSkusUseCase: GetUnmatchedSkusUseCase,
     private readonly retrySyncUseCase: RetrySyncUseCase,
     private readonly retryAllFailedSyncsUseCase: RetryAllFailedSyncsUseCase,
     private readonly vtexTestConnectionUseCase: VtexTestConnectionUseCase,
     private readonly vtexPollOrdersUseCase: VtexPollOrdersUseCase,
     private readonly vtexSyncOrderUseCase: VtexSyncOrderUseCase,
-    private readonly vtexRegisterWebhookUseCase: VtexRegisterWebhookUseCase
+    private readonly vtexRegisterWebhookUseCase: VtexRegisterWebhookUseCase,
+    private readonly meliTestConnectionUseCase: MeliTestConnectionUseCase,
+    private readonly meliPollOrdersUseCase: MeliPollOrdersUseCase,
+    private readonly meliSyncOrderUseCase: MeliSyncOrderUseCase
   ) {}
 
   // --- Connection CRUD ---
@@ -188,6 +196,14 @@ export class IntegrationsController {
   @ApiParam({ name: 'id', description: 'Connection ID' })
   async testConnection(@Param('id') connectionId: string, @OrgId() orgId: string) {
     this.logger.log('Testing connection', { connectionId, orgId });
+    const connection = await this.getConnectionByIdUseCase.execute({ connectionId, orgId });
+    const provider = connection.isOk() ? connection.unwrap().data?.provider : undefined;
+
+    if (provider === 'MERCADOLIBRE') {
+      const result = await this.meliTestConnectionUseCase.execute({ connectionId, orgId });
+      return resultToHttpResponse(result);
+    }
+
     const result = await this.vtexTestConnectionUseCase.execute({ connectionId, orgId });
     return resultToHttpResponse(result);
   }
@@ -199,6 +215,14 @@ export class IntegrationsController {
   @ApiParam({ name: 'id', description: 'Connection ID' })
   async syncConnection(@Param('id') connectionId: string, @OrgId() orgId: string) {
     this.logger.log('Manually syncing connection', { connectionId, orgId });
+    const connection = await this.getConnectionByIdUseCase.execute({ connectionId, orgId });
+    const provider = connection.isOk() ? connection.unwrap().data?.provider : undefined;
+
+    if (provider === 'MERCADOLIBRE') {
+      const result = await this.meliPollOrdersUseCase.execute({ connectionId, orgId });
+      return resultToHttpResponse(result);
+    }
+
     const result = await this.vtexPollOrdersUseCase.execute({ connectionId, orgId });
     return resultToHttpResponse(result);
   }
@@ -215,6 +239,18 @@ export class IntegrationsController {
     @OrgId() orgId: string
   ) {
     this.logger.log('Syncing specific order', { connectionId, externalOrderId, orgId });
+    const connection = await this.getConnectionByIdUseCase.execute({ connectionId, orgId });
+    const provider = connection.isOk() ? connection.unwrap().data?.provider : undefined;
+
+    if (provider === 'MERCADOLIBRE') {
+      const result = await this.meliSyncOrderUseCase.execute({
+        connectionId,
+        externalOrderId,
+        orgId,
+      });
+      return resultToHttpResponse(result);
+    }
+
     const result = await this.vtexSyncOrderUseCase.execute({
       connectionId,
       externalOrderId,
@@ -291,6 +327,36 @@ export class IntegrationsController {
       mappingId,
       connectionId,
       orgId,
+    });
+    return resultToHttpResponse(result);
+  }
+
+  // --- Sync Logs ---
+
+  @Get('connections/:id/logs')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SYSTEM_PERMISSIONS.INTEGRATIONS_READ)
+  @ApiOperation({ summary: 'Get sync logs for a connection' })
+  @ApiParam({ name: 'id', description: 'Connection ID' })
+  @ApiQuery({ name: 'action', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Sync logs retrieved successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Connection not found' })
+  async getSyncLogs(
+    @Param('id') connectionId: string,
+    @Query('action') action: string | undefined,
+    @Query('page') page: string | undefined,
+    @Query('limit') limit: string | undefined,
+    @OrgId() orgId: string
+  ) {
+    this.logger.log('Getting sync logs', { connectionId, orgId });
+    const result = await this.getSyncLogsUseCase.execute({
+      connectionId,
+      orgId,
+      action,
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
     });
     return resultToHttpResponse(result);
   }

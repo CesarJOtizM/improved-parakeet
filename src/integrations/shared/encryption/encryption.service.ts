@@ -10,8 +10,10 @@ export class EncryptionService {
 
   private getKey(): Buffer {
     const keyHex = process.env.ENCRYPTION_KEY;
-    if (!keyHex || keyHex.length !== 64) {
-      throw new Error('ENCRYPTION_KEY must be a 64-character hex string (32 bytes)');
+    if (!keyHex || !/^[0-9a-fA-F]{64}$/.test(keyHex)) {
+      throw new Error(
+        'ENCRYPTION_KEY must be a 64-character hex string (32 bytes). Validated at startup via env.validation.ts'
+      );
     }
     return Buffer.from(keyHex, 'hex');
   }

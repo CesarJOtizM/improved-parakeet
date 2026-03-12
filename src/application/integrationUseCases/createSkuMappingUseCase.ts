@@ -27,6 +27,8 @@ export interface ISkuMappingData {
   connectionId: string;
   externalSku: string;
   productId: string;
+  productName?: string;
+  productSku?: string;
   createdAt: Date;
 }
 
@@ -104,6 +106,8 @@ export class CreateSkuMappingUseCase {
           connectionId: saved.connectionId,
           externalSku: saved.externalSku,
           productId: saved.productId,
+          productName: product.name.getValue(),
+          productSku: product.sku.getValue(),
           createdAt: saved.createdAt,
         },
         timestamp: new Date().toISOString(),

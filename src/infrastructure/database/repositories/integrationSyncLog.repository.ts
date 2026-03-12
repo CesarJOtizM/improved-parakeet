@@ -17,6 +17,7 @@ export class PrismaIntegrationSyncLogRepository implements IIntegrationSyncLogRe
     externalOrderId: string;
     action: string;
     saleId: string | null;
+    saleNumber: string | null;
     contactId: string | null;
     errorMessage: string | null;
     rawPayload: Prisma.JsonValue;
@@ -29,6 +30,7 @@ export class PrismaIntegrationSyncLogRepository implements IIntegrationSyncLogRe
         externalOrderId: data.externalOrderId,
         action: data.action,
         saleId: data.saleId || undefined,
+        saleNumber: data.saleNumber || undefined,
         contactId: data.contactId || undefined,
         errorMessage: data.errorMessage || undefined,
         rawPayload: (data.rawPayload as Record<string, unknown>) || undefined,
@@ -48,6 +50,7 @@ export class PrismaIntegrationSyncLogRepository implements IIntegrationSyncLogRe
           externalOrderId: log.externalOrderId,
           action: log.action,
           saleId: log.saleId || null,
+          saleNumber: log.saleNumber || null,
           contactId: log.contactId || null,
           errorMessage: log.errorMessage || null,
           rawPayload: (log.rawPayload as Prisma.InputJsonValue) || undefined,
@@ -134,6 +137,7 @@ export class PrismaIntegrationSyncLogRepository implements IIntegrationSyncLogRe
         data: {
           action: log.action,
           saleId: log.saleId || null,
+          saleNumber: log.saleNumber || null,
           contactId: log.contactId || null,
           errorMessage: log.errorMessage || null,
         },

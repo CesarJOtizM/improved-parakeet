@@ -875,11 +875,17 @@ model IntegrationConnection {
   connectedAt        DateTime?
   lastSyncAt         DateTime?
   lastSyncError      String?
-  companyId          String?
-  orgId              String
-  createdBy          String
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  companyId               String?
+  encryptedAccessToken    String?
+  encryptedRefreshToken   String?
+  accessTokenExpiresAt    DateTime?
+  refreshTokenExpiresAt   DateTime?
+  meliUserId              String?
+  tokenStatus             String?
+  orgId                   String
+  createdBy               String
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
   warehouse      Warehouse @relation(fields: [defaultWarehouseId], references: [id])
   defaultContact Contact?  @relation(fields: [defaultContactId], references: [id])
@@ -890,6 +896,7 @@ model IntegrationConnection {
   @@unique([provider, accountName, orgId])
   @@index([orgId, provider])
   @@index([status])
+  @@index([meliUserId])
   @@map("integration_connections")
 }
 
@@ -900,6 +907,7 @@ model IntegrationSyncLog {
   externalOrderId String
   action          String
   saleId          String?
+  saleNumber      String?
   contactId       String?
   errorMessage    String?
   rawPayload      Json?

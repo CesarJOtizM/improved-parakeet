@@ -5,6 +5,7 @@ export interface IIntegrationSyncLogProps {
   externalOrderId: string;
   action: string;
   saleId?: string;
+  saleNumber?: string;
   contactId?: string;
   errorMessage?: string;
   rawPayload?: Record<string, unknown>;
@@ -35,9 +36,10 @@ export class IntegrationSyncLog extends Entity<IIntegrationSyncLogProps> {
     return new IntegrationSyncLog(props, id, orgId);
   }
 
-  public markSuccess(saleId: string, contactId?: string): void {
+  public markSuccess(saleId: string, contactId?: string, saleNumber?: string): void {
     this.props.action = 'SYNCED';
     this.props.saleId = saleId;
+    this.props.saleNumber = saleNumber;
     this.props.contactId = contactId;
     this.props.errorMessage = undefined;
     this.updateTimestamp();
@@ -60,6 +62,9 @@ export class IntegrationSyncLog extends Entity<IIntegrationSyncLogProps> {
   }
   get saleId(): string | undefined {
     return this.props.saleId;
+  }
+  get saleNumber(): string | undefined {
+    return this.props.saleNumber;
   }
   get contactId(): string | undefined {
     return this.props.contactId;

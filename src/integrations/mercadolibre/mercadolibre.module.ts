@@ -8,14 +8,13 @@ import { PrismaIntegrationConnectionRepository } from '@infrastructure/database/
 import { PrismaIntegrationSyncLogRepository } from '@infrastructure/database/repositories/integrationSyncLog.repository';
 import { PrismaIntegrationSkuMappingRepository } from '@infrastructure/database/repositories/integrationSkuMapping.repository';
 import { EncryptionService } from '../shared/encryption/encryption.service.js';
-import { VtexApiClient } from './infrastructure/vtexApiClient.js';
-import { VtexTestConnectionUseCase } from './application/vtexTestConnectionUseCase.js';
-import { VtexSyncOrderUseCase } from './application/vtexSyncOrderUseCase.js';
-import { VtexPollOrdersUseCase } from './application/vtexPollOrdersUseCase.js';
-import { VtexRegisterWebhookUseCase } from './application/vtexRegisterWebhookUseCase.js';
-import { VtexOutboundSyncUseCase } from './application/vtexOutboundSyncUseCase.js';
-import { VtexPollingJob } from './jobs/vtexPollingJob.js';
-import { VtexOutboundSyncHandler } from './events/vtexOutboundSyncHandler.js';
+import { MeliTokenService } from './infrastructure/meliTokenService.js';
+import { MeliApiClient } from './infrastructure/meliApiClient.js';
+import { MeliExchangeAuthCodeUseCase } from './application/meliExchangeAuthCodeUseCase.js';
+import { MeliTestConnectionUseCase } from './application/meliTestConnectionUseCase.js';
+import { MeliSyncOrderUseCase } from './application/meliSyncOrderUseCase.js';
+import { MeliPollOrdersUseCase } from './application/meliPollOrdersUseCase.js';
+import { MeliPollingJob } from './jobs/meliPollingJob.js';
 
 @Module({
   imports: [PrismaModule, ContactsModule, InventoryModule, SalesModule, ScheduleModule.forRoot()],
@@ -35,27 +34,24 @@ import { VtexOutboundSyncHandler } from './events/vtexOutboundSyncHandler.js';
     },
     // Shared services
     EncryptionService,
-    // VTEX services
-    VtexApiClient,
-    // VTEX use cases
-    VtexTestConnectionUseCase,
-    VtexSyncOrderUseCase,
-    VtexPollOrdersUseCase,
-    VtexRegisterWebhookUseCase,
-    VtexOutboundSyncUseCase,
+    // MeLi services
+    MeliTokenService,
+    MeliApiClient,
+    // MeLi use cases
+    MeliExchangeAuthCodeUseCase,
+    MeliTestConnectionUseCase,
+    MeliSyncOrderUseCase,
+    MeliPollOrdersUseCase,
     // Scheduled jobs
-    VtexPollingJob,
-    // Event handlers
-    VtexOutboundSyncHandler,
+    MeliPollingJob,
   ],
   exports: [
-    VtexTestConnectionUseCase,
-    VtexSyncOrderUseCase,
-    VtexPollOrdersUseCase,
-    VtexRegisterWebhookUseCase,
-    VtexOutboundSyncUseCase,
-    VtexApiClient,
-    VtexOutboundSyncHandler,
+    MeliTokenService,
+    MeliApiClient,
+    MeliExchangeAuthCodeUseCase,
+    MeliTestConnectionUseCase,
+    MeliSyncOrderUseCase,
+    MeliPollOrdersUseCase,
   ],
 })
-export class VtexModule {}
+export class MercadoLibreModule {}

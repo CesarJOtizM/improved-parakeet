@@ -27,6 +27,12 @@ export class PrismaIntegrationConnectionRepository implements IIntegrationConnec
     lastSyncAt: Date | null;
     lastSyncError: string | null;
     companyId: string | null;
+    encryptedAccessToken: string | null;
+    encryptedRefreshToken: string | null;
+    accessTokenExpiresAt: Date | null;
+    refreshTokenExpiresAt: Date | null;
+    meliUserId: string | null;
+    tokenStatus: string | null;
     orgId: string;
     createdBy: string;
   }): IntegrationConnection {
@@ -47,6 +53,12 @@ export class PrismaIntegrationConnectionRepository implements IIntegrationConnec
         lastSyncAt: data.lastSyncAt || undefined,
         lastSyncError: data.lastSyncError || undefined,
         companyId: data.companyId || undefined,
+        encryptedAccessToken: data.encryptedAccessToken || undefined,
+        encryptedRefreshToken: data.encryptedRefreshToken || undefined,
+        accessTokenExpiresAt: data.accessTokenExpiresAt || undefined,
+        refreshTokenExpiresAt: data.refreshTokenExpiresAt || undefined,
+        meliUserId: data.meliUserId || undefined,
+        tokenStatus: data.tokenStatus || undefined,
         createdBy: data.createdBy,
       },
       data.id,
@@ -163,6 +175,12 @@ export class PrismaIntegrationConnectionRepository implements IIntegrationConnec
         lastSyncAt: connection.lastSyncAt || null,
         lastSyncError: connection.lastSyncError || null,
         companyId: connection.companyId || null,
+        encryptedAccessToken: connection.encryptedAccessToken || null,
+        encryptedRefreshToken: connection.encryptedRefreshToken || null,
+        accessTokenExpiresAt: connection.accessTokenExpiresAt || null,
+        refreshTokenExpiresAt: connection.refreshTokenExpiresAt || null,
+        meliUserId: connection.meliUserId || null,
+        tokenStatus: connection.tokenStatus || null,
         orgId: connection.orgId,
         createdBy: connection.createdBy,
       };
@@ -196,12 +214,33 @@ export class PrismaIntegrationConnectionRepository implements IIntegrationConnec
           lastSyncAt: connection.lastSyncAt || null,
           lastSyncError: connection.lastSyncError || null,
           companyId: connection.companyId || null,
+          encryptedAccessToken: connection.encryptedAccessToken || null,
+          encryptedRefreshToken: connection.encryptedRefreshToken || null,
+          accessTokenExpiresAt: connection.accessTokenExpiresAt || null,
+          refreshTokenExpiresAt: connection.refreshTokenExpiresAt || null,
+          meliUserId: connection.meliUserId || null,
+          tokenStatus: connection.tokenStatus || null,
         },
       });
       return this.toDomain(updated);
     } catch (error) {
       this.logger.error(
         `Error updating connection: ${error instanceof Error ? error.message : error}`
+      );
+      throw error;
+    }
+  }
+
+  async findByMeliUserId(meliUserId: string): Promise<IntegrationConnection | null> {
+    try {
+      const data = await this.prisma.integrationConnection.findFirst({
+        where: { meliUserId, provider: 'MERCADOLIBRE' },
+      });
+      if (!data) return null;
+      return this.toDomain(data);
+    } catch (error) {
+      this.logger.error(
+        `Error finding connection by MeLi user ID: ${error instanceof Error ? error.message : error}`
       );
       throw error;
     }

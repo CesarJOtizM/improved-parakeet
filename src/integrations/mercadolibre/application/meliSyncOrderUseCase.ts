@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Contact } from '@contacts/domain/entities/contact.entity';
 import { CreateSaleUseCase } from '@application/saleUseCases/createSaleUseCase';
-import { EncryptionService } from '../../shared/encryption/encryption.service.js';
+import { MeliApiClient } from '../infrastructure/meliApiClient.js';
+import { MeliReauthRequiredError } from '../domain/meliReauthRequired.error.js';
 import { IntegrationSyncLog } from '../../shared/domain/entities/integrationSyncLog.entity.js';
-import { VtexApiClient } from '../infrastructure/vtexApiClient.js';
 import {
   DomainError,
   NotFoundError,
@@ -19,15 +19,15 @@ import type { IIntegrationSyncLogRepository } from '../../shared/domain/ports/iI
 import type { IIntegrationSkuMappingRepository } from '../../shared/domain/ports/iIntegrationSkuMappingRepository.port.js';
 import type { IContactRepository } from '@contacts/domain/ports/repositories/iContactRepository.port';
 import type { IProductRepository } from '@product/domain/repositories/productRepository.interface';
-import type { VtexOrderDetail } from '../dto/vtex-api.types.js';
+import type { MeliOrderDetail } from '../dto/meli-api.types.js';
 
-export interface IVtexSyncOrderRequest {
+export interface IMeliSyncOrderRequest {
   connectionId: string;
   externalOrderId: string;
   orgId: string;
 }
 
-export type IVtexSyncOrderResponse = IApiResponseSuccess<{
+export type IMeliSyncOrderResponse = IApiResponseSuccess<{
   externalOrderId: string;
   action: string;
   saleId?: string;
@@ -35,8 +35,8 @@ export type IVtexSyncOrderResponse = IApiResponseSuccess<{
 }>;
 
 @Injectable()
-export class VtexSyncOrderUseCase {
-  private readonly logger = new Logger(VtexSyncOrderUseCase.name);
+export class MeliSyncOrderUseCase {
+  private readonly logger = new Logger(MeliSyncOrderUseCase.name);
 
   constructor(
     @Inject('IntegrationConnectionRepository')
@@ -49,15 +49,14 @@ export class VtexSyncOrderUseCase {
     private readonly contactRepository: IContactRepository,
     @Inject('ProductRepository')
     private readonly productRepository: IProductRepository,
-    private readonly encryptionService: EncryptionService,
-    private readonly vtexApiClient: VtexApiClient,
+    private readonly meliApiClient: MeliApiClient,
     private readonly createSaleUseCase: CreateSaleUseCase
   ) {}
 
   async execute(
-    request: IVtexSyncOrderRequest
-  ): Promise<Result<IVtexSyncOrderResponse, DomainError>> {
-    this.logger.log('Syncing VTEX order', {
+    request: IMeliSyncOrderRequest
+  ): Promise<Result<IMeliSyncOrderResponse, DomainError>> {
+    this.logger.log('Syncing MeLi order', {
       connectionId: request.connectionId,
       externalOrderId: request.externalOrderId,
       orgId: request.orgId,
@@ -93,20 +92,24 @@ export class VtexSyncOrderUseCase {
         });
       }
 
-      // Decrypt credentials and fetch order
-      const appKey = this.encryptionService.decrypt(connection.encryptedAppKey);
-      const appToken = this.encryptionService.decrypt(connection.encryptedAppToken);
-
-      let order: VtexOrderDetail;
+      // Fetch order from MeLi (token handled automatically by MeliApiClient)
+      let order: MeliOrderDetail;
       try {
-        order = await this.vtexApiClient.getOrder(
-          connection.accountName,
-          appKey,
-          appToken,
-          request.externalOrderId
-        );
+        order = await this.meliApiClient.getOrder(connection, request.externalOrderId);
       } catch (fetchError) {
-        const errorMsg = `Failed to fetch VTEX order: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`;
+        if (fetchError instanceof MeliReauthRequiredError) {
+          await this.logSyncFailure(
+            request.connectionId,
+            request.externalOrderId,
+            request.orgId,
+            'MercadoLibre authentication expired',
+            existingLog
+          );
+          return err(
+            new ValidationError('MercadoLibre requires re-authentication', 'MELI_REAUTH_REQUIRED')
+          );
+        }
+        const errorMsg = `Failed to fetch MeLi order: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`;
         await this.logSyncFailure(
           request.connectionId,
           request.externalOrderId,
@@ -114,7 +117,7 @@ export class VtexSyncOrderUseCase {
           errorMsg,
           existingLog
         );
-        return err(new ValidationError(errorMsg, 'VTEX_ORDER_FETCH_ERROR'));
+        return err(new ValidationError(errorMsg, 'MELI_ORDER_FETCH_ERROR'));
       }
 
       // Resolve or create contact
@@ -137,32 +140,32 @@ export class VtexSyncOrderUseCase {
         currency: string;
       }> = [];
 
-      for (const item of order.items) {
-        const refId = item.refId || item.id;
+      for (const orderItem of order.order_items) {
+        const sellerSku = orderItem.item.seller_sku || orderItem.item.id;
         const mapping = await this.skuMappingRepository.findByExternalSku(
           request.connectionId,
-          refId
+          sellerSku
         );
 
         if (mapping) {
           matchedLines.push({
             productId: mapping.productId,
-            quantity: item.quantity,
-            salePrice: item.sellingPrice / 100, // VTEX prices are in cents
-            currency: 'COP',
+            quantity: orderItem.quantity,
+            salePrice: orderItem.unit_price, // MeLi prices are already in base currency (not cents)
+            currency: orderItem.currency_id,
           });
         } else {
           // Try to find product by SKU directly
-          const product = await this.productRepository.findBySku(refId, request.orgId);
+          const product = await this.productRepository.findBySku(sellerSku, request.orgId);
           if (product) {
             matchedLines.push({
               productId: product.id,
-              quantity: item.quantity,
-              salePrice: item.sellingPrice / 100,
-              currency: 'COP',
+              quantity: orderItem.quantity,
+              salePrice: orderItem.unit_price,
+              currency: orderItem.currency_id,
             });
           } else {
-            unmatchedSkus.push(refId);
+            unmatchedSkus.push(sellerSku);
           }
         }
       }
@@ -177,7 +180,7 @@ export class VtexSyncOrderUseCase {
           existingLog,
           order
         );
-        return err(new ValidationError(errorMsg, 'VTEX_SKU_MISMATCH'));
+        return err(new ValidationError(errorMsg, 'MELI_SKU_MISMATCH'));
       }
 
       // Create sale via CreateSaleUseCase
@@ -185,7 +188,7 @@ export class VtexSyncOrderUseCase {
         warehouseId: connection.defaultWarehouseId,
         contactId: contactId ?? connection.defaultContactId ?? '',
         externalReference: request.externalOrderId,
-        note: `VTEX order ${request.externalOrderId}`,
+        note: `MercadoLibre order ${request.externalOrderId}`,
         lines: matchedLines,
         createdBy: connection.createdBy,
         orgId: request.orgId,
@@ -201,7 +204,7 @@ export class VtexSyncOrderUseCase {
           existingLog,
           order
         );
-        return err(new ValidationError(errorMsg, 'VTEX_SALE_CREATION_ERROR'));
+        return err(new ValidationError(errorMsg, 'MELI_SALE_CREATION_ERROR'));
       }
 
       const saleData = saleResult.unwrap().data;
@@ -237,7 +240,7 @@ export class VtexSyncOrderUseCase {
 
       return ok({
         success: true,
-        message: 'VTEX order synced successfully',
+        message: 'MeLi order synced successfully',
         data: {
           externalOrderId: request.externalOrderId,
           action: 'SYNCED',
@@ -247,49 +250,52 @@ export class VtexSyncOrderUseCase {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      this.logger.error('Error syncing VTEX order', {
+      if (error instanceof MeliReauthRequiredError) {
+        return err(
+          new ValidationError('MercadoLibre requires re-authentication', 'MELI_REAUTH_REQUIRED')
+        );
+      }
+      this.logger.error('Error syncing MeLi order', {
         error: error instanceof Error ? error.message : 'Unknown error',
         externalOrderId: request.externalOrderId,
       });
       return err(
         new ValidationError(
-          `Failed to sync VTEX order: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          'VTEX_SYNC_ORDER_ERROR'
+          `Failed to sync MeLi order: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'MELI_SYNC_ORDER_ERROR'
         )
       );
     }
   }
 
   private async resolveContact(
-    order: VtexOrderDetail,
+    order: MeliOrderDetail,
     defaultContactId: string | undefined,
     orgId: string
   ): Promise<string | undefined> {
-    const profile = order.clientProfileData;
-    if (!profile) return defaultContactId;
+    const buyer = order.buyer;
+    if (!buyer) return defaultContactId;
 
-    // Try to find by email
-    if (profile.email) {
-      const existing = await this.contactRepository.findByEmail(profile.email, orgId);
+    // Try to find by document/identification
+    if (buyer.billing_info?.doc_number) {
+      const existing = await this.contactRepository.findByIdentification(
+        buyer.billing_info.doc_number,
+        orgId
+      );
       if (existing) return existing.id;
     }
 
-    // Try to find by document/identification
-    if (profile.document) {
-      const existing = await this.contactRepository.findByIdentification(profile.document, orgId);
+    // Try to find by email
+    if (buyer.email) {
+      const existing = await this.contactRepository.findByEmail(buyer.email, orgId);
       if (existing) return existing.id;
     }
 
     // Create new contact
-    const contactName =
-      profile.isCorporate && profile.corporateName
-        ? profile.corporateName
-        : `${profile.firstName} ${profile.lastName}`.trim();
-
-    const identification = profile.document || profile.email || `vtex-${Date.now()}`;
-
-    const address = order.shippingData?.address
-      ? `${order.shippingData.address.street} ${order.shippingData.address.number}, ${order.shippingData.address.city}, ${order.shippingData.address.state}`
+    const contactName = `${buyer.first_name} ${buyer.last_name}`.trim() || buyer.nickname;
+    const identification = buyer.billing_info?.doc_number || buyer.email || `meli-${buyer.id}`;
+    const phone = buyer.phone
+      ? `${buyer.phone.area_code || ''}${buyer.phone.number || ''}`.trim()
       : undefined;
 
     const contact = Contact.create(
@@ -297,9 +303,8 @@ export class VtexSyncOrderUseCase {
         name: contactName,
         identification,
         type: 'CUSTOMER',
-        email: profile.email,
-        phone: profile.phone,
-        address,
+        email: buyer.email || undefined,
+        phone: phone || undefined,
       },
       orgId
     );
