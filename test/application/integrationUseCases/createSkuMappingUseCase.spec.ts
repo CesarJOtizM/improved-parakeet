@@ -79,7 +79,11 @@ describe('CreateSkuMappingUseCase', () => {
       mockOrgId
     );
     mockConnectionRepository.findById.mockResolvedValue(connection);
-    mockProductRepository.findById.mockResolvedValue({ id: 'prod-1' } as any);
+    mockProductRepository.findById.mockResolvedValue({
+      id: 'prod-1',
+      name: { getValue: () => 'Test Product' },
+      sku: { getValue: () => 'SKU-001' },
+    } as any);
     mockSkuMappingRepository.findByExternalSku.mockResolvedValue(null);
     mockSkuMappingRepository.save.mockImplementation(async m => m);
 

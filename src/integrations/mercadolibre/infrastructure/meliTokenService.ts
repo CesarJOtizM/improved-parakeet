@@ -81,11 +81,16 @@ export class MeliTokenService {
         refresh_token: refreshToken,
       });
 
-      const { access_token, refresh_token, expires_in, user_id } = response.data;
+      const {
+        access_token: accessToken,
+        refresh_token: newRefreshToken,
+        expires_in: expiresIn,
+        user_id: userId,
+      } = response.data;
 
-      const encryptedAccessToken = this.encryptionService.encrypt(access_token);
-      const encryptedRefreshToken = this.encryptionService.encrypt(refresh_token);
-      const accessTokenExpiresAt = new Date(Date.now() + expires_in * 1000);
+      const encryptedAccessToken = this.encryptionService.encrypt(accessToken);
+      const encryptedRefreshToken = this.encryptionService.encrypt(newRefreshToken);
+      const accessTokenExpiresAt = new Date(Date.now() + expiresIn * 1000);
       const refreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_LIFETIME_MS);
 
       connection.updateOAuthTokens({
@@ -93,7 +98,7 @@ export class MeliTokenService {
         encryptedRefreshToken,
         accessTokenExpiresAt,
         refreshTokenExpiresAt,
-        meliUserId: String(user_id),
+        meliUserId: String(userId),
       });
       await this.connectionRepository.update(connection);
 

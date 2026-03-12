@@ -1,10 +1,10 @@
 import { Inject, Controller, Post, Body, HttpCode, HttpStatus, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { MeliSyncOrderUseCase } from '../../../integrations/mercadolibre/application/meliSyncOrderUseCase.js';
+import { MeliSyncOrderUseCase } from '@integrations/mercadolibre/application/meliSyncOrderUseCase';
 import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
-import type { IIntegrationConnectionRepository } from '../../../integrations/shared/domain/ports/iIntegrationConnectionRepository.port.js';
-import type { MeliNotificationPayload } from '../../../integrations/mercadolibre/dto/meli-api.types.js';
+import type { IIntegrationConnectionRepository } from '@integrations/shared/domain/ports/iIntegrationConnectionRepository.port';
+import type { MeliNotificationPayload } from '@integrations/mercadolibre/dto/meli-api.types';
 
 @ApiTags('MercadoLibre Webhook')
 @Controller('integrations/meli/webhook')

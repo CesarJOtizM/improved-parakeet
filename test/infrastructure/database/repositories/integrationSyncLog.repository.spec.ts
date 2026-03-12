@@ -196,6 +196,7 @@ describe('PrismaIntegrationSyncLogRepository', () => {
         data: {
           action: 'SYNCED',
           saleId: 'sale-1',
+          saleNumber: null,
           contactId: null,
           errorMessage: null,
         },
@@ -230,6 +231,7 @@ describe('PrismaIntegrationSyncLogRepository', () => {
         data: {
           action: 'FAILED',
           saleId: 'sale-1',
+          saleNumber: null,
           contactId: 'contact-1',
           errorMessage: 'Failed to sync',
         },

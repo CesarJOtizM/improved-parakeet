@@ -1,8 +1,8 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Injectable, Logger } from '@nestjs/common';
-import { IntegrationSkuMapping } from '../../../integrations/shared/domain/entities/integrationSkuMapping.entity.js';
+import { IntegrationSkuMapping } from '@integrations/shared/domain/entities/integrationSkuMapping.entity';
 
-import type { IIntegrationSkuMappingRepository } from '../../../integrations/shared/domain/ports/iIntegrationSkuMappingRepository.port.js';
+import type { IIntegrationSkuMappingRepository } from '@integrations/shared/domain/ports/iIntegrationSkuMappingRepository.port';
 
 @Injectable()
 export class PrismaIntegrationSkuMappingRepository implements IIntegrationSkuMappingRepository {

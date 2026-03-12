@@ -10,11 +10,11 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
-import { VtexSyncOrderUseCase } from '../../../integrations/vtex/application/vtexSyncOrderUseCase.js';
+import { VtexSyncOrderUseCase } from '@integrations/vtex/application/vtexSyncOrderUseCase';
 import { resultToHttpResponse } from '@shared/utils/resultToHttp';
 
-import type { IIntegrationConnectionRepository } from '../../../integrations/shared/domain/ports/iIntegrationConnectionRepository.port.js';
-import type { VtexWebhookPayload } from '../../../integrations/vtex/dto/vtex-api.types.js';
+import type { IIntegrationConnectionRepository } from '@integrations/shared/domain/ports/iIntegrationConnectionRepository.port';
+import type { VtexWebhookPayload } from '@integrations/vtex/dto/vtex-api.types';
 
 @ApiTags('VTEX Webhook')
 @Controller('vtex/webhook')

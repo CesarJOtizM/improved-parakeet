@@ -1,8 +1,8 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Injectable, Logger } from '@nestjs/common';
-import { IntegrationSyncLog } from '../../../integrations/shared/domain/entities/integrationSyncLog.entity.js';
+import { IntegrationSyncLog } from '@integrations/shared/domain/entities/integrationSyncLog.entity';
 
-import type { IIntegrationSyncLogRepository } from '../../../integrations/shared/domain/ports/iIntegrationSyncLogRepository.port.js';
+import type { IIntegrationSyncLogRepository } from '@integrations/shared/domain/ports/iIntegrationSyncLogRepository.port';
 import type { Prisma } from '../generated/prisma/index.js';
 
 @Injectable()

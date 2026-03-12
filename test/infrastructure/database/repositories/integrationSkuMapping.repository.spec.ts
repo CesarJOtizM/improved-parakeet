@@ -44,6 +44,7 @@ describe('PrismaIntegrationSkuMappingRepository', () => {
       expect(result[0].productId).toBe('prod-1');
       expect(mockPrismaService.integrationSkuMapping.findMany).toHaveBeenCalledWith({
         where: { connectionId: 'conn-1' },
+        include: { product: { select: { name: true, sku: true } } },
         orderBy: { createdAt: 'desc' },
       });
     });

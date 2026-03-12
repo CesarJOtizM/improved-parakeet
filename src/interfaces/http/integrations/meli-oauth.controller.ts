@@ -21,10 +21,10 @@ import { SYSTEM_PERMISSIONS } from '@shared/constants/security.constants';
 import { OrgId } from '@shared/decorators/orgId.decorator';
 import { RequirePermissions } from '@shared/decorators/requirePermissions.decorator';
 import { AuditInterceptor } from '@shared/interceptors/audit.interceptor';
-import { EncryptionService } from '../../../integrations/shared/encryption/encryption.service.js';
-import { MeliExchangeAuthCodeUseCase } from '../../../integrations/mercadolibre/application/meliExchangeAuthCodeUseCase.js';
+import { EncryptionService } from '@integrations/shared/encryption/encryption.service';
+import { MeliExchangeAuthCodeUseCase } from '@integrations/mercadolibre/application/meliExchangeAuthCodeUseCase';
 
-import type { IIntegrationConnectionRepository } from '../../../integrations/shared/domain/ports/iIntegrationConnectionRepository.port.js';
+import type { IIntegrationConnectionRepository } from '@integrations/shared/domain/ports/iIntegrationConnectionRepository.port';
 
 const MELI_AUTH_BASE = 'https://auth.mercadolibre.com/authorization';
 

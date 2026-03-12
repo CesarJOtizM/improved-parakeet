@@ -1,8 +1,8 @@
 import { PrismaService } from '@infrastructure/database/prisma.service';
 import { Injectable, Logger } from '@nestjs/common';
-import { IntegrationConnection } from '../../../integrations/shared/domain/entities/integrationConnection.entity.js';
+import { IntegrationConnection } from '@integrations/shared/domain/entities/integrationConnection.entity';
 
-import type { IIntegrationConnectionRepository } from '../../../integrations/shared/domain/ports/iIntegrationConnectionRepository.port.js';
+import type { IIntegrationConnectionRepository } from '@integrations/shared/domain/ports/iIntegrationConnectionRepository.port';
 
 @Injectable()
 export class PrismaIntegrationConnectionRepository implements IIntegrationConnectionRepository {
