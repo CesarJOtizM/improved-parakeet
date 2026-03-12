@@ -35,7 +35,7 @@ describe('GetSaleMovementUseCase', () => {
       findByDateRange: jest.fn(),
       getLastSaleNumberForYear: jest.fn(),
       findByMovementId: jest.fn(),
-    } as jest.Mocked<ISaleRepository>;
+    } as unknown as jest.Mocked<ISaleRepository>;
 
     mockMovementRepository = {
       save: jest.fn(),

@@ -35,7 +35,7 @@ describe('RemoveReturnLineUseCase', () => {
       findByDateRange: jest.fn(),
       getLastReturnNumberForYear: jest.fn(),
       findByReturnMovementId: jest.fn(),
-    } as jest.Mocked<IReturnRepository>;
+    } as any;
 
     mockEventDispatcher = {
       dispatchEvents: jest.fn().mockResolvedValue(undefined as never),

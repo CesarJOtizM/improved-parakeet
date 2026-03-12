@@ -480,7 +480,7 @@ describe('MovementsController', () => {
       await controller.getMovements(query as GetMovementsQueryDto, 'org-123');
 
       // Assert
-      const callArgs = mockGetMovementsUseCase.execute.mock.calls[0][0];
+      const callArgs = mockGetMovementsUseCase.execute.mock.calls[0][0] as any;
       expect(callArgs.startDate).toBeInstanceOf(Date);
       expect(callArgs.endDate).toBeInstanceOf(Date);
     });
@@ -500,7 +500,7 @@ describe('MovementsController', () => {
       await controller.getMovements(query as GetMovementsQueryDto, 'org-123');
 
       // Assert
-      const callArgs = mockGetMovementsUseCase.execute.mock.calls[0][0];
+      const callArgs = mockGetMovementsUseCase.execute.mock.calls[0][0] as any;
       expect(callArgs.startDate).toBeUndefined();
       expect(callArgs.endDate).toBeUndefined();
     });
@@ -650,7 +650,7 @@ describe('MovementsController', () => {
       await controller.getMovements(query as GetMovementsQueryDto, 'org-123');
 
       // Assert
-      const callArgs = mockGetMovementsUseCase.execute.mock.calls[0][0];
+      const callArgs = mockGetMovementsUseCase.execute.mock.calls[0][0] as any;
       expect(callArgs.startDate).toBeInstanceOf(Date);
       expect(callArgs.endDate).toBeUndefined();
     });
@@ -670,7 +670,7 @@ describe('MovementsController', () => {
       await controller.getMovements(query as GetMovementsQueryDto, 'org-123');
 
       // Assert
-      const callArgs = mockGetMovementsUseCase.execute.mock.calls[0][0];
+      const callArgs = mockGetMovementsUseCase.execute.mock.calls[0][0] as any;
       expect(callArgs.startDate).toBeUndefined();
       expect(callArgs.endDate).toBeInstanceOf(Date);
     });

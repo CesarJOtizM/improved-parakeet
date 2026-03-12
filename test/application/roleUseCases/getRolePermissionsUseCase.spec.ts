@@ -77,7 +77,7 @@ describe('GetRolePermissionsUseCase', () => {
             action: 'READ',
           },
         },
-      ]);
+      ] as any);
 
       // Act
       const result = await useCase.execute({ roleId: mockRoleId, orgId: mockOrgId });

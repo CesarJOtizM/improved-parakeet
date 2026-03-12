@@ -52,9 +52,10 @@ describe('IntegrationSyncLog', () => {
         },
         'org-1'
       );
-      log.markSuccess('sale-1', 'contact-1');
+      log.markSuccess('sale-1', 'contact-1', 'S-0001');
       expect(log.action).toBe('SYNCED');
       expect(log.saleId).toBe('sale-1');
+      expect(log.saleNumber).toBe('S-0001');
       expect(log.contactId).toBe('contact-1');
       expect(log.errorMessage).toBeUndefined();
     });

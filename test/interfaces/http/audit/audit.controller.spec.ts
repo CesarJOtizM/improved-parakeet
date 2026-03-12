@@ -143,7 +143,7 @@ describe('AuditController', () => {
       // Assert
       expect(result.success).toBe(true);
       expect(result.data.id).toBe('audit-123');
-      expect(result.data.requestBody).toBeDefined();
+      expect((result.data as any).requestBody).toBeDefined();
       expect(mockGetAuditLogUseCase.execute).toHaveBeenCalledWith({
         id: 'audit-123',
         orgId: mockOrgId,

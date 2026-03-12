@@ -7,7 +7,7 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('VtexApiClient', () => {
   let client: VtexApiClient;
-  let mockAxiosInstance: { get: jest.Mock; post: jest.Mock };
+  let mockAxiosInstance: { get: jest.Mock<any>; post: jest.Mock<any> };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -23,7 +23,7 @@ describe('VtexApiClient', () => {
 
   describe('ping', () => {
     it('Given: valid credentials When: pinging Then: should return true on 200 response', async () => {
-      mockAxiosInstance.get.mockResolvedValue({ status: 200 });
+      mockAxiosInstance.get.mockResolvedValue({ status: 200 } as any);
 
       const result = await client.ping('teststore', 'key', 'token');
 
@@ -36,7 +36,7 @@ describe('VtexApiClient', () => {
     });
 
     it('Given: invalid credentials When: pinging Then: should return false on error', async () => {
-      mockAxiosInstance.get.mockRejectedValue(new Error('Unauthorized'));
+      mockAxiosInstance.get.mockRejectedValue(new Error('Unauthorized') as any);
 
       const result = await client.ping('teststore', 'bad-key', 'bad-token');
 
@@ -47,7 +47,7 @@ describe('VtexApiClient', () => {
   describe('getOrder', () => {
     it('Given: valid order ID When: fetching Then: should return order detail', async () => {
       const mockOrder = { orderId: 'ORD-123', status: 'handling' };
-      mockAxiosInstance.get.mockResolvedValue({ data: mockOrder });
+      mockAxiosInstance.get.mockResolvedValue({ data: mockOrder } as any);
 
       const result = await client.getOrder('teststore', 'key', 'token', 'ORD-123');
 
@@ -56,7 +56,7 @@ describe('VtexApiClient', () => {
     });
 
     it('Given: API error When: fetching order Then: should throw error', async () => {
-      mockAxiosInstance.get.mockRejectedValue(new Error('Not Found'));
+      mockAxiosInstance.get.mockRejectedValue(new Error('Not Found') as any);
 
       await expect(client.getOrder('teststore', 'key', 'token', 'ORD-999')).rejects.toThrow(
         'Not Found'
@@ -70,7 +70,7 @@ describe('VtexApiClient', () => {
         list: [],
         paging: { total: 0, pages: 0, currentPage: 1, perPage: 50 },
       };
-      mockAxiosInstance.get.mockResolvedValue({ data: mockResponse });
+      mockAxiosInstance.get.mockResolvedValue({ data: mockResponse } as any);
 
       const result = await client.listOrders('teststore', 'key', 'token', { page: 1 });
 
@@ -80,7 +80,7 @@ describe('VtexApiClient', () => {
 
   describe('startHandling', () => {
     it('Given: valid order ID When: starting handling Then: should call API', async () => {
-      mockAxiosInstance.post.mockResolvedValue({ status: 200 });
+      mockAxiosInstance.post.mockResolvedValue({ status: 200 } as any);
 
       await client.startHandling('teststore', 'key', 'token', 'ORD-123');
 
@@ -92,7 +92,7 @@ describe('VtexApiClient', () => {
 
   describe('cancelOrder', () => {
     it('Given: valid order ID When: cancelling Then: should call API with reason', async () => {
-      mockAxiosInstance.post.mockResolvedValue({ status: 200 });
+      mockAxiosInstance.post.mockResolvedValue({ status: 200 } as any);
 
       await client.cancelOrder('teststore', 'key', 'token', 'ORD-123', 'Customer request');
 
@@ -102,7 +102,7 @@ describe('VtexApiClient', () => {
     });
 
     it('Given: API error When: cancelling order Then: should throw error', async () => {
-      mockAxiosInstance.post.mockRejectedValue(new Error('Cancel failed'));
+      mockAxiosInstance.post.mockRejectedValue(new Error('Cancel failed') as any);
 
       await expect(
         client.cancelOrder('teststore', 'key', 'token', 'ORD-123', 'reason')
@@ -116,7 +116,7 @@ describe('VtexApiClient', () => {
         list: [],
         paging: { total: 0, pages: 0, currentPage: 1, perPage: 50 },
       };
-      mockAxiosInstance.get.mockResolvedValue({ data: mockResponse });
+      mockAxiosInstance.get.mockResolvedValue({ data: mockResponse } as any);
 
       const result = await client.listOrders('teststore', 'key', 'token', {});
 
@@ -134,7 +134,7 @@ describe('VtexApiClient', () => {
         list: [],
         paging: { total: 0, pages: 0, currentPage: 1, perPage: 10 },
       };
-      mockAxiosInstance.get.mockResolvedValue({ data: mockResponse });
+      mockAxiosInstance.get.mockResolvedValue({ data: mockResponse } as any);
 
       await client.listOrders('teststore', 'key', 'token', {
         page: 2,
@@ -164,7 +164,7 @@ describe('VtexApiClient', () => {
 
   describe('registerWebhook', () => {
     it('Given: valid hookUrl When: registering webhook Then: should call API correctly', async () => {
-      mockAxiosInstance.post.mockResolvedValue({ status: 200 });
+      mockAxiosInstance.post.mockResolvedValue({ status: 200 } as any);
 
       await client.registerWebhook('teststore', 'key', 'token', 'https://example.com/hook');
 
@@ -190,7 +190,7 @@ describe('VtexApiClient', () => {
 
   describe('sendInvoice', () => {
     it('Given: valid invoice data When: sending invoice Then: should call API', async () => {
-      mockAxiosInstance.post.mockResolvedValue({ status: 200 });
+      mockAxiosInstance.post.mockResolvedValue({ status: 200 } as any);
       const invoiceData = {
         type: 'Output' as const,
         invoiceNumber: 'INV-001',
@@ -229,7 +229,7 @@ describe('VtexApiClient', () => {
 
   describe('createClient headers', () => {
     it('Given: different account When: creating client Then: should set correct baseURL and headers', async () => {
-      mockAxiosInstance.get.mockResolvedValue({ status: 200 });
+      mockAxiosInstance.get.mockResolvedValue({ status: 200 } as any);
 
       await client.ping('myaccount', 'my-key', 'my-token');
 

@@ -8,9 +8,9 @@ describe('EventIdempotencyService', () => {
   let service: EventIdempotencyService;
   let mockPrisma: {
     processedEvent: {
-      create: jest.Mock;
-      findUnique: jest.Mock;
-      deleteMany: jest.Mock;
+      create: jest.Mock<any>;
+      findUnique: jest.Mock<any>;
+      deleteMany: jest.Mock<any>;
     };
   };
 

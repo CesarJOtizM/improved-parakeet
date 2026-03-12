@@ -32,10 +32,10 @@ describe('GetWarehouseByIdUseCase', () => {
 
     mockPrisma = {
       warehouse: {
-        findUnique: jest.fn().mockResolvedValue(null),
+        findUnique: jest.fn<any>().mockResolvedValue(null),
       },
       user: {
-        findUnique: jest.fn().mockResolvedValue(null),
+        findUnique: jest.fn<any>().mockResolvedValue(null),
       },
     } as unknown as jest.Mocked<PrismaService>;
 

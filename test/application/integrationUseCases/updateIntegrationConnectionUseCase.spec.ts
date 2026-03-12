@@ -2,7 +2,7 @@ import { UpdateIntegrationConnectionUseCase } from '@application/integrationUseC
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { IntegrationConnection } from '../../../src/integrations/shared/domain/entities/integrationConnection.entity';
 import { EncryptionService } from '../../../src/integrations/shared/encryption/encryption.service';
-import { NotFoundError, ValidationError } from '@shared/domain/result/domainError';
+import { NotFoundError } from '@shared/domain/result/domainError';
 
 import type { IIntegrationConnectionRepository } from '../../../src/integrations/shared/domain/ports/iIntegrationConnectionRepository.port';
 import type { IWarehouseRepository } from '@warehouse/domain/repositories/warehouseRepository.interface';
@@ -43,6 +43,7 @@ describe('UpdateIntegrationConnectionUseCase', () => {
       findByProviderAndAccount: jest.fn(),
       findByProviderAndAccountGlobal: jest.fn(),
       findAllConnectedForPolling: jest.fn(),
+      findByMeliUserId: jest.fn(),
       save: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),

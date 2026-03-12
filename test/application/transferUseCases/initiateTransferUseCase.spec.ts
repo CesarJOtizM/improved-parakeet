@@ -84,7 +84,7 @@ describe('InitiateTransferUseCase', () => {
       updateStock: jest.fn(),
       incrementStock: jest.fn(),
       decrementStock: jest.fn(),
-    } as jest.Mocked<IStockRepository>;
+    } as unknown as jest.Mocked<IStockRepository>;
 
     mockLocationRepository = {
       save: jest.fn(),

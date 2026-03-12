@@ -11,10 +11,10 @@ import type { IStockRepository } from '@stock/domain/repositories/stockRepositor
 
 describe('MovementPostedEventHandler', () => {
   let handler: MovementPostedEventHandler;
-  let mockMovementRepository: Record<string, jest.Mock<any>>;
-  let mockStockRepository: Record<string, jest.Mock<any>>;
-  let mockEventBus: Record<string, jest.Mock<any>>;
-  let mockIdempotencyService: Record<string, jest.Mock<any>>;
+  let mockMovementRepository: any;
+  let mockStockRepository: any;
+  let mockEventBus: any;
+  let mockIdempotencyService: any;
 
   const createMockMovement = (overrides: Partial<any> = {}): any => ({
     id: 'mov-123',
@@ -61,11 +61,11 @@ describe('MovementPostedEventHandler', () => {
     };
 
     mockEventBus = {
-      publish: jest.fn().mockResolvedValue(undefined),
+      publish: (jest.fn() as any).mockResolvedValue(undefined),
     };
 
     mockIdempotencyService = {
-      tryMarkAsProcessed: jest.fn().mockResolvedValue(true),
+      tryMarkAsProcessed: (jest.fn() as any).mockResolvedValue(true),
     };
 
     handler = new MovementPostedEventHandler(

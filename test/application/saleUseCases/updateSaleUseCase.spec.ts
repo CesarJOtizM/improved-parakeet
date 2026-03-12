@@ -32,7 +32,7 @@ describe('UpdateSaleUseCase', () => {
       findByDateRange: jest.fn(),
       getLastSaleNumberForYear: jest.fn(),
       findByMovementId: jest.fn(),
-    } as jest.Mocked<ISaleRepository>;
+    } as unknown as jest.Mocked<ISaleRepository>;
 
     mockEventDispatcher = {
       dispatchEvents: jest.fn().mockResolvedValue(undefined as never),

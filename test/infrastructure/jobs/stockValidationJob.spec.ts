@@ -87,7 +87,7 @@ describe('StockValidationJob', () => {
 
     mockPrismaService = {
       alertConfiguration: {
-        findUnique: jest.fn().mockResolvedValue({
+        findUnique: jest.fn<any>().mockResolvedValue({
           orgId: 'org-123',
           isEnabled: true,
           cronFrequency: 'EVERY_HOUR',
@@ -97,23 +97,21 @@ describe('StockValidationJob', () => {
           recipientEmails: '',
           lastRunAt: null,
         }),
-        update: jest.fn().mockResolvedValue(null),
+        update: jest.fn<any>().mockResolvedValue(null),
       },
     };
 
     mockNotificationService = {
-      sendStockAlertDigest: jest.fn().mockResolvedValue(undefined),
+      sendStockAlertDigest: jest.fn<any>().mockResolvedValue(undefined),
     };
 
     job = new StockValidationJob(
-      mockProductRepository,
-      mockStockRepository,
-      mockWarehouseRepository,
-      mockReorderRuleRepository,
-      mockOrganizationRepository,
-      mockEventBus as unknown as Parameters<
-        typeof StockValidationJob.prototype.validateStockLevels
-      >[0],
+      mockProductRepository as any,
+      mockStockRepository as any,
+      mockWarehouseRepository as any,
+      mockReorderRuleRepository as any,
+      mockOrganizationRepository as any,
+      mockEventBus as any,
       mockPrismaService as any,
       mockNotificationService as any
     );
@@ -417,7 +415,7 @@ describe('StockValidationJob', () => {
       await job.validateStockLevels();
 
       // Assert
-      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0] as any;
       expect(digestCall.orgName).toBe('Test Organization');
       expect(digestCall.lowStockItems).toHaveLength(1);
       expect(digestCall.lowStockItems[0].productName).toBe('Test Product');
@@ -438,7 +436,7 @@ describe('StockValidationJob', () => {
       await job.validateStockLevels();
 
       // Assert
-      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0] as any;
       expect(digestCall.overstockItems).toHaveLength(1);
       expect(digestCall.overstockItems[0].productName).toBe('Test Product');
       expect(digestCall.overstockItems[0].maxQuantity).toBe(100);
@@ -466,7 +464,7 @@ describe('StockValidationJob', () => {
       await job.validateStockLevels();
 
       // Assert
-      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0] as any;
       expect(digestCall.recipientEmails).toEqual(['alice@test.com', 'bob@test.com']);
     });
 
@@ -482,7 +480,7 @@ describe('StockValidationJob', () => {
       await job.validateStockLevels();
 
       // Assert
-      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0] as any;
       expect(digestCall.recipientEmails).toEqual(['admin@nevadainventory.com']);
     });
 
@@ -526,7 +524,7 @@ describe('StockValidationJob', () => {
       await job.validateStockLevels();
 
       // Assert
-      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0] as any;
       expect(digestCall.language).toBe('es');
     });
 
@@ -546,7 +544,7 @@ describe('StockValidationJob', () => {
       await job.validateStockLevels();
 
       // Assert
-      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0] as any;
       expect(digestCall.language).toBe('es');
     });
   });
@@ -720,7 +718,7 @@ describe('StockValidationJob', () => {
 
       // Assert
       expect(mockNotificationService.sendStockAlertDigest).toHaveBeenCalledTimes(1);
-      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0] as any;
       expect(digestCall.lowStockItems.length).toBeGreaterThanOrEqual(1);
       expect(digestCall.overstockItems.length).toBeGreaterThanOrEqual(1);
     });
@@ -800,7 +798,7 @@ describe('StockValidationJob', () => {
 
       // Assert - should not alert for exceeded (only > max triggers)
       const thresholdExceededCalls = mockEventBus.publish.mock.calls.filter(
-        call => call[0].constructor.name === 'StockThresholdExceededEvent'
+        (call: any) => call[0].constructor.name === 'StockThresholdExceededEvent'
       );
       expect(thresholdExceededCalls).toHaveLength(0);
     });
@@ -916,7 +914,7 @@ describe('StockValidationJob', () => {
       await job.validateStockLevels();
 
       // Assert
-      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0] as any;
       expect(digestCall.recipientEmails).toEqual(['admin@nevadainventory.com']);
     });
 
@@ -942,7 +940,7 @@ describe('StockValidationJob', () => {
       await job.validateStockLevels();
 
       // Assert
-      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0];
+      const digestCall = mockNotificationService.sendStockAlertDigest.mock.calls[0][0] as any;
       expect(digestCall.recipientEmails).toEqual(['admin@nevadainventory.com']);
     });
   });

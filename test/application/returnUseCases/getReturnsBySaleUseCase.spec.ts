@@ -37,7 +37,7 @@ describe('GetReturnsBySaleUseCase', () => {
       findByDateRange: jest.fn(),
       getLastReturnNumberForYear: jest.fn(),
       findByReturnMovementId: jest.fn(),
-    } as jest.Mocked<IReturnRepository>;
+    } as any;
 
     mockSaleRepository = {
       save: jest.fn(),
@@ -52,7 +52,7 @@ describe('GetReturnsBySaleUseCase', () => {
       findByDateRange: jest.fn(),
       getLastSaleNumberForYear: jest.fn(),
       findByMovementId: jest.fn(),
-    } as jest.Mocked<ISaleRepository>;
+    } as any;
 
     useCase = new GetReturnsBySaleUseCase(mockReturnRepository, mockSaleRepository);
   });

@@ -48,7 +48,7 @@ describe('Category', () => {
       };
 
       // Act
-      const category = Category.reconstitute(props, 'cat-123', 'org-123');
+      const category = Category.reconstitute(props as any, 'cat-123', 'org-123');
 
       // Assert
       expect(category.id).toBe('cat-123');

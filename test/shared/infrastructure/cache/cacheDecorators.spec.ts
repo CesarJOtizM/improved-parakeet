@@ -12,14 +12,14 @@ import type { ICacheService } from '@shared/ports/cache';
 
 describe('Cache Decorators', () => {
   const buildCacheService = (): jest.Mocked<ICacheService> => ({
-    get: jest.fn(),
-    set: jest.fn(),
-    delete: jest.fn(),
-    exists: jest.fn(),
-    clear: jest.fn(),
-    getMany: jest.fn(),
-    setMany: jest.fn(),
-    deleteMany: jest.fn(),
+    get: jest.fn<any>(),
+    set: jest.fn<any>(),
+    delete: jest.fn<any>(),
+    exists: jest.fn<any>(),
+    clear: jest.fn<any>(),
+    getMany: jest.fn<any>(),
+    setMany: jest.fn<any>(),
+    deleteMany: jest.fn<any>(),
   });
 
   describe('cacheMethod', () => {
@@ -27,13 +27,13 @@ describe('Cache Decorators', () => {
       // Arrange
       const cacheService = buildCacheService();
       cacheService.get.mockResolvedValue(ok('cached'));
-      const method = jest.fn().mockResolvedValue('fresh');
+      const method = jest.fn<any>().mockResolvedValue('fresh');
 
       // Act
       const result = await cacheMethod(
         cacheService,
         { entityType: 'product' },
-        method,
+        method as any,
         'product-1'
       );
 
@@ -47,13 +47,13 @@ describe('Cache Decorators', () => {
       const cacheService = buildCacheService();
       cacheService.get.mockResolvedValue(ok(null));
       cacheService.set.mockResolvedValue(ok(undefined));
-      const method = jest.fn().mockResolvedValue({ id: 'product-1' });
+      const method = jest.fn<any>().mockResolvedValue({ id: 'product-1' });
 
       // Act
       const result = await cacheMethod(
         cacheService,
         { entityType: 'product' },
-        method,
+        method as any,
         'product-1',
         'org-1'
       );
@@ -69,7 +69,7 @@ describe('Cache Decorators', () => {
       // Arrange
       const cacheService = buildCacheService();
       cacheService.delete.mockResolvedValue(ok(undefined));
-      const method = jest.fn().mockResolvedValue('done');
+      const method = jest.fn<any>().mockResolvedValue('done');
 
       // Act
       const result = await evictCache(
@@ -78,7 +78,7 @@ describe('Cache Decorators', () => {
           entityType: 'product',
           keyGenerator: args => `product:${String(args[0])}`,
         },
-        method,
+        method as any,
         'product-1'
       );
 
@@ -96,7 +96,7 @@ describe('Cache Decorators', () => {
       // Arrange
       const cacheService = buildCacheService();
       cacheService.set.mockResolvedValue(ok(undefined));
-      const method = jest.fn().mockResolvedValue({ id: 'product-1' });
+      const method = jest.fn<any>().mockResolvedValue({ id: 'product-1' });
 
       // Act
       const result = await updateCache(
@@ -106,7 +106,7 @@ describe('Cache Decorators', () => {
           keyGenerator: args => `product:${String(args[0])}`,
           ttl: 120,
         },
-        method,
+        method as any,
         'product-1'
       );
 

@@ -129,7 +129,7 @@ describe('CreateOrganizationUseCase', () => {
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
-      });
+      } as any);
 
       // Act
       const result = await useCase.execute(validRequest);
@@ -268,7 +268,7 @@ describe('CreateOrganizationUseCase', () => {
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
-      });
+      } as any);
 
       mockPrismaService.user.create.mockResolvedValue({
         id: 'user-123',
@@ -284,7 +284,7 @@ describe('CreateOrganizationUseCase', () => {
         lastLoginAt: null,
         failedLoginAttempts: 0,
         lockedUntil: null,
-      });
+      } as any);
 
       mockPrismaService.role.findFirst.mockResolvedValue({
         id: 'admin-role-id',
@@ -294,7 +294,7 @@ describe('CreateOrganizationUseCase', () => {
         orgId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-      });
+      } as any);
 
       mockPrismaService.userRole.create.mockResolvedValue({
         id: 'user-role-123',
@@ -302,7 +302,7 @@ describe('CreateOrganizationUseCase', () => {
         roleId: 'admin-role-id',
         orgId: mockOrganizationId,
         createdAt: new Date(),
-      });
+      } as any);
 
       const requestWithAdmin = {
         ...validRequest,

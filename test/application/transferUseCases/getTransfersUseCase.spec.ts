@@ -33,7 +33,7 @@ describe('GetTransfersUseCase', () => {
 
     mockPrisma = {
       warehouse: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<any>().mockResolvedValue([]),
       },
     } as unknown as jest.Mocked<PrismaService>;
 
@@ -324,10 +324,10 @@ describe('GetTransfersUseCase', () => {
       const mockTransfers = [createMockTransfer()];
       mockTransferRepository.findAll.mockResolvedValue(mockTransfers);
 
-      (mockPrisma.warehouse.findMany as jest.Mock).mockResolvedValue([
+      (mockPrisma.warehouse.findMany as jest.Mock<any>).mockResolvedValue([
         { id: 'warehouse-from-123', name: 'Source Warehouse' },
         { id: 'warehouse-to-123', name: 'Destination Warehouse' },
-      ]);
+      ] as any);
 
       const request = {
         orgId: mockOrgId,
@@ -551,7 +551,7 @@ describe('GetTransfersUseCase', () => {
       mockTransferRepository.findAll.mockResolvedValue(mockTransfers);
 
       // No warehouses found
-      (mockPrisma.warehouse.findMany as jest.Mock).mockResolvedValue([]);
+      (mockPrisma.warehouse.findMany as jest.Mock<any>).mockResolvedValue([]);
 
       const request = {
         orgId: mockOrgId,

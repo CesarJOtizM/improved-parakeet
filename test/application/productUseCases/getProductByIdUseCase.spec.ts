@@ -55,11 +55,11 @@ describe('GetProductByIdUseCase', () => {
       updateStock: jest.fn(),
       incrementStock: jest.fn(),
       decrementStock: jest.fn(),
-      findAll: jest.fn().mockResolvedValue([]),
+      findAll: jest.fn<any>().mockResolvedValue([]),
     } as jest.Mocked<IStockRepository>;
 
     mockReorderRuleRepository = {
-      findAll: jest.fn().mockResolvedValue([]),
+      findAll: jest.fn<any>().mockResolvedValue([]),
       findById: jest.fn(),
       findByProductAndWarehouse: jest.fn(),
       create: jest.fn(),
@@ -78,14 +78,14 @@ describe('GetProductByIdUseCase', () => {
       findByStatus: jest.fn(),
       findByType: jest.fn(),
       findByDateRange: jest.fn(),
-      findByProduct: jest.fn().mockResolvedValue([]),
+      findByProduct: jest.fn<any>().mockResolvedValue([]),
       findDraftMovements: jest.fn(),
       findPostedMovements: jest.fn(),
     } as jest.Mocked<IMovementRepository>;
 
     mockPrisma = {
       user: {
-        findUnique: jest.fn().mockResolvedValue(null),
+        findUnique: jest.fn<any>().mockResolvedValue(null),
       },
     } as unknown as jest.Mocked<PrismaService>;
 
@@ -756,7 +756,7 @@ describe('GetProductByIdUseCase', () => {
       mockProductRepository.findById.mockResolvedValue(productWithStatusChange);
       mockStockRepository.findAll.mockResolvedValue([]);
 
-      (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue({
+      (mockPrisma.user.findUnique as jest.Mock<any>).mockResolvedValue({
         firstName: 'Admin',
         lastName: 'Manager',
       });
@@ -800,7 +800,7 @@ describe('GetProductByIdUseCase', () => {
       mockStockRepository.findAll.mockResolvedValue([]);
 
       // User not found
-      (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (mockPrisma.user.findUnique as jest.Mock<any>).mockResolvedValue(null);
 
       const request = {
         productId: mockProductId,
@@ -841,7 +841,7 @@ describe('GetProductByIdUseCase', () => {
       mockStockRepository.findAll.mockResolvedValue([]);
 
       // Prisma throws error
-      (mockPrisma.user.findUnique as jest.Mock).mockRejectedValue(new Error('DB error'));
+      (mockPrisma.user.findUnique as jest.Mock<any>).mockRejectedValue(new Error('DB error'));
 
       const request = {
         productId: mockProductId,

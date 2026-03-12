@@ -48,7 +48,7 @@ describe('PrismaStockRepository', () => {
 
     repository = new PrismaStockRepository(
       mockPrismaService as unknown as PrismaService,
-      mockProductRepository
+      mockProductRepository as any
     );
   });
 
@@ -576,7 +576,7 @@ describe('PrismaStockRepository', () => {
 
     it('Given: stock records exist When: finding all Then: should return stock data with product and warehouse info', async () => {
       // Arrange
-      mockPrismaService.stock.findMany = jest.fn().mockResolvedValue([mockStockWithRelations]);
+      mockPrismaService.stock.findMany = jest.fn<any>().mockResolvedValue([mockStockWithRelations]);
 
       // Act
       const result = await repository.findAll('org-123');
@@ -595,7 +595,7 @@ describe('PrismaStockRepository', () => {
 
     it('Given: warehouseIds filter When: finding all Then: should filter by warehouse', async () => {
       // Arrange
-      mockPrismaService.stock.findMany = jest.fn().mockResolvedValue([mockStockWithRelations]);
+      mockPrismaService.stock.findMany = jest.fn<any>().mockResolvedValue([mockStockWithRelations]);
 
       // Act
       await repository.findAll('org-123', { warehouseIds: ['warehouse-1', 'warehouse-2'] });
@@ -612,7 +612,7 @@ describe('PrismaStockRepository', () => {
 
     it('Given: productId filter When: finding all Then: should filter by product', async () => {
       // Arrange
-      mockPrismaService.stock.findMany = jest.fn().mockResolvedValue([mockStockWithRelations]);
+      mockPrismaService.stock.findMany = jest.fn<any>().mockResolvedValue([mockStockWithRelations]);
 
       // Act
       await repository.findAll('org-123', { productId: 'product-1' });
@@ -642,14 +642,14 @@ describe('PrismaStockRepository', () => {
           product: { id: 'product-2', sku: 'SKU-002', name: 'Product Two', unit: 'EA' },
         },
       ];
-      mockPrismaService.stock.findMany = jest.fn().mockResolvedValue(stockRecords);
+      mockPrismaService.stock.findMany = jest.fn<any>().mockResolvedValue(stockRecords);
 
       // Mock reorder rules - add mock for reorderRule
       const mockReorderRule = {
-        findMany: jest.fn().mockResolvedValue([
+        findMany: jest.fn<any>().mockResolvedValue([
           { productId: 'product-1', warehouseId: 'warehouse-1', minQty: 10 },
           { productId: 'product-2', warehouseId: 'warehouse-1', minQty: 10 },
-        ]),
+        ] as any),
       };
       (mockPrismaService as unknown as Record<string, unknown>).reorderRule = mockReorderRule;
 
@@ -664,10 +664,10 @@ describe('PrismaStockRepository', () => {
 
     it('Given: lowStock filter with no reorder rules When: finding all Then: should return empty', async () => {
       // Arrange
-      mockPrismaService.stock.findMany = jest.fn().mockResolvedValue([mockStockWithRelations]);
+      mockPrismaService.stock.findMany = jest.fn<any>().mockResolvedValue([mockStockWithRelations]);
 
       const mockReorderRule = {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<any>().mockResolvedValue([]),
       };
       (mockPrismaService as unknown as Record<string, unknown>).reorderRule = mockReorderRule;
 
@@ -681,7 +681,7 @@ describe('PrismaStockRepository', () => {
     it('Given: stock with null unitCost When: finding all Then: should default to zero cost', async () => {
       // Arrange
       mockPrismaService.stock.findMany = jest
-        .fn()
+        .fn<any>()
         .mockResolvedValue([{ ...mockStockWithRelations, unitCost: null }]);
 
       // Act
@@ -695,7 +695,7 @@ describe('PrismaStockRepository', () => {
       // Arrange
       const decimalCost = { toNumber: () => 42.5 };
       mockPrismaService.stock.findMany = jest
-        .fn()
+        .fn<any>()
         .mockResolvedValue([{ ...mockStockWithRelations, unitCost: decimalCost }]);
 
       // Act
@@ -707,7 +707,7 @@ describe('PrismaStockRepository', () => {
 
     it('Given: database error When: finding all Then: should throw error', async () => {
       // Arrange
-      mockPrismaService.stock.findMany = jest.fn().mockRejectedValue(new Error('Query failed'));
+      mockPrismaService.stock.findMany = jest.fn<any>().mockRejectedValue(new Error('Query failed'));
 
       // Act & Assert
       await expect(repository.findAll('org-123')).rejects.toThrow('Query failed');
@@ -715,7 +715,7 @@ describe('PrismaStockRepository', () => {
 
     it('Given: non-Error database failure When: finding all Then: should still throw', async () => {
       // Arrange
-      mockPrismaService.stock.findMany = jest.fn().mockRejectedValue('string error');
+      mockPrismaService.stock.findMany = jest.fn<any>().mockRejectedValue('string error');
 
       // Act & Assert
       await expect(repository.findAll('org-123')).rejects.toBe('string error');

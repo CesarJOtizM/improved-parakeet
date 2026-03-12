@@ -11,7 +11,7 @@ describe('ExportCompletedEvent', () => {
     it('Given: export completion data When: creating event Then: should create event with correct properties', () => {
       // Arrange
       const type: ReportTypeValue = 'AVAILABLE_INVENTORY';
-      const format: ReportFormatValue = 'xlsx';
+      const format = 'xlsx' as ReportFormatValue;
 
       // Act
       const event = new ExportCompletedEvent(mockReportId, type, format, mockOrgId, mockExportedBy);
@@ -29,7 +29,7 @@ describe('ExportCompletedEvent', () => {
       const event = new ExportCompletedEvent(
         mockReportId,
         'AVAILABLE_INVENTORY',
-        'xlsx',
+        'xlsx' as any,
         mockOrgId,
         mockExportedBy
       );
@@ -49,7 +49,7 @@ describe('ExportCompletedEvent', () => {
       const event = new ExportCompletedEvent(
         mockReportId,
         'AVAILABLE_INVENTORY',
-        'xlsx',
+        'xlsx' as any,
         mockOrgId,
         mockExportedBy
       );
@@ -70,7 +70,7 @@ describe('ExportCompletedEvent', () => {
       const event = new ExportCompletedEvent(
         'specific-report-id',
         'AVAILABLE_INVENTORY',
-        'xlsx',
+        'xlsx' as any,
         mockOrgId,
         mockExportedBy
       );
@@ -96,7 +96,7 @@ describe('ExportCompletedEvent', () => {
         const event = new ExportCompletedEvent(
           mockReportId,
           type,
-          'xlsx',
+          'xlsx' as any,
           mockOrgId,
           mockExportedBy
         );
@@ -111,7 +111,7 @@ describe('ExportCompletedEvent', () => {
   });
 
   describe('format', () => {
-    it.each([['xlsx'], ['csv'], ['pdf']] as ReportFormatValue[][])(
+    it.each([['xlsx'], ['csv'], ['pdf']] as unknown as ReportFormatValue[][])(
       'Given: an ExportCompletedEvent with format %s When: getting format Then: should return correct format',
       format => {
         // Arrange
@@ -138,7 +138,7 @@ describe('ExportCompletedEvent', () => {
       const event = new ExportCompletedEvent(
         mockReportId,
         'AVAILABLE_INVENTORY',
-        'xlsx',
+        'xlsx' as any,
         'specific-org-id',
         mockExportedBy
       );
@@ -157,7 +157,7 @@ describe('ExportCompletedEvent', () => {
       const event = new ExportCompletedEvent(
         mockReportId,
         'AVAILABLE_INVENTORY',
-        'xlsx',
+        'xlsx' as any,
         mockOrgId,
         'specific-user-id'
       );
@@ -176,7 +176,7 @@ describe('ExportCompletedEvent', () => {
       const event = new ExportCompletedEvent(
         mockReportId,
         'AVAILABLE_INVENTORY',
-        'xlsx',
+        'xlsx' as any,
         mockOrgId,
         mockExportedBy
       );

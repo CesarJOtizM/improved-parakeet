@@ -55,16 +55,16 @@ describe('GetMovementsUseCase', () => {
 
     mockPrisma = {
       warehouse: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<any>().mockResolvedValue([]),
       },
       contact: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<any>().mockResolvedValue([]),
       },
       product: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<any>().mockResolvedValue([]),
       },
       user: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<any>().mockResolvedValue([]),
       },
     } as unknown as jest.Mocked<PrismaService>;
 
@@ -603,7 +603,7 @@ describe('GetMovementsUseCase', () => {
       mockMovementRepository.findAll.mockResolvedValue([movement]);
       mockProductRepository.findById.mockResolvedValue(null);
 
-      (mockPrisma.warehouse.findMany as jest.Mock).mockResolvedValue([
+      (mockPrisma.warehouse.findMany as jest.Mock<any>).mockResolvedValue([
         { id: 'wh-123', name: 'Main Warehouse', code: 'MW-01' },
       ]);
 
@@ -620,8 +620,8 @@ describe('GetMovementsUseCase', () => {
       expect(result.isOk()).toBe(true);
       result.match(
         value => {
-          expect(value.data[0].warehouseName).toBe('Main Warehouse');
-          expect(value.data[0].warehouseCode).toBe('MW-01');
+          expect((value.data[0] as any).warehouseName).toBe('Main Warehouse');
+          expect((value.data[0] as any).warehouseCode).toBe('MW-01');
         },
         () => {
           throw new Error('Expected Ok result');
@@ -641,7 +641,7 @@ describe('GetMovementsUseCase', () => {
       mockMovementRepository.findAll.mockResolvedValue([movement]);
       mockProductRepository.findById.mockResolvedValue(null);
 
-      (mockPrisma.warehouse.findMany as jest.Mock).mockResolvedValue([]);
+      (mockPrisma.warehouse.findMany as jest.Mock<any>).mockResolvedValue([]);
 
       const request = {
         orgId: mockOrgId,
@@ -656,7 +656,7 @@ describe('GetMovementsUseCase', () => {
       expect(result.isOk()).toBe(true);
       result.match(
         value => {
-          expect(value.data[0].warehouseName).toBeUndefined();
+          expect((value.data[0] as any).warehouseName).toBeUndefined();
         },
         () => {
           throw new Error('Expected Ok result');

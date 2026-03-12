@@ -38,10 +38,10 @@ describe('GetSaleByIdUseCase', () => {
       findByDateRange: jest.fn(),
       getLastSaleNumberForYear: jest.fn(),
       findByMovementId: jest.fn(),
-    } as jest.Mocked<ISaleRepository>;
+    } as unknown as jest.Mocked<ISaleRepository>;
 
     mockWarehouseRepository = {
-      findById: jest.fn().mockResolvedValue(null),
+      findById: jest.fn<any>().mockResolvedValue(null),
       findAll: jest.fn(),
       findByCode: jest.fn(),
       existsByCode: jest.fn(),
@@ -52,7 +52,7 @@ describe('GetSaleByIdUseCase', () => {
     } as jest.Mocked<IWarehouseRepository>;
 
     mockProductRepository = {
-      findById: jest.fn().mockResolvedValue(null),
+      findById: jest.fn<any>().mockResolvedValue(null),
       findAll: jest.fn(),
       findBySku: jest.fn(),
       findByCategory: jest.fn(),
@@ -67,7 +67,7 @@ describe('GetSaleByIdUseCase', () => {
     } as jest.Mocked<IProductRepository>;
 
     mockOrganizationRepository = {
-      findById: jest.fn().mockResolvedValue(null),
+      findById: jest.fn<any>().mockResolvedValue(null),
       findAll: jest.fn(),
       findBySlug: jest.fn(),
       findByDomain: jest.fn(),
@@ -83,7 +83,7 @@ describe('GetSaleByIdUseCase', () => {
 
     mockPrisma = {
       user: {
-        findUnique: jest.fn().mockResolvedValue(null),
+        findUnique: jest.fn<any>().mockResolvedValue(null),
       },
     } as unknown as jest.Mocked<PrismaService>;
 
@@ -237,7 +237,7 @@ describe('GetSaleByIdUseCase', () => {
       };
       (mockSale as unknown as { getLines: () => unknown[] }).getLines = jest
         .fn()
-        .mockReturnValue([mockLine]);
+        .mockReturnValue([mockLine]) as any;
 
       mockSaleRepository.findById.mockResolvedValue(mockSale);
 
@@ -277,7 +277,7 @@ describe('GetSaleByIdUseCase', () => {
       mockSaleRepository.findById.mockResolvedValue(mockSale);
 
       // Mock the prisma user lookup to return a user for the createdBy field
-      (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue({
+      (mockPrisma.user.findUnique as jest.Mock<any>).mockResolvedValue({
         firstName: 'John',
         lastName: 'Doe',
       });
@@ -308,7 +308,7 @@ describe('GetSaleByIdUseCase', () => {
       mockSaleRepository.findById.mockResolvedValue(mockSale);
 
       // All user lookups return null
-      (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (mockPrisma.user.findUnique as jest.Mock<any>).mockResolvedValue(null);
 
       const request = {
         id: mockSaleId,
@@ -337,7 +337,7 @@ describe('GetSaleByIdUseCase', () => {
       // Make getLines return empty array
       (mockSale as unknown as { getLines: () => unknown[] }).getLines = jest
         .fn()
-        .mockReturnValue([]);
+        .mockReturnValue([]) as any;
 
       mockSaleRepository.findById.mockResolvedValue(mockSale);
 
@@ -387,7 +387,7 @@ describe('GetSaleByIdUseCase', () => {
 
       // Mock prisma.contact to throw
       (mockPrisma as unknown as { contact: { findUnique: jest.Mock } }).contact = {
-        findUnique: jest.fn().mockRejectedValue(new Error('Contact DB error')),
+        findUnique: jest.fn<any>().mockRejectedValue(new Error('Contact DB error')),
       };
 
       const request = {
@@ -416,7 +416,7 @@ describe('GetSaleByIdUseCase', () => {
       mockSaleRepository.findById.mockResolvedValue(mockSale);
 
       (mockPrisma as unknown as { contact: { findUnique: jest.Mock } }).contact = {
-        findUnique: jest.fn().mockResolvedValue({ name: 'Acme Corp' }),
+        findUnique: jest.fn<any>().mockResolvedValue({ name: 'Acme Corp' }),
       };
 
       const request = {
@@ -445,7 +445,7 @@ describe('GetSaleByIdUseCase', () => {
       mockSaleRepository.findById.mockResolvedValue(mockSale);
 
       (mockPrisma as unknown as { contact: { findUnique: jest.Mock } }).contact = {
-        findUnique: jest.fn().mockResolvedValue(null),
+        findUnique: jest.fn<any>().mockResolvedValue(null),
       };
 
       const request = {
@@ -482,7 +482,7 @@ describe('GetSaleByIdUseCase', () => {
       };
       (mockSale as unknown as { getLines: () => unknown[] }).getLines = jest
         .fn()
-        .mockReturnValue([mockLine]);
+        .mockReturnValue([mockLine]) as any;
 
       mockSaleRepository.findById.mockResolvedValue(mockSale);
       mockProductRepository.findById.mockRejectedValue(new Error('Product DB error'));
@@ -522,7 +522,7 @@ describe('GetSaleByIdUseCase', () => {
       };
       (mockSale as unknown as { getLines: () => unknown[] }).getLines = jest
         .fn()
-        .mockReturnValue([mockLine]);
+        .mockReturnValue([mockLine]) as any;
 
       mockSaleRepository.findById.mockResolvedValue(mockSale);
       mockProductRepository.findById.mockResolvedValue(null);
@@ -607,7 +607,7 @@ describe('GetSaleByIdUseCase', () => {
       const mockSale = createMockSale();
       mockSaleRepository.findById.mockResolvedValue(mockSale);
 
-      (mockPrisma.user.findUnique as jest.Mock).mockRejectedValue(new Error('User DB error'));
+      (mockPrisma.user.findUnique as jest.Mock<any>).mockRejectedValue(new Error('User DB error'));
 
       const request = {
         id: mockSaleId,
@@ -637,7 +637,7 @@ describe('GetSaleByIdUseCase', () => {
           warehouseId: 'warehouse-123',
           createdBy: 'user-123',
           // contactId is omitted
-        },
+        } as any,
         saleNumber
       );
       const mockSale = Sale.reconstitute(props, mockSaleId, mockOrgId);

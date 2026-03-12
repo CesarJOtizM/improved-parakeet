@@ -203,7 +203,7 @@ describe('ReceiveTransferUseCase', () => {
           expect(value.message).toContain('received successfully');
           expect(value.data.status).toBe('RECEIVED');
           expect(value.data.inMovementId).toBe(mockMovementId);
-          expect(value.data.receivedBy).toBe(mockReceiverId);
+          expect((value.data as any).receivedBy).toBe(mockReceiverId);
           expect(value.data.fromWarehouseId).toBe(mockFromWarehouseId);
           expect(value.data.toWarehouseId).toBe(mockToWarehouseId);
         },

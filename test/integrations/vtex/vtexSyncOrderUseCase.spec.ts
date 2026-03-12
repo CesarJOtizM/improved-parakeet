@@ -4,7 +4,9 @@ import { IntegrationConnection } from '../../../src/integrations/shared/domain/e
 import { IntegrationSyncLog } from '../../../src/integrations/shared/domain/entities/integrationSyncLog.entity';
 import { EncryptionService } from '../../../src/integrations/shared/encryption/encryption.service';
 import { VtexApiClient } from '../../../src/integrations/vtex/infrastructure/vtexApiClient';
+import { CreateSaleUseCase } from '@application/saleUseCases/createSaleUseCase';
 import { NotFoundError } from '@shared/domain/result/domainError';
+import { ok } from '@shared/domain/result';
 
 import type { IIntegrationConnectionRepository } from '../../../src/integrations/shared/domain/ports/iIntegrationConnectionRepository.port';
 import type { IIntegrationSyncLogRepository } from '../../../src/integrations/shared/domain/ports/iIntegrationSyncLogRepository.port';
@@ -23,6 +25,7 @@ describe('VtexSyncOrderUseCase', () => {
   let mockProductRepository: jest.Mocked<IProductRepository>;
   let mockEncryptionService: jest.Mocked<EncryptionService>;
   let mockVtexApiClient: jest.Mocked<VtexApiClient>;
+  let mockCreateSaleUseCase: jest.Mocked<CreateSaleUseCase>;
 
   const createMockConnection = () =>
     IntegrationConnection.reconstitute(
@@ -53,6 +56,7 @@ describe('VtexSyncOrderUseCase', () => {
       findByProviderAndAccount: jest.fn(),
       findByProviderAndAccountGlobal: jest.fn(),
       findAllConnectedForPolling: jest.fn(),
+      findByMeliUserId: jest.fn(),
       save: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
@@ -116,6 +120,17 @@ describe('VtexSyncOrderUseCase', () => {
       cancelOrder: jest.fn(),
     } as unknown as jest.Mocked<VtexApiClient>;
 
+    mockCreateSaleUseCase = {
+      execute: jest.fn<any>().mockResolvedValue(
+        ok({
+          success: true,
+          message: 'Sale created successfully',
+          data: { id: 'sale-uuid-123', saleNumber: 'S-0001', status: 'DRAFT' },
+          timestamp: new Date().toISOString(),
+        })
+      ),
+    } as unknown as jest.Mocked<CreateSaleUseCase>;
+
     useCase = new VtexSyncOrderUseCase(
       mockConnectionRepository,
       mockSyncLogRepository,
@@ -123,7 +138,8 @@ describe('VtexSyncOrderUseCase', () => {
       mockContactRepository,
       mockProductRepository,
       mockEncryptionService,
-      mockVtexApiClient
+      mockVtexApiClient,
+      mockCreateSaleUseCase
     );
   });
 

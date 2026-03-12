@@ -67,7 +67,7 @@ describe('AuthController', () => {
         timestamp: new Date().toISOString(),
       };
 
-      mockLoginUseCase.execute.mockResolvedValue(ok(mockLoginData));
+      mockLoginUseCase.execute.mockResolvedValue(ok(mockLoginData) as any);
 
       const mockReq = {
         orgId: 'org-123',
@@ -328,7 +328,7 @@ describe('AuthController', () => {
         message: 'Login successful',
         timestamp: new Date().toISOString(),
       };
-      mockLoginUseCase.execute.mockResolvedValue(ok(mockLoginData));
+      mockLoginUseCase.execute.mockResolvedValue(ok(mockLoginData) as any);
 
       const mockReq = {} as any; // no orgId on req
 
@@ -368,7 +368,7 @@ describe('AuthController', () => {
         message: 'Login successful',
         timestamp: new Date().toISOString(),
       };
-      mockLoginUseCase.execute.mockResolvedValue(ok(mockLoginData));
+      mockLoginUseCase.execute.mockResolvedValue(ok(mockLoginData) as any);
 
       const mockReq = { orgId: 'org-middleware' } as any;
 
@@ -389,7 +389,7 @@ describe('AuthController', () => {
   describe('logout - additional branches', () => {
     it('Given: no user on request When: logging out Then: should throw UnauthorizedException', async () => {
       // Arrange
-      const logoutRequest = { accessToken: 'token-123' };
+      const logoutRequest = { accessToken: 'token-123' } as any;
       const mockReq = { user: null } as any;
 
       // Act & Assert
@@ -400,7 +400,7 @@ describe('AuthController', () => {
 
     it('Given: undefined user on request When: logging out Then: should throw UnauthorizedException', async () => {
       // Arrange
-      const logoutRequest = { accessToken: 'token-123' };
+      const logoutRequest = { accessToken: 'token-123' } as any;
       const mockReq = {} as any;
 
       // Act & Assert

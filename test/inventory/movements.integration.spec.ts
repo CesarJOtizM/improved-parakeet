@@ -13,7 +13,7 @@ describe('Movement Integration Tests', () => {
   let postMovementUseCase: PostMovementUseCase;
   let mockMovementRepository: jest.Mocked<IMovementRepository>;
   let mockStockRepository: jest.Mocked<IStockRepository>;
-  let mockEventDispatcher: { markAndDispatch: jest.Mock; dispatchEvents: jest.Mock };
+  let mockEventDispatcher: { markAndDispatch: jest.Mock<any>; dispatchEvents: jest.Mock<any> };
 
   const testOrgId = 'test-org-123';
   const testWarehouseId = 'warehouse-123';
@@ -39,14 +39,14 @@ describe('Movement Integration Tests', () => {
     } as any;
 
     mockEventDispatcher = {
-      markAndDispatch: jest.fn().mockResolvedValue(undefined),
-      dispatchEvents: jest.fn().mockResolvedValue(undefined),
+      markAndDispatch: jest.fn<any>().mockResolvedValue(undefined),
+      dispatchEvents: jest.fn<any>().mockResolvedValue(undefined),
     };
 
     postMovementUseCase = new PostMovementUseCase(
       mockMovementRepository,
       mockStockRepository,
-      mockEventDispatcher
+      mockEventDispatcher as any
     );
   });
 

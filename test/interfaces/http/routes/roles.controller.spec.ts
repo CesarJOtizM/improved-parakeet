@@ -150,7 +150,7 @@ describe('RolesController', () => {
 
       // Assert
       expect(result.success).toBe(true);
-      expect(result.data.modules).toHaveLength(2);
+      expect((result.data as any).modules).toHaveLength(2);
       expect(mockGetPermissionsUseCase.execute).toHaveBeenCalled();
     });
 
@@ -346,7 +346,7 @@ describe('RolesController', () => {
 
       // Assert
       expect(result.success).toBe(true);
-      expect(result.data.permissions).toHaveLength(3);
+      expect((result.data as any).permissions).toHaveLength(3);
       expect(mockGetRolePermissionsUseCase.execute).toHaveBeenCalledWith({
         roleId: 'role-123',
         orgId: mockOrgId,
@@ -537,7 +537,7 @@ describe('RolesController', () => {
       mockUpdateRoleUseCase.execute.mockResolvedValue(ok(updateResponse));
 
       // Act
-      const result = await controller.updateRole(
+      await controller.updateRole(
         'role-123',
         dto as any,
         mockOrgId,

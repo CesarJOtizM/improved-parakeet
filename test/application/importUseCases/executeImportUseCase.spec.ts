@@ -6,7 +6,7 @@ import { ImportType } from '@import/domain/valueObjects/importType.valueObject';
 import { ValidationResult } from '@import/domain/valueObjects/validationResult.valueObject';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { IDomainEventDispatcher } from '@shared/domain/events/domainEventDispatcher.interface';
-import { BusinessRuleError, ValidationError } from '@shared/domain/result/domainError';
+import { ValidationError } from '@shared/domain/result/domainError';
 
 import type { IImportBatchRepository } from '@import/domain';
 import type { IFileParsingService } from '@shared/ports/externalServices';

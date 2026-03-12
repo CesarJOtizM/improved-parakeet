@@ -100,7 +100,7 @@ describe('UpdateOrganizationUseCase', () => {
       mockPrismaService.organization.findUnique.mockResolvedValue({
         slug: 'original',
         domain: 'original.com',
-      });
+      } as any);
 
       // Act
       const result = await useCase.execute({ id: organizationId, slug: 'INVALID_SLUG' });
@@ -124,7 +124,7 @@ describe('UpdateOrganizationUseCase', () => {
       mockPrismaService.organization.findUnique.mockResolvedValue({
         slug: 'original',
         domain: 'original.com',
-      });
+      } as any);
 
       // Act
       const result = await useCase.execute({ id: organizationId, slug: 'ab' });
@@ -147,7 +147,7 @@ describe('UpdateOrganizationUseCase', () => {
       mockPrismaService.organization.findUnique.mockResolvedValue({
         slug: 'original',
         domain: 'original.com',
-      });
+      } as any);
       mockOrganizationRepository.existsBySlug.mockResolvedValue(true);
 
       // Act
@@ -171,7 +171,7 @@ describe('UpdateOrganizationUseCase', () => {
       mockPrismaService.organization.findUnique.mockResolvedValue({
         slug: 'original',
         domain: 'original.com',
-      });
+      } as any);
       mockOrganizationRepository.existsByDomain.mockResolvedValue(true);
 
       // Act
@@ -206,13 +206,13 @@ describe('UpdateOrganizationUseCase', () => {
 
       mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
       mockPrismaService.organization.findUnique
-        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' })
+        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' } as any)
         .mockResolvedValueOnce({
           id: organizationId,
           slug: 'updated-slug',
           domain: 'updated.com',
           updatedAt: new Date(),
-        });
+        } as any);
       mockOrganizationRepository.existsBySlug.mockResolvedValue(false);
       mockOrganizationRepository.existsByDomain.mockResolvedValue(false);
       mockOrganizationRepository.update.mockResolvedValue(updatedOrganization);
@@ -247,7 +247,7 @@ describe('UpdateOrganizationUseCase', () => {
       mockPrismaService.organization.findUnique.mockResolvedValue({
         slug: 'original',
         domain: 'original.com',
-      });
+      } as any);
 
       // Act
       const result = await useCase.execute({
@@ -284,13 +284,13 @@ describe('UpdateOrganizationUseCase', () => {
       );
       mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
       mockPrismaService.organization.findUnique
-        .mockResolvedValueOnce({ slug: 'same-slug', domain: 'original.com' })
+        .mockResolvedValueOnce({ slug: 'same-slug', domain: 'original.com' } as any)
         .mockResolvedValueOnce({
           id: organizationId,
           slug: 'same-slug',
           domain: 'original.com',
           updatedAt: new Date(),
-        });
+        } as any);
       mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
 
       // Act
@@ -321,13 +321,13 @@ describe('UpdateOrganizationUseCase', () => {
       );
       mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
       mockPrismaService.organization.findUnique
-        .mockResolvedValueOnce({ slug: 'original', domain: 'same.com' })
+        .mockResolvedValueOnce({ slug: 'original', domain: 'same.com' } as any)
         .mockResolvedValueOnce({
           id: organizationId,
           slug: 'original',
           domain: 'same.com',
           updatedAt: new Date(),
-        });
+        } as any);
       mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
 
       // Act
@@ -357,13 +357,13 @@ describe('UpdateOrganizationUseCase', () => {
       );
       mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
       mockPrismaService.organization.findUnique
-        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' })
+        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' } as any)
         .mockResolvedValueOnce({
           id: organizationId,
           slug: 'original',
           domain: 'original.com',
           updatedAt: new Date(),
-        });
+        } as any);
       mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
 
       // Act
@@ -392,13 +392,13 @@ describe('UpdateOrganizationUseCase', () => {
       );
       mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
       mockPrismaService.organization.findUnique
-        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' })
+        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' } as any)
         .mockResolvedValueOnce({
           id: organizationId,
           slug: 'original',
           domain: 'original.com',
           updatedAt: new Date(),
-        });
+        } as any);
       mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
 
       // Act
@@ -427,13 +427,13 @@ describe('UpdateOrganizationUseCase', () => {
       );
       mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
       mockPrismaService.organization.findUnique
-        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' })
+        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' } as any)
         .mockResolvedValueOnce({
           id: organizationId,
           slug: 'original',
           domain: 'original.com',
           updatedAt: new Date(),
-        });
+        } as any);
       mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
 
       // Act
@@ -462,13 +462,13 @@ describe('UpdateOrganizationUseCase', () => {
       );
       mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
       mockPrismaService.organization.findUnique
-        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' })
+        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' } as any)
         .mockResolvedValueOnce({
           id: organizationId,
           slug: 'original',
           domain: 'original.com',
           updatedAt: new Date(),
-        });
+        } as any);
       mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
 
       // Act
@@ -497,13 +497,13 @@ describe('UpdateOrganizationUseCase', () => {
       );
       mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
       mockPrismaService.organization.findUnique
-        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' })
+        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' } as any)
         .mockResolvedValueOnce({
           id: organizationId,
           slug: 'original',
           domain: 'original.com',
           updatedAt: new Date(),
-        });
+        } as any);
       mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
 
       // Act - only id, no update fields
@@ -530,7 +530,7 @@ describe('UpdateOrganizationUseCase', () => {
       );
       mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
       mockPrismaService.organization.findUnique
-        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' })
+        .mockResolvedValueOnce({ slug: 'original', domain: 'original.com' } as any)
         .mockResolvedValueOnce(null); // Not found after update
       mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
 
@@ -566,13 +566,13 @@ describe('UpdateOrganizationUseCase', () => {
       );
       mockOrganizationRepository.findById.mockResolvedValue(baseOrganization);
       mockPrismaService.organization.findUnique
-        .mockResolvedValueOnce({ slug: 'original', domain: null })
+        .mockResolvedValueOnce({ slug: 'original', domain: null } as any)
         .mockResolvedValueOnce({
           id: organizationId,
           slug: 'original',
           domain: null, // no domain
           updatedAt: new Date(),
-        });
+        } as any);
       mockOrganizationRepository.update.mockResolvedValue(updatedOrg);
 
       // Act

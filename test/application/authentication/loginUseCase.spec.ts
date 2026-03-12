@@ -188,6 +188,7 @@ describe('LoginUseCase', () => {
         username: 'testuser',
         roles: [],
         permissions: [],
+        type: 'access',
       });
       mockSessionRepository.save.mockResolvedValue(mockSession);
 
@@ -586,6 +587,7 @@ describe('LoginUseCase', () => {
         username: 'testuser',
         roles: [],
         permissions: [],
+        type: 'access',
       });
       mockSessionRepository.save.mockRejectedValue(new Error('Session creation failed'));
 

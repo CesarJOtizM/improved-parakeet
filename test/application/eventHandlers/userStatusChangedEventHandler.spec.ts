@@ -23,7 +23,7 @@ describe('UserStatusChangedEventHandler', () => {
     };
 
     mockEmailService = {
-      sendAccountDeactivationEmail: jest.fn().mockResolvedValue({ success: true }),
+      sendAccountDeactivationEmail: (jest.fn() as any).mockResolvedValue({ success: true }),
     };
 
     handler = new UserStatusChangedEventHandler(
@@ -221,7 +221,6 @@ describe('UserStatusChangedEventHandler', () => {
       await expect(handler.handle(event)).resolves.toBeUndefined();
 
       // Assert - should have logged warning but not thrown
-      const warnSpy = jest.spyOn((handler as any).logger, 'warn');
       // The handler should complete without throwing
       expect(mockEmailService.sendAccountDeactivationEmail).toHaveBeenCalled();
     });

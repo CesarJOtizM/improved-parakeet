@@ -48,7 +48,7 @@ describe('ConfirmSaleUseCase', () => {
       getNextSaleNumber: jest.fn(),
       findByMovementId: jest.fn(),
       addLine: jest.fn(),
-    } as jest.Mocked<ISaleRepository>;
+    } as unknown as jest.Mocked<ISaleRepository>;
 
     mockStockRepository = {
       getStockQuantity: jest.fn(),
@@ -56,7 +56,7 @@ describe('ConfirmSaleUseCase', () => {
       updateStock: jest.fn(),
       incrementStock: jest.fn(),
       decrementStock: jest.fn(),
-    } as jest.Mocked<IStockRepository>;
+    } as unknown as jest.Mocked<IStockRepository>;
 
     mockEventDispatcher = {
       dispatchEvents: jest.fn().mockResolvedValue(undefined as never),
@@ -181,7 +181,7 @@ describe('ConfirmSaleUseCase', () => {
             warehouseId: 'warehouse-123',
             orgId: mockOrgId,
           },
-        };
+        } as any;
       });
 
       const request = {
@@ -535,7 +535,7 @@ describe('ConfirmSaleUseCase', () => {
       const mockCreateMany = jest.fn();
       const mockTx = {
         movement: {
-          create: jest.fn().mockResolvedValue({
+          create: jest.fn<any>().mockResolvedValue({
             id: mockMovementId,
             type: 'OUT',
             status: 'POSTED',
@@ -547,7 +547,7 @@ describe('ConfirmSaleUseCase', () => {
           createMany: mockCreateMany,
         },
         sale: {
-          update: jest.fn().mockResolvedValue({
+          update: jest.fn<any>().mockResolvedValue({
             id: mockSaleId,
             saleNumber: 'SALE-2025-001',
             status: 'CONFIRMED',
@@ -772,7 +772,7 @@ describe('ConfirmSaleUseCase', () => {
             warehouseId: 'warehouse-123',
             orgId: mockOrgId,
           },
-        };
+        } as any;
       });
 
       const request = {
@@ -887,7 +887,7 @@ describe('ConfirmSaleUseCase', () => {
             warehouseId: 'warehouse-123',
             orgId: mockOrgId,
           },
-        };
+        } as any;
       });
 
       // Act
@@ -995,7 +995,7 @@ describe('ConfirmSaleUseCase', () => {
       const mockExecuteRaw = jest.fn<() => Promise<number>>().mockResolvedValue(1);
       const mockTx = {
         movement: {
-          create: jest.fn().mockResolvedValue({
+          create: jest.fn<any>().mockResolvedValue({
             id: mockMovementId,
             type: 'OUT',
             status: 'POSTED',
@@ -1007,7 +1007,7 @@ describe('ConfirmSaleUseCase', () => {
           createMany: mockCreateMany,
         },
         sale: {
-          update: jest.fn().mockResolvedValue({
+          update: jest.fn<any>().mockResolvedValue({
             id: mockSaleId,
             saleNumber: 'SALE-2025-001',
             status: 'CONFIRMED',

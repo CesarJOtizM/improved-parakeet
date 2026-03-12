@@ -4,9 +4,9 @@ import { REPORT_TYPES } from '@report/domain/valueObjects';
 import type { ReportGenerationService } from '@report/domain/services/reportGeneration.service';
 
 describe('ReportViewService', () => {
-  const reportGenerationService: Pick<ReportGenerationService, 'generateReport'> = {
+  const reportGenerationService = {
     generateReport: jest.fn(),
-  };
+  } as any;
   const service = new ReportViewService(
     reportGenerationService as unknown as ReportGenerationService
   );

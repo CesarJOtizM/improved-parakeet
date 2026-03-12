@@ -332,13 +332,13 @@ describe('Database Types', () => {
 
     it('Given: MovementStatus When: checking values Then: should have correct movement statuses', () => {
       // Arrange & Act
-      const movementStatuses: MovementStatus[] = ['DRAFT', 'POSTED', 'VOIDED', 'CANCELLED'];
+      const movementStatuses: MovementStatus[] = ['DRAFT', 'POSTED', 'VOID', 'RETURNED'];
 
       // Assert
       expect(movementStatuses).toContain('DRAFT');
       expect(movementStatuses).toContain('POSTED');
-      expect(movementStatuses).toContain('VOIDED');
-      expect(movementStatuses).toContain('CANCELLED');
+      expect(movementStatuses).toContain('VOID');
+      expect(movementStatuses).toContain('RETURNED');
     });
   });
 

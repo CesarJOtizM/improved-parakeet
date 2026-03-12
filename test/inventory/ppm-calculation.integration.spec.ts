@@ -41,7 +41,7 @@ describe('PPM Calculation Integration Tests', () => {
     } as any;
 
     mockIdempotencyService = {
-      tryMarkAsProcessed: jest.fn().mockResolvedValue(true),
+      tryMarkAsProcessed: jest.fn<any>().mockResolvedValue(true),
     } as any;
 
     handler = new MovementPostedEventHandler(

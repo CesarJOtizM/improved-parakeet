@@ -86,7 +86,7 @@ describe('EncryptionService', () => {
       delete process.env.ENCRYPTION_KEY;
       const svc = new EncryptionService();
       expect(() => svc.encrypt('test')).toThrow(
-        'ENCRYPTION_KEY must be a 64-character hex string (32 bytes)'
+        'ENCRYPTION_KEY must be a 64-character hex string (32 bytes). Validated at startup via env.validation.ts'
       );
     });
 
@@ -94,7 +94,7 @@ describe('EncryptionService', () => {
       process.env.ENCRYPTION_KEY = 'short';
       const svc = new EncryptionService();
       expect(() => svc.encrypt('test')).toThrow(
-        'ENCRYPTION_KEY must be a 64-character hex string (32 bytes)'
+        'ENCRYPTION_KEY must be a 64-character hex string (32 bytes). Validated at startup via env.validation.ts'
       );
     });
   });

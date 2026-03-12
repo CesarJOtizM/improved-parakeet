@@ -46,7 +46,7 @@ describe('StockController', () => {
       );
 
       // Act
-      const result = await controller.getStock('org-123');
+      const result = await controller.getStock('org-123') as any;
 
       // Assert
       expect(result.success).toBe(true);

@@ -727,7 +727,7 @@ describe('Sale', () => {
       };
 
       // Act
-      sale.emitSwapEvent(eventProps);
+      sale.emitSwapEvent(eventProps as any);
 
       // Assert - sale should have at least 2 domain events (created + swap)
       expect(sale.domainEvents.length).toBeGreaterThanOrEqual(2);

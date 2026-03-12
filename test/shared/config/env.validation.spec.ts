@@ -19,7 +19,7 @@ const MINIMAL_VALID_ENV = {
   JWT_ACCESS_TOKEN_EXPIRES_IN: '900',
   JWT_REFRESH_TOKEN_EXPIRES_IN: '604800',
   BCRYPT_SALT_ROUNDS: '12',
-  ENCRYPTION_KEY: 'test-encryption-key-long-enough-32chars',
+  ENCRYPTION_KEY: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
   MAX_FAILED_LOGIN_ATTEMPTS: '5',
   LOCKOUT_DURATION_MINUTES: '30',
   SESSION_TIMEOUT_MINUTES: '480',
@@ -185,16 +185,15 @@ describe('env.validation', () => {
       expect(() => validate(env)).toThrow('JWT_SECRET must be at least 32 characters');
     });
 
-    it('Given: production env with default ENCRYPTION_KEY When: validating Then: should throw', () => {
+    it('Given: production env with non-hex ENCRYPTION_KEY When: validating Then: should throw', () => {
       // Arrange
       const env = {
         ...PRODUCTION_ENV,
-        ENCRYPTION_KEY: 'your-encryption-key-change-in-production',
+        ENCRYPTION_KEY: 'your-encryption-key-change-in-production-not-hex-value-64chars!',
       };
 
       // Act & Assert
-      expect(() => validate(env)).toThrow('Production environment validation failed');
-      expect(() => validate(env)).toThrow('ENCRYPTION_KEY must be changed from default value');
+      expect(() => validate(env)).toThrow('Environment validation failed');
     });
 
     it('Given: production env with localhost in ALLOWED_ORIGINS When: validating Then: should throw', () => {
@@ -440,12 +439,11 @@ describe('env.validation', () => {
       // Arrange
       const env = {
         ...PRODUCTION_ENV,
-        ENCRYPTION_KEY: 'short',
+        ENCRYPTION_KEY: 'abcd',
       };
 
       // Act & Assert
-      expect(() => validate(env)).toThrow('Production environment validation failed');
-      expect(() => validate(env)).toThrow('ENCRYPTION_KEY must be at least 32 characters');
+      expect(() => validate(env)).toThrow('Environment validation failed');
     });
 
     it('Given: production env with SWAGGER_ENABLED=true When: validating Then: should throw', () => {

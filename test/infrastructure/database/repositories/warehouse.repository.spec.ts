@@ -47,7 +47,7 @@ describe('PrismaWarehouseRepository', () => {
 
     repository = new PrismaWarehouseRepository(
       mockPrismaService as unknown as PrismaService,
-      mockCacheService
+      mockCacheService as any
     );
   });
 
@@ -259,7 +259,7 @@ describe('PrismaWarehouseRepository', () => {
           name: 'Brand New Warehouse',
           isActive: true,
         },
-        undefined,
+        undefined as any,
         'org-123'
       );
       mockPrismaService.warehouse.create.mockResolvedValue({

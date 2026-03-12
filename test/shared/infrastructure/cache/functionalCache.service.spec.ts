@@ -120,7 +120,7 @@ describe('FunctionalCacheService', () => {
     it('Given: key exists in cache When: deleting value Then: should return ok result', async () => {
       // Arrange
       const key = 'test-key';
-      mockCacheManager.del.mockResolvedValue(undefined);
+      mockCacheManager.del.mockResolvedValue(undefined as any);
 
       // Act
       const result = await service.delete(key);
@@ -524,7 +524,7 @@ describe('FunctionalCacheService', () => {
     it('Given: multiple keys When: deleting many values Then: should return ok result', async () => {
       // Arrange
       const keys = ['key1', 'key2', 'key3'];
-      mockCacheManager.del.mockResolvedValue(undefined);
+      mockCacheManager.del.mockResolvedValue(undefined as any);
 
       // Act
       const result = await service.deleteMany(keys);
@@ -538,7 +538,7 @@ describe('FunctionalCacheService', () => {
       // Arrange
       const keys = ['key1', 'key2'];
       mockCacheManager.del
-        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(undefined as any)
         .mockRejectedValueOnce(new Error('Delete failed'));
 
       // Act

@@ -59,7 +59,7 @@ describe('UserRepository', () => {
 
     repository = new UserRepository(
       mockPrismaService as unknown as PrismaService,
-      mockCacheService
+      mockCacheService as any
     );
   });
 
@@ -95,7 +95,7 @@ describe('UserRepository', () => {
           status: UserStatus.create('ACTIVE'),
           roles: ['admin'],
           permissions: ['read:users'],
-        },
+        } as any,
         'user-123',
         'org-123'
       );
@@ -469,7 +469,7 @@ describe('UserRepository', () => {
           status: UserStatus.create('ACTIVE'),
           roles: ['admin'],
           permissions: ['read:users'],
-        },
+        } as any,
         'user-123',
         'org-123'
       );
@@ -501,7 +501,7 @@ describe('UserRepository', () => {
           status: UserStatus.create('ACTIVE'),
           roles: [],
           permissions: [],
-        },
+        } as any,
         'new-user-id',
         'org-123'
       );
@@ -533,7 +533,7 @@ describe('UserRepository', () => {
           status: UserStatus.create('ACTIVE'),
           roles: [],
           permissions: [],
-        },
+        } as any,
         'user-123',
         'org-123'
       );
@@ -636,7 +636,7 @@ describe('UserRepository', () => {
           status: UserStatus.create('ACTIVE'),
           roles: ['admin'],
           permissions: ['read:users'],
-        },
+        } as any,
         'user-123',
         'org-123'
       );
@@ -668,7 +668,7 @@ describe('UserRepository', () => {
           status: UserStatus.create('ACTIVE'),
           roles: [],
           permissions: [],
-        },
+        } as any,
         'new-user-id',
         'org-123'
       );
@@ -940,7 +940,7 @@ describe('UserRepository', () => {
           status: UserStatus.create('ACTIVE'),
           roles: ['admin'],
           permissions: ['read:users'],
-        },
+        } as any,
         'user-123',
         'org-123'
       );
@@ -1215,7 +1215,7 @@ describe('UserRepository', () => {
           status: UserStatus.create('ACTIVE'),
           roles: [],
           permissions: [],
-        },
+        } as any,
         'user-123',
         'org-123'
       );
@@ -1253,7 +1253,7 @@ describe('UserRepository', () => {
           status: UserStatus.create('INACTIVE'),
           roles: [],
           permissions: [],
-        },
+        } as any,
         'user-123',
         'org-123'
       );
@@ -1284,7 +1284,7 @@ describe('UserRepository', () => {
           status: UserStatus.create('ACTIVE'),
           roles: [],
           permissions: [],
-        },
+        } as any,
         'new-user-id',
         'org-123'
       );
@@ -1323,7 +1323,7 @@ describe('UserRepository', () => {
           status: UserStatus.create('INACTIVE'),
           roles: [],
           permissions: [],
-        },
+        } as any,
         'new-user-id',
         'org-123'
       );
@@ -1354,7 +1354,7 @@ describe('UserRepository', () => {
           status: UserStatus.create('ACTIVE'),
           roles: [],
           permissions: [],
-        },
+        } as any,
         'user-123',
         'org-123'
       );

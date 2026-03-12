@@ -289,7 +289,7 @@ describe('SettingsController', () => {
     it('Given: org with picking settings When: getting config Then: should return picking config', async () => {
       // Arrange
       const mockOrg = {
-        getSetting: jest.fn().mockImplementation((key: string) => {
+        getSetting: jest.fn<any>().mockImplementation((key: string) => {
           if (key === 'pickingMode') return 'REQUIRED_FULL';
           if (key === 'pickingEnabled') return true;
           return undefined;
@@ -342,8 +342,8 @@ describe('SettingsController', () => {
       // Arrange
       const settings: Record<string, any> = {};
       const mockOrg = {
-        getSetting: jest.fn().mockImplementation((key: string) => settings[key]),
-        setSetting: jest.fn().mockImplementation((key: string, value: any) => {
+        getSetting: jest.fn<any>().mockImplementation((key: string) => settings[key]),
+        setSetting: jest.fn<any>().mockImplementation((key: string, value: any) => {
           settings[key] = value;
         }),
       };
@@ -382,8 +382,8 @@ describe('SettingsController', () => {
       // Arrange
       const settings: Record<string, any> = {};
       const mockOrg = {
-        getSetting: jest.fn().mockImplementation((key: string) => settings[key]),
-        setSetting: jest.fn().mockImplementation((key: string, value: any) => {
+        getSetting: jest.fn<any>().mockImplementation((key: string) => settings[key]),
+        setSetting: jest.fn<any>().mockImplementation((key: string, value: any) => {
           settings[key] = value;
         }),
       };
@@ -405,8 +405,8 @@ describe('SettingsController', () => {
       // Arrange
       const settings: Record<string, any> = { pickingMode: 'OPTIONAL' };
       const mockOrg = {
-        getSetting: jest.fn().mockImplementation((key: string) => settings[key]),
-        setSetting: jest.fn().mockImplementation((key: string, value: any) => {
+        getSetting: jest.fn<any>().mockImplementation((key: string) => settings[key]),
+        setSetting: jest.fn<any>().mockImplementation((key: string, value: any) => {
           settings[key] = value;
         }),
       };
@@ -427,8 +427,8 @@ describe('SettingsController', () => {
       // Arrange
       const settings: Record<string, any> = { pickingEnabled: true };
       const mockOrg = {
-        getSetting: jest.fn().mockImplementation((key: string) => settings[key]),
-        setSetting: jest.fn().mockImplementation((key: string, value: any) => {
+        getSetting: jest.fn<any>().mockImplementation((key: string) => settings[key]),
+        setSetting: jest.fn<any>().mockImplementation((key: string, value: any) => {
           settings[key] = value;
         }),
       };
@@ -448,8 +448,8 @@ describe('SettingsController', () => {
       // Arrange
       const settings: Record<string, any> = {};
       const mockOrg = {
-        getSetting: jest.fn().mockImplementation((key: string) => settings[key]),
-        setSetting: jest.fn().mockImplementation((key: string, value: any) => {
+        getSetting: jest.fn<any>().mockImplementation((key: string) => settings[key]),
+        setSetting: jest.fn<any>().mockImplementation((key: string, value: any) => {
           settings[key] = value;
         }),
       };

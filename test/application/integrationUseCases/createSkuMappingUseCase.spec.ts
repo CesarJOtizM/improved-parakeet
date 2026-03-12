@@ -25,6 +25,7 @@ describe('CreateSkuMappingUseCase', () => {
       findByProviderAndAccount: jest.fn(),
       findByProviderAndAccountGlobal: jest.fn(),
       findAllConnectedForPolling: jest.fn(),
+      findByMeliUserId: jest.fn(),
       save: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),

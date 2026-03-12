@@ -247,7 +247,7 @@ describe('PrismaSpecification', () => {
       const chainedSpec = andSpec.and(spec3);
 
       // Assert
-      const where = chainedSpec.toPrismaWhere(testOrgId);
+      const where = (chainedSpec as any).toPrismaWhere(testOrgId);
       expect(where).toHaveProperty('AND');
     });
 
@@ -262,7 +262,7 @@ describe('PrismaSpecification', () => {
       const chainedSpec = orSpec.or(spec3);
 
       // Assert
-      const where = chainedSpec.toPrismaWhere(testOrgId);
+      const where = (chainedSpec as any).toPrismaWhere(testOrgId);
       expect(where).toHaveProperty('OR');
     });
 

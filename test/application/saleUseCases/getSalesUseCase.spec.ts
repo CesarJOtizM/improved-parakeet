@@ -31,20 +31,20 @@ describe('GetSalesUseCase', () => {
       findByDateRange: jest.fn(),
       getLastSaleNumberForYear: jest.fn(),
       findByMovementId: jest.fn(),
-    } as jest.Mocked<ISaleRepository>;
+    } as unknown as jest.Mocked<ISaleRepository>;
 
     mockPrisma = {
       warehouse: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<any>().mockResolvedValue([]),
       },
       contact: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<any>().mockResolvedValue([]),
       },
       product: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<any>().mockResolvedValue([]),
       },
       user: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<any>().mockResolvedValue([]),
       },
     } as unknown as jest.Mocked<PrismaService>;
 
@@ -690,11 +690,6 @@ describe('GetSalesUseCase', () => {
 
     it('Given: enrichment with warehouse, contact, and user data When: getting sales Then: should enrich sale data', async () => {
       // Arrange
-      const sale = createSaleWithDates({
-        saleNumber: SaleNumber.create(2025, 1),
-        status: 'CONFIRMED',
-        confirmedAt: new Date(),
-      });
       // Set contactId and confirmedBy on the sale via reconstitute
       const saleWithContact = Sale.reconstitute(
         {
@@ -717,13 +712,13 @@ describe('GetSalesUseCase', () => {
         hasMore: false,
       });
 
-      (mockPrisma.warehouse.findMany as jest.Mock).mockResolvedValue([
+      (mockPrisma.warehouse.findMany as jest.Mock<any>).mockResolvedValue([
         { id: 'warehouse-123', name: 'Main Warehouse', code: 'WH-01' },
       ]);
-      (mockPrisma.contact.findMany as jest.Mock).mockResolvedValue([
+      (mockPrisma.contact.findMany as jest.Mock<any>).mockResolvedValue([
         { id: 'contact-456', name: 'John Doe' },
       ]);
-      (mockPrisma.user.findMany as jest.Mock).mockResolvedValue([
+      (mockPrisma.user.findMany as jest.Mock<any>).mockResolvedValue([
         { id: 'user-789', firstName: 'Jane', lastName: 'Smith' },
         { id: 'user-cancel-1', firstName: 'Admin', lastName: 'User' },
       ]);
@@ -765,8 +760,8 @@ describe('GetSalesUseCase', () => {
       });
 
       // No warehouse/contact data returned
-      (mockPrisma.warehouse.findMany as jest.Mock).mockResolvedValue([]);
-      (mockPrisma.contact.findMany as jest.Mock).mockResolvedValue([]);
+      (mockPrisma.warehouse.findMany as jest.Mock<any>).mockResolvedValue([]);
+      (mockPrisma.contact.findMany as jest.Mock<any>).mockResolvedValue([]);
 
       const request = {
         orgId: mockOrgId,
@@ -819,7 +814,7 @@ describe('GetSalesUseCase', () => {
         hasMore: false,
       });
 
-      (mockPrisma.product.findMany as jest.Mock).mockResolvedValue([
+      (mockPrisma.product.findMany as jest.Mock<any>).mockResolvedValue([
         { id: 'product-abc', name: 'Widget', sku: 'WDG-001', barcode: 'BAR123' },
       ]);
 

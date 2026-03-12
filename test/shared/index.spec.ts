@@ -47,6 +47,7 @@ describe('Shared Index Exports', () => {
       const errorResponse: IApiResponseError = {
         success: false,
         message: 'Error message',
+        errorCode: 'UNKNOWN_ERROR',
         error: {
           statusCode: 400,
           timestamp: '2024-01-01T00:00:00.000Z',

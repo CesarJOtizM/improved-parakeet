@@ -9,7 +9,7 @@ import { RemoveRoleFromUserUseCase } from '@application/userUseCases/removeRoleF
 import { UpdateUserUseCase } from '@application/userUseCases/updateUserUseCase';
 import { UsersController } from '@interface/http/routes/users.controller';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException } from '@nestjs/common';
 import { ok, err } from '@shared/domain/result';
 import { ConflictError, NotFoundError, ValidationError } from '@shared/domain/result/domainError';
 
@@ -468,7 +468,7 @@ describe('UsersController', () => {
         message: 'User retrieved successfully',
         timestamp: new Date().toISOString(),
       };
-      mockGetUserUseCase.execute.mockResolvedValue(ok(mockResponseData));
+      mockGetUserUseCase.execute.mockResolvedValue(ok(mockResponseData) as any);
 
       // Act
       const result = await usersController.getMyProfile(mockRequest, mockOrgId);
@@ -516,7 +516,7 @@ describe('UsersController', () => {
         message: 'Profile updated successfully',
         timestamp: new Date().toISOString(),
       };
-      mockUpdateUserUseCase.execute.mockResolvedValue(ok(mockResponseData));
+      mockUpdateUserUseCase.execute.mockResolvedValue(ok(mockResponseData) as any);
 
       // Act
       const result = await usersController.updateMyProfile(updateDto, mockOrgId, mockRequest);
@@ -567,7 +567,7 @@ describe('UsersController', () => {
         message: 'Password changed successfully',
         timestamp: new Date().toISOString(),
       };
-      mockChangePasswordUseCase.execute.mockResolvedValue(ok(mockResponseData));
+      mockChangePasswordUseCase.execute.mockResolvedValue(ok(mockResponseData) as any);
 
       // Act
       const result = await usersController.changeMyPassword(
@@ -683,7 +683,7 @@ describe('UsersController', () => {
         message: 'User updated',
         timestamp: new Date().toISOString(),
       };
-      mockUpdateUserUseCase.execute.mockResolvedValue(ok(mockResponseData));
+      mockUpdateUserUseCase.execute.mockResolvedValue(ok(mockResponseData) as any);
 
       // Act
       const result = await usersController.updateUser(
@@ -741,7 +741,7 @@ describe('UsersController', () => {
         message: 'User locked',
         timestamp: new Date().toISOString(),
       };
-      mockChangeUserStatusUseCase.execute.mockResolvedValue(ok(mockResponseData));
+      mockChangeUserStatusUseCase.execute.mockResolvedValue(ok(mockResponseData) as any);
 
       // Act
       const result = await usersController.changeUserStatus(
@@ -827,7 +827,7 @@ describe('UsersController', () => {
         message: 'Profile updated',
         timestamp: new Date().toISOString(),
       };
-      mockUpdateUserUseCase.execute.mockResolvedValue(ok(mockResponseData));
+      mockUpdateUserUseCase.execute.mockResolvedValue(ok(mockResponseData) as any);
 
       // Act
       const result = await usersController.updateMyProfile(updateDto, mockOrgId, mockRequest);
@@ -876,10 +876,10 @@ describe('UsersController', () => {
         message: 'User updated',
         timestamp: new Date().toISOString(),
       };
-      mockUpdateUserUseCase.execute.mockResolvedValue(ok(mockResponseData));
+      mockUpdateUserUseCase.execute.mockResolvedValue(ok(mockResponseData) as any);
 
       // Act
-      const result = await usersController.updateUser(
+      await usersController.updateUser(
         mockUserId,
         updateDto,
         mockOrgId,

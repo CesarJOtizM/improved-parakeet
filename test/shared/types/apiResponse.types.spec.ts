@@ -76,6 +76,7 @@ describe('API Response Types', () => {
       const errorResponse: IApiResponseError = {
         success: false,
         message: 'Validation failed',
+        errorCode: 'VALIDATION_ERROR',
         error: {
           statusCode: 400,
           timestamp: '2024-01-01T00:00:00.000Z',
@@ -102,6 +103,7 @@ describe('API Response Types', () => {
         const errorResponse: IApiResponseError = {
           success: false,
           message: 'Error occurred',
+          errorCode: 'UNKNOWN_ERROR',
           error: {
             statusCode,
             timestamp: '2024-01-01T00:00:00.000Z',
@@ -123,6 +125,7 @@ describe('API Response Types', () => {
         const errorResponse: IApiResponseError = {
           success: false,
           message: 'Error occurred',
+          errorCode: 'UNKNOWN_ERROR',
           error: {
             statusCode: 500,
             timestamp: '2024-01-01T00:00:00.000Z',
@@ -158,6 +161,7 @@ describe('API Response Types', () => {
       const response: IApiResponse<{ id: string }> = {
         success: false,
         message: 'Error',
+        errorCode: 'UNKNOWN_ERROR',
         error: {
           statusCode: 400,
           timestamp: '2024-01-01T00:00:00.000Z',
@@ -338,6 +342,7 @@ describe('API Response Types', () => {
       const errorResponse: IApiResponseError = {
         success: false,
         message: 'Error',
+        errorCode: 'UNKNOWN_ERROR',
         error: {
           statusCode: 400,
           timestamp: '2024-01-01T00:00:00.000Z',

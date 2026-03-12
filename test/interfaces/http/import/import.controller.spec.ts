@@ -53,7 +53,8 @@ describe('ImportController', () => {
       mockDownloadImportTemplateUseCase,
       mockDownloadErrorReportUseCase,
       mockPreviewImportUseCase,
-      mockExecuteImportUseCase
+      mockExecuteImportUseCase,
+      { execute: jest.fn() } as any
     );
   });
 
@@ -127,7 +128,7 @@ describe('ImportController', () => {
 
       // Assert
       expect(result.success).toBe(true);
-      expect(result.data.batchId).toBe('batch-123');
+      expect((result.data as any).batchId).toBe('batch-123');
       expect(mockExecuteImportUseCase.execute).toHaveBeenCalledWith({
         type: 'PRODUCTS',
         file: mockFile,
@@ -663,7 +664,7 @@ describe('ImportController', () => {
   describe('listImportBatches - missing constructor param', () => {
     it('Given: controller with listImportBatchesUseCase When: listing Then: should use injected use case', async () => {
       // Arrange - create controller with proper 9th constructor arg
-      const mockListUseCase = { execute: jest.fn() };
+      const mockListUseCase = { execute: jest.fn<any>() };
       const ctrl = new ImportController(
         mockCreateImportBatchUseCase,
         mockValidateImportUseCase,
@@ -683,7 +684,7 @@ describe('ImportController', () => {
         message: 'Batches retrieved',
         timestamp: new Date().toISOString(),
       };
-      mockListUseCase.execute.mockResolvedValue(ok(listResponse));
+      mockListUseCase.execute.mockResolvedValue(ok(listResponse) as any);
 
       // Act
       const result = await ctrl.listImportBatches(query as any, 'org-123');
@@ -794,7 +795,7 @@ describe('ImportController', () => {
       );
 
       // Act
-      const result = await controller.previewImport(mockFile, dto as any, 'org-123');
+      await controller.previewImport(mockFile, dto as any, 'org-123');
 
       // Assert
       expect(mockPreviewImportUseCase.execute).toHaveBeenCalledWith({
@@ -817,7 +818,7 @@ describe('ImportController', () => {
       );
 
       // Act
-      const result = await controller.previewImport(mockFile, dto as any, 'org-123');
+      await controller.previewImport(mockFile, dto as any, 'org-123');
 
       // Assert
       expect(mockPreviewImportUseCase.execute).toHaveBeenCalledWith({

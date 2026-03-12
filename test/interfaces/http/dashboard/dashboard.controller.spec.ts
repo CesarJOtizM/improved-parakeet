@@ -43,8 +43,8 @@ describe('DashboardController', () => {
       // Assert
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
-      expect(result.data.inventorySummary).toBeDefined();
-      expect(result.data.lowStockCount).toBe(3);
+      expect((result.data as any).inventorySummary).toBeDefined();
+      expect((result.data as any).lowStockCount).toBe(3);
       expect(mockGetDashboardMetricsUseCase.execute).toHaveBeenCalledWith({ orgId: 'org-123' });
     });
 

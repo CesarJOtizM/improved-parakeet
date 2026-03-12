@@ -7,7 +7,7 @@ import {
   AuditLogByEntityTypeSpecification,
   AuditLogByUserSpecification,
 } from '@shared/audit/domain/specifications/auditLogSpecifications';
-import { AuditAction } from '@shared/audit/domain/valueObjects/auditAction.valueObject';
+import { AuditAction, AuditActionValue } from '@shared/audit/domain/valueObjects/auditAction.valueObject';
 import { AuditMetadata } from '@shared/audit/domain/valueObjects/auditMetadata.valueObject';
 import {
   EntityType,
@@ -21,7 +21,7 @@ describe('AuditLogSpecifications', () => {
     overrides: Partial<{
       id: string;
       entityType: EntityTypeValue;
-      action: string;
+      action: AuditActionValue;
       performedBy: string;
       entityId: string;
       createdAt: Date;

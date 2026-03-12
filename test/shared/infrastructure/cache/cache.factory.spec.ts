@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 // Mock redis module before importing the cache factory
-const mockConnect = jest.fn();
-const mockPing = jest.fn();
-const mockDisconnect = jest.fn();
-const mockCreateClient = jest.fn();
+const mockConnect = jest.fn<any>();
+const mockPing = jest.fn<any>();
+const mockDisconnect = jest.fn<any>();
+const mockCreateClient = jest.fn<any>();
 
 jest.mock('redis', () => ({
   createClient: (...args: unknown[]) => mockCreateClient(...args),
@@ -25,13 +25,13 @@ describe('CacheFactory - createCacheModuleOptions', () => {
       disconnect: mockDisconnect,
     });
 
-    mockConnect.mockResolvedValue(undefined);
-    mockPing.mockResolvedValue('PONG');
-    mockDisconnect.mockResolvedValue(undefined);
+    mockConnect.mockResolvedValue(undefined as any);
+    mockPing.mockResolvedValue('PONG' as any);
+    mockDisconnect.mockResolvedValue(undefined as any);
 
     mockConfigService = {
       get: jest.fn(),
-    } as jest.Mocked<Pick<ConfigService, 'get'>>;
+    } as unknown as jest.Mocked<Pick<ConfigService, 'get'>>;
   });
 
   it('Given: createCacheModuleOptions is called When: invoked Then: should return an async options object', () => {
@@ -143,7 +143,7 @@ describe('CacheFactory - createCacheModuleOptions', () => {
 
   it('Given: Redis is unavailable When: factory runs Then: should fall back to in-memory cache', async () => {
     // Arrange
-    mockConnect.mockRejectedValue(new Error('ECONNREFUSED'));
+    mockConnect.mockRejectedValue(new Error('ECONNREFUSED') as any);
     mockConfigService.get.mockImplementation(((key: string) => {
       if (key === 'REDIS_URL') return undefined;
       if (key === 'auth') return { redis: { ttl: 3600 } };
@@ -166,7 +166,7 @@ describe('CacheFactory - createCacheModuleOptions', () => {
 
   it('Given: Redis ping fails When: factory runs Then: should fall back to in-memory cache', async () => {
     // Arrange
-    mockPing.mockRejectedValue(new Error('AUTH required'));
+    mockPing.mockRejectedValue(new Error('AUTH required') as any);
     mockConfigService.get.mockImplementation(((key: string) => {
       if (key === 'REDIS_URL') return undefined;
       if (key === 'auth') return { redis: { ttl: 5000 } };
@@ -188,8 +188,8 @@ describe('CacheFactory - createCacheModuleOptions', () => {
 
   it('Given: no auth config exists When: factory runs Then: should use default TTL of 3600', async () => {
     // Arrange
-    mockConnect.mockRejectedValue(new Error('no redis'));
-    mockConfigService.get.mockReturnValue(undefined as never);
+    mockConnect.mockRejectedValue(new Error('no redis') as any);
+    mockConfigService.get.mockReturnValue(undefined as any);
 
     const options = createCacheModuleOptions();
     const factory = options.useFactory as (config: ConfigService) => Promise<unknown>;

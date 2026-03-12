@@ -19,8 +19,14 @@ describe('Event Handlers Integration', () => {
       save: jest.fn(),
     } as any;
     mockAuditRepository.save.mockResolvedValue(undefined);
+    const mockUserRepository = {
+      findById: jest.fn(),
+    } as any;
+    const mockEmailService = {
+      sendAccountDeactivationEmail: jest.fn(),
+    } as any;
     roleAssignedHandler = new RoleAssignedEventHandler(mockAuditRepository);
-    userStatusChangedHandler = new UserStatusChangedEventHandler(mockAuditRepository);
+    userStatusChangedHandler = new UserStatusChangedEventHandler(mockAuditRepository, mockUserRepository, mockEmailService);
 
     // Register handlers
     eventBus.registerHandler('RoleAssigned', roleAssignedHandler);

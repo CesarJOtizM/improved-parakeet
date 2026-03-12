@@ -22,7 +22,7 @@ describe('OtpCleanupService', () => {
       findRecentOtpByEmail: jest.fn(),
     };
 
-    otpCleanupService = new OtpCleanupService(mockOtpRepository);
+    otpCleanupService = new OtpCleanupService(mockOtpRepository, {} as any);
   });
 
   describe('cleanupExpiredOtp', () => {

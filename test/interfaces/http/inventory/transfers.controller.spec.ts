@@ -346,7 +346,7 @@ describe('TransfersController', () => {
       );
 
       // Act
-      const result = await controller.confirmTransfer('transfer-123', 'org-123');
+      const result = await controller.confirmTransfer('transfer-123', 'org-123') as any;
 
       // Assert
       expect(result.success).toBe(true);
@@ -391,7 +391,7 @@ describe('TransfersController', () => {
         'transfer-123',
         'org-123',
         mockRequest as any
-      );
+      ) as any;
 
       // Assert
       expect(result.success).toBe(true);
@@ -448,7 +448,7 @@ describe('TransfersController', () => {
       // Act
       const result = await controller.rejectTransfer('transfer-123', 'org-123', {
         reason: 'Damaged goods',
-      });
+      }) as any;
 
       // Assert
       expect(result.success).toBe(true);
@@ -693,7 +693,7 @@ describe('TransfersController', () => {
       );
 
       // Act
-      const result = await controller.cancelTransfer('transfer-123', 'org-123');
+      const result = await controller.cancelTransfer('transfer-123', 'org-123') as any;
 
       // Assert
       expect(result.success).toBe(true);

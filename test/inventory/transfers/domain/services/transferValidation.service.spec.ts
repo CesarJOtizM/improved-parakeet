@@ -24,7 +24,7 @@ describe('TransferValidationService', () => {
   describe('validateTransferCreation', () => {
     it('Given: same warehouses When: validating Then: should return error', async () => {
       const warehouseRepository = {
-        findById: jest.fn().mockResolvedValue({ isActive: true }),
+        findById: jest.fn<any>().mockResolvedValue({ isActive: true }),
       } as unknown as IWarehouseRepository;
 
       const result = await TransferValidationService.validateTransferCreation(
@@ -42,7 +42,7 @@ describe('TransferValidationService', () => {
 
     it('Given: missing and inactive warehouses When: validating Then: should return errors', async () => {
       const warehouseRepository = {
-        findById: jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce({ isActive: false }),
+        findById: jest.fn<any>().mockResolvedValueOnce(null).mockResolvedValueOnce({ isActive: false }),
       } as unknown as IWarehouseRepository;
 
       const result = await TransferValidationService.validateTransferCreation(
@@ -63,7 +63,7 @@ describe('TransferValidationService', () => {
   describe('validateTransferLines', () => {
     it('Given: empty lines When: validating Then: should return error', async () => {
       const productRepository = {
-        findById: jest.fn(),
+        findById: jest.fn<any>(),
       } as unknown as IProductRepository;
 
       const result = await TransferValidationService.validateTransferLines(
@@ -78,7 +78,7 @@ describe('TransferValidationService', () => {
 
     it('Given: invalid quantity or missing product When: validating Then: should return errors', async () => {
       const productRepository = {
-        findById: jest.fn().mockResolvedValue(null),
+        findById: jest.fn<any>().mockResolvedValue(null),
       } as unknown as IProductRepository;
 
       const invalidLine = {
@@ -99,7 +99,7 @@ describe('TransferValidationService', () => {
 
     it('Given: inactive product When: validating Then: should return error', async () => {
       const productRepository = {
-        findById: jest.fn().mockResolvedValue({ isActive: false }),
+        findById: jest.fn<any>().mockResolvedValue({ isActive: false }),
       } as unknown as IProductRepository;
 
       const line = createTransferLine();
@@ -117,8 +117,8 @@ describe('TransferValidationService', () => {
   describe('validateStockAvailability', () => {
     it('Given: insufficient stock When: validating Then: should return error', async () => {
       const stockRepository = {
-        getStockQuantity: jest.fn().mockResolvedValue(Quantity.create(2)),
-      };
+        getStockQuantity: jest.fn<any>().mockResolvedValue(Quantity.create(2)),
+      } as any;
       const line = createTransferLine();
 
       const result = await TransferValidationService.validateStockAvailability(
@@ -134,8 +134,8 @@ describe('TransferValidationService', () => {
 
     it('Given: enough stock When: validating Then: should return valid result', async () => {
       const stockRepository = {
-        getStockQuantity: jest.fn().mockResolvedValue(Quantity.create(10)),
-      };
+        getStockQuantity: jest.fn<any>().mockResolvedValue(Quantity.create(10)),
+      } as any;
       const line = createTransferLine();
 
       const result = await TransferValidationService.validateStockAvailability(
@@ -154,7 +154,7 @@ describe('TransferValidationService', () => {
     it('Given: invalid locations When: validating Then: should return errors', async () => {
       const locationRepository = {
         findById: jest
-          .fn()
+          .fn<any>()
           .mockResolvedValueOnce(null)
           .mockResolvedValueOnce({ warehouseId: 'wrong-warehouse', isActive: true }),
       } as unknown as ILocationRepository;
@@ -176,7 +176,7 @@ describe('TransferValidationService', () => {
     it('Given: inactive locations When: validating Then: should return errors', async () => {
       const locationRepository = {
         findById: jest
-          .fn()
+          .fn<any>()
           .mockResolvedValueOnce({ warehouseId: 'wh-1', isActive: false })
           .mockResolvedValueOnce({ warehouseId: 'wh-2', isActive: false }),
       } as unknown as ILocationRepository;
@@ -198,7 +198,7 @@ describe('TransferValidationService', () => {
     it('Given: valid locations When: validating Then: should return valid result', async () => {
       const locationRepository = {
         findById: jest
-          .fn()
+          .fn<any>()
           .mockResolvedValueOnce({ warehouseId: 'wh-1', isActive: true })
           .mockResolvedValueOnce({ warehouseId: 'wh-2', isActive: true }),
       } as unknown as ILocationRepository;

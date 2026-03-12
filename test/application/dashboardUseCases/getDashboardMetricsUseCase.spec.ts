@@ -39,7 +39,7 @@ describe('GetDashboardMetricsUseCase', () => {
   describe('execute', () => {
     const setupSuccessMocks = () => {
       // detectCurrency
-      mockPrismaService.product.findFirst.mockResolvedValue({ currency: 'COP' });
+      mockPrismaService.product.findFirst.mockResolvedValue({ currency: 'COP' } as any);
 
       // getInventorySummary
       mockPrismaService.product.count.mockResolvedValue(50);
@@ -74,7 +74,7 @@ describe('GetDashboardMetricsUseCase', () => {
       // recentActivity
       mockPrismaService.sale.findMany.mockResolvedValue([
         { saleNumber: 'S-001', status: 'CONFIRMED', createdAt: new Date('2026-02-28T10:00:00Z') },
-      ]);
+      ] as any);
       mockPrismaService.movement.findMany.mockResolvedValue([
         {
           id: 'mov-123456789',
@@ -83,7 +83,7 @@ describe('GetDashboardMetricsUseCase', () => {
           reference: 'REF-001',
           createdAt: new Date('2026-02-28T09:00:00Z'),
         },
-      ]);
+      ] as any);
       mockPrismaService.return.findMany.mockResolvedValue([
         {
           returnNumber: 'R-001',
@@ -91,14 +91,14 @@ describe('GetDashboardMetricsUseCase', () => {
           type: 'RETURN_CUSTOMER',
           createdAt: new Date('2026-02-28T08:00:00Z'),
         },
-      ]);
+      ] as any);
       mockPrismaService.transfer.findMany.mockResolvedValue([
         {
           id: 'tr-1234567890',
           status: 'IN_TRANSIT',
           createdAt: new Date('2026-02-28T07:00:00Z'),
         },
-      ]);
+      ] as any);
     };
 
     it('Given: all data available When: getting metrics Then: should return complete dashboard data', async () => {
@@ -254,7 +254,7 @@ describe('GetDashboardMetricsUseCase', () => {
 
     it('Given: empty stock summary When: getting metrics Then: should return zero values', async () => {
       // Arrange
-      mockPrismaService.product.findFirst.mockResolvedValue({ currency: 'COP' });
+      mockPrismaService.product.findFirst.mockResolvedValue({ currency: 'COP' } as any);
       mockPrismaService.product.count.mockResolvedValue(0);
       mockPrismaService.sale.count.mockResolvedValue(0);
       mockPrismaService.$queryRaw
@@ -295,7 +295,7 @@ describe('GetDashboardMetricsUseCase', () => {
 
     it('Given: null stock summary row When: getting metrics Then: should default to zero values', async () => {
       // Arrange
-      mockPrismaService.product.findFirst.mockResolvedValue({ currency: 'USD' });
+      mockPrismaService.product.findFirst.mockResolvedValue({ currency: 'USD' } as any);
       mockPrismaService.product.count.mockResolvedValue(5);
       mockPrismaService.sale.count.mockResolvedValue(0);
       mockPrismaService.$queryRaw
@@ -363,7 +363,7 @@ describe('GetDashboardMetricsUseCase', () => {
         { saleNumber: 'S-001', status: 'CONFIRMED', createdAt: new Date('2026-02-28T12:00:00Z') },
         { saleNumber: 'S-002', status: 'COMPLETED', createdAt: new Date('2026-02-28T11:00:00Z') },
         { saleNumber: 'S-003', status: 'DRAFT', createdAt: new Date('2026-02-28T10:00:00Z') },
-      ]);
+      ] as any);
       mockPrismaService.movement.findMany.mockResolvedValue([
         {
           id: 'mov-111111111',
@@ -379,7 +379,7 @@ describe('GetDashboardMetricsUseCase', () => {
           reference: 'REF-002',
           createdAt: new Date('2026-02-28T09:00:00Z'),
         },
-      ]);
+      ] as any);
       mockPrismaService.return.findMany.mockResolvedValue([
         {
           returnNumber: 'R-001',
@@ -387,7 +387,7 @@ describe('GetDashboardMetricsUseCase', () => {
           type: 'RETURN_SUPPLIER',
           createdAt: new Date('2026-02-28T08:00:00Z'),
         },
-      ]);
+      ] as any);
       mockPrismaService.transfer.findMany.mockResolvedValue([]);
 
       // Act
@@ -441,7 +441,7 @@ describe('GetDashboardMetricsUseCase', () => {
           reference: null,
           createdAt: new Date('2026-02-28T09:00:00Z'),
         },
-      ]);
+      ] as any);
 
       // Act
       const result = await useCase.execute({ orgId: mockOrgId });
@@ -471,7 +471,7 @@ describe('GetDashboardMetricsUseCase', () => {
           type: 'RETURN_SUPPLIER',
           createdAt: new Date('2026-02-28T08:00:00Z'),
         },
-      ]);
+      ] as any);
 
       // Act
       const result = await useCase.execute({ orgId: mockOrgId });
@@ -501,7 +501,7 @@ describe('GetDashboardMetricsUseCase', () => {
           type: 'RETURN_CUSTOMER',
           createdAt: new Date('2026-02-28T08:00:00Z'),
         },
-      ]);
+      ] as any);
 
       // Act
       const result = await useCase.execute({ orgId: mockOrgId });
@@ -530,7 +530,7 @@ describe('GetDashboardMetricsUseCase', () => {
           status: 'IN_TRANSIT',
           createdAt: new Date('2026-02-28T07:00:00Z'),
         },
-      ]);
+      ] as any);
 
       // Act
       const result = await useCase.execute({ orgId: mockOrgId });
@@ -616,7 +616,7 @@ describe('GetDashboardMetricsUseCase', () => {
     it('Given: product with non-COP currency When: getting metrics Then: should return detected currency', async () => {
       // Arrange
       setupSuccessMocks();
-      mockPrismaService.product.findFirst.mockResolvedValue({ currency: 'USD' });
+      mockPrismaService.product.findFirst.mockResolvedValue({ currency: 'USD' } as any);
 
       // Act
       const result = await useCase.execute({ orgId: mockOrgId });

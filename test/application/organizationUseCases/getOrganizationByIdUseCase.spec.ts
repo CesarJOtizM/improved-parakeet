@@ -58,7 +58,7 @@ describe('GetOrganizationByIdUseCase', () => {
     mockPrismaService.organization.findUnique.mockResolvedValue({
       slug: 'org-slug',
       domain: 'org.example.com',
-    });
+    } as any);
 
     // Act
     const result = await useCase.execute({ identifier: cuidId });
@@ -97,7 +97,7 @@ describe('GetOrganizationByIdUseCase', () => {
     mockPrismaService.organization.findUnique.mockResolvedValue({
       slug: 'org-123',
       domain: null,
-    });
+    } as any);
 
     // Act
     const result = await useCase.execute({ identifier: cuidId });

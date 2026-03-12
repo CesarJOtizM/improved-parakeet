@@ -60,7 +60,7 @@ describe('OrgId Decorator', () => {
 
     mockModuleRef = {
       get: jest.fn(),
-    } as jest.Mocked<ModuleRef>;
+    } as unknown as jest.Mocked<ModuleRef>;
   });
 
   describe('OrgId parameter decorator', () => {

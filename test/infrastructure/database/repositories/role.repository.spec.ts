@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 describe('RoleRepository', () => {
   let repository: RoleRepository;
 
-  type MockFn = jest.Mock<unknown, unknown[]>;
+  type MockFn = jest.Mock<any>;
 
   let mockPrismaService: {
     role: Record<string, MockFn>;

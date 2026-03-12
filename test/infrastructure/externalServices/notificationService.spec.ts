@@ -3,9 +3,7 @@ import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
 import type {
-  ILowStockAlertNotification,
   IStockAlertDigestNotification,
-  IStockThresholdExceededNotification,
 } from '@infrastructure/externalServices/notificationService.interface';
 
 const mockEmailService = {
@@ -19,7 +17,7 @@ describe('NotificationService', () => {
 
   it('sends low stock alert with optional thresholds', async () => {
     const service = new NotificationService(mockEmailService);
-    const notification: ILowStockAlertNotification = {
+    const notification = {
       productId: 'product-1',
       warehouseId: 'warehouse-1',
       currentStock: Quantity.create(2, 0),
@@ -30,7 +28,7 @@ describe('NotificationService', () => {
       timestamp: new Date('2025-01-01'),
     };
 
-    await service.sendLowStockAlert(notification);
+    await service.sendLowStockAlert(notification as any);
     expect(notification.currentStock.getNumericValue()).toBe(2);
     expect(mockEmailService.sendEmail).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -42,7 +40,7 @@ describe('NotificationService', () => {
 
   it('sends low stock alert without thresholds', async () => {
     const service = new NotificationService(mockEmailService);
-    const notification: ILowStockAlertNotification = {
+    const notification = {
       productId: 'product-2',
       warehouseId: 'warehouse-2',
       currentStock: Quantity.create(0, 0),
@@ -51,7 +49,7 @@ describe('NotificationService', () => {
       timestamp: new Date('2025-01-02'),
     };
 
-    await service.sendLowStockAlert(notification);
+    await service.sendLowStockAlert(notification as any);
     expect(notification.severity).toBe('OUT_OF_STOCK');
     expect(mockEmailService.sendEmail).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -62,7 +60,7 @@ describe('NotificationService', () => {
 
   it('sends stock threshold exceeded alert', async () => {
     const service = new NotificationService(mockEmailService);
-    const notification: IStockThresholdExceededNotification = {
+    const notification = {
       productId: 'product-3',
       warehouseId: 'warehouse-3',
       currentStock: Quantity.create(12, 0),
@@ -71,7 +69,7 @@ describe('NotificationService', () => {
       timestamp: new Date('2025-01-03'),
     };
 
-    await service.sendStockThresholdExceededAlert(notification);
+    await service.sendStockThresholdExceededAlert(notification as any);
     expect(notification.currentStock.getNumericValue()).toBe(12);
     expect(mockEmailService.sendEmail).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -84,7 +82,7 @@ describe('NotificationService', () => {
   describe('sendLowStockAlert - severity branches', () => {
     it('Given: LOW severity When: sending alert Then: should use base subject without prefix', async () => {
       const service = new NotificationService(mockEmailService);
-      const notification: ILowStockAlertNotification = {
+      const notification = {
         productId: 'product-4',
         warehouseId: 'warehouse-4',
         currentStock: Quantity.create(3, 0),
@@ -93,7 +91,7 @@ describe('NotificationService', () => {
         timestamp: new Date('2025-01-04'),
       };
 
-      await service.sendLowStockAlert(notification);
+      await service.sendLowStockAlert(notification as any);
       expect(mockEmailService.sendEmail).toHaveBeenCalledWith(
         expect.objectContaining({
           subject: 'Low Stock Alert',
@@ -103,7 +101,7 @@ describe('NotificationService', () => {
 
     it('Given: CRITICAL severity When: sending alert Then: should use CRITICAL prefix', async () => {
       const service = new NotificationService(mockEmailService);
-      const notification: ILowStockAlertNotification = {
+      const notification = {
         productId: 'product-5',
         warehouseId: 'warehouse-5',
         currentStock: Quantity.create(1, 0),
@@ -112,7 +110,7 @@ describe('NotificationService', () => {
         timestamp: new Date('2025-01-05'),
       };
 
-      await service.sendLowStockAlert(notification);
+      await service.sendLowStockAlert(notification as any);
       expect(mockEmailService.sendEmail).toHaveBeenCalledWith(
         expect.objectContaining({
           subject: 'CRITICAL: Low Stock Alert',
@@ -122,7 +120,7 @@ describe('NotificationService', () => {
 
     it('Given: OUT_OF_STOCK severity When: sending alert Then: should use CRITICAL + Out of Stock', async () => {
       const service = new NotificationService(mockEmailService);
-      const notification: ILowStockAlertNotification = {
+      const notification = {
         productId: 'product-6',
         warehouseId: 'warehouse-6',
         currentStock: Quantity.create(0, 0),
@@ -131,7 +129,7 @@ describe('NotificationService', () => {
         timestamp: new Date('2025-01-06'),
       };
 
-      await service.sendLowStockAlert(notification);
+      await service.sendLowStockAlert(notification as any);
       expect(mockEmailService.sendEmail).toHaveBeenCalledWith(
         expect.objectContaining({
           subject: 'CRITICAL: Low Stock Alert - Out of Stock',
@@ -434,7 +432,7 @@ describe('NotificationService', () => {
         sendEmail: jest.fn().mockRejectedValue(new Error('SMTP error') as never),
       } as any;
       const service = new NotificationService(failingEmailService);
-      const notification: ILowStockAlertNotification = {
+      const notification = {
         productId: 'product-err',
         warehouseId: 'warehouse-err',
         currentStock: Quantity.create(0, 0),
@@ -443,7 +441,7 @@ describe('NotificationService', () => {
         timestamp: new Date(),
       };
 
-      await expect(service.sendLowStockAlert(notification)).rejects.toThrow();
+      await expect(service.sendLowStockAlert(notification as any)).rejects.toThrow();
     });
   });
 
@@ -453,7 +451,7 @@ describe('NotificationService', () => {
         sendEmail: jest.fn().mockRejectedValue(new Error('SMTP error') as never),
       } as any;
       const service = new NotificationService(failingEmailService);
-      const notification: IStockThresholdExceededNotification = {
+      const notification = {
         productId: 'product-err',
         warehouseId: 'warehouse-err',
         currentStock: Quantity.create(100, 0),
@@ -462,7 +460,7 @@ describe('NotificationService', () => {
         timestamp: new Date(),
       };
 
-      await expect(service.sendStockThresholdExceededAlert(notification)).rejects.toThrow();
+      await expect(service.sendStockThresholdExceededAlert(notification as any)).rejects.toThrow();
     });
   });
 });

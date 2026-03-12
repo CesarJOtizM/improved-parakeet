@@ -1417,10 +1417,10 @@ describe('PrismaProductRepository', () => {
   });
 
   describe('findBySpecification', () => {
-    const mockSpec: IPrismaSpecification<Product> = {
+    const mockSpec = {
       toPrismaWhere: jest.fn().mockReturnValue({ orgId: 'org-123', isActive: true }),
       isSatisfiedBy: jest.fn().mockReturnValue(true),
-    };
+    } as unknown as IPrismaSpecification<Product>;
 
     it('Given: spec and no pagination When: finding by specification Then: should return all matching products', async () => {
       // Arrange

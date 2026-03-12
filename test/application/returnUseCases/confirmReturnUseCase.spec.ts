@@ -132,19 +132,19 @@ describe('ConfirmReturnUseCase', () => {
       });
 
       // Mock generateMovementFromCustomerReturn to bypass status validation
-      const mockMovement: Movement = {
+      const mockMovement: any = {
         id: mockMovementId,
         post: jest.fn().mockReturnValue({
           id: mockMovementId,
           getLines: () => [],
         }),
-      } as unknown as typeof mockMovement & { post: () => unknown };
+      };
       jest
         .spyOn(InventoryIntegrationService, 'generateMovementFromCustomerReturn')
         .mockReturnValue(mockMovement);
 
       // Mock unitOfWork.execute to return the confirmed return and posted movement
-      mockUnitOfWork.execute.mockImplementation(async _callback => {
+      mockUnitOfWork.execute.mockImplementation((async (_callback: any) => {
         return {
           confirmedReturn: {
             id: mockReturnId,
@@ -173,7 +173,7 @@ describe('ConfirmReturnUseCase', () => {
             orgId: mockOrgId,
           },
         };
-      });
+      }) as any);
 
       const request = {
         id: mockReturnId,
@@ -310,7 +310,7 @@ describe('ConfirmReturnUseCase', () => {
         .spyOn(InventoryIntegrationService, 'generateMovementFromSupplierReturn')
         .mockReturnValue(mockMovement as any);
 
-      mockUnitOfWork.execute.mockImplementation(async _callback => {
+      mockUnitOfWork.execute.mockImplementation((async (_callback: any) => {
         return {
           confirmedReturn: {
             id: mockReturnId,
@@ -339,7 +339,7 @@ describe('ConfirmReturnUseCase', () => {
             orgId: mockOrgId,
           },
         };
-      });
+      }) as any);
 
       // Act
       const result = await useCase.execute({ id: mockReturnId, orgId: mockOrgId });
@@ -678,7 +678,7 @@ describe('ConfirmReturnUseCase', () => {
       };
 
       it('Given: customer return with saleId When: tx callback runs Then: should lock sale and validate quantities', async () => {
-        const { mockReturn } = setupCustomerReturnWithTransactionExec();
+        const { mockReturn: _mockReturn } = setupCustomerReturnWithTransactionExec();
 
         // Capture the transaction callback and execute it
         mockUnitOfWork.execute.mockImplementation(async (callback: any) => {
@@ -1256,7 +1256,7 @@ describe('ConfirmReturnUseCase', () => {
           .mockReturnValue(mockMovement as any);
 
         const createManyMock = jest
-          .fn<() => Promise<any>>()
+          .fn<(...args: any[]) => Promise<any>>()
           .mockResolvedValue({ count: 1 } as never);
 
         mockUnitOfWork.execute.mockImplementation(async (callback: any) => {
@@ -2083,7 +2083,7 @@ describe('ConfirmReturnUseCase', () => {
           .spyOn(InventoryIntegrationService, 'generateMovementFromCustomerReturn')
           .mockReturnValue(mockMovement as any);
 
-        mockUnitOfWork.execute.mockImplementation(async _callback => {
+        mockUnitOfWork.execute.mockImplementation((async (_callback: any) => {
           return {
             confirmedReturn: {
               id: mockReturnId,
@@ -2112,7 +2112,7 @@ describe('ConfirmReturnUseCase', () => {
               orgId: mockOrgId,
             },
           };
-        });
+        }) as any);
 
         const result = await useCase.execute({ id: mockReturnId, orgId: mockOrgId });
 
@@ -2182,7 +2182,7 @@ describe('ConfirmReturnUseCase', () => {
           .spyOn(InventoryIntegrationService, 'generateMovementFromCustomerReturn')
           .mockReturnValue(mockMovement as any);
 
-        mockUnitOfWork.execute.mockImplementation(async _callback => {
+        mockUnitOfWork.execute.mockImplementation((async (_callback: any) => {
           return {
             confirmedReturn: {
               id: mockReturnId,
@@ -2211,7 +2211,7 @@ describe('ConfirmReturnUseCase', () => {
               orgId: mockOrgId,
             },
           };
-        });
+        }) as any);
 
         const result = await useCase.execute({ id: mockReturnId, orgId: mockOrgId });
 

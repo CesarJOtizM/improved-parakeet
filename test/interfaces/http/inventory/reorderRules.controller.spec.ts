@@ -50,7 +50,7 @@ describe('ReorderRulesController', () => {
       );
 
       // Act
-      const result = await controller.getAll('org-123');
+      const result = await controller.getAll('org-123') as any;
 
       // Assert
       expect(result.success).toBe(true);
@@ -83,7 +83,7 @@ describe('ReorderRulesController', () => {
       );
 
       // Act
-      const result = await controller.getAll('org-123');
+      const result = await controller.getAll('org-123') as any;
 
       // Assert
       expect(result.success).toBe(true);
@@ -111,7 +111,7 @@ describe('ReorderRulesController', () => {
       );
 
       // Act
-      const result = await controller.create('org-123', dto as any);
+      const result = await controller.create('org-123', dto as any) as any;
 
       // Assert
       expect(result.success).toBe(true);
@@ -191,7 +191,7 @@ describe('ReorderRulesController', () => {
       );
 
       // Act
-      const result = await controller.update('org-123', 'rule-123', dto as any);
+      const result = await controller.update('org-123', 'rule-123', dto as any) as any;
 
       // Assert
       expect(result.success).toBe(true);
@@ -246,7 +246,7 @@ describe('ReorderRulesController', () => {
       );
 
       // Act
-      const result = await controller.delete('org-123', 'rule-123');
+      const result = await controller.delete('org-123', 'rule-123') as any;
 
       // Assert
       expect(result.success).toBe(true);
@@ -310,7 +310,7 @@ describe('ReorderRulesController', () => {
       );
 
       // Act
-      const result = await controller.create('org-456', dto as any);
+      const result = await controller.create('org-456', dto as any) as any;
 
       // Assert
       expect(result.success).toBe(true);
@@ -340,7 +340,7 @@ describe('ReorderRulesController', () => {
       );
 
       // Act
-      const result = await controller.update('org-456', 'rule-456', dto as any);
+      const result = await controller.update('org-456', 'rule-456', dto as any) as any;
 
       // Assert
       expect(result.success).toBe(true);
@@ -376,7 +376,7 @@ describe('ReorderRulesController', () => {
       );
 
       // Act
-      const result = await controller.delete('org-123', 'rule-789');
+      const result = await controller.delete('org-123', 'rule-789') as any;
 
       // Assert
       expect(result.success).toBe(true);

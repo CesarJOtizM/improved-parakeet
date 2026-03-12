@@ -14,7 +14,7 @@ describe('UnitOfWork', () => {
 
     mockPrisma = {
       $transaction: jest.fn(),
-    } as jest.Mocked<Pick<PrismaService, '$transaction'>>;
+    } as unknown as jest.Mocked<Pick<PrismaService, '$transaction'>>;
 
     unitOfWork = new UnitOfWork(mockPrisma as unknown as PrismaService);
   });
@@ -23,7 +23,7 @@ describe('UnitOfWork', () => {
     it('Given: a valid callback When: executing a transaction Then: should return the callback result', async () => {
       // Arrange
       const expectedResult = { id: 'product-1', name: 'Widget' };
-      mockPrisma.$transaction.mockImplementation(async (fn: unknown) => {
+      (mockPrisma.$transaction as jest.Mock).mockImplementation(async (fn: unknown) => {
         const txClient = {} as TransactionClient;
         return (fn as (tx: TransactionClient) => Promise<unknown>)(txClient);
       });
@@ -41,7 +41,7 @@ describe('UnitOfWork', () => {
 
     it('Given: a valid callback When: transaction succeeds Then: should call $transaction with correct options', async () => {
       // Arrange
-      mockPrisma.$transaction.mockImplementation(async (fn: unknown) => {
+      (mockPrisma.$transaction as jest.Mock).mockImplementation(async (fn: unknown) => {
         const txClient = {} as TransactionClient;
         return (fn as (tx: TransactionClient) => Promise<unknown>)(txClient);
       });
@@ -63,7 +63,7 @@ describe('UnitOfWork', () => {
 
     it('Given: a callback that returns void When: executing Then: should complete without error', async () => {
       // Arrange
-      mockPrisma.$transaction.mockImplementation(async (fn: unknown) => {
+      (mockPrisma.$transaction as jest.Mock).mockImplementation(async (fn: unknown) => {
         const txClient = {} as TransactionClient;
         return (fn as (tx: TransactionClient) => Promise<unknown>)(txClient);
       });
@@ -81,7 +81,7 @@ describe('UnitOfWork', () => {
     it('Given: a callback that throws When: executing Then: should propagate the error', async () => {
       // Arrange
       const dbError = new Error('Unique constraint violation');
-      mockPrisma.$transaction.mockImplementation(async (fn: unknown) => {
+      (mockPrisma.$transaction as jest.Mock).mockImplementation(async (fn: unknown) => {
         const txClient = {} as TransactionClient;
         return (fn as (tx: TransactionClient) => Promise<unknown>)(txClient);
       });
@@ -107,7 +107,7 @@ describe('UnitOfWork', () => {
     it('Given: a callback that performs multiple operations When: executing Then: should pass the transaction client to the callback', async () => {
       // Arrange
       const fakeTxClient = { product: {}, warehouse: {} } as unknown as TransactionClient;
-      mockPrisma.$transaction.mockImplementation(async (fn: unknown) => {
+      (mockPrisma.$transaction as jest.Mock).mockImplementation(async (fn: unknown) => {
         return (fn as (tx: TransactionClient) => Promise<unknown>)(fakeTxClient);
       });
 
@@ -128,7 +128,7 @@ describe('UnitOfWork', () => {
         updated: 3,
         deleted: 0,
       };
-      mockPrisma.$transaction.mockImplementation(async (fn: unknown) => {
+      (mockPrisma.$transaction as jest.Mock).mockImplementation(async (fn: unknown) => {
         const txClient = {} as TransactionClient;
         return (fn as (tx: TransactionClient) => Promise<unknown>)(txClient);
       });
@@ -147,7 +147,7 @@ describe('UnitOfWork', () => {
 
     it('Given: a non-Error exception in callback When: executing Then: should still propagate the error', async () => {
       // Arrange
-      mockPrisma.$transaction.mockImplementation(async (fn: unknown) => {
+      (mockPrisma.$transaction as jest.Mock).mockImplementation(async (fn: unknown) => {
         const txClient = {} as TransactionClient;
         return (fn as (tx: TransactionClient) => Promise<unknown>)(txClient);
       });
@@ -162,7 +162,7 @@ describe('UnitOfWork', () => {
     it('Given: the transaction commits successfully When: a second transaction is started Then: should execute independently', async () => {
       // Arrange
       let callCount = 0;
-      mockPrisma.$transaction.mockImplementation(async (fn: unknown) => {
+      (mockPrisma.$transaction as jest.Mock).mockImplementation(async (fn: unknown) => {
         callCount++;
         const txClient = {} as TransactionClient;
         return (fn as (tx: TransactionClient) => Promise<unknown>)(txClient);
@@ -187,7 +187,7 @@ describe('UnitOfWork', () => {
     it('Given: a failed transaction When: a subsequent transaction is attempted Then: should execute normally', async () => {
       // Arrange
       let callIndex = 0;
-      mockPrisma.$transaction.mockImplementation(async (fn: unknown) => {
+      (mockPrisma.$transaction as jest.Mock).mockImplementation(async (fn: unknown) => {
         callIndex++;
         const txClient = {} as TransactionClient;
         return (fn as (tx: TransactionClient) => Promise<unknown>)(txClient);

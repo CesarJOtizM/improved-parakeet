@@ -48,7 +48,7 @@ describe('SwapSaleLineUseCase', () => {
       getNextSaleNumber: jest.fn(),
       findByMovementId: jest.fn(),
       addLine: jest.fn(),
-    } as jest.Mocked<ISaleRepository>;
+    } as unknown as jest.Mocked<ISaleRepository>;
 
     mockStockRepository = {
       getStockQuantity: jest.fn(),
@@ -56,7 +56,7 @@ describe('SwapSaleLineUseCase', () => {
       updateStock: jest.fn(),
       incrementStock: jest.fn(),
       decrementStock: jest.fn(),
-    } as jest.Mocked<IStockRepository>;
+    } as unknown as jest.Mocked<IStockRepository>;
 
     mockEventDispatcher = {
       dispatchEvents: jest.fn().mockResolvedValue(undefined as never),
@@ -128,7 +128,7 @@ describe('SwapSaleLineUseCase', () => {
         returnMovementId: 'mov-ret-1',
         deductMovementId: 'mov-ded-1',
         newLineId: undefined,
-      }));
+      } as any));
 
       const result = await useCase.execute(baseRequest);
 
@@ -156,7 +156,7 @@ describe('SwapSaleLineUseCase', () => {
         returnMovementId: 'mov-ret-2',
         deductMovementId: 'mov-ded-2',
         newLineId: 'line-new-1',
-      }));
+      } as any));
 
       const result = await useCase.execute({ ...baseRequest, swapQuantity: 2 });
 
@@ -180,7 +180,7 @@ describe('SwapSaleLineUseCase', () => {
         returnMovementId: 'mov-ret-3',
         deductMovementId: 'mov-ded-3',
         newLineId: undefined,
-      }));
+      } as any));
 
       const result = await useCase.execute(baseRequest);
 
@@ -321,7 +321,7 @@ describe('SwapSaleLineUseCase', () => {
         returnMovementId: 'mov-1',
         deductMovementId: 'mov-2',
         newLineId: undefined,
-      }));
+      } as any));
 
       const result = await useCase.execute({
         ...baseRequest,
@@ -367,7 +367,7 @@ describe('SwapSaleLineUseCase', () => {
         returnMovementId: 'mov-1',
         deductMovementId: 'mov-2',
         newLineId: undefined,
-      }));
+      } as any));
 
       const result = await useCase.execute({
         ...baseRequest,
@@ -397,7 +397,7 @@ describe('SwapSaleLineUseCase', () => {
         returnMovementId: 'mov-1',
         deductMovementId: 'mov-2',
         newLineId: undefined,
-      }));
+      } as any));
 
       const result = await useCase.execute({
         ...baseRequest,
@@ -423,7 +423,7 @@ describe('SwapSaleLineUseCase', () => {
         returnMovementId: 'mov-1',
         deductMovementId: 'mov-2',
         newLineId: undefined,
-      }));
+      } as any));
 
       const result = await useCase.execute(baseRequest);
 
@@ -448,7 +448,7 @@ describe('SwapSaleLineUseCase', () => {
         returnMovementId: 'mov-1',
         deductMovementId: 'mov-2',
         newLineId: undefined,
-      }));
+      } as any));
 
       await useCase.execute(baseRequest);
 
@@ -468,7 +468,7 @@ describe('SwapSaleLineUseCase', () => {
         returnMovementId: 'mov-1',
         deductMovementId: 'mov-2',
         newLineId: undefined,
-      }));
+      } as any));
 
       const result = await useCase.execute({
         ...baseRequest,
@@ -504,7 +504,7 @@ describe('SwapSaleLineUseCase', () => {
         returnMovementId: 'mov-1',
         deductMovementId: 'mov-2',
         newLineId: undefined,
-      }));
+      } as any));
 
       const result = await useCase.execute({
         ...baseRequest,
@@ -530,7 +530,7 @@ describe('SwapSaleLineUseCase', () => {
         returnMovementId: 'mov-1',
         deductMovementId: 'mov-2',
         newLineId: undefined,
-      }));
+      } as any));
 
       // Original line quantity is 5, swap 5 = full swap
       const result = await useCase.execute({ ...baseRequest, swapQuantity: 5 });
@@ -554,7 +554,7 @@ describe('SwapSaleLineUseCase', () => {
         returnMovementId: 'mov-1',
         deductMovementId: 'mov-2',
         newLineId: 'line-new-1',
-      }));
+      } as any));
 
       const result = await useCase.execute({ ...baseRequest, swapQuantity: 1 });
 
@@ -594,7 +594,7 @@ describe('SwapSaleLineUseCase', () => {
         returnMovementId: 'mov-1',
         deductMovementId: 'mov-2',
         newLineId: undefined,
-      }));
+      } as any));
 
       const result = await useCase.execute(baseRequest);
 
@@ -640,19 +640,19 @@ describe('SwapSaleLineUseCase', () => {
         $executeRaw: jest.fn<() => Promise<number>>().mockResolvedValue(1),
         movement: {
           create: jest
-            .fn()
+            .fn<any>()
             .mockResolvedValueOnce({ id: 'mov-ret' })
             .mockResolvedValueOnce({ id: 'mov-ded' }),
         },
         movementLine: {
-          create: jest.fn().mockResolvedValue({}),
+          create: jest.fn<any>().mockResolvedValue({}),
         },
         saleLine: {
-          update: jest.fn().mockResolvedValue({}),
-          create: jest.fn().mockResolvedValue({ id: 'new-line-1' }),
+          update: jest.fn<any>().mockResolvedValue({}),
+          create: jest.fn<any>().mockResolvedValue({ id: 'new-line-1' }),
         },
         saleLineSwap: {
-          create: jest.fn().mockResolvedValue({ id: 'swap-tx-1' }),
+          create: jest.fn<any>().mockResolvedValue({ id: 'swap-tx-1' }),
         },
       };
 
@@ -676,19 +676,19 @@ describe('SwapSaleLineUseCase', () => {
         $executeRaw: jest.fn<() => Promise<number>>().mockResolvedValue(1),
         movement: {
           create: jest
-            .fn()
+            .fn<any>()
             .mockResolvedValueOnce({ id: 'mov-ret' })
             .mockResolvedValueOnce({ id: 'mov-ded' }),
         },
         movementLine: {
-          create: jest.fn().mockResolvedValue({}),
+          create: jest.fn<any>().mockResolvedValue({}),
         },
         saleLine: {
-          update: jest.fn().mockResolvedValue({}),
-          create: jest.fn().mockResolvedValue({ id: 'new-line-partial' }),
+          update: jest.fn<any>().mockResolvedValue({}),
+          create: jest.fn<any>().mockResolvedValue({ id: 'new-line-partial' }),
         },
         saleLineSwap: {
-          create: jest.fn().mockResolvedValue({ id: 'swap-tx-2' }),
+          create: jest.fn<any>().mockResolvedValue({ id: 'swap-tx-2' }),
         },
       };
 
@@ -716,16 +716,16 @@ describe('SwapSaleLineUseCase', () => {
           .mockResolvedValueOnce(0) // insert if not exists
           .mockResolvedValueOnce(0), // deduct fails (returns 0)
         movement: {
-          create: jest.fn().mockResolvedValue({ id: 'mov-1' }),
+          create: jest.fn<any>().mockResolvedValue({ id: 'mov-1' }),
         },
         movementLine: {
-          create: jest.fn().mockResolvedValue({}),
+          create: jest.fn<any>().mockResolvedValue({}),
         },
         saleLine: {
-          update: jest.fn().mockResolvedValue({}),
+          update: jest.fn<any>().mockResolvedValue({}),
         },
         saleLineSwap: {
-          create: jest.fn().mockResolvedValue({ id: 'swap-1' }),
+          create: jest.fn<any>().mockResolvedValue({ id: 'swap-1' }),
         },
       };
 
@@ -755,7 +755,7 @@ describe('SwapSaleLineUseCase', () => {
         returnMovementId: 'mov-1',
         deductMovementId: 'mov-2',
         newLineId: undefined,
-      }));
+      } as any));
 
       const result = await useCase.execute({
         ...baseRequest,

@@ -52,7 +52,7 @@ describe('UpdateWarehouseUseCase', () => {
       findByWarehouse: jest.fn(),
       findByProduct: jest.fn(),
       findLowStock: jest.fn(),
-    } as jest.Mocked<IStockRepository>;
+    } as unknown as jest.Mocked<IStockRepository>;
 
     useCase = new UpdateWarehouseUseCase(mockWarehouseRepository, mockStockRepository);
   });

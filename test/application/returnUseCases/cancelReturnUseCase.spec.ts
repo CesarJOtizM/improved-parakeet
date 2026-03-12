@@ -37,7 +37,7 @@ describe('CancelReturnUseCase', () => {
       findByDateRange: jest.fn(),
       getLastReturnNumberForYear: jest.fn(),
       findByReturnMovementId: jest.fn(),
-    } as jest.Mocked<IReturnRepository>;
+    } as any;
 
     mockEventDispatcher = {
       dispatchEvents: jest.fn().mockResolvedValue(undefined as never),
@@ -272,9 +272,9 @@ describe('CancelReturnUseCase', () => {
       });
 
       mockUnitOfWork.execute.mockImplementation(
-        async (callback: (tx: unknown) => Promise<unknown>) => {
+        (async (callback: (tx: unknown) => Promise<unknown>) => {
           return callback(mockTx);
-        }
+        }) as any
       );
 
       const request = {
@@ -350,9 +350,9 @@ describe('CancelReturnUseCase', () => {
       });
 
       mockUnitOfWork.execute.mockImplementation(
-        async (callback: (tx: unknown) => Promise<unknown>) => {
+        (async (callback: (tx: unknown) => Promise<unknown>) => {
           return callback(mockTx);
-        }
+        }) as any
       );
 
       const request = {
@@ -418,9 +418,9 @@ describe('CancelReturnUseCase', () => {
       });
 
       mockUnitOfWork.execute.mockImplementation(
-        async (callback: (tx: unknown) => Promise<unknown>) => {
+        (async (callback: (tx: unknown) => Promise<unknown>) => {
           return callback(mockTx);
-        }
+        }) as any
       );
 
       const request = {
@@ -463,9 +463,9 @@ describe('CancelReturnUseCase', () => {
       });
 
       mockUnitOfWork.execute.mockImplementation(
-        async (callback: (tx: unknown) => Promise<unknown>) => {
+        (async (callback: (tx: unknown) => Promise<unknown>) => {
           return callback(mockTx);
-        }
+        }) as any
       );
 
       const request = {
@@ -481,7 +481,7 @@ describe('CancelReturnUseCase', () => {
       expect(result.isOk()).toBe(true);
       expect(mockReturn.markEventsForDispatch).toHaveBeenCalledTimes(1);
       expect(mockEventDispatcher.dispatchEvents).toHaveBeenCalledWith(
-        (mockReturn as unknown as { domainEvents: unknown[] }).domainEvents
+        (mockReturn as unknown as { domainEvents: unknown[] }).domainEvents as any
       );
       expect(mockReturn.clearEvents).toHaveBeenCalledTimes(1);
     });
@@ -602,9 +602,9 @@ describe('CancelReturnUseCase', () => {
       });
 
       mockUnitOfWork.execute.mockImplementation(
-        async (callback: (tx: unknown) => Promise<unknown>) => {
+        (async (callback: (tx: unknown) => Promise<unknown>) => {
           return callback(mockTx);
-        }
+        }) as any
       );
 
       const request = {
@@ -655,9 +655,9 @@ describe('CancelReturnUseCase', () => {
       });
 
       mockUnitOfWork.execute.mockImplementation(
-        async (callback: (tx: unknown) => Promise<unknown>) => {
+        (async (callback: (tx: unknown) => Promise<unknown>) => {
           return callback(mockTx);
-        }
+        }) as any
       );
 
       const request = {
@@ -698,9 +698,9 @@ describe('CancelReturnUseCase', () => {
       mockTx.return.count.mockResolvedValue(2);
 
       mockUnitOfWork.execute.mockImplementation(
-        async (callback: (tx: unknown) => Promise<unknown>) => {
+        (async (callback: (tx: unknown) => Promise<unknown>) => {
           return callback(mockTx);
-        }
+        }) as any
       );
 
       const request = {
@@ -744,9 +744,9 @@ describe('CancelReturnUseCase', () => {
       });
 
       mockUnitOfWork.execute.mockImplementation(
-        async (callback: (tx: unknown) => Promise<unknown>) => {
+        (async (callback: (tx: unknown) => Promise<unknown>) => {
           return callback(mockTx);
-        }
+        }) as any
       );
 
       const request = {
@@ -777,9 +777,9 @@ describe('CancelReturnUseCase', () => {
       mockTx.movement.findUnique.mockResolvedValue(null);
 
       mockUnitOfWork.execute.mockImplementation(
-        async (callback: (tx: unknown) => Promise<unknown>) => {
+        (async (callback: (tx: unknown) => Promise<unknown>) => {
           return callback(mockTx);
-        }
+        }) as any
       );
 
       const request = {
@@ -842,9 +842,9 @@ describe('CancelReturnUseCase', () => {
       });
 
       mockUnitOfWork.execute.mockImplementation(
-        async (callback: (tx: unknown) => Promise<unknown>) => {
+        (async (callback: (tx: unknown) => Promise<unknown>) => {
           return callback(mockTx);
-        }
+        }) as any
       );
 
       const request = {
@@ -896,9 +896,9 @@ describe('CancelReturnUseCase', () => {
       });
 
       mockUnitOfWork.execute.mockImplementation(
-        async (callback: (tx: unknown) => Promise<unknown>) => {
+        (async (callback: (tx: unknown) => Promise<unknown>) => {
           return callback(mockTx);
-        }
+        }) as any
       );
 
       const request = {

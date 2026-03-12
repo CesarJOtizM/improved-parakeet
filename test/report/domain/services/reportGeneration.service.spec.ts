@@ -103,15 +103,15 @@ describe('ReportGenerationService', () => {
   const productRepository = {
     findAll: jest.fn() as MockFn<unknown[]>,
     findLowStock: jest.fn() as MockFn<unknown[]>,
-  } satisfies Pick<IProductRepository, 'findAll' | 'findLowStock'>;
+  };
   const warehouseRepository = {
     findAll: jest.fn() as MockFn<unknown[]>,
-  } satisfies Pick<IWarehouseRepository, 'findAll'>;
+  };
   const movementRepository = {
     findByDateRange: jest.fn() as MockFn<unknown[]>,
     findAll: jest.fn() as MockFn<unknown[]>,
     findPostedMovements: jest.fn() as MockFn<unknown[]>,
-  } satisfies Pick<IMovementRepository, 'findByDateRange' | 'findAll' | 'findPostedMovements'>;
+  };
   const prismaService = {
     $queryRaw: jest.fn() as MockFn<unknown[]>,
     user: {
@@ -129,12 +129,12 @@ describe('ReportGenerationService', () => {
     findByDateRange: jest.fn() as MockFn<unknown[]>,
     findAll: jest.fn() as MockFn<unknown[]>,
     findById: jest.fn() as MockFn<unknown | null>,
-  } satisfies Pick<ISaleRepository, 'findByDateRange' | 'findAll' | 'findById'>;
+  };
   const returnRepository = {
     findByDateRange: jest.fn() as MockFn<unknown[]>,
     findAll: jest.fn() as MockFn<unknown[]>,
     findBySaleId: jest.fn() as MockFn<unknown[]>,
-  } satisfies Pick<IReturnRepository, 'findByDateRange' | 'findAll' | 'findBySaleId'>;
+  };
 
   const service = new ReportGenerationService(
     productRepository as unknown as IProductRepository,

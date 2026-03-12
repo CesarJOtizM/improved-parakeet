@@ -32,7 +32,7 @@ describe('GetReturnByIdUseCase', () => {
       findByDateRange: jest.fn(),
       getLastReturnNumberForYear: jest.fn(),
       findByReturnMovementId: jest.fn(),
-    } as jest.Mocked<IReturnRepository>;
+    } as any;
 
     useCase = new GetReturnByIdUseCase(mockReturnRepository);
   });

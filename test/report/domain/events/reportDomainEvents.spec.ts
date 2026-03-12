@@ -273,7 +273,7 @@ describe('Report Domain Events', () => {
   // ExportCompletedEvent
   // ─────────────────────────────────────────────
   describe('ExportCompletedEvent', () => {
-    const mockFormat: ReportFormatValue = 'xlsx';
+    const mockFormat = 'xlsx' as ReportFormatValue;
 
     describe('constructor', () => {
       it('Given: export completion data When: creating event Then: should create event with correct properties', () => {
@@ -381,7 +381,7 @@ describe('Report Domain Events', () => {
     });
 
     describe('format', () => {
-      it.each([['xlsx'], ['csv'], ['pdf']] as ReportFormatValue[][])(
+      it.each([['xlsx'], ['csv'], ['pdf']] as unknown as ReportFormatValue[][])(
         'Given: an ExportCompletedEvent with format %s When: getting format Then: should return correct format',
         format => {
           // Arrange
@@ -823,7 +823,7 @@ describe('Report Domain Events', () => {
 
     it('Given: two events created sequentially When: comparing occurredOn Then: second should be >= first', () => {
       // Arrange & Act
-      const first = new ExportCompletedEvent(mockReportId, mockType, 'xlsx', mockOrgId, mockUserId);
+      const first = new ExportCompletedEvent(mockReportId, mockType, 'xlsx' as any, mockOrgId, mockUserId);
       const second = new ReportTemplateCreatedEvent(
         mockTemplateId,
         mockTemplateName,

@@ -129,7 +129,7 @@ describe('Import Endpoints (E2E)', () => {
   describe('POST /imports/preview', () => {
     it('Given: valid file with correct structure When: previewing import Then: should return preview data', async () => {
       // Arrange
-      const file = generateValidProductsFile();
+      const file = await generateValidProductsFile();
       const mockResponse: IPreviewImportResponse = {
         success: true,
         message: 'Preview generated successfully',
@@ -200,7 +200,7 @@ describe('Import Endpoints (E2E)', () => {
 
     it('Given: file with invalid row data When: previewing import Then: should return errors', async () => {
       // Arrange
-      const file = generateProductsFileWithErrors();
+      const file = await generateProductsFileWithErrors();
       const mockResponse: IPreviewImportResponse = {
         success: true,
         message: 'Preview generated with errors',
@@ -248,7 +248,7 @@ describe('Import Endpoints (E2E)', () => {
 
     it('Given: missing type parameter When: previewing import Then: should return validation error', async () => {
       // Arrange
-      const file = generateValidProductsFile();
+      const file = await generateValidProductsFile();
 
       // Act & Assert
       await request(app.getHttpServer())
@@ -261,7 +261,7 @@ describe('Import Endpoints (E2E)', () => {
   describe('POST /imports/execute', () => {
     it('Given: successful import with valid file When: executing import Then: should return success', async () => {
       // Arrange
-      const file = generateValidProductsFile();
+      const file = await generateValidProductsFile();
       const mockResponse: IExecuteImportResponse = {
         success: true,
         message: 'Import executed successfully',
@@ -292,7 +292,7 @@ describe('Import Endpoints (E2E)', () => {
 
     it('Given: import with validation errors When: executing import Then: should return validation error', async () => {
       // Arrange
-      const file = generateProductsFileWithErrors();
+      const file = await generateProductsFileWithErrors();
       mockExecuteImportUseCase.execute.mockResolvedValue(
         err(new ValidationError('File validation failed'))
       );
@@ -372,7 +372,7 @@ describe('Import Endpoints (E2E)', () => {
   describe('POST /imports/:id/validate', () => {
     it('Given: valid file When: validating batch Then: should return success', async () => {
       // Arrange
-      const file = generateValidProductsFile();
+      const file = await generateValidProductsFile();
       const mockResponse: IValidateImportResponse = {
         success: true,
         message: 'Import batch validated successfully',
@@ -402,7 +402,7 @@ describe('Import Endpoints (E2E)', () => {
 
     it('Given: batch not found When: validating batch Then: should return not found error', async () => {
       // Arrange
-      const file = generateValidProductsFile();
+      const file = await generateValidProductsFile();
       mockValidateImportUseCase.execute.mockResolvedValue(
         err(new NotFoundError('Import batch not found'))
       );
@@ -493,6 +493,7 @@ describe('Import Endpoints (E2E)', () => {
           orgId: 'org-123',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          rows: [],
         },
         timestamp: new Date().toISOString(),
       };

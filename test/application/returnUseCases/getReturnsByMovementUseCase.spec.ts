@@ -36,7 +36,7 @@ describe('GetReturnsByMovementUseCase', () => {
       findByDateRange: jest.fn(),
       getLastReturnNumberForYear: jest.fn(),
       findByReturnMovementId: jest.fn(),
-    } as jest.Mocked<IReturnRepository>;
+    } as any;
 
     mockMovementRepository = {
       save: jest.fn(),

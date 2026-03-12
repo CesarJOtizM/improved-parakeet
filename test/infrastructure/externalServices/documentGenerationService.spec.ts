@@ -10,7 +10,7 @@ describe('DocumentGenerationService', () => {
   const baseRequest: IDocumentGenerationRequest = {
     title: 'Stock Report',
     columns: [
-      { key: 'sku', header: 'SKU', type: 'text' },
+      { key: 'sku', header: 'SKU', type: 'string' },
       { key: 'quantity', header: 'Quantity', type: 'number' },
       { key: 'date', header: 'Date', type: 'date' },
     ],

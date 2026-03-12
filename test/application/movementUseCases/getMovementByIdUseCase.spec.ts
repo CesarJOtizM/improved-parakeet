@@ -21,8 +21,8 @@ describe('GetMovementByIdUseCase', () => {
   let mockMovementRepository: jest.Mocked<IMovementRepository>;
   let mockProductRepository: jest.Mocked<IProductRepository>;
   let mockPrismaService: {
-    warehouse: { findFirst: jest.Mock };
-    user: { findMany: jest.Mock };
+    warehouse: { findFirst: jest.Mock<any> };
+    user: { findMany: jest.Mock<any> };
   };
 
   beforeEach(() => {
@@ -126,10 +126,10 @@ describe('GetMovementByIdUseCase', () => {
       mockPrismaService.warehouse.findFirst.mockResolvedValue({
         name: 'Main Warehouse',
         code: 'WH-001',
-      });
+      } as any);
       mockPrismaService.user.findMany.mockResolvedValue([
         { id: mockUserId, firstName: 'John', lastName: 'Doe' },
-      ]);
+      ] as any);
 
       // Act
       const result = await useCase.execute(validRequest);
@@ -182,10 +182,10 @@ describe('GetMovementByIdUseCase', () => {
       mockPrismaService.warehouse.findFirst.mockResolvedValue({
         name: 'Main Warehouse',
         code: 'WH-001',
-      });
+      } as any);
       mockPrismaService.user.findMany.mockResolvedValue([
         { id: mockUserId, firstName: 'John', lastName: 'Doe' },
-      ]);
+      ] as any);
 
       // Act
       const result = await useCase.execute(validRequest);
@@ -216,10 +216,10 @@ describe('GetMovementByIdUseCase', () => {
       mockPrismaService.warehouse.findFirst.mockResolvedValue({
         name: 'Main Warehouse',
         code: 'WH-001',
-      });
+      } as any);
       mockPrismaService.user.findMany.mockResolvedValue([
         { id: mockUserId, firstName: 'John', lastName: 'Doe' },
-      ]);
+      ] as any);
 
       // Act
       const result = await useCase.execute(validRequest);
@@ -245,10 +245,10 @@ describe('GetMovementByIdUseCase', () => {
       mockPrismaService.warehouse.findFirst.mockResolvedValue({
         name: 'Central Warehouse',
         code: 'WH-CENTRAL',
-      });
+      } as any);
       mockPrismaService.user.findMany.mockResolvedValue([
         { id: mockUserId, firstName: 'John', lastName: 'Doe' },
-      ]);
+      ] as any);
 
       // Act
       const result = await useCase.execute(validRequest);
@@ -274,10 +274,10 @@ describe('GetMovementByIdUseCase', () => {
       // Arrange
       const mockMovement = createMockMovement(false);
       mockMovementRepository.findById.mockResolvedValue(mockMovement);
-      mockPrismaService.warehouse.findFirst.mockResolvedValue(null);
+      mockPrismaService.warehouse.findFirst.mockResolvedValue(null as any);
       mockPrismaService.user.findMany.mockResolvedValue([
         { id: mockUserId, firstName: 'Jane', lastName: 'Smith' },
-      ]);
+      ] as any);
 
       // Act
       const result = await useCase.execute(validRequest);
@@ -299,8 +299,8 @@ describe('GetMovementByIdUseCase', () => {
       const mockMovement = createMockMovement(true);
       mockMovementRepository.findById.mockResolvedValue(mockMovement);
       mockProductRepository.findById.mockRejectedValue(new Error('Database connection error'));
-      mockPrismaService.warehouse.findFirst.mockResolvedValue(null);
-      mockPrismaService.user.findMany.mockResolvedValue([]);
+      mockPrismaService.warehouse.findFirst.mockResolvedValue(null as any);
+      mockPrismaService.user.findMany.mockResolvedValue([] as any);
 
       // Act
       const result = await useCase.execute(validRequest);
@@ -323,8 +323,8 @@ describe('GetMovementByIdUseCase', () => {
       // Arrange
       const mockMovement = createMockMovement(false);
       mockMovementRepository.findById.mockResolvedValue(mockMovement);
-      mockPrismaService.warehouse.findFirst.mockResolvedValue(null);
-      mockPrismaService.user.findMany.mockResolvedValue([]);
+      mockPrismaService.warehouse.findFirst.mockResolvedValue(null as any);
+      mockPrismaService.user.findMany.mockResolvedValue([] as any);
 
       // Act
       const result = await useCase.execute(validRequest);

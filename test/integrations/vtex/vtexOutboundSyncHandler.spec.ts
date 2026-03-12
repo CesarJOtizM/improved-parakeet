@@ -6,8 +6,6 @@ import { IntegrationSyncLog } from '../../../src/integrations/shared/domain/enti
 import { SaleConfirmedEvent } from '@sale/domain/events/saleConfirmed.event';
 import { SaleCompletedEvent } from '@sale/domain/events/saleCompleted.event';
 import { SaleCancelledEvent } from '@sale/domain/events/saleCancelled.event';
-import { ok } from '@shared/domain/result';
-
 import type { IIntegrationConnectionRepository } from '../../../src/integrations/shared/domain/ports/iIntegrationConnectionRepository.port';
 import type { IIntegrationSyncLogRepository } from '../../../src/integrations/shared/domain/ports/iIntegrationSyncLogRepository.port';
 
@@ -111,6 +109,7 @@ describe('VtexOutboundSyncHandler', () => {
       findByProviderAndAccount: jest.fn(),
       findByProviderAndAccountGlobal: jest.fn(),
       findAllConnectedForPolling: jest.fn(),
+      findByMeliUserId: jest.fn(),
       save: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),

@@ -308,8 +308,8 @@ describe('OrganizationRepository', () => {
           dateFormat: 'YYYY-MM-DD',
           settings: {},
         },
-        undefined,
-        undefined
+        undefined as any,
+        undefined as any
       );
       mockPrismaService.organization.create.mockResolvedValue({
         ...mockOrgData,
@@ -343,8 +343,8 @@ describe('OrganizationRepository', () => {
           dateFormat: 'YYYY-MM-DD',
           settings: {},
         },
-        undefined,
-        undefined
+        undefined as any,
+        undefined as any
       );
 
       // Act & Assert
@@ -364,8 +364,8 @@ describe('OrganizationRepository', () => {
           dateFormat: 'YYYY-MM-DD',
           settings: {},
         },
-        undefined,
-        undefined
+        undefined as any,
+        undefined as any
       );
       mockPrismaService.organization.create.mockRejectedValue(new Error('Create failed'));
 
@@ -413,8 +413,8 @@ describe('OrganizationRepository', () => {
           dateFormat: 'YYYY-MM-DD',
           settings: {},
         },
-        undefined,
-        undefined
+        undefined as any,
+        undefined as any
       );
 
       // Act & Assert

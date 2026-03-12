@@ -50,11 +50,10 @@ describe('SaleSpecifications', () => {
     describe('isSatisfiedBy', () => {
       it('Given: any sale When: checking satisfaction Then: should always return true', () => {
         // Arrange
-        const sale = createMockSale({ status: 'DRAFT' });
         const specification = new SaleAllSpecification();
 
         // Act
-        const result = specification.isSatisfiedBy(sale);
+        const result = specification.isSatisfiedBy();
 
         // Assert
         expect(result).toBe(true);
@@ -62,11 +61,10 @@ describe('SaleSpecifications', () => {
 
       it('Given: a CONFIRMED sale When: checking satisfaction Then: should still return true', () => {
         // Arrange
-        const sale = createMockSale({ status: 'CONFIRMED' });
         const specification = new SaleAllSpecification();
 
         // Act
-        const result = specification.isSatisfiedBy(sale);
+        const result = specification.isSatisfiedBy();
 
         // Assert
         expect(result).toBe(true);

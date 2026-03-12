@@ -9,7 +9,7 @@ import { TransferStatus } from '@transfer/domain/valueObjects/transferStatus.val
 describe('PrismaTransferRepository', () => {
   let repository: PrismaTransferRepository;
 
-  type MockFn = jest.Mock<unknown, unknown[]>;
+  type MockFn = jest.Mock<any>;
 
   let mockPrismaService: {
     transfer: Record<string, MockFn>;

@@ -214,7 +214,7 @@ describe('GlobalExceptionFilter', () => {
         })
       );
       // details should NOT be in error because it's an array
-      const callArgs = mockResponse.json.mock.calls[0][0];
+      const callArgs = mockResponse.json.mock.calls[0]![0] as any;
       expect(callArgs.error.details).toBeUndefined();
     });
 
@@ -280,7 +280,7 @@ describe('GlobalExceptionFilter', () => {
 
       filter.catch(exception, mockHost);
 
-      const callArgs = mockResponse.json.mock.calls[0][0];
+      const callArgs = mockResponse.json.mock.calls[0]![0] as any;
       expect(callArgs.error.details).toBeUndefined();
     });
 

@@ -12,7 +12,6 @@ jest.mock('resend', () => ({
 
 describe('EmailService', () => {
   let service: EmailService;
-  let configService: ConfigService;
 
   beforeEach(async () => {
     mockSend.mockReset();
@@ -36,7 +35,7 @@ describe('EmailService', () => {
     }).compile();
 
     service = module.get<EmailService>(EmailService);
-    configService = module.get<ConfigService>(ConfigService);
+    module.get<ConfigService>(ConfigService);
   });
 
   describe('sendEmail', () => {

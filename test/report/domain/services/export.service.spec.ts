@@ -5,17 +5,14 @@ import type { IReportColumn, ReportViewService } from '@report/domain/services/r
 import type { IDocumentColumn, IDocumentGenerationService } from '@shared/ports/externalServices';
 
 describe('ExportService', () => {
-  const reportViewService: Pick<ReportViewService, 'viewReport'> = {
+  const reportViewService = {
     viewReport: jest.fn(),
-  };
-  const documentGenerationService: Pick<
-    IDocumentGenerationService,
-    'generateExcel' | 'generatePDF' | 'healthCheck'
-  > = {
+  } as any;
+  const documentGenerationService = {
     generateExcel: jest.fn(),
     generatePDF: jest.fn(),
     healthCheck: jest.fn(),
-  };
+  } as any;
   const service = new ExportService(
     reportViewService as unknown as ReportViewService,
     documentGenerationService as unknown as IDocumentGenerationService
@@ -174,7 +171,7 @@ describe('ExportService', () => {
     const serviceAccess = service as unknown as {
       mapToDocumentColumns: (input: IReportColumn[]) => IDocumentColumn[];
     };
-    const result = serviceAccess.mapToDocumentColumns(columns);
+    const result = serviceAccess.mapToDocumentColumns(columns as any);
 
     // Assert
     expect(result[0]).toEqual({ key: 'name', header: 'Name', type: 'string', width: 100 });
@@ -189,7 +186,7 @@ describe('ExportService', () => {
     const serviceAccess = service as unknown as {
       mapToDocumentColumns: (input: IReportColumn[]) => IDocumentColumn[];
     };
-    const result = serviceAccess.mapToDocumentColumns(columns);
+    const result = serviceAccess.mapToDocumentColumns(columns as any);
 
     // Assert
     expect(result[0]).toEqual({ key: 'name', header: 'Name', type: 'string' });

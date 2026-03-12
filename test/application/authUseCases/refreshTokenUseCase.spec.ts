@@ -210,6 +210,7 @@ describe('RefreshTokenUseCase', () => {
         username: 'testuser',
         roles: [],
         permissions: [],
+        type: 'access',
         iat: Math.floor(Date.now() / 1000),
         jti: 'new-jti',
         exp: Math.floor(Date.now() / 1000) + 3600,

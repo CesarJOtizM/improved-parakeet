@@ -11,7 +11,7 @@ import { MovementType } from '@movement/domain/valueObjects/movementType.valueOb
 describe('PrismaMovementRepository', () => {
   let repository: PrismaMovementRepository;
 
-  type MockFn = jest.Mock<unknown, unknown[]>;
+  type MockFn = jest.Mock<any>;
 
   let mockPrismaService: {
     movement: Record<string, MockFn>;
@@ -591,7 +591,7 @@ describe('PrismaMovementRepository', () => {
       mockPrismaService.movement.count.mockResolvedValue(1);
 
       // Act
-      const result = await repository.findBySpecification(mockSpec, 'org-123', {
+      const result = await repository.findBySpecification(mockSpec as any, 'org-123', {
         skip: 0,
         take: 10,
       });
@@ -609,7 +609,7 @@ describe('PrismaMovementRepository', () => {
       mockPrismaService.movement.findMany.mockRejectedValue(new Error('Spec query failed'));
 
       // Act & Assert
-      await expect(repository.findBySpecification(mockSpec, 'org-123')).rejects.toThrow(
+      await expect(repository.findBySpecification(mockSpec as any, 'org-123')).rejects.toThrow(
         'Spec query failed'
       );
     });
@@ -623,7 +623,7 @@ describe('PrismaMovementRepository', () => {
       mockPrismaService.movement.count.mockResolvedValue(1);
 
       // Act
-      const result = await repository.findBySpecification(mockSpec, 'org-123');
+      const result = await repository.findBySpecification(mockSpec as any, 'org-123');
 
       // Assert
       expect(result.data).toHaveLength(1);
@@ -639,7 +639,7 @@ describe('PrismaMovementRepository', () => {
       mockPrismaService.movement.count.mockResolvedValue(20);
 
       // Act
-      const result = await repository.findBySpecification(mockSpec, 'org-123', {
+      const result = await repository.findBySpecification(mockSpec as any, 'org-123', {
         skip: 0,
         take: 10,
       });
@@ -656,7 +656,7 @@ describe('PrismaMovementRepository', () => {
       mockPrismaService.movement.findMany.mockRejectedValue('spec-error');
 
       // Act & Assert
-      await expect(repository.findBySpecification(mockSpec, 'org-123')).rejects.toBe('spec-error');
+      await expect(repository.findBySpecification(mockSpec as any, 'org-123')).rejects.toBe('spec-error');
     });
   });
 

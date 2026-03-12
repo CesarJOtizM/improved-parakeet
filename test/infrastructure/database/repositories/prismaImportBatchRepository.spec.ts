@@ -5,11 +5,14 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 describe('PrismaImportBatchRepository', () => {
   let repository: PrismaImportBatchRepository;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockPrismaClient: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     importBatch: Record<string, jest.Mock<any>>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     importRow: Record<string, jest.Mock<any>>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    $transaction: jest.Mock<any>;
   };
 
   const mockBatchData = {

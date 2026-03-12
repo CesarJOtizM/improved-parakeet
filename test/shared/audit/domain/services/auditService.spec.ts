@@ -33,7 +33,7 @@ describe('AuditService', () => {
 
   beforeEach(() => {
     mockRepository = {
-      save: jest.fn<IAuditLogRepository['save']>().mockResolvedValue(undefined),
+      save: jest.fn<IAuditLogRepository['save']>().mockResolvedValue(undefined as any),
       findById: jest.fn<IAuditLogRepository['findById']>(),
       findAll: jest.fn<IAuditLogRepository['findAll']>(),
       findByEntity: jest.fn<IAuditLogRepository['findByEntity']>(),

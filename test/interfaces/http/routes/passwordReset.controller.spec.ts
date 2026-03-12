@@ -52,7 +52,7 @@ describe('PasswordResetController', () => {
 
       // Assert
       expect(result.success).toBe(true);
-      expect(result.email).toBe('user@example.com');
+      expect((result as any).email).toBe('user@example.com');
       expect(mockRequestPasswordResetUseCase.execute).toHaveBeenCalledWith({
         email: 'user@example.com',
         orgId: mockOrgId,
@@ -107,7 +107,7 @@ describe('PasswordResetController', () => {
 
       // Assert
       expect(result.success).toBe(true);
-      expect(result.isValid).toBe(true);
+      expect((result as any).isValid).toBe(true);
       expect(mockVerifyOtpUseCase.execute).toHaveBeenCalledWith({
         email: 'user@example.com',
         otpCode: '123456',
@@ -159,7 +159,7 @@ describe('PasswordResetController', () => {
 
       // Assert
       expect(result.success).toBe(true);
-      expect(result.email).toBe('user@example.com');
+      expect((result as any).email).toBe('user@example.com');
       expect(mockResetPasswordUseCase.execute).toHaveBeenCalledWith({
         email: 'user@example.com',
         otpCode: '123456',

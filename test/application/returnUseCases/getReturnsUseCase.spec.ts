@@ -34,11 +34,11 @@ describe('GetReturnsUseCase', () => {
       findByDateRange: jest.fn(),
       getLastReturnNumberForYear: jest.fn(),
       findByReturnMovementId: jest.fn(),
-    } as jest.Mocked<IReturnRepository>;
+    } as any;
 
     mockPrisma = {
       return: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<() => Promise<any>>().mockResolvedValue([]),
       },
     } as unknown as jest.Mocked<PrismaService>;
 
@@ -752,7 +752,7 @@ describe('GetReturnsUseCase', () => {
       });
       mockReturnRepository.findAll.mockResolvedValue([mockReturn]);
 
-      (mockPrisma.return.findMany as jest.Mock).mockResolvedValue([{ id: mockReturn.id }]);
+      (mockPrisma.return.findMany as any).mockResolvedValue([{ id: mockReturn.id }]);
 
       const request = {
         orgId: mockOrgId,
@@ -1092,7 +1092,7 @@ describe('GetReturnsUseCase', () => {
         returnNumber: ReturnNumber.create(2025, 1),
       });
       mockReturnRepository.findAll.mockResolvedValue([mockReturn]);
-      (mockPrisma.return.findMany as jest.Mock).mockResolvedValue([]); // no matching IDs
+      (mockPrisma.return.findMany as any).mockResolvedValue([]); // no matching IDs
 
       const request = {
         orgId: mockOrgId,

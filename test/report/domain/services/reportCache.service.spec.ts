@@ -19,7 +19,7 @@ describe('ReportCacheService', () => {
     } as unknown as jest.Mocked<Cache>;
 
     mockConfigService = {
-      get: jest.fn().mockImplementation((key: string, defaultValue?: unknown) => {
+      get: jest.fn<any>().mockImplementation((key: string, defaultValue?: unknown) => {
         if (key === 'REPORT_CACHE_ENABLED') return true;
         if (key === 'REPORT_CACHE_TTL_VIEW') return 300;
         if (key === 'REPORT_CACHE_TTL_EXPORT') return 600;
@@ -48,13 +48,13 @@ describe('ReportCacheService', () => {
     it('Given: cache enabled and cacheable report type with dateRange When: checking cacheability Then: should return true', () => {
       // Arrange
       const reportType = 'MOVEMENT_HISTORY';
-      const parameters: IReportParametersInput = {
+      const parameters = {
         orgId: 'org-123',
         dateRange: {
           startDate: new Date('2024-01-01'),
           endDate: new Date('2024-12-31'),
         },
-      };
+      } as IReportParametersInput;
 
       // Act
       const result = service.isCacheable(reportType, parameters);
@@ -66,9 +66,9 @@ describe('ReportCacheService', () => {
     it('Given: cache enabled and export flag When: checking cacheability Then: should return true', () => {
       // Arrange
       const reportType = 'AVAILABLE_INVENTORY';
-      const parameters: IReportParametersInput = {
+      const parameters = {
         orgId: 'org-123',
-      };
+      } as IReportParametersInput;
 
       // Act
       const result = service.isCacheable(reportType, parameters, true);
@@ -80,9 +80,9 @@ describe('ReportCacheService', () => {
     it('Given: cache enabled but non-cacheable report type When: checking cacheability Then: should return false', () => {
       // Arrange
       const reportType = 'AVAILABLE_INVENTORY';
-      const parameters: IReportParametersInput = {
+      const parameters = {
         orgId: 'org-123',
-      };
+      } as IReportParametersInput;
 
       // Act
       const result = service.isCacheable(reportType, parameters);
@@ -94,9 +94,9 @@ describe('ReportCacheService', () => {
     it('Given: cache enabled and cacheable report type without dateRange When: checking cacheability Then: should return false', () => {
       // Arrange
       const reportType = 'MOVEMENT_HISTORY';
-      const parameters: IReportParametersInput = {
+      const parameters = {
         orgId: 'org-123',
-      };
+      } as IReportParametersInput;
 
       // Act
       const result = service.isCacheable(reportType, parameters);
@@ -110,10 +110,10 @@ describe('ReportCacheService', () => {
     it('Given: report type and parameters When: generating key for view Then: should create proper key format', () => {
       // Arrange
       const reportType = 'AVAILABLE_INVENTORY';
-      const parameters: IReportParametersInput = {
+      const parameters = {
         orgId: 'org-123',
         warehouseId: 'warehouse-123',
-      };
+      } as IReportParametersInput;
 
       // Act
       const key = service.generateKey(reportType, parameters);
@@ -125,9 +125,9 @@ describe('ReportCacheService', () => {
     it('Given: report type, parameters and format When: generating key for export Then: should include format and export prefix', () => {
       // Arrange
       const reportType = 'AVAILABLE_INVENTORY';
-      const parameters: IReportParametersInput = {
+      const parameters = {
         orgId: 'org-123',
-      };
+      } as IReportParametersInput;
       const format = 'csv';
 
       // Act
@@ -140,10 +140,10 @@ describe('ReportCacheService', () => {
     it('Given: same parameters When: generating key multiple times Then: should produce same key', () => {
       // Arrange
       const reportType = 'AVAILABLE_INVENTORY';
-      const parameters: IReportParametersInput = {
+      const parameters = {
         orgId: 'org-123',
         warehouseId: 'warehouse-123',
-      };
+      } as IReportParametersInput;
 
       // Act
       const key1 = service.generateKey(reportType, parameters);
@@ -156,14 +156,14 @@ describe('ReportCacheService', () => {
     it('Given: different parameters When: generating keys Then: should produce different keys', () => {
       // Arrange
       const reportType = 'AVAILABLE_INVENTORY';
-      const parameters1: IReportParametersInput = {
+      const parameters1 = {
         orgId: 'org-123',
         warehouseId: 'warehouse-123',
-      };
-      const parameters2: IReportParametersInput = {
+      } as IReportParametersInput;
+      const parameters2 = {
         orgId: 'org-123',
         warehouseId: 'warehouse-456',
-      };
+      } as IReportParametersInput;
 
       // Act
       const key1 = service.generateKey(reportType, parameters1);
@@ -176,13 +176,13 @@ describe('ReportCacheService', () => {
     it('Given: parameters with dateRange When: generating key Then: should include dateRange in hash', () => {
       // Arrange
       const reportType = 'MOVEMENT_HISTORY';
-      const parameters: IReportParametersInput = {
+      const parameters = {
         orgId: 'org-123',
         dateRange: {
           startDate: new Date('2024-01-01'),
           endDate: new Date('2024-12-31'),
         },
-      };
+      } as IReportParametersInput;
 
       // Act
       const key = service.generateKey(reportType, parameters);
@@ -323,7 +323,7 @@ describe('ReportCacheService with cache disabled', () => {
     } as unknown as jest.Mocked<Cache>;
 
     mockConfigService = {
-      get: jest.fn().mockImplementation((key: string, defaultValue?: unknown) => {
+      get: jest.fn<any>().mockImplementation((key: string, defaultValue?: unknown) => {
         if (key === 'REPORT_CACHE_ENABLED') return false;
         return defaultValue;
       }),
@@ -350,7 +350,7 @@ describe('ReportCacheService with cache disabled', () => {
     it('Given: cache disabled When: checking cacheability Then: should return false', () => {
       // Arrange
       const reportType = 'AVAILABLE_INVENTORY';
-      const parameters: IReportParametersInput = { orgId: 'org-123' };
+      const parameters = { orgId: 'org-123' } as IReportParametersInput;
 
       // Act
       const result = service.isCacheable(reportType, parameters);
@@ -412,7 +412,7 @@ describe('ReportCacheService - additional branch coverage', () => {
     } as unknown as jest.Mocked<Cache>;
 
     mockConfigService = {
-      get: jest.fn().mockImplementation((key: string, defaultValue?: unknown) => {
+      get: jest.fn<any>().mockImplementation((key: string, defaultValue?: unknown) => {
         if (key === 'REPORT_CACHE_ENABLED') return true;
         if (key === 'REPORT_CACHE_TTL_VIEW') return 300;
         if (key === 'REPORT_CACHE_TTL_EXPORT') return 600;
@@ -578,7 +578,7 @@ describe('ReportCacheService - zero TTL config', () => {
 
     // Return 0 for TTL values so the `|| DEFAULT_CACHE_TTL.VIEW` fallback kicks in
     const mockConfigService = {
-      get: jest.fn().mockImplementation((key: string, defaultValue?: unknown) => {
+      get: jest.fn<any>().mockImplementation((key: string, defaultValue?: unknown) => {
         if (key === 'REPORT_CACHE_ENABLED') return true;
         if (key === 'REPORT_CACHE_TTL_VIEW') return 0;
         if (key === 'REPORT_CACHE_TTL_EXPORT') return 0;

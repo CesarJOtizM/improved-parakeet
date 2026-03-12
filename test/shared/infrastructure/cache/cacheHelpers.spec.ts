@@ -13,14 +13,14 @@ import type { ICacheService } from '@shared/ports/cache';
 
 describe('Cache Helpers', () => {
   const buildCacheService = (): jest.Mocked<ICacheService> => ({
-    get: jest.fn(),
-    set: jest.fn(),
-    delete: jest.fn(),
-    exists: jest.fn(),
-    clear: jest.fn(),
-    getMany: jest.fn(),
-    setMany: jest.fn(),
-    deleteMany: jest.fn(),
+    get: jest.fn<any>(),
+    set: jest.fn<any>(),
+    delete: jest.fn<any>(),
+    exists: jest.fn<any>(),
+    clear: jest.fn<any>(),
+    getMany: jest.fn<any>(),
+    setMany: jest.fn<any>(),
+    deleteMany: jest.fn<any>(),
   });
 
   it('Given: cache error When: caching entity Then: should log error', async () => {
