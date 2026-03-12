@@ -656,7 +656,9 @@ describe('PrismaMovementRepository', () => {
       mockPrismaService.movement.findMany.mockRejectedValue('spec-error');
 
       // Act & Assert
-      await expect(repository.findBySpecification(mockSpec as any, 'org-123')).rejects.toBe('spec-error');
+      await expect(repository.findBySpecification(mockSpec as any, 'org-123')).rejects.toBe(
+        'spec-error'
+      );
     });
   });
 

@@ -55,9 +55,7 @@ describe('VtexPollingJob', () => {
   });
 
   it('Given: VTEX connections exist When: job runs Then: should execute polling', async () => {
-    mockConnectionRepo.findAllConnectedForPolling.mockResolvedValue([
-      makeVtexConnection(),
-    ]);
+    mockConnectionRepo.findAllConnectedForPolling.mockResolvedValue([makeVtexConnection()]);
     mockPollUseCase.execute.mockResolvedValue(
       ok({
         success: true,
@@ -73,9 +71,7 @@ describe('VtexPollingJob', () => {
   });
 
   it('Given: polling returns error result When: job runs Then: should not throw', async () => {
-    mockConnectionRepo.findAllConnectedForPolling.mockResolvedValue([
-      makeVtexConnection(),
-    ]);
+    mockConnectionRepo.findAllConnectedForPolling.mockResolvedValue([makeVtexConnection()]);
     mockPollUseCase.execute.mockResolvedValue(
       err(new ValidationError('Polling failed', 'POLL_ERROR'))
     );
@@ -84,18 +80,14 @@ describe('VtexPollingJob', () => {
   });
 
   it('Given: polling throws exception When: job runs Then: should catch and not throw', async () => {
-    mockConnectionRepo.findAllConnectedForPolling.mockResolvedValue([
-      makeVtexConnection(),
-    ]);
+    mockConnectionRepo.findAllConnectedForPolling.mockResolvedValue([makeVtexConnection()]);
     mockPollUseCase.execute.mockRejectedValue(new Error('Network error'));
 
     await expect(job.pollOrders()).resolves.not.toThrow();
   });
 
   it('Given: zero orders polled When: job runs Then: should complete silently', async () => {
-    mockConnectionRepo.findAllConnectedForPolling.mockResolvedValue([
-      makeVtexConnection(),
-    ]);
+    mockConnectionRepo.findAllConnectedForPolling.mockResolvedValue([makeVtexConnection()]);
     mockPollUseCase.execute.mockResolvedValue(
       ok({
         success: true,

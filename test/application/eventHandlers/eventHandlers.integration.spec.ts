@@ -26,7 +26,11 @@ describe('Event Handlers Integration', () => {
       sendAccountDeactivationEmail: jest.fn(),
     } as any;
     roleAssignedHandler = new RoleAssignedEventHandler(mockAuditRepository);
-    userStatusChangedHandler = new UserStatusChangedEventHandler(mockAuditRepository, mockUserRepository, mockEmailService);
+    userStatusChangedHandler = new UserStatusChangedEventHandler(
+      mockAuditRepository,
+      mockUserRepository,
+      mockEmailService
+    );
 
     // Register handlers
     eventBus.registerHandler('RoleAssigned', roleAssignedHandler);

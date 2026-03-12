@@ -458,10 +458,7 @@ describe('MeliSyncOrderUseCase', () => {
           throw new Error('Expected Ok result');
         }
       );
-      expect(mockContactRepository.findByIdentification).toHaveBeenCalledWith(
-        'DOC-999',
-        mockOrgId
-      );
+      expect(mockContactRepository.findByIdentification).toHaveBeenCalledWith('DOC-999', mockOrgId);
       // Should NOT have tried email lookup since doc matched
       expect(mockContactRepository.findByEmail).not.toHaveBeenCalled();
     });

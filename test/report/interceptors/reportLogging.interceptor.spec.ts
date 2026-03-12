@@ -88,7 +88,9 @@ describe('ReportLoggingInterceptor', () => {
 
       // Assert
       expect(logSpy).toHaveBeenCalled();
-      const successCall = logSpy.mock.calls.find((call: any) => String(call[0]).includes('SUCCESS'));
+      const successCall = logSpy.mock.calls.find((call: any) =>
+        String(call[0]).includes('SUCCESS')
+      );
       expect(successCall).toBeDefined();
       expect(successCall?.[1]).toEqual(
         expect.objectContaining({
@@ -258,7 +260,9 @@ describe('ReportLoggingInterceptor', () => {
 
       // Assert
       expect(logSpy).toHaveBeenCalled();
-      const successCall = logSpy.mock.calls.find((call: any) => String(call[0]).includes('SUCCESS'));
+      const successCall = logSpy.mock.calls.find((call: any) =>
+        String(call[0]).includes('SUCCESS')
+      );
       expect(successCall?.[1]).toEqual(
         expect.objectContaining({
           userId: 'anonymous',
@@ -423,7 +427,9 @@ describe('ReportLoggingInterceptor', () => {
       await lastValueFrom(interceptor.intercept(context, handler));
 
       // Assert
-      const successCall = logSpy.mock.calls.find((call: any) => String(call[0]).includes('SUCCESS'));
+      const successCall = logSpy.mock.calls.find((call: any) =>
+        String(call[0]).includes('SUCCESS')
+      );
       expect(successCall?.[1]).toEqual(
         expect.objectContaining({
           size: 0,
@@ -458,7 +464,9 @@ describe('ReportLoggingInterceptor', () => {
       await lastValueFrom(interceptor.intercept(context, handler));
 
       // Assert
-      const successCall = logSpy.mock.calls.find((call: any) => String(call[0]).includes('SUCCESS'));
+      const successCall = logSpy.mock.calls.find((call: any) =>
+        String(call[0]).includes('SUCCESS')
+      );
       expect(successCall?.[1]).toEqual(
         expect.objectContaining({
           size: bufferData.length,
@@ -490,7 +498,9 @@ describe('ReportLoggingInterceptor', () => {
       await lastValueFrom(interceptor.intercept(context, handler));
 
       // Assert
-      const successCall = logSpy.mock.calls.find((call: any) => String(call[0]).includes('SUCCESS'));
+      const successCall = logSpy.mock.calls.find((call: any) =>
+        String(call[0]).includes('SUCCESS')
+      );
       expect(successCall?.[1]).toEqual(
         expect.objectContaining({
           size: 'string-data'.length,
@@ -523,7 +533,9 @@ describe('ReportLoggingInterceptor', () => {
       await lastValueFrom(interceptor.intercept(context, handler));
 
       // Assert
-      const successCall = logSpy.mock.calls.find((call: any) => String(call[0]).includes('SUCCESS'));
+      const successCall = logSpy.mock.calls.find((call: any) =>
+        String(call[0]).includes('SUCCESS')
+      );
       expect(successCall?.[1]).toEqual(
         expect.objectContaining({
           size: undefined,

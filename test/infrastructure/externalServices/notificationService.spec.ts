@@ -2,9 +2,7 @@ import { NotificationService } from '@infrastructure/externalServices/notificati
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { Quantity } from '@stock/domain/valueObjects/quantity.valueObject';
 
-import type {
-  IStockAlertDigestNotification,
-} from '@infrastructure/externalServices/notificationService.interface';
+import type { IStockAlertDigestNotification } from '@infrastructure/externalServices/notificationService.interface';
 
 const mockEmailService = {
   sendEmail: jest.fn().mockResolvedValue({ success: true, messageId: 'mock-id' } as never),

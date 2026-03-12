@@ -208,7 +208,12 @@ describe('IntegrationsController', () => {
   describe('testConnection', () => {
     it('Given: valid connectionId When: testing Then: should call test use case', async () => {
       mockGetConnectionByIdUseCase.execute.mockResolvedValue(
-        ok({ success: true, message: 'OK', data: { id: 'conn-1', provider: 'VTEX' }, timestamp: new Date().toISOString() })
+        ok({
+          success: true,
+          message: 'OK',
+          data: { id: 'conn-1', provider: 'VTEX' },
+          timestamp: new Date().toISOString(),
+        })
       );
       mockVtexTestConnectionUseCase.execute.mockResolvedValue(
         ok({
@@ -229,7 +234,12 @@ describe('IntegrationsController', () => {
   describe('syncConnection', () => {
     it('Given: valid connectionId When: syncing Then: should call poll use case', async () => {
       mockGetConnectionByIdUseCase.execute.mockResolvedValue(
-        ok({ success: true, message: 'OK', data: { id: 'conn-1', provider: 'VTEX' }, timestamp: new Date().toISOString() })
+        ok({
+          success: true,
+          message: 'OK',
+          data: { id: 'conn-1', provider: 'VTEX' },
+          timestamp: new Date().toISOString(),
+        })
       );
       mockVtexPollOrdersUseCase.execute.mockResolvedValue(
         ok({
@@ -250,7 +260,12 @@ describe('IntegrationsController', () => {
   describe('syncOrder', () => {
     it('Given: valid params When: syncing order Then: should call sync order use case', async () => {
       mockGetConnectionByIdUseCase.execute.mockResolvedValue(
-        ok({ success: true, message: 'OK', data: { id: 'conn-1', provider: 'VTEX' }, timestamp: new Date().toISOString() })
+        ok({
+          success: true,
+          message: 'OK',
+          data: { id: 'conn-1', provider: 'VTEX' },
+          timestamp: new Date().toISOString(),
+        })
       );
       mockVtexSyncOrderUseCase.execute.mockResolvedValue(
         ok({
@@ -470,7 +485,12 @@ describe('IntegrationsController', () => {
   describe('syncConnection - success path details', () => {
     it('Given: valid connectionId When: syncing Then: should pass correct params', async () => {
       mockGetConnectionByIdUseCase.execute.mockResolvedValue(
-        ok({ success: true, message: 'OK', data: { id: 'conn-2', provider: 'VTEX' }, timestamp: new Date().toISOString() })
+        ok({
+          success: true,
+          message: 'OK',
+          data: { id: 'conn-2', provider: 'VTEX' },
+          timestamp: new Date().toISOString(),
+        })
       );
       mockVtexPollOrdersUseCase.execute.mockResolvedValue(
         ok({
@@ -493,7 +513,12 @@ describe('IntegrationsController', () => {
   describe('testConnection - success params', () => {
     it('Given: valid connectionId When: testing Then: should pass correct params', async () => {
       mockGetConnectionByIdUseCase.execute.mockResolvedValue(
-        ok({ success: true, message: 'OK', data: { id: 'conn-2', provider: 'VTEX' }, timestamp: new Date().toISOString() })
+        ok({
+          success: true,
+          message: 'OK',
+          data: { id: 'conn-2', provider: 'VTEX' },
+          timestamp: new Date().toISOString(),
+        })
       );
       mockVtexTestConnectionUseCase.execute.mockResolvedValue(
         ok({
@@ -681,7 +706,12 @@ describe('IntegrationsController', () => {
   describe('testConnection - error paths', () => {
     it('Given: connection test fails When: testing Then: should throw', async () => {
       mockGetConnectionByIdUseCase.execute.mockResolvedValue(
-        ok({ success: true, message: 'OK', data: { id: 'conn-1', provider: 'VTEX' }, timestamp: new Date().toISOString() })
+        ok({
+          success: true,
+          message: 'OK',
+          data: { id: 'conn-1', provider: 'VTEX' },
+          timestamp: new Date().toISOString(),
+        })
       );
       mockVtexTestConnectionUseCase.execute.mockResolvedValue(
         err(new ValidationError('Connection test failed'))
@@ -694,7 +724,12 @@ describe('IntegrationsController', () => {
   describe('syncConnection - error paths', () => {
     it('Given: sync fails When: syncing Then: should throw', async () => {
       mockGetConnectionByIdUseCase.execute.mockResolvedValue(
-        ok({ success: true, message: 'OK', data: { id: 'conn-1', provider: 'VTEX' }, timestamp: new Date().toISOString() })
+        ok({
+          success: true,
+          message: 'OK',
+          data: { id: 'conn-1', provider: 'VTEX' },
+          timestamp: new Date().toISOString(),
+        })
       );
       mockVtexPollOrdersUseCase.execute.mockResolvedValue(err(new ValidationError('Sync failed')));
 
@@ -705,7 +740,12 @@ describe('IntegrationsController', () => {
   describe('syncOrder - error paths', () => {
     it('Given: order sync fails When: syncing order Then: should throw', async () => {
       mockGetConnectionByIdUseCase.execute.mockResolvedValue(
-        ok({ success: true, message: 'OK', data: { id: 'conn-1', provider: 'VTEX' }, timestamp: new Date().toISOString() })
+        ok({
+          success: true,
+          message: 'OK',
+          data: { id: 'conn-1', provider: 'VTEX' },
+          timestamp: new Date().toISOString(),
+        })
       );
       mockVtexSyncOrderUseCase.execute.mockResolvedValue(err(new NotFoundError('Order not found')));
 

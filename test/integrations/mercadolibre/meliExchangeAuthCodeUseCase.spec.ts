@@ -15,9 +15,7 @@ describe('MeliExchangeAuthCodeUseCase', () => {
   let mockEncryptionService: jest.Mocked<EncryptionService>;
   let mockMeliTokenService: jest.Mocked<MeliTokenService>;
 
-  const createMockConnection = (
-    overrides: Partial<{ provider: string }> = {}
-  ) =>
+  const createMockConnection = (overrides: Partial<{ provider: string }> = {}) =>
     IntegrationConnection.reconstitute(
       {
         provider: overrides.provider ?? 'MERCADOLIBRE',

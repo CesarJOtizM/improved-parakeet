@@ -823,7 +823,13 @@ describe('Report Domain Events', () => {
 
     it('Given: two events created sequentially When: comparing occurredOn Then: second should be >= first', () => {
       // Arrange & Act
-      const first = new ExportCompletedEvent(mockReportId, mockType, 'xlsx' as any, mockOrgId, mockUserId);
+      const first = new ExportCompletedEvent(
+        mockReportId,
+        mockType,
+        'xlsx' as any,
+        mockOrgId,
+        mockUserId
+      );
       const second = new ReportTemplateCreatedEvent(
         mockTemplateId,
         mockTemplateName,

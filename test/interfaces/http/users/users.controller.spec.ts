@@ -879,12 +879,7 @@ describe('UsersController', () => {
       mockUpdateUserUseCase.execute.mockResolvedValue(ok(mockResponseData) as any);
 
       // Act
-      await usersController.updateUser(
-        mockUserId,
-        updateDto,
-        mockOrgId,
-        mockRequest
-      );
+      await usersController.updateUser(mockUserId, updateDto, mockOrgId, mockRequest);
 
       // Assert
       expect(mockUpdateUserUseCase.execute).toHaveBeenCalledWith({

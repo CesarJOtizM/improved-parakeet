@@ -123,12 +123,15 @@ describe('SwapSaleLineUseCase', () => {
     it('Given: CONFIRMED sale with valid line When: full swap Then: should succeed', async () => {
       mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
       mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
-      mockUnitOfWork.execute.mockImplementation(async () => ({
-        swapId: 'swap-1',
-        returnMovementId: 'mov-ret-1',
-        deductMovementId: 'mov-ded-1',
-        newLineId: undefined,
-      } as any));
+      mockUnitOfWork.execute.mockImplementation(
+        async () =>
+          ({
+            swapId: 'swap-1',
+            returnMovementId: 'mov-ret-1',
+            deductMovementId: 'mov-ded-1',
+            newLineId: undefined,
+          }) as any
+      );
 
       const result = await useCase.execute(baseRequest);
 
@@ -151,12 +154,15 @@ describe('SwapSaleLineUseCase', () => {
     it('Given: CONFIRMED sale When: partial swap (2 of 5) Then: should succeed with isPartial=true', async () => {
       mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
       mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
-      mockUnitOfWork.execute.mockImplementation(async () => ({
-        swapId: 'swap-2',
-        returnMovementId: 'mov-ret-2',
-        deductMovementId: 'mov-ded-2',
-        newLineId: 'line-new-1',
-      } as any));
+      mockUnitOfWork.execute.mockImplementation(
+        async () =>
+          ({
+            swapId: 'swap-2',
+            returnMovementId: 'mov-ret-2',
+            deductMovementId: 'mov-ded-2',
+            newLineId: 'line-new-1',
+          }) as any
+      );
 
       const result = await useCase.execute({ ...baseRequest, swapQuantity: 2 });
 
@@ -175,12 +181,15 @@ describe('SwapSaleLineUseCase', () => {
     it('Given: PICKING state sale When: swap Then: should succeed', async () => {
       mockSaleRepository.findById.mockResolvedValue(createMockSale('PICKING'));
       mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
-      mockUnitOfWork.execute.mockImplementation(async () => ({
-        swapId: 'swap-3',
-        returnMovementId: 'mov-ret-3',
-        deductMovementId: 'mov-ded-3',
-        newLineId: undefined,
-      } as any));
+      mockUnitOfWork.execute.mockImplementation(
+        async () =>
+          ({
+            swapId: 'swap-3',
+            returnMovementId: 'mov-ret-3',
+            deductMovementId: 'mov-ded-3',
+            newLineId: undefined,
+          }) as any
+      );
 
       const result = await useCase.execute(baseRequest);
 
@@ -316,12 +325,15 @@ describe('SwapSaleLineUseCase', () => {
     it('Given: KEEP_ORIGINAL strategy When: swap Then: should use original price', async () => {
       mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
       mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
-      mockUnitOfWork.execute.mockImplementation(async () => ({
-        swapId: 'swap-pricing-1',
-        returnMovementId: 'mov-1',
-        deductMovementId: 'mov-2',
-        newLineId: undefined,
-      } as any));
+      mockUnitOfWork.execute.mockImplementation(
+        async () =>
+          ({
+            swapId: 'swap-pricing-1',
+            returnMovementId: 'mov-1',
+            deductMovementId: 'mov-2',
+            newLineId: undefined,
+          }) as any
+      );
 
       const result = await useCase.execute({
         ...baseRequest,
@@ -362,12 +374,15 @@ describe('SwapSaleLineUseCase', () => {
     it('Given: NEW_PRICE with price When: swap Then: should use new price', async () => {
       mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
       mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
-      mockUnitOfWork.execute.mockImplementation(async () => ({
-        swapId: 'swap-pricing-2',
-        returnMovementId: 'mov-1',
-        deductMovementId: 'mov-2',
-        newLineId: undefined,
-      } as any));
+      mockUnitOfWork.execute.mockImplementation(
+        async () =>
+          ({
+            swapId: 'swap-pricing-2',
+            returnMovementId: 'mov-1',
+            deductMovementId: 'mov-2',
+            newLineId: undefined,
+          }) as any
+      );
 
       const result = await useCase.execute({
         ...baseRequest,
@@ -392,12 +407,15 @@ describe('SwapSaleLineUseCase', () => {
     it('Given: different source warehouse When: swap Then: should set isCrossWarehouse=true', async () => {
       mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
       mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
-      mockUnitOfWork.execute.mockImplementation(async () => ({
-        swapId: 'swap-cross',
-        returnMovementId: 'mov-1',
-        deductMovementId: 'mov-2',
-        newLineId: undefined,
-      } as any));
+      mockUnitOfWork.execute.mockImplementation(
+        async () =>
+          ({
+            swapId: 'swap-cross',
+            returnMovementId: 'mov-1',
+            deductMovementId: 'mov-2',
+            newLineId: undefined,
+          }) as any
+      );
 
       const result = await useCase.execute({
         ...baseRequest,
@@ -418,12 +436,15 @@ describe('SwapSaleLineUseCase', () => {
     it('Given: same source warehouse When: swap Then: should set isCrossWarehouse=false', async () => {
       mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
       mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
-      mockUnitOfWork.execute.mockImplementation(async () => ({
-        swapId: 'swap-same',
-        returnMovementId: 'mov-1',
-        deductMovementId: 'mov-2',
-        newLineId: undefined,
-      } as any));
+      mockUnitOfWork.execute.mockImplementation(
+        async () =>
+          ({
+            swapId: 'swap-same',
+            returnMovementId: 'mov-1',
+            deductMovementId: 'mov-2',
+            newLineId: undefined,
+          }) as any
+      );
 
       const result = await useCase.execute(baseRequest);
 
@@ -443,12 +464,15 @@ describe('SwapSaleLineUseCase', () => {
     it('Given: successful swap When: post-commit Then: should dispatch SaleLineSwapped event', async () => {
       mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
       mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
-      mockUnitOfWork.execute.mockImplementation(async () => ({
-        swapId: 'swap-event',
-        returnMovementId: 'mov-1',
-        deductMovementId: 'mov-2',
-        newLineId: undefined,
-      } as any));
+      mockUnitOfWork.execute.mockImplementation(
+        async () =>
+          ({
+            swapId: 'swap-event',
+            returnMovementId: 'mov-1',
+            deductMovementId: 'mov-2',
+            newLineId: undefined,
+          }) as any
+      );
 
       await useCase.execute(baseRequest);
 
@@ -463,12 +487,15 @@ describe('SwapSaleLineUseCase', () => {
     it('Given: NEW_PRICE with custom currency When: swap Then: should use provided currency', async () => {
       mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
       mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
-      mockUnitOfWork.execute.mockImplementation(async () => ({
-        swapId: 'swap-curr',
-        returnMovementId: 'mov-1',
-        deductMovementId: 'mov-2',
-        newLineId: undefined,
-      } as any));
+      mockUnitOfWork.execute.mockImplementation(
+        async () =>
+          ({
+            swapId: 'swap-curr',
+            returnMovementId: 'mov-1',
+            deductMovementId: 'mov-2',
+            newLineId: undefined,
+          }) as any
+      );
 
       const result = await useCase.execute({
         ...baseRequest,
@@ -499,12 +526,15 @@ describe('SwapSaleLineUseCase', () => {
     it('Given: swap with reason When: swap Then: should include reason in response', async () => {
       mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
       mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
-      mockUnitOfWork.execute.mockImplementation(async () => ({
-        swapId: 'swap-reason',
-        returnMovementId: 'mov-1',
-        deductMovementId: 'mov-2',
-        newLineId: undefined,
-      } as any));
+      mockUnitOfWork.execute.mockImplementation(
+        async () =>
+          ({
+            swapId: 'swap-reason',
+            returnMovementId: 'mov-1',
+            deductMovementId: 'mov-2',
+            newLineId: undefined,
+          }) as any
+      );
 
       const result = await useCase.execute({
         ...baseRequest,
@@ -525,12 +555,15 @@ describe('SwapSaleLineUseCase', () => {
     it('Given: swap quantity equal to line quantity When: full swap Then: isPartial should be false', async () => {
       mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
       mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
-      mockUnitOfWork.execute.mockImplementation(async () => ({
-        swapId: 'swap-full',
-        returnMovementId: 'mov-1',
-        deductMovementId: 'mov-2',
-        newLineId: undefined,
-      } as any));
+      mockUnitOfWork.execute.mockImplementation(
+        async () =>
+          ({
+            swapId: 'swap-full',
+            returnMovementId: 'mov-1',
+            deductMovementId: 'mov-2',
+            newLineId: undefined,
+          }) as any
+      );
 
       // Original line quantity is 5, swap 5 = full swap
       const result = await useCase.execute({ ...baseRequest, swapQuantity: 5 });
@@ -549,12 +582,15 @@ describe('SwapSaleLineUseCase', () => {
     it('Given: swap quantity of 1 out of 5 When: partial swap Then: isPartial should be true', async () => {
       mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
       mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
-      mockUnitOfWork.execute.mockImplementation(async () => ({
-        swapId: 'swap-partial-1',
-        returnMovementId: 'mov-1',
-        deductMovementId: 'mov-2',
-        newLineId: 'line-new-1',
-      } as any));
+      mockUnitOfWork.execute.mockImplementation(
+        async () =>
+          ({
+            swapId: 'swap-partial-1',
+            returnMovementId: 'mov-1',
+            deductMovementId: 'mov-2',
+            newLineId: 'line-new-1',
+          }) as any
+      );
 
       const result = await useCase.execute({ ...baseRequest, swapQuantity: 1 });
 
@@ -589,12 +625,15 @@ describe('SwapSaleLineUseCase', () => {
     it('Given: successful full swap When: response Then: should include originalSalePrice', async () => {
       mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
       mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
-      mockUnitOfWork.execute.mockImplementation(async () => ({
-        swapId: 'swap-price',
-        returnMovementId: 'mov-1',
-        deductMovementId: 'mov-2',
-        newLineId: undefined,
-      } as any));
+      mockUnitOfWork.execute.mockImplementation(
+        async () =>
+          ({
+            swapId: 'swap-price',
+            returnMovementId: 'mov-1',
+            deductMovementId: 'mov-2',
+            newLineId: undefined,
+          }) as any
+      );
 
       const result = await useCase.execute(baseRequest);
 
@@ -750,12 +789,15 @@ describe('SwapSaleLineUseCase', () => {
     it('Given: NEW_PRICE with no currency When: swap Then: should default to original currency', async () => {
       mockSaleRepository.findById.mockResolvedValue(createMockSale('CONFIRMED'));
       mockStockRepository.getStockQuantity.mockResolvedValue(Quantity.create(10, 2));
-      mockUnitOfWork.execute.mockImplementation(async () => ({
-        swapId: 'swap-no-currency',
-        returnMovementId: 'mov-1',
-        deductMovementId: 'mov-2',
-        newLineId: undefined,
-      } as any));
+      mockUnitOfWork.execute.mockImplementation(
+        async () =>
+          ({
+            swapId: 'swap-no-currency',
+            returnMovementId: 'mov-1',
+            deductMovementId: 'mov-2',
+            newLineId: undefined,
+          }) as any
+      );
 
       const result = await useCase.execute({
         ...baseRequest,

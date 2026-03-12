@@ -89,9 +89,7 @@ describe('MeliPollOrdersUseCase', () => {
     mockConnectionRepository.findById.mockResolvedValue(connection);
     mockMeliApiClient.listOrders.mockResolvedValue({
       query: '',
-      results: [
-        { id: 111, status: 'paid' } as any,
-      ],
+      results: [{ id: 111, status: 'paid' } as any],
       sort: { id: 'date_desc', name: 'Date descending' },
       paging: { total: 1, offset: 0, limit: 50 },
     });

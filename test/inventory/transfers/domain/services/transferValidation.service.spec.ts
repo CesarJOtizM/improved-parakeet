@@ -42,7 +42,10 @@ describe('TransferValidationService', () => {
 
     it('Given: missing and inactive warehouses When: validating Then: should return errors', async () => {
       const warehouseRepository = {
-        findById: jest.fn<any>().mockResolvedValueOnce(null).mockResolvedValueOnce({ isActive: false }),
+        findById: jest
+          .fn<any>()
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce({ isActive: false }),
       } as unknown as IWarehouseRepository;
 
       const result = await TransferValidationService.validateTransferCreation(

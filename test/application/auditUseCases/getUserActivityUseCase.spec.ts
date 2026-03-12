@@ -178,7 +178,7 @@ describe('GetUserActivityUseCase', () => {
 
     it('Given: results equal to limit When: getting user activity Then: hasNext should be true and total should be estimated', async () => {
       // Arrange - return exactly limit number of results (50)
-      const mockAuditLogs = Array.from({ length: 50 }, (_) =>
+      const mockAuditLogs = Array.from({ length: 50 }, _ =>
         createMockAuditLog({ action: AuditAction.create('CREATE') })
       );
       mockAuditRepository.findByUser.mockResolvedValue(mockAuditLogs);

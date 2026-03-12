@@ -537,12 +537,7 @@ describe('RolesController', () => {
       mockUpdateRoleUseCase.execute.mockResolvedValue(ok(updateResponse));
 
       // Act
-      await controller.updateRole(
-        'role-123',
-        dto as any,
-        mockOrgId,
-        mockRequest as any
-      );
+      await controller.updateRole('role-123', dto as any, mockOrgId, mockRequest as any);
 
       // Assert
       expect(mockUpdateRoleUseCase.execute).toHaveBeenCalledWith({

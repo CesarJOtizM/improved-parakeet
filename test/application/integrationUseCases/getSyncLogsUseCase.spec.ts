@@ -19,7 +19,7 @@ const makeSyncLog = (action: string, id: string) =>
       processedAt: new Date('2026-03-11T10:00:00Z'),
     },
     id,
-    'org-1',
+    'org-1'
   );
 
 describe('GetSyncLogsUseCase', () => {
@@ -74,12 +74,9 @@ describe('GetSyncLogsUseCase', () => {
       action: 'FAILED',
     });
 
-    expect(mockSyncLogRepo.findByConnectionId).toHaveBeenCalledWith(
-      'conn-1',
-      1,
-      20,
-      { action: 'FAILED' },
-    );
+    expect(mockSyncLogRepo.findByConnectionId).toHaveBeenCalledWith('conn-1', 1, 20, {
+      action: 'FAILED',
+    });
   });
 
   it('Given: non-existent connection When: getting logs Then: should return not found error', async () => {
@@ -100,12 +97,7 @@ describe('GetSyncLogsUseCase', () => {
 
     await useCase.execute({ connectionId: 'conn-1', orgId: 'org-1' });
 
-    expect(mockSyncLogRepo.findByConnectionId).toHaveBeenCalledWith(
-      'conn-1',
-      1,
-      20,
-      undefined,
-    );
+    expect(mockSyncLogRepo.findByConnectionId).toHaveBeenCalledWith('conn-1', 1, 20, undefined);
   });
 
   it('Given: many logs When: getting logs Then: should calculate totalPages correctly', async () => {

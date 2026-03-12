@@ -130,9 +130,7 @@ describe('MeliOAuthController', () => {
         redirectUri: expect.stringContaining('/integrations/meli/callback'),
         orgId: mockOrgId,
       });
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        expect.stringContaining('meli_connected=true')
-      );
+      expect(mockRes.redirect).toHaveBeenCalledWith(expect.stringContaining('meli_connected=true'));
     });
 
     it('Given: exchange use case fails When: handling callback Then: should redirect with error', async () => {
@@ -145,9 +143,7 @@ describe('MeliOAuthController', () => {
 
       await controller.handleCallback('BAD-CODE', state, mockRes);
 
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        expect.stringContaining('meli_error=')
-      );
+      expect(mockRes.redirect).toHaveBeenCalledWith(expect.stringContaining('meli_error='));
     });
 
     it('Given: exception thrown during callback When: handling Then: should return 500 error', async () => {

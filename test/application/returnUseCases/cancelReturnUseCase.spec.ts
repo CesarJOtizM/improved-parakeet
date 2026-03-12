@@ -271,11 +271,11 @@ describe('CancelReturnUseCase', () => {
         lines: [{ productId: 'product-1', quantity: 10, locationId: 'location-1' }],
       });
 
-      mockUnitOfWork.execute.mockImplementation(
-        (async (callback: (tx: unknown) => Promise<unknown>) => {
-          return callback(mockTx);
-        }) as any
-      );
+      mockUnitOfWork.execute.mockImplementation((async (
+        callback: (tx: unknown) => Promise<unknown>
+      ) => {
+        return callback(mockTx);
+      }) as any);
 
       const request = {
         id: mockReturnId,
@@ -349,11 +349,11 @@ describe('CancelReturnUseCase', () => {
         return null;
       });
 
-      mockUnitOfWork.execute.mockImplementation(
-        (async (callback: (tx: unknown) => Promise<unknown>) => {
-          return callback(mockTx);
-        }) as any
-      );
+      mockUnitOfWork.execute.mockImplementation((async (
+        callback: (tx: unknown) => Promise<unknown>
+      ) => {
+        return callback(mockTx);
+      }) as any);
 
       const request = {
         id: mockReturnId,
@@ -417,11 +417,11 @@ describe('CancelReturnUseCase', () => {
         shippedAt: new Date('2025-05-28'),
       });
 
-      mockUnitOfWork.execute.mockImplementation(
-        (async (callback: (tx: unknown) => Promise<unknown>) => {
-          return callback(mockTx);
-        }) as any
-      );
+      mockUnitOfWork.execute.mockImplementation((async (
+        callback: (tx: unknown) => Promise<unknown>
+      ) => {
+        return callback(mockTx);
+      }) as any);
 
       const request = {
         id: mockReturnId,
@@ -462,11 +462,11 @@ describe('CancelReturnUseCase', () => {
         lines: [],
       });
 
-      mockUnitOfWork.execute.mockImplementation(
-        (async (callback: (tx: unknown) => Promise<unknown>) => {
-          return callback(mockTx);
-        }) as any
-      );
+      mockUnitOfWork.execute.mockImplementation((async (
+        callback: (tx: unknown) => Promise<unknown>
+      ) => {
+        return callback(mockTx);
+      }) as any);
 
       const request = {
         id: mockReturnId,
@@ -601,11 +601,11 @@ describe('CancelReturnUseCase', () => {
         shippedAt: new Date('2025-05-28'),
       });
 
-      mockUnitOfWork.execute.mockImplementation(
-        (async (callback: (tx: unknown) => Promise<unknown>) => {
-          return callback(mockTx);
-        }) as any
-      );
+      mockUnitOfWork.execute.mockImplementation((async (
+        callback: (tx: unknown) => Promise<unknown>
+      ) => {
+        return callback(mockTx);
+      }) as any);
 
       const request = {
         id: mockReturnId,
@@ -654,11 +654,11 @@ describe('CancelReturnUseCase', () => {
         shippedAt: null,
       });
 
-      mockUnitOfWork.execute.mockImplementation(
-        (async (callback: (tx: unknown) => Promise<unknown>) => {
-          return callback(mockTx);
-        }) as any
-      );
+      mockUnitOfWork.execute.mockImplementation((async (
+        callback: (tx: unknown) => Promise<unknown>
+      ) => {
+        return callback(mockTx);
+      }) as any);
 
       const request = {
         id: mockReturnId,
@@ -697,11 +697,11 @@ describe('CancelReturnUseCase', () => {
       // There are other active returns
       mockTx.return.count.mockResolvedValue(2);
 
-      mockUnitOfWork.execute.mockImplementation(
-        (async (callback: (tx: unknown) => Promise<unknown>) => {
-          return callback(mockTx);
-        }) as any
-      );
+      mockUnitOfWork.execute.mockImplementation((async (
+        callback: (tx: unknown) => Promise<unknown>
+      ) => {
+        return callback(mockTx);
+      }) as any);
 
       const request = {
         id: mockReturnId,
@@ -743,11 +743,11 @@ describe('CancelReturnUseCase', () => {
         shippedAt: null,
       });
 
-      mockUnitOfWork.execute.mockImplementation(
-        (async (callback: (tx: unknown) => Promise<unknown>) => {
-          return callback(mockTx);
-        }) as any
-      );
+      mockUnitOfWork.execute.mockImplementation((async (
+        callback: (tx: unknown) => Promise<unknown>
+      ) => {
+        return callback(mockTx);
+      }) as any);
 
       const request = {
         id: mockReturnId,
@@ -776,11 +776,11 @@ describe('CancelReturnUseCase', () => {
       // Return movement not found
       mockTx.movement.findUnique.mockResolvedValue(null);
 
-      mockUnitOfWork.execute.mockImplementation(
-        (async (callback: (tx: unknown) => Promise<unknown>) => {
-          return callback(mockTx);
-        }) as any
-      );
+      mockUnitOfWork.execute.mockImplementation((async (
+        callback: (tx: unknown) => Promise<unknown>
+      ) => {
+        return callback(mockTx);
+      }) as any);
 
       const request = {
         id: mockReturnId,
@@ -841,11 +841,11 @@ describe('CancelReturnUseCase', () => {
         lines: [],
       });
 
-      mockUnitOfWork.execute.mockImplementation(
-        (async (callback: (tx: unknown) => Promise<unknown>) => {
-          return callback(mockTx);
-        }) as any
-      );
+      mockUnitOfWork.execute.mockImplementation((async (
+        callback: (tx: unknown) => Promise<unknown>
+      ) => {
+        return callback(mockTx);
+      }) as any);
 
       const request = {
         id: mockReturnId,
@@ -895,11 +895,11 @@ describe('CancelReturnUseCase', () => {
         return null;
       });
 
-      mockUnitOfWork.execute.mockImplementation(
-        (async (callback: (tx: unknown) => Promise<unknown>) => {
-          return callback(mockTx);
-        }) as any
-      );
+      mockUnitOfWork.execute.mockImplementation((async (
+        callback: (tx: unknown) => Promise<unknown>
+      ) => {
+        return callback(mockTx);
+      }) as any);
 
       const request = {
         id: mockReturnId,

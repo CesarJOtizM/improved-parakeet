@@ -220,15 +220,12 @@ describe('MeliTokenService', () => {
       const result = await service.getValidAccessToken(connection);
 
       expect(result).toBe('fresh-access-token');
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        'https://api.mercadolibre.com/oauth/token',
-        {
-          grant_type: 'refresh_token',
-          client_id: 'client-id-123',
-          client_secret: 'client-secret-456',
-          refresh_token: 'refresh-tok-789',
-        }
-      );
+      expect(mockedAxios.post).toHaveBeenCalledWith('https://api.mercadolibre.com/oauth/token', {
+        grant_type: 'refresh_token',
+        client_id: 'client-id-123',
+        client_secret: 'client-secret-456',
+        refresh_token: 'refresh-tok-789',
+      });
     });
 
     it('Given: API failure during refresh When: refreshing Then: should mark REAUTH_REQUIRED', async () => {
@@ -272,16 +269,13 @@ describe('MeliTokenService', () => {
       );
 
       expect(result).toEqual(tokenResponse);
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        'https://api.mercadolibre.com/oauth/token',
-        {
-          grant_type: 'authorization_code',
-          client_id: 'app-client-id',
-          client_secret: 'app-client-secret',
-          code: 'AUTH-CODE-123',
-          redirect_uri: 'https://myapp.com/callback',
-        }
-      );
+      expect(mockedAxios.post).toHaveBeenCalledWith('https://api.mercadolibre.com/oauth/token', {
+        grant_type: 'authorization_code',
+        client_id: 'app-client-id',
+        client_secret: 'app-client-secret',
+        code: 'AUTH-CODE-123',
+        redirect_uri: 'https://myapp.com/callback',
+      });
     });
   });
 });

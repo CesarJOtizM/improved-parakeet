@@ -707,7 +707,9 @@ describe('PrismaStockRepository', () => {
 
     it('Given: database error When: finding all Then: should throw error', async () => {
       // Arrange
-      mockPrismaService.stock.findMany = jest.fn<any>().mockRejectedValue(new Error('Query failed'));
+      mockPrismaService.stock.findMany = jest
+        .fn<any>()
+        .mockRejectedValue(new Error('Query failed'));
 
       // Act & Assert
       await expect(repository.findAll('org-123')).rejects.toThrow('Query failed');
