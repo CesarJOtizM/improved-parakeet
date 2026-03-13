@@ -24,6 +24,7 @@ export interface IDashboardMetricsData {
   salesTrend: Array<{ date: string; count: number; revenue: number }>;
   topProducts: Array<{ name: string; sku: string; revenue: number; quantitySold: number }>;
   stockByWarehouse: Array<{ warehouseName: string; quantity: number; value: number }>;
+  stockByCompany?: Array<{ companyName: string; quantity: number; value: number }>;
   recentActivity: Array<{
     type: string;
     reference: string;
@@ -57,6 +58,24 @@ export class GetDashboardMetricsUseCase {
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     try {
+      const promises: Promise<unknown>[] = [
+        this.detectCurrency(orgId, companyId),
+        this.getInventorySummary(orgId, companyId),
+        this.getLowStockCount(orgId, companyId),
+        this.getMonthlySales(orgId, monthStart, companyId),
+        this.getSalesTrend(orgId, sevenDaysAgo, companyId),
+        this.getTopProducts(orgId, monthStart, companyId),
+        this.getStockByWarehouse(orgId, companyId),
+        this.getRecentActivity(orgId, companyId),
+      ];
+
+      // Only fetch stock-by-company when viewing all companies (no filter)
+      if (!companyId) {
+        promises.push(this.getStockByCompany(orgId));
+      }
+
+      const results = await Promise.all(promises);
+
       const [
         currency,
         inventory,
@@ -66,16 +85,26 @@ export class GetDashboardMetricsUseCase {
         topProducts,
         stockByWarehouse,
         recentActivity,
-      ] = await Promise.all([
-        this.detectCurrency(orgId, companyId),
-        this.getInventorySummary(orgId, companyId),
-        this.getLowStockCount(orgId, companyId),
-        this.getMonthlySales(orgId, monthStart, companyId),
-        this.getSalesTrend(orgId, sevenDaysAgo, companyId),
-        this.getTopProducts(orgId, monthStart, companyId),
-        this.getStockByWarehouse(orgId, companyId),
-        this.getRecentActivity(orgId, companyId),
-      ]);
+      ] = results as [
+        string,
+        { totalProducts: number; totalStockQuantity: number; totalInventoryValue: number },
+        number,
+        { monthlyCount: number; monthlyRevenue: number },
+        Array<{ date: string; count: number; revenue: number }>,
+        Array<{ name: string; sku: string; revenue: number; quantitySold: number }>,
+        Array<{ warehouseName: string; quantity: number; value: number }>,
+        Array<{
+          type: string;
+          reference: string;
+          status: string;
+          description: string;
+          createdAt: string;
+        }>,
+      ];
+
+      const stockByCompany = !companyId
+        ? (results[8] as Array<{ companyName: string; quantity: number; value: number }>)
+        : undefined;
 
       return ok({
         success: true as const,
@@ -87,6 +116,7 @@ export class GetDashboardMetricsUseCase {
           salesTrend,
           topProducts,
           stockByWarehouse,
+          ...(stockByCompany && { stockByCompany }),
           recentActivity,
         },
         timestamp: new Date().toISOString(),
@@ -328,6 +358,29 @@ export class GetDashboardMetricsUseCase {
 
     return result.map(row => ({
       warehouseName: row.warehouseName,
+      quantity: Number(row.quantity),
+      value: parseFloat(String(row.value)),
+    }));
+  }
+
+  private async getStockByCompany(orgId: string) {
+    const result = await this.prisma.$queryRaw<
+      Array<{ companyName: string; quantity: bigint; value: string }>
+    >`
+      SELECT
+        c.name AS "companyName",
+        COALESCE(SUM(s."quantity"), 0) AS quantity,
+        COALESCE(SUM(CAST(s."quantity" AS DECIMAL) * s."unitCost"), 0) AS value
+      FROM "companies" c
+      LEFT JOIN "products" p ON p."companyId" = c.id AND p."orgId" = c."orgId"
+      LEFT JOIN "stock" s ON s."productId" = p.id AND s."orgId" = p."orgId"
+      WHERE c."orgId" = ${orgId} AND c."isActive" = true
+      GROUP BY c.id, c.name
+      ORDER BY value DESC
+    `;
+
+    return result.map(row => ({
+      companyName: row.companyName,
       quantity: Number(row.quantity),
       value: parseFloat(String(row.value)),
     }));
