@@ -11,6 +11,7 @@ import type { IIntegrationConnectionRepository } from '../../shared/domain/ports
 export interface IVtexPollOrdersRequest {
   connectionId?: string;
   orgId?: string;
+  fromDate?: string;
 }
 
 export type IVtexPollOrdersResponse = IApiResponseSuccess<{
@@ -55,7 +56,7 @@ export class VtexPollOrdersUseCase {
 
       for (const connection of connections) {
         try {
-          const result = await this.pollConnection(connection);
+          const result = await this.pollConnection(connection, request.fromDate);
           totalPolled += result.polled;
           totalSynced += result.synced;
           totalFailed += result.failed;
@@ -90,21 +91,30 @@ export class VtexPollOrdersUseCase {
   }
 
   private async pollConnection(
-    connection: IntegrationConnection
+    connection: IntegrationConnection,
+    fromDate?: string
   ): Promise<{ polled: number; synced: number; failed: number }> {
     const appKey = this.encryptionService.decrypt(connection.encryptedAppKey);
     const appToken = this.encryptionService.decrypt(connection.encryptedAppToken);
 
-    // Build date filter from lastSyncAt
+    // Build date filter: manual fromDate takes precedence over lastSyncAt
     let creationDate: string | undefined;
-    if (connection.lastSyncAt) {
-      const from = connection.lastSyncAt.toISOString();
+    const syncFrom = fromDate ? new Date(fromDate) : connection.lastSyncAt;
+    if (syncFrom) {
+      const from =
+        syncFrom instanceof Date ? syncFrom.toISOString() : new Date(syncFrom).toISOString();
       const to = new Date().toISOString();
       creationDate = `creationDate:[${from} TO ${to}]`;
     }
 
+    // Only fetch orders with payment approved or later (excludes payment-pending)
+    const paidStatuses = ['payment-approved', 'ready-for-handling', 'handling', 'invoiced'].join(
+      ','
+    );
+
     const response = await this.vtexApiClient.listOrders(connection.accountName, appKey, appToken, {
       creationDate,
+      status: paidStatuses,
       orderBy: 'creationDate,asc',
       perPage: 50,
     });

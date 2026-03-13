@@ -170,7 +170,14 @@ describe('VtexApiClient', () => {
 
       expect(mockAxiosInstance.post).toHaveBeenCalledWith('/api/orders/hook/config', {
         filter: {
-          status: ['order-completed', 'handling', 'invoiced', 'canceled'],
+          status: [
+            'payment-approved',
+            'order-completed',
+            'ready-for-handling',
+            'handling',
+            'invoiced',
+            'canceled',
+          ],
         },
         hook: {
           url: 'https://example.com/hook',

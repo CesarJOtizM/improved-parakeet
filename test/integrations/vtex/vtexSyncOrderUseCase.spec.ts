@@ -4,6 +4,7 @@ import { IntegrationConnection } from '../../../src/integrations/shared/domain/e
 import { IntegrationSyncLog } from '../../../src/integrations/shared/domain/entities/integrationSyncLog.entity';
 import { EncryptionService } from '../../../src/integrations/shared/encryption/encryption.service';
 import { VtexApiClient } from '../../../src/integrations/vtex/infrastructure/vtexApiClient';
+import { ConfirmSaleUseCase } from '@application/saleUseCases/confirmSaleUseCase';
 import { CreateSaleUseCase } from '@application/saleUseCases/createSaleUseCase';
 import { NotFoundError } from '@shared/domain/result/domainError';
 import { ok } from '@shared/domain/result';
@@ -26,6 +27,7 @@ describe('VtexSyncOrderUseCase', () => {
   let mockEncryptionService: jest.Mocked<EncryptionService>;
   let mockVtexApiClient: jest.Mocked<VtexApiClient>;
   let mockCreateSaleUseCase: jest.Mocked<CreateSaleUseCase>;
+  let mockConfirmSaleUseCase: jest.Mocked<ConfirmSaleUseCase>;
 
   const createMockConnection = () =>
     IntegrationConnection.reconstitute(
@@ -131,6 +133,22 @@ describe('VtexSyncOrderUseCase', () => {
       ),
     } as unknown as jest.Mocked<CreateSaleUseCase>;
 
+    mockConfirmSaleUseCase = {
+      execute: jest.fn<any>().mockResolvedValue(
+        ok({
+          success: true,
+          message: 'Sale confirmed successfully',
+          data: {
+            id: 'sale-uuid-123',
+            saleNumber: 'S-0001',
+            status: 'CONFIRMED',
+            movementId: 'mov-1',
+          },
+          timestamp: new Date().toISOString(),
+        })
+      ),
+    } as unknown as jest.Mocked<ConfirmSaleUseCase>;
+
     useCase = new VtexSyncOrderUseCase(
       mockConnectionRepository,
       mockSyncLogRepository,
@@ -139,7 +157,8 @@ describe('VtexSyncOrderUseCase', () => {
       mockProductRepository,
       mockEncryptionService,
       mockVtexApiClient,
-      mockCreateSaleUseCase
+      mockCreateSaleUseCase,
+      mockConfirmSaleUseCase
     );
   });
 
@@ -857,6 +876,111 @@ describe('VtexSyncOrderUseCase', () => {
 
     expect(result.isOk()).toBe(true);
     expect(mockContactRepository.save).toHaveBeenCalled();
+  });
+
+  it('Given: order with payment-pending status When: syncing Then: should skip and not create sale', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockSyncLogRepository.findByExternalOrderId.mockResolvedValue(null);
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-key');
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-token');
+    mockVtexApiClient.getOrder.mockResolvedValue({
+      orderId: 'ORD-PENDING',
+      sequence: '1',
+      status: 'payment-pending',
+      creationDate: new Date().toISOString(),
+      value: 5000,
+      totals: [],
+      items: [
+        {
+          id: 'item-1',
+          productId: 'vtex-prod-1',
+          refId: 'SKU-1',
+          name: 'Product',
+          skuName: 'SKU',
+          quantity: 1,
+          price: 5000,
+          sellingPrice: 5000,
+          imageUrl: '',
+        },
+      ],
+      clientProfileData: undefined as any,
+      shippingData: undefined as any,
+      paymentData: { transactions: [] },
+    });
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-PENDING',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isOk()).toBe(true);
+    result.match(
+      value => {
+        expect(value.data.action).toBe('SKIPPED');
+        expect(value.message).toContain('payment not yet confirmed');
+      },
+      () => {
+        throw new Error('Expected Ok result');
+      }
+    );
+    // Should NOT create a sale
+    expect(mockCreateSaleUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('Given: order with payment-approved status When: syncing Then: should sync successfully', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findById.mockResolvedValue(connection);
+    mockSyncLogRepository.findByExternalOrderId.mockResolvedValue(null);
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-key');
+    mockEncryptionService.decrypt.mockReturnValueOnce('plain-token');
+    mockVtexApiClient.getOrder.mockResolvedValue({
+      orderId: 'ORD-PAID',
+      sequence: '1',
+      status: 'payment-approved',
+      creationDate: new Date().toISOString(),
+      value: 5000,
+      totals: [],
+      items: [
+        {
+          id: 'item-1',
+          productId: 'vtex-prod-1',
+          refId: 'SKU-1',
+          name: 'Product',
+          skuName: 'SKU',
+          quantity: 1,
+          price: 5000,
+          sellingPrice: 5000,
+          imageUrl: '',
+        },
+      ],
+      clientProfileData: undefined as any,
+      shippingData: undefined as any,
+      paymentData: { transactions: [] },
+    });
+    mockSkuMappingRepository.findByExternalSku.mockResolvedValue({
+      productId: 'local-product-1',
+    } as any);
+    mockSyncLogRepository.save.mockImplementation(async l => l);
+    mockConnectionRepository.update.mockImplementation(async c => c);
+
+    const result = await useCase.execute({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-PAID',
+      orgId: mockOrgId,
+    });
+
+    expect(result.isOk()).toBe(true);
+    result.match(
+      value => {
+        expect(value.data.action).toBe('SYNCED');
+      },
+      () => {
+        throw new Error('Expected Ok result');
+      }
+    );
+    expect(mockCreateSaleUseCase.execute).toHaveBeenCalled();
   });
 
   it('Given: valid order with unmatched SKUs When: syncing Then: should return error and log failure', async () => {

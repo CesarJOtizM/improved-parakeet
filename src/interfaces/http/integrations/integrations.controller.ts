@@ -213,17 +213,27 @@ export class IntegrationsController {
   @RequirePermissions(SYSTEM_PERMISSIONS.INTEGRATIONS_SYNC)
   @ApiOperation({ summary: 'Trigger manual sync for a connection' })
   @ApiParam({ name: 'id', description: 'Connection ID' })
-  async syncConnection(@Param('id') connectionId: string, @OrgId() orgId: string) {
-    this.logger.log('Manually syncing connection', { connectionId, orgId });
+  @ApiQuery({
+    name: 'fromDate',
+    required: false,
+    type: String,
+    description: 'Sync orders from this date (ISO 8601)',
+  })
+  async syncConnection(
+    @Param('id') connectionId: string,
+    @Query('fromDate') fromDate: string | undefined,
+    @OrgId() orgId: string
+  ) {
+    this.logger.log('Manually syncing connection', { connectionId, orgId, fromDate });
     const connection = await this.getConnectionByIdUseCase.execute({ connectionId, orgId });
     const provider = connection.isOk() ? connection.unwrap().data?.provider : undefined;
 
     if (provider === 'MERCADOLIBRE') {
-      const result = await this.meliPollOrdersUseCase.execute({ connectionId, orgId });
+      const result = await this.meliPollOrdersUseCase.execute({ connectionId, orgId, fromDate });
       return resultToHttpResponse(result);
     }
 
-    const result = await this.vtexPollOrdersUseCase.execute({ connectionId, orgId });
+    const result = await this.vtexPollOrdersUseCase.execute({ connectionId, orgId, fromDate });
     return resultToHttpResponse(result);
   }
 

@@ -65,11 +65,12 @@ export class VtexWebhookController {
 
     // Only process relevant states
     const relevantStates = [
+      'payment-approved',
       'order-completed',
+      'ready-for-handling',
       'handling',
       'invoiced',
       'canceled',
-      'ready-for-handling',
     ];
     if (!relevantStates.includes(payload.State)) {
       this.logger.debug('Ignoring webhook for state', { state: payload.State });

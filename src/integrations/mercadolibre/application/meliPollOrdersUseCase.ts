@@ -11,6 +11,7 @@ import type { IIntegrationConnectionRepository } from '../../shared/domain/ports
 export interface IMeliPollOrdersRequest {
   connectionId?: string;
   orgId?: string;
+  fromDate?: string;
 }
 
 export type IMeliPollOrdersResponse = IApiResponseSuccess<{

@@ -211,6 +211,7 @@ describe('VtexPollOrdersUseCase', () => {
       'plain-token',
       expect.objectContaining({
         creationDate: undefined,
+        status: 'payment-approved,ready-for-handling,handling,invoiced',
         orderBy: 'creationDate,asc',
         perPage: 50,
       })
@@ -236,6 +237,7 @@ describe('VtexPollOrdersUseCase', () => {
       'plain-token',
       expect.objectContaining({
         creationDate: expect.stringContaining('creationDate:['),
+        status: 'payment-approved,ready-for-handling,handling,invoiced',
         orderBy: 'creationDate,asc',
         perPage: 50,
       })

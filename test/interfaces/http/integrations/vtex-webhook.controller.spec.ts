@@ -118,6 +118,36 @@ describe('VtexWebhookController', () => {
     expect(mockSyncUseCase.execute).not.toHaveBeenCalled();
   });
 
+  it('Given: payment-approved state When: handling webhook Then: should sync the order', async () => {
+    const connection = createMockConnection();
+    mockConnectionRepository.findByProviderAndAccountGlobal.mockResolvedValue(connection);
+    mockSyncUseCase.execute.mockResolvedValue(
+      ok({
+        success: true,
+        message: 'Synced',
+        data: { externalOrderId: 'ORD-PAID', action: 'SYNCED', saleId: 'sale-1' },
+        timestamp: new Date().toISOString(),
+      })
+    );
+
+    const result = await controller.handleWebhook('teststore', 'valid-secret', {
+      Domain: 'Marketplace',
+      OrderId: 'ORD-PAID',
+      State: 'payment-approved',
+      LastState: 'payment-pending',
+      LastChange: new Date().toISOString(),
+      CurrentChange: new Date().toISOString(),
+      Origin: { Account: 'teststore', Key: 'key' },
+    });
+
+    expect(result).toBeDefined();
+    expect(mockSyncUseCase.execute).toHaveBeenCalledWith({
+      connectionId: 'conn-1',
+      externalOrderId: 'ORD-PAID',
+      orgId: mockOrgId,
+    });
+  });
+
   it('Given: irrelevant state When: handling webhook Then: should ignore', async () => {
     const connection = createMockConnection();
     mockConnectionRepository.findByProviderAndAccountGlobal.mockResolvedValue(connection);

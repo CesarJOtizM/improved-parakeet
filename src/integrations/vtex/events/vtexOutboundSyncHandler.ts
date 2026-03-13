@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { VtexOutboundSyncUseCase } from '../application/vtexOutboundSyncUseCase.js';
-import { SaleConfirmedEvent } from '@sale/domain/events/saleConfirmed.event';
-import { SaleCompletedEvent } from '@sale/domain/events/saleCompleted.event';
+import { SalePickingStartedEvent } from '@sale/domain/events/salePickingStarted.event';
+import { SaleShippedEvent } from '@sale/domain/events/saleShipped.event';
 import { SaleCancelledEvent } from '@sale/domain/events/saleCancelled.event';
 
 import type { IDomainEventHandler } from '@shared/ports/events';
@@ -27,11 +27,11 @@ export class VtexOutboundSyncHandler implements IDomainEventHandler<DomainEvent>
       let orgId: string | undefined;
       let action: 'START_HANDLING' | 'INVOICE' | 'CANCEL';
 
-      if (event instanceof SaleConfirmedEvent) {
+      if (event instanceof SalePickingStartedEvent) {
         saleId = event.saleId;
         orgId = event.orgId;
         action = 'START_HANDLING';
-      } else if (event instanceof SaleCompletedEvent) {
+      } else if (event instanceof SaleShippedEvent) {
         saleId = event.saleId;
         orgId = event.orgId;
         action = 'INVOICE';

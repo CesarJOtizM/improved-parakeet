@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Contact } from '@contacts/domain/entities/contact.entity';
+import { ConfirmSaleUseCase } from '@application/saleUseCases/confirmSaleUseCase';
 import { CreateSaleUseCase } from '@application/saleUseCases/createSaleUseCase';
 import { EncryptionService } from '../../shared/encryption/encryption.service.js';
 import { IntegrationSyncLog } from '../../shared/domain/entities/integrationSyncLog.entity.js';
@@ -51,7 +52,8 @@ export class VtexSyncOrderUseCase {
     private readonly productRepository: IProductRepository,
     private readonly encryptionService: EncryptionService,
     private readonly vtexApiClient: VtexApiClient,
-    private readonly createSaleUseCase: CreateSaleUseCase
+    private readonly createSaleUseCase: CreateSaleUseCase,
+    private readonly confirmSaleUseCase: ConfirmSaleUseCase
   ) {}
 
   async execute(
@@ -115,6 +117,29 @@ export class VtexSyncOrderUseCase {
           existingLog
         );
         return err(new ValidationError(errorMsg, 'VTEX_ORDER_FETCH_ERROR'));
+      }
+
+      // Only sync orders that have payment approved or are further in the flow
+      const paidStatuses = new Set([
+        'payment-approved',
+        'ready-for-handling',
+        'handling',
+        'invoiced',
+      ]);
+      if (!paidStatuses.has(order.status)) {
+        this.logger.debug('Skipping order with non-paid status', {
+          orderId: request.externalOrderId,
+          status: order.status,
+        });
+        return ok({
+          success: true,
+          message: `Order skipped: status "${order.status}" indicates payment not yet confirmed`,
+          data: {
+            externalOrderId: request.externalOrderId,
+            action: 'SKIPPED',
+          },
+          timestamp: new Date().toISOString(),
+        });
       }
 
       // Resolve or create contact
@@ -207,6 +232,22 @@ export class VtexSyncOrderUseCase {
       const saleData = saleResult.unwrap().data;
       const saleId = saleData.id;
       const saleNumber = saleData.saleNumber;
+
+      // Auto-confirm sale to reserve inventory (VTEX payment already approved)
+      const confirmResult = await this.confirmSaleUseCase.execute({
+        id: saleId,
+        orgId: request.orgId,
+        userId: connection.createdBy,
+      });
+
+      if (confirmResult.isErr()) {
+        this.logger.warn('Sale created but auto-confirm failed', {
+          saleId,
+          error: confirmResult.unwrapErr().message,
+        });
+      } else {
+        this.logger.log('Sale auto-confirmed, inventory reserved', { saleId, saleNumber });
+      }
 
       // Log success
       const syncLog =

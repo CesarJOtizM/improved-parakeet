@@ -60,7 +60,13 @@ export class VtexApiClient {
     accountName: string,
     appKey: string,
     appToken: string,
-    params: { page?: number; perPage?: number; creationDate?: string; orderBy?: string }
+    params: {
+      page?: number;
+      perPage?: number;
+      creationDate?: string;
+      orderBy?: string;
+      status?: string;
+    }
   ): Promise<VtexOrderListResponse> {
     try {
       const client = this.createClient(accountName, appKey, appToken);
@@ -69,6 +75,7 @@ export class VtexApiClient {
         per_page: params.perPage || 50,
       };
       if (params.creationDate) queryParams.f_creationDate = params.creationDate;
+      if (params.status) queryParams.f_status = params.status;
       if (params.orderBy) queryParams.orderBy = params.orderBy;
 
       const response = await client.get<VtexOrderListResponse>('/api/oms/pvt/orders', {
@@ -93,7 +100,14 @@ export class VtexApiClient {
       const client = this.createClient(accountName, appKey, appToken);
       await client.post('/api/orders/hook/config', {
         filter: {
-          status: ['order-completed', 'handling', 'invoiced', 'canceled'],
+          status: [
+            'payment-approved',
+            'order-completed',
+            'ready-for-handling',
+            'handling',
+            'invoiced',
+            'canceled',
+          ],
         },
         hook: {
           url: hookUrl,

@@ -47,7 +47,7 @@ describe('GetDashboardMetricsUseCase', () => {
       // getMonthlySales - sale count
       mockPrismaService.sale.count.mockResolvedValue(25);
 
-      // $queryRaw calls: stockSummary, lowStockCount, salesRevenue, salesTrend, topProducts, stockByWarehouse
+      // $queryRaw calls: stockSummary, lowStockCount, salesRevenue, salesTrend, topProducts, stockByWarehouse, stockByCompany
       mockPrismaService.$queryRaw
         // stockSummary
         .mockResolvedValueOnce([{ totalQuantity: BigInt(1000), totalValue: '500000.00' }])
@@ -69,6 +69,11 @@ describe('GetDashboardMetricsUseCase', () => {
         .mockResolvedValueOnce([
           { warehouseName: 'Main Warehouse', quantity: BigInt(800), value: '400000.00' },
           { warehouseName: 'Secondary', quantity: BigInt(200), value: '100000.00' },
+        ])
+        // stockByCompany (fetched when no companyId filter)
+        .mockResolvedValueOnce([
+          { companyName: 'Company A', quantity: BigInt(600), value: '300000.00' },
+          { companyName: 'Company B', quantity: BigInt(400), value: '200000.00' },
         ]);
 
       // recentActivity
@@ -263,7 +268,8 @@ describe('GetDashboardMetricsUseCase', () => {
         .mockResolvedValueOnce([{ revenue: '0' }])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]); // stockByCompany
       mockPrismaService.sale.findMany.mockResolvedValue([]);
       mockPrismaService.movement.findMany.mockResolvedValue([]);
       mockPrismaService.return.findMany.mockResolvedValue([]);
@@ -304,7 +310,8 @@ describe('GetDashboardMetricsUseCase', () => {
         .mockResolvedValueOnce([{}]) // no revenue
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]); // stockByCompany
       mockPrismaService.sale.findMany.mockResolvedValue([]);
       mockPrismaService.movement.findMany.mockResolvedValue([]);
       mockPrismaService.return.findMany.mockResolvedValue([]);
@@ -588,7 +595,8 @@ describe('GetDashboardMetricsUseCase', () => {
         .mockResolvedValueOnce([]) // empty salesRevenue
         .mockResolvedValueOnce([]) // empty salesTrend
         .mockResolvedValueOnce([]) // empty topProducts
-        .mockResolvedValueOnce([]); // empty stockByWarehouse
+        .mockResolvedValueOnce([]) // empty stockByWarehouse
+        .mockResolvedValueOnce([]); // empty stockByCompany
       mockPrismaService.sale.findMany.mockResolvedValue([]);
       mockPrismaService.movement.findMany.mockResolvedValue([]);
       mockPrismaService.return.findMany.mockResolvedValue([]);
