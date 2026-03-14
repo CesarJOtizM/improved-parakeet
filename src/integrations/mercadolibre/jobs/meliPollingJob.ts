@@ -18,7 +18,9 @@ export class MeliPollingJob {
   async pollOrders(): Promise<void> {
     try {
       const connections = await this.connectionRepository.findAllConnectedForPolling();
-      const meliConnections = connections.filter(c => c.provider === 'MERCADOLIBRE');
+      const meliConnections = connections.filter(
+        c => c.provider === 'MERCADOLIBRE' && c.lastSyncAt !== null
+      );
 
       if (meliConnections.length === 0) {
         return;

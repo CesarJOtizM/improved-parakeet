@@ -22,7 +22,9 @@ export class VtexPollingJob {
   async pollOrders(): Promise<void> {
     try {
       const connections = await this.connectionRepository.findAllConnectedForPolling();
-      const vtexConnections = connections.filter(c => c.provider === 'VTEX');
+      const vtexConnections = connections.filter(
+        c => c.provider === 'VTEX' && c.lastSyncAt !== null
+      );
 
       if (vtexConnections.length === 0) {
         return;

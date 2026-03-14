@@ -15,10 +15,12 @@ export class PrismaIntegrationSyncLogRepository implements IIntegrationSyncLogRe
     id: string;
     connectionId: string;
     externalOrderId: string;
+    externalOrderStatus: string | null;
     action: string;
     saleId: string | null;
     saleNumber: string | null;
     contactId: string | null;
+    contactName: string | null;
     errorMessage: string | null;
     rawPayload: Prisma.JsonValue;
     orgId: string;
@@ -28,10 +30,12 @@ export class PrismaIntegrationSyncLogRepository implements IIntegrationSyncLogRe
       {
         connectionId: data.connectionId,
         externalOrderId: data.externalOrderId,
+        externalOrderStatus: data.externalOrderStatus || undefined,
         action: data.action,
         saleId: data.saleId || undefined,
         saleNumber: data.saleNumber || undefined,
         contactId: data.contactId || undefined,
+        contactName: data.contactName || undefined,
         errorMessage: data.errorMessage || undefined,
         rawPayload: (data.rawPayload as Record<string, unknown>) || undefined,
         processedAt: data.processedAt,
@@ -48,10 +52,12 @@ export class PrismaIntegrationSyncLogRepository implements IIntegrationSyncLogRe
           id: log.id,
           connectionId: log.connectionId,
           externalOrderId: log.externalOrderId,
+          externalOrderStatus: log.externalOrderStatus || null,
           action: log.action,
           saleId: log.saleId || null,
           saleNumber: log.saleNumber || null,
           contactId: log.contactId || null,
+          contactName: log.contactName || null,
           errorMessage: log.errorMessage || null,
           rawPayload: (log.rawPayload as Prisma.InputJsonValue) || undefined,
           orgId: log.orgId,
@@ -139,7 +145,9 @@ export class PrismaIntegrationSyncLogRepository implements IIntegrationSyncLogRe
           saleId: log.saleId || null,
           saleNumber: log.saleNumber || null,
           contactId: log.contactId || null,
+          contactName: log.contactName || null,
           errorMessage: log.errorMessage || null,
+          externalOrderStatus: log.externalOrderStatus || null,
         },
       });
       return this.toDomain(updated);

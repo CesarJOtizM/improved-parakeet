@@ -14,9 +14,11 @@ describe('PrismaIntegrationSyncLogRepository', () => {
     id: 'log-1',
     connectionId: 'conn-1',
     externalOrderId: 'ORD-001',
+    externalOrderStatus: null as string | null,
     action: 'SYNCED',
     saleId: 'sale-1',
     contactId: 'contact-1',
+    contactName: 'Test Contact',
     errorMessage: null,
     rawPayload: { OrderId: 'ORD-001', Status: 'ready-for-handling' },
     orgId: 'org-123',
@@ -198,7 +200,9 @@ describe('PrismaIntegrationSyncLogRepository', () => {
           saleId: 'sale-1',
           saleNumber: null,
           contactId: null,
+          contactName: null,
           errorMessage: null,
+          externalOrderStatus: null,
         },
       });
     });
@@ -212,6 +216,7 @@ describe('PrismaIntegrationSyncLogRepository', () => {
           saleId: 'sale-1',
           contactId: 'contact-1',
           errorMessage: 'Failed to sync',
+          externalOrderStatus: 'payment-approved',
           processedAt: new Date(),
         },
         'log-1',
@@ -221,6 +226,7 @@ describe('PrismaIntegrationSyncLogRepository', () => {
         ...mockSyncLogData,
         action: 'FAILED',
         errorMessage: 'Failed to sync',
+        externalOrderStatus: 'payment-approved',
       });
 
       const result = await repository.update(log);
@@ -233,7 +239,9 @@ describe('PrismaIntegrationSyncLogRepository', () => {
           saleId: 'sale-1',
           saleNumber: null,
           contactId: 'contact-1',
+          contactName: null,
           errorMessage: 'Failed to sync',
+          externalOrderStatus: 'payment-approved',
         },
       });
     });
@@ -396,6 +404,7 @@ describe('PrismaIntegrationSyncLogRepository', () => {
         rawPayload: null,
         saleId: null,
         contactId: null,
+        contactName: null,
         errorMessage: null,
       };
       mockPrismaService.integrationSyncLog.findFirst.mockResolvedValue(dataWithNullPayload);

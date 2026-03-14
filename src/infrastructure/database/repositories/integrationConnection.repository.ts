@@ -146,6 +146,7 @@ export class PrismaIntegrationConnectionRepository implements IIntegrationConnec
         where: {
           status: 'CONNECTED',
           syncStrategy: { in: ['POLLING', 'BOTH'] },
+          lastSyncAt: { not: null },
         },
       });
       return data.map(item => this.toDomain(item));

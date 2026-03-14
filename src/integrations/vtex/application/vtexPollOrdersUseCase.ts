@@ -12,6 +12,7 @@ export interface IVtexPollOrdersRequest {
   connectionId?: string;
   orgId?: string;
   fromDate?: string;
+  statuses?: string;
 }
 
 export type IVtexPollOrdersResponse = IApiResponseSuccess<{
@@ -56,7 +57,7 @@ export class VtexPollOrdersUseCase {
 
       for (const connection of connections) {
         try {
-          const result = await this.pollConnection(connection, request.fromDate);
+          const result = await this.pollConnection(connection, request.fromDate, request.statuses);
           totalPolled += result.polled;
           totalSynced += result.synced;
           totalFailed += result.failed;
@@ -92,7 +93,8 @@ export class VtexPollOrdersUseCase {
 
   private async pollConnection(
     connection: IntegrationConnection,
-    fromDate?: string
+    fromDate?: string,
+    statuses?: string
   ): Promise<{ polled: number; synced: number; failed: number }> {
     const appKey = this.encryptionService.decrypt(connection.encryptedAppKey);
     const appToken = this.encryptionService.decrypt(connection.encryptedAppToken);
@@ -108,9 +110,8 @@ export class VtexPollOrdersUseCase {
     }
 
     // Only fetch orders with payment approved or later (excludes payment-pending)
-    const paidStatuses = ['payment-approved', 'ready-for-handling', 'handling', 'invoiced'].join(
-      ','
-    );
+    const paidStatuses =
+      statuses || ['payment-approved', 'ready-for-handling', 'handling', 'invoiced'].join(',');
 
     const response = await this.vtexApiClient.listOrders(connection.accountName, appKey, appToken, {
       creationDate,

@@ -322,6 +322,10 @@ describe('VtexSyncOrderUseCase', () => {
       shippingData: undefined as any,
       paymentData: { transactions: [] },
     });
+    mockContactRepository.findById.mockResolvedValue({
+      id: 'contact-1',
+      name: 'Default Contact',
+    } as any);
     mockSkuMappingRepository.findByExternalSku.mockResolvedValue({
       productId: 'local-product-1',
     } as any);

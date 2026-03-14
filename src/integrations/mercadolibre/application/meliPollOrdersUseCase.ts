@@ -12,6 +12,7 @@ export interface IMeliPollOrdersRequest {
   connectionId?: string;
   orgId?: string;
   fromDate?: string;
+  statuses?: string;
 }
 
 export type IMeliPollOrdersResponse = IApiResponseSuccess<{
@@ -56,7 +57,7 @@ export class MeliPollOrdersUseCase {
 
       for (const connection of connections) {
         try {
-          const result = await this.pollConnection(connection);
+          const result = await this.pollConnection(connection, request.statuses);
           totalPolled += result.polled;
           totalSynced += result.synced;
           totalFailed += result.failed;
@@ -95,7 +96,8 @@ export class MeliPollOrdersUseCase {
   }
 
   private async pollConnection(
-    connection: IntegrationConnection
+    connection: IntegrationConnection,
+    statuses?: string
   ): Promise<{ polled: number; synced: number; failed: number }> {
     const dateFrom = connection.lastSyncAt ? connection.lastSyncAt.toISOString() : undefined;
 
@@ -105,10 +107,16 @@ export class MeliPollOrdersUseCase {
       limit: 50,
     });
 
+    // Filter by statuses if provided (for initial sync)
+    const allowedStatuses = statuses ? statuses.split(',').map(s => s.trim()) : null;
+    const orders = allowedStatuses
+      ? response.results.filter(order => allowedStatuses.includes(order.status))
+      : response.results;
+
     let synced = 0;
     let failed = 0;
 
-    for (const order of response.results) {
+    for (const order of orders) {
       const result = await this.meliSyncOrderUseCase.execute({
         connectionId: connection.id,
         externalOrderId: String(order.id),
@@ -122,6 +130,6 @@ export class MeliPollOrdersUseCase {
       }
     }
 
-    return { polled: response.results.length, synced, failed };
+    return { polled: orders.length, synced, failed };
   }
 }

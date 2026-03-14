@@ -219,21 +219,38 @@ export class IntegrationsController {
     type: String,
     description: 'Sync orders from this date (ISO 8601)',
   })
+  @ApiQuery({
+    name: 'statuses',
+    required: false,
+    type: String,
+    description: 'Comma-separated order statuses to sync (for initial sync)',
+  })
   async syncConnection(
     @Param('id') connectionId: string,
     @Query('fromDate') fromDate: string | undefined,
+    @Query('statuses') statuses: string | undefined,
     @OrgId() orgId: string
   ) {
-    this.logger.log('Manually syncing connection', { connectionId, orgId, fromDate });
+    this.logger.log('Manually syncing connection', { connectionId, orgId, fromDate, statuses });
     const connection = await this.getConnectionByIdUseCase.execute({ connectionId, orgId });
     const provider = connection.isOk() ? connection.unwrap().data?.provider : undefined;
 
     if (provider === 'MERCADOLIBRE') {
-      const result = await this.meliPollOrdersUseCase.execute({ connectionId, orgId, fromDate });
+      const result = await this.meliPollOrdersUseCase.execute({
+        connectionId,
+        orgId,
+        fromDate,
+        statuses,
+      });
       return resultToHttpResponse(result);
     }
 
-    const result = await this.vtexPollOrdersUseCase.execute({ connectionId, orgId, fromDate });
+    const result = await this.vtexPollOrdersUseCase.execute({
+      connectionId,
+      orgId,
+      fromDate,
+      statuses,
+    });
     return resultToHttpResponse(result);
   }
 

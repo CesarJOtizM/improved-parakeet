@@ -122,8 +122,15 @@ export class MeliSyncOrderUseCase {
 
       // Resolve or create contact
       let contactId: string | undefined;
+      let contactName: string | undefined;
       try {
-        contactId = await this.resolveContact(order, connection.defaultContactId, request.orgId);
+        const resolved = await this.resolveContact(
+          order,
+          connection.defaultContactId,
+          request.orgId
+        );
+        contactId = resolved?.id;
+        contactName = resolved?.name;
       } catch (contactError) {
         this.logger.warn('Could not resolve contact, using default', {
           error: contactError instanceof Error ? contactError.message : 'Unknown error',
@@ -178,7 +185,8 @@ export class MeliSyncOrderUseCase {
           request.orgId,
           errorMsg,
           existingLog,
-          order
+          order,
+          order.status
         );
         return err(new ValidationError(errorMsg, 'MELI_SKU_MISMATCH'));
       }
@@ -202,7 +210,8 @@ export class MeliSyncOrderUseCase {
           request.orgId,
           errorMsg,
           existingLog,
-          order
+          order,
+          order.status
         );
         return err(new ValidationError(errorMsg, 'MELI_SALE_CREATION_ERROR'));
       }
@@ -222,13 +231,15 @@ export class MeliSyncOrderUseCase {
             saleId,
             saleNumber,
             contactId,
+            contactName,
+            externalOrderStatus: order.status,
             rawPayload: order as unknown as Record<string, unknown>,
           },
           request.orgId
         );
 
       if (existingLog) {
-        syncLog.markSuccess(saleId, contactId, saleNumber);
+        syncLog.markSuccess(saleId, contactId, saleNumber, order.status, contactName);
         await this.syncLogRepository.update(syncLog);
       } else {
         await this.syncLogRepository.save(syncLog);
@@ -272,9 +283,15 @@ export class MeliSyncOrderUseCase {
     order: MeliOrderDetail,
     defaultContactId: string | undefined,
     orgId: string
-  ): Promise<string | undefined> {
+  ): Promise<{ id: string; name: string } | undefined> {
     const buyer = order.buyer;
-    if (!buyer) return defaultContactId;
+    if (!buyer) {
+      if (defaultContactId) {
+        const defaultContact = await this.contactRepository.findById(defaultContactId, orgId);
+        return defaultContact ? { id: defaultContact.id, name: defaultContact.name } : undefined;
+      }
+      return undefined;
+    }
 
     // Try to find by document/identification
     if (buyer.billing_info?.doc_number) {
@@ -282,13 +299,13 @@ export class MeliSyncOrderUseCase {
         buyer.billing_info.doc_number,
         orgId
       );
-      if (existing) return existing.id;
+      if (existing) return { id: existing.id, name: existing.name };
     }
 
     // Try to find by email
     if (buyer.email) {
       const existing = await this.contactRepository.findByEmail(buyer.email, orgId);
-      if (existing) return existing.id;
+      if (existing) return { id: existing.id, name: existing.name };
     }
 
     // Create new contact
@@ -310,7 +327,7 @@ export class MeliSyncOrderUseCase {
     );
 
     const saved = await this.contactRepository.save(contact);
-    return saved.id;
+    return { id: saved.id, name: contactName };
   }
 
   private async logSyncFailure(
@@ -319,7 +336,8 @@ export class MeliSyncOrderUseCase {
     orgId: string,
     errorMessage: string,
     existingLog: IntegrationSyncLog | null,
-    rawPayload?: unknown
+    rawPayload?: unknown,
+    externalOrderStatus?: string
   ): Promise<void> {
     try {
       if (existingLog) {
@@ -332,6 +350,7 @@ export class MeliSyncOrderUseCase {
             externalOrderId,
             action: 'FAILED',
             errorMessage,
+            externalOrderStatus,
             rawPayload: (rawPayload as Record<string, unknown>) || undefined,
           },
           orgId

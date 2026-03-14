@@ -905,16 +905,18 @@ model IntegrationSyncLog {
   id              String   @id @default(cuid())
   connectionId    String
   externalOrderId String
+  externalOrderStatus String?
   action          String
   saleId          String?
   saleNumber      String?
   contactId       String?
+  contactName     String?
   errorMessage    String?
   rawPayload      Json?
   orgId           String
   processedAt     DateTime @default(now())
 
-  connection IntegrationConnection @relation(fields: [connectionId], references: [id])
+  connection IntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
 
   @@unique([connectionId, externalOrderId])
   @@index([connectionId])
@@ -931,7 +933,7 @@ model IntegrationSkuMapping {
   orgId           String
   createdAt       DateTime @default(now())
 
-  connection IntegrationConnection @relation(fields: [connectionId], references: [id])
+  connection IntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
   product    Product               @relation(fields: [productId], references: [id])
 
   @@unique([connectionId, externalSku])

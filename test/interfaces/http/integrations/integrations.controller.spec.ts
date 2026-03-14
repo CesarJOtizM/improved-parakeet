@@ -250,7 +250,7 @@ describe('IntegrationsController', () => {
         })
       );
 
-      const result = await controller.syncConnection('conn-1', undefined, mockOrgId);
+      const result = await controller.syncConnection('conn-1', undefined, undefined, mockOrgId);
 
       expect(result.success).toBe(true);
       expect(result.data.polled).toBe(5);
@@ -501,12 +501,13 @@ describe('IntegrationsController', () => {
         })
       );
 
-      await controller.syncConnection('conn-2', undefined, mockOrgId);
+      await controller.syncConnection('conn-2', undefined, undefined, mockOrgId);
 
       expect(mockVtexPollOrdersUseCase.execute).toHaveBeenCalledWith({
         connectionId: 'conn-2',
         orgId: mockOrgId,
         fromDate: undefined,
+        statuses: undefined,
       });
     });
   });
@@ -734,7 +735,9 @@ describe('IntegrationsController', () => {
       );
       mockVtexPollOrdersUseCase.execute.mockResolvedValue(err(new ValidationError('Sync failed')));
 
-      await expect(controller.syncConnection('conn-1', undefined, mockOrgId)).rejects.toThrow();
+      await expect(
+        controller.syncConnection('conn-1', undefined, undefined, mockOrgId)
+      ).rejects.toThrow();
     });
   });
 

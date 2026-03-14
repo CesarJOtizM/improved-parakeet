@@ -144,6 +144,7 @@ describe('PrismaIntegrationConnectionRepository', () => {
         where: {
           status: 'CONNECTED',
           syncStrategy: { in: ['POLLING', 'BOTH'] },
+          lastSyncAt: { not: null },
         },
       });
     });
